@@ -1,95 +1,114 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import React, { useEffect, useState } from "react";
+import HeaderWithDropdowns from "../components/selectDropdown";
+import {
+  getHistoricData,
+  getIntradayData,
+} from "../components/getIntervalData";
+import companyArr from "../components/utils/companyArr";
+import Tiles from "../components/tiles";
+import FinanceChart from "../components/financeChart";
 
-export default function Home() {
+const CandleStickChart = () => {
+  const [period, setPeriod] = useState("1m");
+  const [companyName, setCompany] = useState(companyArr[0].value);
+  const [interval, setInterval] = useState("1minute");
+  const [intradayOrHistoric, setIntradayOrHistoric] = useState("intraday");
+  const [apiCall, setApiCall] = useState(0);
+  const [candleData, setCandleData] = useState([]);
+
+  const setCandleArr = (arr) => {
+    let dataArr = [];
+    let candles = arr.data.candles.reverse();
+
+    candles.forEach((item, i) => {
+      const aa = item[0].split("T");
+      const hhmmss = aa[1].split("+")[0];
+      dataArr = [
+        ...dataArr,
+        {
+          date: `${aa[0]} ${hhmmss}`,
+          open: item[1],
+          high: item[2],
+          low: item[3],
+          close: item[4],
+          volume: item[5],
+        },
+      ];
+    });
+
+    setCandleData(dataArr);
+  };
+
+  const isBSE = () => {
+    const index = companyArr.findIndex((v) => v.value === companyName);
+    return index !== -1 ? companyArr[index].isBSE : false;
+  };
+
+  const callHistoricApi = () => {
+    getHistoricData(setCandleArr, interval, companyName, isBSE(), period);
+  };
+
+  const callIntradayApi = () => {
+    getIntradayData(setCandleArr, interval, companyName, isBSE());
+  };
+
+  const handleIntervalChange = (e) => {
+    setInterval(e.target.value);
+  };
+
+  const handleCompanyChange = (e) => {
+    setCompany(e.target.value);
+  };
+
+  const handleIntradayChange = (e) => {
+    const val = e.target.value;
+    if (val === "intraday") {
+      setInterval("1minute");
+    } else {
+      setInterval("30minute");
+    }
+    setIntradayOrHistoric(val);
+  };
+
+  useEffect(() => {
+    if (interval && intradayOrHistoric && apiCall > 0) {
+      // setCandleData([]);
+      if (intradayOrHistoric === "intraday") {
+        callIntradayApi();
+      } else {
+        callHistoricApi();
+      }
+    }
+  }, [apiCall]);
+
+  useEffect(() => {
+    setApiCall((prevState) => prevState + 1);
+  }, [interval, intradayOrHistoric, companyName, period]);
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+    <div>
+      <HeaderWithDropdowns
+        interval={interval}
+        intradayOrHistoric={intradayOrHistoric}
+        companyName={companyName}
+        handleIntervalChange={handleIntervalChange}
+        handleIntradayChange={handleIntradayChange}
+        handleCompanyChange={handleCompanyChange}
+      />
+      <div style={{ margin: "20px" }}>
+        {intradayOrHistoric === "historical" && (
+          <Tiles
+            selectedPeriod={period}
+            setSelectedPeriod={(val) => {
+              setPeriod(val);
+            }}
           />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        )}
+        <FinanceChart initialData={candleData} />
+      </div>
     </div>
   );
-}
+};
+
+export default CandleStickChart;
