@@ -7,9 +7,9 @@ const useParseCsv = () => {
   const { readRemoteFile } = usePapaParse();
 
   useEffect(() => {
-    let companyArr = [];
-    readRemoteFile("/EQUITY_L.csv", {
+    readRemoteFile("/nse_equity.csv", {
       complete: (results) => {
+        let companyArr = [];
         let selectedObj = "";
         results.data.forEach((item, i) => {
           if (i > 0) {
@@ -22,7 +22,25 @@ const useParseCsv = () => {
           }
         });
         setCompany(selectedObj || companyArr[0]);
-        setCompanyArr(companyArr);
+        setCompanyArr((prevState) => [...prevState, ...companyArr]);
+      },
+    });
+
+    readRemoteFile("/bse_equity.csv", {
+      complete: (results) => {
+        let companyArr = [];
+        results.data.forEach((item, i) => {
+          if (i > 0 && item[7]) {
+            let obj = {
+              label: item[1] + " (BSE)",
+              value: item[7],
+              symbol: item[2],
+              isBSE: true,
+            };
+            companyArr = [...companyArr, obj];
+          }
+        });
+        setCompanyArr((prevState) => [...prevState, ...companyArr]);
       },
     });
   }, []);

@@ -114,7 +114,7 @@ const CandleStickChart = () => {
           />
         )}
         <h1>{getCompanyName()}</h1>
-        {candleData.length && <FinanceChart initialData={candleData} />}
+        <FinanceChart initialData={candleData} />
       </div>
     </div>
   );

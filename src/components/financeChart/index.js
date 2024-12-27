@@ -2,7 +2,6 @@ import React from "react";
 import { format } from "d3-format";
 import { timeFormat } from "d3-time-format";
 import {
-  elderRay,
   ema,
   discontinuousTimeScaleProviderBuilder,
   Chart,
@@ -10,17 +9,14 @@ import {
   CurrentCoordinate,
   BarSeries,
   CandlestickSeries,
-  ElderRaySeries,
   LineSeries,
   MovingAverageTooltip,
   OHLCTooltip,
-  SingleValueTooltip,
   lastVisibleItemBasedZoomAnchor,
   XAxis,
   YAxis,
   CrossHairCursor,
   EdgeIndicator,
-  MouseCoordinateX,
   MouseCoordinateY,
   ZoomButtons,
 } from "react-financial-charts";
@@ -49,9 +45,6 @@ const FinanceChart = ({ initialData }) => {
     })
     .accessor((d) => d.ema26);
 
-  const elder = elderRay();
-
-  // const calculatedData = elder(ema26(ema12(initialData)));
   const { data, xScale, xAccessor, displayXAccessor } = ScaleProvider(
     initialData
   );
@@ -63,17 +56,9 @@ const FinanceChart = ({ initialData }) => {
   const gridHeight = height - margin.top - margin.bottom;
 
   const elderRayHeight = 100;
-  const elderRayOrigin = (_, h) => [0, h - elderRayHeight];
   const barChartHeight = gridHeight / 4;
   const barChartOrigin = (_, h) => [0, h - barChartHeight - elderRayHeight];
   const chartHeight = gridHeight - elderRayHeight;
-  /*
-  const yExtents = (data) => {
-    return [data.high, data.low];
-  };
-  */
-  const dateTimeFormat = "%d %b";
-  const timeDisplayFormat = timeFormat(dateTimeFormat);
 
   const barChartExtents = (data) => {
     return data.volume;
