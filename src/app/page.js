@@ -5,17 +5,17 @@ import {
   getHistoricData,
   getIntradayData,
 } from "../components/getIntervalData";
-import companyArr from "../components/utils/companyArr";
 import Tiles from "../components/tiles";
 import FinanceChart from "../components/financeChart";
+import useParseCsv from "../components/utils/parseCsv";
 
 const CandleStickChart = () => {
   const [period, setPeriod] = useState("1m");
-  const [companyName, setCompany] = useState(companyArr[0].value);
   const [interval, setInterval] = useState("1minute");
   const [intradayOrHistoric, setIntradayOrHistoric] = useState("intraday");
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
+  const { companyArr, companyObj, setCompany } = useParseCsv();
 
   const setCandleArr = (arr) => {
     let dataArr = [];
@@ -41,29 +41,27 @@ const CandleStickChart = () => {
   };
 
   const getCompanyName = () => {
-    const index = companyArr.findIndex((v) => v.value === companyName);
-    return index !== -1 ? companyArr[index].name : "";
+    return companyObj?.label;
   };
 
   const isBSE = () => {
-    const index = companyArr.findIndex((v) => v.value === companyName);
-    return index !== -1 ? companyArr[index].isBSE : false;
+    return companyObj?.isBSE;
   };
 
   const callHistoricApi = () => {
-    getHistoricData(setCandleArr, interval, companyName, isBSE(), period);
+    getHistoricData(setCandleArr, interval, companyObj.value, isBSE(), period);
   };
 
   const callIntradayApi = () => {
-    getIntradayData(setCandleArr, interval, companyName, isBSE());
+    getIntradayData(setCandleArr, interval, companyObj.value, isBSE());
   };
 
   const handleIntervalChange = (e) => {
     setInterval(e.target.value);
   };
 
-  const handleCompanyChange = (e) => {
-    setCompany(e.target.value);
+  const handleCompanyChange = (companyObj) => {
+    setCompany(companyObj);
   };
 
   const handleIntradayChange = (e) => {
@@ -77,7 +75,7 @@ const CandleStickChart = () => {
   };
 
   useEffect(() => {
-    if (interval && intradayOrHistoric && apiCall > 0) {
+    if (interval && intradayOrHistoric && companyObj.value && apiCall > 0) {
       setCandleData([]);
       if (intradayOrHistoric === "intraday") {
         callIntradayApi();
@@ -89,17 +87,22 @@ const CandleStickChart = () => {
 
   useEffect(() => {
     setApiCall((prevState) => prevState + 1);
-  }, [interval, intradayOrHistoric, companyName, period]);
+  }, [interval, intradayOrHistoric, companyObj, period]);
+
+  if (!companyArr.length) {
+    return "please wait";
+  }
 
   return (
     <div>
       <HeaderWithDropdowns
         interval={interval}
         intradayOrHistoric={intradayOrHistoric}
-        companyName={companyName}
+        companyObj={companyObj}
         handleIntervalChange={handleIntervalChange}
         handleIntradayChange={handleIntradayChange}
         handleCompanyChange={handleCompanyChange}
+        companyArr={companyArr}
       />
       <div style={{ margin: "20px" }}>
         {intradayOrHistoric === "historical" && (
@@ -111,7 +114,7 @@ const CandleStickChart = () => {
           />
         )}
         <h1>{getCompanyName()}</h1>
-        <FinanceChart initialData={candleData} />
+        {candleData.length && <FinanceChart initialData={candleData} />}
       </div>
     </div>
   );

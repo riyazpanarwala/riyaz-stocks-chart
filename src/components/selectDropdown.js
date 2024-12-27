@@ -1,13 +1,14 @@
 import React from "react";
-import companyArr from "./utils/companyArr";
+import ReactSelect from "./Select/ReactSelect";
 
 const HeaderWithDropdowns = ({
   interval = "30minute",
   intradayOrHistoric = "intraday",
-  companyName,
+  companyObj,
   handleIntervalChange,
   handleIntradayChange,
   handleCompanyChange,
+  companyArr,
 }) => {
   return (
     <header style={styles.header}>
@@ -47,22 +48,11 @@ const HeaderWithDropdowns = ({
           <option value="historical">historical</option>
         </select>
 
-        <select
-          style={styles.select}
-          value={companyName}
+        <ReactSelect
+          options={companyArr}
           onChange={handleCompanyChange}
-        >
-          <option value="" disabled>
-            Select company
-          </option>
-          {companyArr.map((v) => {
-            return (
-              <option value={v.value} key={v.value}>
-                {v.name}
-              </option>
-            );
-          })}
-        </select>
+          value={companyObj}
+        />
       </div>
     </header>
   );
