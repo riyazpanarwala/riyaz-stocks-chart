@@ -30,7 +30,7 @@ const FinanceChart = ({ initialData }) => {
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
 
   const ema12 = ema()
-    .id(1)
+    .id(3)
     .options({ windowSize: 12 })
     .merge((d, c) => {
       d.ema12 = c;
@@ -38,7 +38,7 @@ const FinanceChart = ({ initialData }) => {
     .accessor((d) => d.ema12);
 
   const ema26 = ema()
-    .id(2)
+    .id(3)
     .options({ windowSize: 26 })
     .merge((d, c) => {
       d.ema26 = c;
