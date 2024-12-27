@@ -9,10 +9,27 @@ import Tiles from "../components/tiles";
 import FinanceChart from "../components/financeChart";
 import useParseCsv from "../components/utils/parseCsv";
 
+const intraArr = [
+  { label: "Intraday", value: "intraday" },
+  { label: "historical", value: "historical" },
+];
+
+const intervalArr = [
+  { label: "1 Minute", value: "1minute" },
+  { label: "30 Minute", value: "30minute" },
+];
+
+const intervalArr1 = [
+  { label: "30 Minute", value: "30minute" },
+  { label: "Daily", value: "day" },
+  { label: "Weekly", value: "week" },
+  { label: "Monthly", value: "month" },
+];
+
 const CandleStickChart = () => {
   const [period, setPeriod] = useState("1m");
-  const [interval, setInterval] = useState("1minute");
-  const [intradayOrHistoric, setIntradayOrHistoric] = useState("intraday");
+  const [intervalObj, setInterval] = useState(intervalArr[0]);
+  const [intradayObj, setIntradayOrHistoric] = useState(intraArr[0]);
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
   const { companyArr, companyObj, setCompany } = useParseCsv();
@@ -49,35 +66,46 @@ const CandleStickChart = () => {
   };
 
   const callHistoricApi = () => {
-    getHistoricData(setCandleArr, interval, companyObj.value, isBSE(), period);
+    getHistoricData(
+      setCandleArr,
+      intervalObj.value,
+      companyObj.value,
+      isBSE(),
+      period
+    );
   };
 
   const callIntradayApi = () => {
-    getIntradayData(setCandleArr, interval, companyObj.value, isBSE());
+    getIntradayData(setCandleArr, intervalObj.value, companyObj.value, isBSE());
   };
 
-  const handleIntervalChange = (e) => {
-    setInterval(e.target.value);
+  const handleIntervalChange = (obj) => {
+    setInterval(obj);
   };
 
   const handleCompanyChange = (companyObj) => {
     setCompany(companyObj);
   };
 
-  const handleIntradayChange = (e) => {
-    const val = e.target.value;
+  const handleIntradayChange = (obj) => {
+    const val = obj.value;
     if (val === "intraday") {
-      setInterval("1minute");
+      setInterval(intervalArr[0]);
     } else {
-      setInterval("30minute");
+      setInterval(intervalArr1[0]);
     }
-    setIntradayOrHistoric(val);
+    setIntradayOrHistoric(obj);
   };
 
   useEffect(() => {
-    if (interval && intradayOrHistoric && companyObj.value && apiCall > 0) {
+    if (
+      intervalObj.value &&
+      intradayObj.value &&
+      companyObj.value &&
+      apiCall > 0
+    ) {
       setCandleData([]);
-      if (intradayOrHistoric === "intraday") {
+      if (intradayObj.value === "intraday") {
         callIntradayApi();
       } else {
         callHistoricApi();
@@ -87,7 +115,7 @@ const CandleStickChart = () => {
 
   useEffect(() => {
     setApiCall((prevState) => prevState + 1);
-  }, [interval, intradayOrHistoric, companyObj, period]);
+  }, [intervalObj, intradayObj, companyObj, period]);
 
   if (!companyArr.length) {
     return "please wait";
@@ -96,16 +124,20 @@ const CandleStickChart = () => {
   return (
     <div>
       <HeaderWithDropdowns
-        interval={interval}
-        intradayOrHistoric={intradayOrHistoric}
+        intervalObj={intervalObj}
+        intradayObj={intradayObj}
         companyObj={companyObj}
         handleIntervalChange={handleIntervalChange}
         handleIntradayChange={handleIntradayChange}
         handleCompanyChange={handleCompanyChange}
         companyArr={companyArr}
+        intraArr={intraArr}
+        intervalArr={
+          intradayObj.value === "intraday" ? intervalArr : intervalArr1
+        }
       />
       <div style={{ margin: "20px" }}>
-        {intradayOrHistoric === "historical" && (
+        {intradayObj.value === "historical" && (
           <Tiles
             selectedPeriod={period}
             setSelectedPeriod={(val) => {
@@ -114,7 +146,7 @@ const CandleStickChart = () => {
           />
         )}
         <h1>{getCompanyName()}</h1>
-        {candleData.length && <FinanceChart initialData={candleData} />}
+        <FinanceChart initialData={candleData} />
       </div>
     </div>
   );

@@ -2,56 +2,38 @@ import React from "react";
 import ReactSelect from "./Select/ReactSelect";
 
 const HeaderWithDropdowns = ({
-  interval = "30minute",
-  intradayOrHistoric = "intraday",
+  intervalObj,
+  intradayObj,
   companyObj,
   handleIntervalChange,
   handleIntradayChange,
   handleCompanyChange,
   companyArr,
+  intraArr,
+  intervalArr,
 }) => {
   return (
     <header style={styles.header}>
       <div style={styles.dropdownContainer}>
-        <select
-          style={styles.select}
-          value={interval}
+        <ReactSelect
+          options={intervalArr}
           onChange={handleIntervalChange}
-        >
-          <option value="" disabled>
-            Select Interval
-          </option>
-          {intradayOrHistoric === "intraday" ? (
-            <>
-              <option value="1minute">1 Minute</option>
-              <option value="30minute">30 Minute</option>
-            </>
-          ) : (
-            <>
-              <option value="30minute">30 Minute</option>
-              <option value="day">Daily</option>
-              <option value="week">Weekly</option>
-              <option value="month">Monthly</option>
-            </>
-          )}
-        </select>
+          value={intervalObj}
+          width="auto"
+        />
 
-        <select
-          style={styles.select}
-          value={intradayOrHistoric}
+        <ReactSelect
+          options={intraArr}
           onChange={handleIntradayChange}
-        >
-          <option value="" disabled>
-            Select Second Option
-          </option>
-          <option value="intraday">Intraday</option>
-          <option value="historical">historical</option>
-        </select>
+          value={intradayObj}
+          width="auto"
+        />
 
         <ReactSelect
           options={companyArr}
           onChange={handleCompanyChange}
           value={companyObj}
+          width="350px"
         />
       </div>
     </header>

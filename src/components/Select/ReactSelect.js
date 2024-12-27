@@ -5,7 +5,7 @@ import Option from "./Option";
 
 import "./ReactSelect.scss";
 
-const ReactSelect = ({ options, value, onChange, placeholder }) => {
+const ReactSelect = ({ options, value, onChange, placeholder, width }) => {
   const customStyles = {
     menu: (provided) => ({
       ...provided,
@@ -14,7 +14,7 @@ const ReactSelect = ({ options, value, onChange, placeholder }) => {
     }),
     control: (provided) => ({
       ...provided,
-      width: "350px",
+      width: width,
     }),
   };
 
