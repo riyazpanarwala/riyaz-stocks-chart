@@ -40,6 +40,11 @@ const CandleStickChart = () => {
     setCandleData(dataArr);
   };
 
+  const getCompanyName = () => {
+    const index = companyArr.findIndex((v) => v.value === companyName);
+    return index !== -1 ? companyArr[index].name : "";
+  };
+
   const isBSE = () => {
     const index = companyArr.findIndex((v) => v.value === companyName);
     return index !== -1 ? companyArr[index].isBSE : false;
@@ -73,7 +78,7 @@ const CandleStickChart = () => {
 
   useEffect(() => {
     if (interval && intradayOrHistoric && apiCall > 0) {
-      // setCandleData([]);
+      setCandleData([]);
       if (intradayOrHistoric === "intraday") {
         callIntradayApi();
       } else {
@@ -105,6 +110,7 @@ const CandleStickChart = () => {
             }}
           />
         )}
+        <h1>{getCompanyName()}</h1>
         <FinanceChart initialData={candleData} />
       </div>
     </div>
