@@ -1,8 +1,6 @@
 import React from "react";
 import { format } from "d3-format";
-import { timeFormat } from "d3-time-format";
 import {
-  elderRay,
   ema,
   discontinuousTimeScaleProviderBuilder,
   Chart,
@@ -46,9 +44,7 @@ const FinanceChart = ({ initialData }) => {
     })
     .accessor((d) => d.ema26);
 
-  const elder = elderRay();
-
-  const calculatedData = elder(ema26(ema12(initialData)));
+  const calculatedData = ema26(ema12(initialData));
 
   const { data, xScale, xAccessor, displayXAccessor } = ScaleProvider(
     calculatedData
@@ -60,7 +56,7 @@ const FinanceChart = ({ initialData }) => {
 
   const gridHeight = height - margin.top - margin.bottom;
 
-  const elderRayHeight = 100;
+  const elderRayHeight = 0;
   const barChartHeight = gridHeight / 4;
   const barChartOrigin = (_, h) => [0, h - barChartHeight - elderRayHeight];
   const chartHeight = gridHeight - elderRayHeight;
