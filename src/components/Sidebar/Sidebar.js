@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FaBars } from "react-icons/fa";
 import { MdTrendingFlat } from "react-icons/md";
 import { LiaRulerHorizontalSolid } from "react-icons/lia";
+import { CiText } from "react-icons/ci";
 import styles from "./Sidebar.module.scss";
 
 const Sidebar = ({
@@ -9,6 +10,8 @@ const Sidebar = ({
   trendLineEnable,
   measurementEnable,
   handleMeasurementClick,
+  textEnable,
+  handleTextClick,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -38,6 +41,16 @@ const Sidebar = ({
         >
           <MdTrendingFlat className={styles.icon} />
           <span>Trendline</span>
+        </div>
+        <div
+          className={`${styles.button} ${textEnable ? styles.active : ""}`}
+          onClick={(e) => {
+            closeSidebar();
+            handleTextClick(e);
+          }}
+        >
+          <CiText className={styles.icon} />
+          <span>Text</span>
         </div>
         <div
           className={`${styles.button} ${

@@ -25,6 +25,7 @@ import {
   isNotDefined,
   DrawingObjectSelector,
   Measurement,
+  InteractiveText,
 } from "react-financial-charts";
 import toObject from "../utils/toObject";
 
@@ -32,12 +33,15 @@ const FinanceChart = ({
   initialData,
   trendLineEnable,
   measurementEnable,
+  textEnable,
   disableAllTools,
   width,
   height,
 }) => {
   const [trendLines, setTrendLines] = useState([]);
+  const [textList, setTextList] = useState([]);
   const trendLineRef = useRef(trendLines);
+  const textListRef = useRef(textList);
   const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
     (d) => new Date(d.date)
   );
@@ -114,6 +118,12 @@ const FinanceChart = ({
       setTrendLines(state.Trendline);
       // updateTrendLine(state.Trendline);
     }
+
+    if ("Interactive" in state && state["Interactive"].length > 0) {
+      textListRef.current = state["Interactive"];
+      setTextList(state.Interactive);
+      // updateTextList(state.Interactive)
+    }
   };
 
   const saveInteractiveNode = (type, chartId) => {
@@ -138,6 +148,58 @@ const FinanceChart = ({
       trendLineRef.current = newTrendlines;
       setTrendLines(newTrendlines);
       // updateTrendLine(newTrendlines)
+    }
+
+    if (textListRef.current) {
+      const newTextList = textListRef?.current?.filter((each) => {
+        if (!("selected" in each)) return each;
+        else if (!each.selected) {
+          return each;
+        }
+      });
+
+      textListRef.current = newTextList;
+      setTextList(newTextList);
+      // updateTextList(newTextList);
+    }
+  };
+
+  const handleChoosePosition = (event, interactives, moreProps) => {
+    const userInput = prompt("Enter text:");
+    if (userInput !== null) {
+      interactives["text"] = userInput;
+      textListRef.current = [...textList, interactives];
+      setTextList((prevState) => [...prevState, interactives]);
+      // updateTextList([...textList, interactives]);
+    }
+  };
+
+  const onDragComplete = (event, textList, moreProps) => {
+    textListRef.current = textList;
+    setTextList(textList);
+  };
+
+  const handleEditText = (node) => {
+    const userInput = prompt("Enter text:", node["text"]);
+    if (userInput !== null) {
+      return userInput;
+    }
+    return node["text"];
+  };
+
+  const handleDoubleClick = (event, textList, moreProps) => {
+    if (textListRef.current) {
+      const newTextList = textListRef?.current?.filter((each) => {
+        if (!("selected" in each) || !each.selected) return each;
+        else {
+          each["text"] = handleEditText(each);
+          return each;
+        }
+      });
+
+      textListRef.current = newTextList;
+      setTextList(newTextList);
+      // updateTextList(newTextList);
     }
   };
 
@@ -249,6 +311,30 @@ const FinanceChart = ({
             edgeStrokeWidth: 1,
             edgeFill: "#FFFFFF",
             edgeStroke: "#FFF",
+          }}
+        />
+
+        <InteractiveText
+          ref={saveInteractiveNode("Interactive", 3)}
+          enabled={textEnable}
+          textList={textList}
+          onChoosePosition={(e, interactiveText, moreProps) => {
+            handleChoosePosition(e, interactiveText, moreProps);
+            disableAllTools();
+          }}
+          onDoubleClick={handleDoubleClick}
+          onDragComplete={onDragComplete}
+          defaultText={{
+            bgFill: "#FFF",
+            bgOpacity: 1,
+            bgStrokeWidth: 1,
+            textFill: "#000",
+            fontFamily:
+              "-apple-system, system-ui, Roboto, 'Helvetica Neue', Ubuntu, sans-serif",
+            fontSize: 12,
+            fontStyle: "normal",
+            fontWeight: "normal",
+            text: "Dummy Text",
           }}
         />
 

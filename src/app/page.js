@@ -35,6 +35,7 @@ const CandleStickChart = () => {
   const [candleData, setCandleData] = useState([]);
   const [trendLineEnable, setTrendLineEnable] = useState(false);
   const [measurementEnable, setMeasurementEnable] = useState(false);
+  const [textEnable, setTextEnable] = useState(false);
   const { companyArr, companyObj, setCompany } = useParseCsv();
 
   const handleTrendLineClick = () => {
@@ -47,9 +48,15 @@ const CandleStickChart = () => {
     setMeasurementEnable(true);
   };
 
+  const handleTextClick = () => {
+    disableAllTools();
+    setTextEnable(true);
+  };
+
   const disableAllTools = () => {
     setMeasurementEnable(false);
     setTrendLineEnable(false);
+    setTextEnable(false);
   };
 
   const setCandleArr = (arr) => {
@@ -165,6 +172,8 @@ const CandleStickChart = () => {
           trendLineEnable={trendLineEnable}
           measurementEnable={measurementEnable}
           handleMeasurementClick={handleMeasurementClick}
+          textEnable={textEnable}
+          handleTextClick={handleTextClick}
         />
         <main className="mainChart">
           <div style={{ margin: "20px" }}>
@@ -184,6 +193,7 @@ const CandleStickChart = () => {
                   trendLineEnable={trendLineEnable}
                   disableAllTools={disableAllTools}
                   measurementEnable={measurementEnable}
+                  textEnable={textEnable}
                 />
               </div>
             ) : (
