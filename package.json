@@ -18,7 +18,7 @@
     "next": "15.1.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-financial-charts": "^2.0.1",
+    "react-financial-charts": "file:react-financial-charts-2.0.1.tgz",
     "react-papaparse": "^4.4.0",
     "react-select": "^5.9.0",
     "react-window": "^1.8.11",
