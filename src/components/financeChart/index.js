@@ -3,15 +3,11 @@ import { format } from "d3-format";
 import {
   withDeviceRatio,
   withSize,
-  ema,
   discontinuousTimeScaleProviderBuilder,
   Chart,
   ChartCanvas,
-  CurrentCoordinate,
   BarSeries,
   CandlestickSeries,
-  LineSeries,
-  MovingAverageTooltip,
   OHLCTooltip,
   lastVisibleItemBasedZoomAnchor,
   XAxis,
@@ -27,6 +23,9 @@ import {
   Measurement,
   InteractiveText,
 } from "react-financial-charts";
+import EMAChart from "./ema";
+import RSIChart from "./RSI";
+import useData from "./useData";
 import toObject from "../utils/toObject";
 
 const FinanceChart = ({
@@ -37,35 +36,22 @@ const FinanceChart = ({
   disableAllTools,
   width,
   height,
+  indicatorName,
 }) => {
   const [trendLines, setTrendLines] = useState([]);
   const [textList, setTextList] = useState([]);
   const trendLineRef = useRef(trendLines);
   const textListRef = useRef(textList);
+  const { calculatedData, ema12, ema26, rsiCalculator, rsiYAccessor } = useData(
+    initialData,
+    indicatorName
+  );
   const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
     (d) => new Date(d.date)
   );
 
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
   let interactiveNodes = {};
-
-  const ema12 = ema()
-    .id(1)
-    .options({ windowSize: 12 })
-    .merge((d, c) => {
-      d.ema12 = c;
-    })
-    .accessor((d) => d.ema12);
-
-  const ema26 = ema()
-    .id(2)
-    .options({ windowSize: 26 })
-    .merge((d, c) => {
-      d.ema26 = c;
-    })
-    .accessor((d) => d.ema26);
-
-  const calculatedData = ema26(ema12(initialData));
 
   const { data, xScale, xAccessor, displayXAccessor } = ScaleProvider(
     calculatedData
@@ -252,16 +238,13 @@ const FinanceChart = ({
         <XAxis showGridLines gridLinesStrokeStyle="#e0e3eb" />
         <YAxis showGridLines tickFormat={pricesDisplayFormat} />
         <CandlestickSeries />
-        <LineSeries yAccessor={ema26.accessor()} strokeStyle={ema26.stroke()} />
-        <CurrentCoordinate
-          yAccessor={ema26.accessor()}
-          fillStyle={ema26.stroke()}
-        />
-        <LineSeries yAccessor={ema12.accessor()} strokeStyle={ema12.stroke()} />
-        <CurrentCoordinate
-          yAccessor={ema12.accessor()}
-          fillStyle={ema12.stroke()}
-        />
+
+        {indicatorName === "ema" ? (
+          <EMAChart ema26={ema26} ema12={ema12} />
+        ) : (
+          ""
+        )}
+
         <MouseCoordinateY
           rectWidth={margin.right}
           displayFormat={pricesDisplayFormat}
@@ -273,23 +256,6 @@ const FinanceChart = ({
           lineStroke={openCloseColor}
           displayFormat={pricesDisplayFormat}
           yAccessor={yEdgeIndicator}
-        />
-        <MovingAverageTooltip
-          origin={[8, 24]}
-          options={[
-            {
-              yAccessor: ema26.accessor(),
-              type: "EMA",
-              stroke: ema26.stroke(),
-              windowSize: ema26.options().windowSize,
-            },
-            {
-              yAccessor: ema12.accessor(),
-              type: "EMA",
-              stroke: ema12.stroke(),
-              windowSize: ema12.options().windowSize,
-            },
-          ]}
         />
 
         <TrendLine
@@ -350,6 +316,17 @@ const FinanceChart = ({
         <ZoomButtons />
         <OHLCTooltip origin={[8, 16]} />
       </Chart>
+
+      {indicatorName === "rsi" ? (
+        <Chart id={4} yExtents={[0, 100]}>
+          <XAxis />
+          <YAxis tickValues={[30, 50, 70]} />
+
+          <RSIChart rsiYAccessor={rsiYAccessor} rsiCalculator={rsiCalculator} />
+        </Chart>
+      ) : (
+        ""
+      )}
 
       <CrossHairCursor />
       <DrawingObjectSelector

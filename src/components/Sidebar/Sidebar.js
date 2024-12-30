@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FaBars } from "react-icons/fa";
 import { MdTrendingFlat } from "react-icons/md";
 import { LiaRulerHorizontalSolid } from "react-icons/lia";
+import { GrIndicator } from "react-icons/gr";
 import { CiText } from "react-icons/ci";
 import styles from "./Sidebar.module.scss";
 
@@ -12,8 +13,12 @@ const Sidebar = ({
   handleMeasurementClick,
   textEnable,
   handleTextClick,
+  indicatorName,
+  handleEMAClick,
+  handleRSIClick,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [tooltipOpen, setTooltipOpen] = useState(false);
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
@@ -63,6 +68,45 @@ const Sidebar = ({
         >
           <LiaRulerHorizontalSolid className={styles.icon} />
           <span>Measurement</span>
+        </div>
+        <div
+          className={styles.button}
+          style={{ position: "relative" }}
+          onMouseEnter={() => setTooltipOpen(true)}
+          onMouseLeave={() => setTooltipOpen(false)}
+        >
+          <GrIndicator className={styles.icon} />
+          <span>Indicator</span>
+
+          {/* Tooltip Submenu */}
+          {tooltipOpen && (
+            <div className={styles.tooltip}>
+              <div
+                className={`${styles.tooltipItem} ${
+                  indicatorName === "ema" ? styles.active : ""
+                }`}
+                onClick={(e) => {
+                  setTooltipOpen(false);
+                  closeSidebar();
+                  handleEMAClick(e);
+                }}
+              >
+                EMA
+              </div>
+              <div
+                className={`${styles.tooltipItem} ${
+                  indicatorName === "rsi" ? styles.active : ""
+                }`}
+                onClick={(e) => {
+                  setTooltipOpen(false);
+                  closeSidebar();
+                  handleRSIClick(e);
+                }}
+              >
+                RSI
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

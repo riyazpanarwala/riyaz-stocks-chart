@@ -10,6 +10,7 @@
   position: fixed;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
+  z-index: 100;
 }
 
 /* Button Styles */
@@ -57,6 +58,35 @@
   border-radius: 5px;
   cursor: pointer;
   z-index: 1000;
+}
+
+/* Tooltip Styles */
+.tooltip {
+  position: absolute;
+  left: 100%;
+  background-color: #444;
+  border: 1px solid #575757;
+  padding: 10px 0;
+  min-width: 150px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.tooltipItem {
+  padding: 10px 20px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.tooltipItem:hover {
+  background-color: #575757;
+  color: #ddd;
+}
+
+.active.tooltipItem {
+  background-color: #333;
+  color: #00bcd4;
 }
 
 /* Responsive Sidebar */
