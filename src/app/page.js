@@ -36,9 +36,9 @@ const CandleStickChart = () => {
 
   const setCandleArr = (arr) => {
     let dataArr = [];
-    let candles = arr.data.candles.reverse();
+    let candles = arr.data.candles?.reverse();
 
-    candles.forEach((item, i) => {
+    candles?.forEach((item, i) => {
       const aa = item[0].split("T");
       const hhmmss = aa[1].split("+")[0];
       dataArr = [
@@ -65,18 +65,23 @@ const CandleStickChart = () => {
     return companyObj?.isBSE;
   };
 
-  const callHistoricApi = () => {
-    getHistoricData(
-      setCandleArr,
+  const callHistoricApi = async () => {
+    const arr = await getHistoricData(
       intervalObj.value,
       companyObj.value,
       isBSE(),
       period
     );
+    setCandleArr(arr);
   };
 
-  const callIntradayApi = () => {
-    getIntradayData(setCandleArr, intervalObj.value, companyObj.value, isBSE());
+  const callIntradayApi = async () => {
+    const arr = await getIntradayData(
+      intervalObj.value,
+      companyObj.value,
+      isBSE()
+    );
+    setCandleArr(arr);
   };
 
   const handleIntervalChange = (obj) => {
@@ -146,7 +151,7 @@ const CandleStickChart = () => {
           />
         )}
         <h1>{getCompanyName()}</h1>
-        <FinanceChart initialData={candleData} />
+        {candleData.length ? <FinanceChart initialData={candleData} /> : ""}
       </div>
     </div>
   );
