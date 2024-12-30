@@ -19,6 +19,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-financial-charts": "file:react-financial-charts-2.0.1.tgz",
+    "react-icons": "^5.4.0",
     "react-papaparse": "^4.4.0",
     "react-select": "^5.9.0",
     "react-window": "^1.8.11",

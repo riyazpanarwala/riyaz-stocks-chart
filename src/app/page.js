@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import Sidebar from "../components/Sidebar/Sidebar.js";
 import HeaderWithDropdowns from "../components/selectDropdown";
 import {
   getHistoricData,
@@ -32,7 +33,16 @@ const CandleStickChart = () => {
   const [intradayObj, setIntradayOrHistoric] = useState(intraArr[0]);
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
+  const [trendLineEnable, setTrendLineEnable] = useState(false);
   const { companyArr, companyObj, setCompany } = useParseCsv();
+
+  const handleTrendLineClick = () => {
+    setTrendLineEnable(true);
+  };
+
+  const disableAllTools = () => {
+    setTrendLineEnable(false);
+  };
 
   const setCandleArr = (arr) => {
     let dataArr = [];
@@ -127,7 +137,7 @@ const CandleStickChart = () => {
   }
 
   return (
-    <div>
+    <>
       <HeaderWithDropdowns
         intervalObj={intervalObj}
         intradayObj={intradayObj}
@@ -141,19 +151,37 @@ const CandleStickChart = () => {
           intradayObj.value === "intraday" ? intervalArr : intervalArr1
         }
       />
-      <div style={{ margin: "20px" }}>
-        {intradayObj.value === "historical" && (
-          <Tiles
-            selectedPeriod={period}
-            setSelectedPeriod={(val) => {
-              setPeriod(val);
-            }}
-          />
-        )}
-        <h1>{getCompanyName()}</h1>
-        {candleData.length ? <FinanceChart initialData={candleData} /> : ""}
+      <div style={{ display: "flex" }}>
+        <Sidebar
+          handleTrendLineClick={handleTrendLineClick}
+          trendLineEnable={trendLineEnable}
+        />
+        <main className="mainChart">
+          <div style={{ margin: "20px" }}>
+            {intradayObj.value === "historical" && (
+              <Tiles
+                selectedPeriod={period}
+                setSelectedPeriod={(val) => {
+                  setPeriod(val);
+                }}
+              />
+            )}
+            <h1>{getCompanyName()}</h1>
+            {candleData.length ? (
+              <div className="finance-charts">
+                <FinanceChart
+                  initialData={candleData}
+                  trendLineEnable={trendLineEnable}
+                  disableAllTools={disableAllTools}
+                />
+              </div>
+            ) : (
+              ""
+            )}
+          </div>
+        </main>
       </div>
-    </div>
+    </>
   );
 };
 

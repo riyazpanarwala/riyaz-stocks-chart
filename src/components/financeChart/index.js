@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { format } from "d3-format";
 import {
+  withDeviceRatio,
+  withSize,
   ema,
   discontinuousTimeScaleProviderBuilder,
   Chart,
@@ -18,15 +20,30 @@ import {
   EdgeIndicator,
   MouseCoordinateY,
   ZoomButtons,
+  TrendLine,
+  isDefined,
+  isNotDefined,
+  DrawingObjectSelector,
 } from "react-financial-charts";
+import toObject from "../utils/toObject";
 
-const FinanceChart = ({ initialData }) => {
+const FinanceChart = ({
+  initialData,
+  trendLineEnable,
+  disableAllTools,
+  width,
+  height,
+}) => {
+  const [trendLines, setTrendLines] = useState([]);
+  const trendLineRef = useRef(trendLines);
   const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
     (d) => new Date(d.date)
   );
-  const height = 500;
-  const width = 1200;
+
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
+  let interactiveNodes = {};
+
+  console.log(width, height);
 
   const ema12 = ema()
     .id(1)
@@ -86,6 +103,66 @@ const FinanceChart = ({ initialData }) => {
   const openCloseColor = (data) => {
     return data.close > data.open ? "#26a69a" : "#ef5350";
   };
+
+  const handleSelection = (e, interactives, moreProps) => {
+    const state = toObject(interactives, (each) => {
+      return [each.type, each.objects];
+    });
+
+    if ("Trendline" in state && state["Trendline"].length > 0) {
+      trendLineRef.current = state["Trendline"];
+      setTrendLines(state.Trendline);
+      // updateTrendLine(state.Trendline);
+    }
+  };
+
+  const saveInteractiveNode = (type, chartId) => {
+    return (node) => {
+      const key = `${type}_${chartId}`;
+      if (isDefined(node) || isNotDefined(interactiveNodes[key])) {
+        interactiveNodes = {
+          ...interactiveNodes,
+          [key]: { type, chartId, node },
+        };
+      }
+      return interactiveNodes;
+    };
+  };
+
+  const handleDelete = () => {
+    if (trendLineRef.current) {
+      const newTrendlines = trendLineRef?.current?.filter(
+        (each) => !each.selected
+      );
+
+      trendLineRef.current = newTrendlines;
+      setTrendLines(newTrendlines);
+      // updateTrendLine(newTrendlines)
+    }
+  };
+
+  const onKeyPress = (e) => {
+    const keyCode = e.which;
+
+    switch (keyCode) {
+      case 46:
+        // DEL
+        handleDelete();
+        break;
+
+      case 27:
+        // ESC
+        disableAllTools();
+        break;
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("keyup", onKeyPress);
+    return () => {
+      document.removeEventListener("keyup", onKeyPress);
+    };
+  }, []);
 
   return (
     <ChartCanvas
@@ -153,13 +230,50 @@ const FinanceChart = ({ initialData }) => {
           ]}
         />
 
+        <TrendLine
+          ref={saveInteractiveNode("Trendline", 3)}
+          trends={trendLines}
+          enabled={trendLineEnable}
+          type="LINE"
+          snap={false}
+          onComplete={(e, newTrends, moreProps) => {
+            trendLineRef.current = newTrends;
+            setTrendLines([...newTrends]);
+            // updateTrendLine(newTrends);
+            disableAllTools();
+          }}
+          appearance={{
+            strokeStyle: "#FFF",
+            strokeWidth: 1,
+            strokeDasharray: "Solid",
+            edgeStrokeWidth: 1,
+            edgeFill: "#FFFFFF",
+            edgeStroke: "#FFF",
+          }}
+        />
+
         <ZoomButtons />
         <OHLCTooltip origin={[8, 16]} />
       </Chart>
 
       <CrossHairCursor />
+      <DrawingObjectSelector
+        enabled={true}
+        getInteractiveNodes={() => interactiveNodes}
+        drawingObjectMap={{
+          Trendline: "trends",
+          Interactive: "textList",
+        }}
+        onSelect={handleSelection}
+      />
     </ChartCanvas>
   );
 };
 
-export default FinanceChart;
+// export default FinanceChart;
+
+export default withSize({
+  style: {
+    minHeight: 450,
+  },
+})(withDeviceRatio()(FinanceChart));

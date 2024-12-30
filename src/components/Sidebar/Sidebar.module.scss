@@ -1,0 +1,75 @@
+/* Sidebar Styles */
+.sidebar {
+  width: 150px;
+  height: 100vh;
+  background-color: grey;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding-top: 20px;
+  position: fixed;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+/* Button Styles */
+.button {
+  width: 100%;
+  padding: 15px 20px;
+  background-color: transparent;
+  border: none;
+  color: white;
+  text-align: left;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #444;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.button:hover {
+  background-color: #575757;
+  color: #ddd;
+}
+
+/* Highlight Active Button */
+.active {
+  background-color: blue;
+  color: white;
+}
+
+.icon {
+  margin-right: 10px;
+  font-size: 20px;
+}
+
+/* Hamburger Menu Styles */
+.hamburger {
+  display: none;
+  position: fixed;
+  top: 75px;
+  left: 10px;
+  background-color: #333;
+  color: white;
+  font-size: 24px;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+/* Responsive Sidebar */
+@media (max-width: 768px) {
+  .hamburger {
+    display: block;
+  }
+
+  .sidebar {
+    transform: translateX(-150px);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}

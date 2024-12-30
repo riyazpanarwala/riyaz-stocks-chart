@@ -40,3 +40,19 @@ a {
     color-scheme: dark;
   }
 }
+
+.finance-charts {
+  background-color: #d9d9d9;
+}
+
+.mainChart {
+  margin-left: 150px;
+  padding: 20px;
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .mainChart {
+    margin-left: 0px;
+  }
+}
