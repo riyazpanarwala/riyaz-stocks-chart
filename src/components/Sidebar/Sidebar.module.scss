@@ -1,6 +1,6 @@
 /* Sidebar Styles */
 .sidebar {
-  width: 150px;
+  width: 200px;
   height: 100vh;
   background-color: grey;
   color: white;
@@ -66,7 +66,7 @@
   }
 
   .sidebar {
-    transform: translateX(-150px);
+    transform: translateX(-200px);
   }
 
   .sidebar.open {

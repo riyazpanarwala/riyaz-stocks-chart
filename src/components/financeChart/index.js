@@ -24,12 +24,14 @@ import {
   isDefined,
   isNotDefined,
   DrawingObjectSelector,
+  Measurement,
 } from "react-financial-charts";
 import toObject from "../utils/toObject";
 
 const FinanceChart = ({
   initialData,
   trendLineEnable,
+  measurementEnable,
   disableAllTools,
   width,
   height,
@@ -42,8 +44,6 @@ const FinanceChart = ({
 
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
   let interactiveNodes = {};
-
-  console.log(width, height);
 
   const ema12 = ema()
     .id(1)
@@ -250,6 +250,15 @@ const FinanceChart = ({
             edgeFill: "#FFFFFF",
             edgeStroke: "#FFF",
           }}
+        />
+
+        <Measurement
+          ref={saveInteractiveNode("Measurement", 3)}
+          enabled={measurementEnable}
+          type={"2D"}
+          onBrush={() => {}}
+          fillStyle="#d9d9d9"
+          interactiveState={{}}
         />
 
         <ZoomButtons />

@@ -34,13 +34,21 @@ const CandleStickChart = () => {
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
   const [trendLineEnable, setTrendLineEnable] = useState(false);
+  const [measurementEnable, setMeasurementEnable] = useState(false);
   const { companyArr, companyObj, setCompany } = useParseCsv();
 
   const handleTrendLineClick = () => {
+    disableAllTools();
     setTrendLineEnable(true);
   };
 
+  const handleMeasurementClick = () => {
+    disableAllTools();
+    setMeasurementEnable(true);
+  };
+
   const disableAllTools = () => {
+    setMeasurementEnable(false);
     setTrendLineEnable(false);
   };
 
@@ -155,6 +163,8 @@ const CandleStickChart = () => {
         <Sidebar
           handleTrendLineClick={handleTrendLineClick}
           trendLineEnable={trendLineEnable}
+          measurementEnable={measurementEnable}
+          handleMeasurementClick={handleMeasurementClick}
         />
         <main className="mainChart">
           <div style={{ margin: "20px" }}>
@@ -173,6 +183,7 @@ const CandleStickChart = () => {
                   initialData={candleData}
                   trendLineEnable={trendLineEnable}
                   disableAllTools={disableAllTools}
+                  measurementEnable={measurementEnable}
                 />
               </div>
             ) : (

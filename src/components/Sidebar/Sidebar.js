@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import { FaBars } from "react-icons/fa";
 import { MdTrendingFlat } from "react-icons/md";
+import { LiaRulerHorizontalSolid } from "react-icons/lia";
 import styles from "./Sidebar.module.scss";
 
-const Sidebar = ({ handleTrendLineClick, trendLineEnable }) => {
+const Sidebar = ({
+  handleTrendLineClick,
+  trendLineEnable,
+  measurementEnable,
+  handleMeasurementClick,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -32,6 +38,18 @@ const Sidebar = ({ handleTrendLineClick, trendLineEnable }) => {
         >
           <MdTrendingFlat className={styles.icon} />
           <span>Trendline</span>
+        </div>
+        <div
+          className={`${styles.button} ${
+            measurementEnable ? styles.active : ""
+          }`}
+          onClick={(e) => {
+            closeSidebar();
+            handleMeasurementClick(e);
+          }}
+        >
+          <LiaRulerHorizontalSolid className={styles.icon} />
+          <span>Measurement</span>
         </div>
       </div>
     </>
