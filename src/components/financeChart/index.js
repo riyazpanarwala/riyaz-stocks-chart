@@ -66,7 +66,7 @@ const FinanceChart = ({
   const elderRayHeight = 0;
   const barChartHeight = gridHeight / 4;
   const barChartOrigin = (_, h) => [0, h - barChartHeight - elderRayHeight];
-  const chartHeight = gridHeight - elderRayHeight;
+  const chartHeight = gridHeight - barChartHeight - elderRayHeight;
 
   const barChartExtents = (data) => {
     return data.volume;
@@ -318,7 +318,12 @@ const FinanceChart = ({
       </Chart>
 
       {indicatorName === "rsi" ? (
-        <Chart id={4} yExtents={[0, 100]}>
+        <Chart
+          id={4}
+          yExtents={[0, 100]}
+          height={barChartHeight}
+          origin={barChartOrigin}
+        >
           <XAxis />
           <YAxis tickValues={[30, 50, 70]} />
 
@@ -346,6 +351,6 @@ const FinanceChart = ({
 
 export default withSize({
   style: {
-    minHeight: 450,
+    minHeight: 500,
   },
 })(withDeviceRatio()(FinanceChart));
