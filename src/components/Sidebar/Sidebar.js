@@ -5,7 +5,7 @@ import { LiaRulerHorizontalSolid } from "react-icons/lia";
 import { GrIndicator } from "react-icons/gr";
 import { CiText } from "react-icons/ci";
 import { FcPositiveDynamic } from "react-icons/fc";
-import TooltipSubMenu from "./tooltipMenu";
+import TooltipSubMenu from "./toolTipMenu";
 import styles from "./Sidebar.module.scss";
 
 const Sidebar = ({
