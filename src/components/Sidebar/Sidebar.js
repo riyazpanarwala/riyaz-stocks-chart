@@ -4,6 +4,8 @@ import { MdTrendingFlat } from "react-icons/md";
 import { LiaRulerHorizontalSolid } from "react-icons/lia";
 import { GrIndicator } from "react-icons/gr";
 import { CiText } from "react-icons/ci";
+import { FcPositiveDynamic } from "react-icons/fc";
+import TooltipSubMenu from "./tooltipMenu";
 import styles from "./Sidebar.module.scss";
 
 const Sidebar = ({
@@ -16,9 +18,11 @@ const Sidebar = ({
   indicatorName,
   handleEMAClick,
   handleRSIClick,
+  positionName,
+  handleLongPositionClick,
+  handleShortPositionClick,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [tooltipOpen, setTooltipOpen] = useState(false);
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
@@ -27,6 +31,15 @@ const Sidebar = ({
   const closeSidebar = () => {
     setIsOpen(false); // Close sidebar on navigation for mobile
   };
+
+  const indicatorArr = [
+    { id: 1, name: "EMA", isActive: indicatorName === "ema" },
+    { id: 2, name: "RSI", isActive: indicatorName === "rsi" },
+  ];
+  const positionArr = [
+    { id: 1, name: "Long Position", isActive: positionName === "long" },
+    { id: 2, name: "Short Position", isActive: positionName === "short" },
+  ];
 
   return (
     <>
@@ -69,45 +82,38 @@ const Sidebar = ({
           <LiaRulerHorizontalSolid className={styles.icon} />
           <span>Measurement</span>
         </div>
-        <div
-          className={styles.button}
-          style={{ position: "relative" }}
-          onMouseEnter={() => setTooltipOpen(true)}
-          onMouseLeave={() => setTooltipOpen(false)}
-        >
-          <GrIndicator className={styles.icon} />
-          <span>Indicator</span>
-
-          {/* Tooltip Submenu */}
-          {tooltipOpen && (
-            <div className={styles.tooltip}>
-              <div
-                className={`${styles.tooltipItem} ${
-                  indicatorName === "ema" ? styles.active : ""
-                }`}
-                onClick={(e) => {
-                  setTooltipOpen(false);
-                  closeSidebar();
-                  handleEMAClick(e);
-                }}
-              >
-                EMA
-              </div>
-              <div
-                className={`${styles.tooltipItem} ${
-                  indicatorName === "rsi" ? styles.active : ""
-                }`}
-                onClick={(e) => {
-                  setTooltipOpen(false);
-                  closeSidebar();
-                  handleRSIClick(e);
-                }}
-              >
-                RSI
-              </div>
-            </div>
-          )}
-        </div>
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{
+            name: "Indicator",
+            icon: <GrIndicator className={styles.icon} />,
+            subMenu: indicatorArr,
+          }}
+          onClick={(e, id) => {
+            closeSidebar();
+            if (id === 1) {
+              handleEMAClick(e);
+            } else if (id === 2) {
+              handleRSIClick(e);
+            }
+          }}
+        />
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{
+            name: "Position",
+            icon: <FcPositiveDynamic className={styles.icon} />,
+            subMenu: positionArr,
+          }}
+          onClick={(e, id) => {
+            closeSidebar();
+            if (id === 1) {
+              handleLongPositionClick(e);
+            } else if (id === 2) {
+              handleShortPositionClick(e);
+            }
+          }}
+        />
       </div>
     </>
   );

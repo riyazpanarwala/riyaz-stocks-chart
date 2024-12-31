@@ -22,11 +22,13 @@ import {
   DrawingObjectSelector,
   Measurement,
   InteractiveText,
+  ClickCallback,
 } from "react-financial-charts";
 import EMAChart from "./ema";
 import RSIChart from "./RSI";
 import useData from "./useData";
 import toObject from "../utils/toObject";
+import LongPosition from "./LongPosition";
 
 const FinanceChart = ({
   initialData,
@@ -37,9 +39,11 @@ const FinanceChart = ({
   width,
   height,
   indicatorName,
+  positionName,
 }) => {
   const [trendLines, setTrendLines] = useState([]);
   const [textList, setTextList] = useState([]);
+  const [longPositionArr, setLongPositionArr] = useState([]);
   const trendLineRef = useRef(trendLines);
   const textListRef = useRef(textList);
   const { calculatedData, ema12, ema26, rsiCalculator, rsiYAccessor } = useData(
@@ -148,6 +152,8 @@ const FinanceChart = ({
       setTextList(newTextList);
       // updateTextList(newTextList);
     }
+
+    handleRiskRewardDelete();
   };
 
   const handleChoosePosition = (event, interactives, moreProps) => {
@@ -187,6 +193,26 @@ const FinanceChart = ({
       setTextList(newTextList);
       // updateTextList(newTextList);
     }
+  };
+
+  const onDelete = (id) => {
+    // dont use prevState here
+    setLongPositionArr(longPositionArr.filter((v) => v.id !== id));
+  };
+
+  const handleRiskRewardDelete = () => {
+    setLongPositionArr((prevState) => prevState.filter((v) => !v.selected));
+  };
+
+  const onSelected = (isSelected, mainId) => {
+    setLongPositionArr((prevState) =>
+      prevState.map((v) => {
+        if (v.id === mainId) {
+          return { ...v, selected: isSelected };
+        }
+        return v;
+      })
+    );
   };
 
   const onKeyPress = (e) => {
@@ -312,6 +338,72 @@ const FinanceChart = ({
           fillStyle="#d9d9d9"
           interactiveState={{}}
         />
+
+        {positionName && (
+          <>
+            <ClickCallback
+              onClick={(e, moreProps) => {
+                const { mouseXY, chartConfig, xScale } = moreProps;
+                const [mouseX, mouseY] = mouseXY; // Extract the Y-coordinate of the mouse
+                const yValue = chartConfig.yScale.invert(mouseY); // Convert pixel value to data value
+
+                let percent = 2;
+                let targetValue = yValue + (yValue * percent) / 100;
+                let stopLossValue = yValue - (yValue * percent) / 100;
+                const width = 200;
+
+                const [yMin, yHigh] = chartConfig.realYDomain;
+                if (targetValue > yHigh || stopLossValue < yMin) {
+                  if (yHigh - yValue > yValue - yMin) {
+                    stopLossValue = yMin;
+                    percent = (
+                      ((yValue - stopLossValue) * 100) /
+                      yValue
+                    ).toFixed(2);
+                    targetValue = yValue + (yValue * percent) / 100;
+                  } else {
+                    targetValue = yHigh;
+                    percent = (((targetValue - yValue) * 100) / yValue).toFixed(
+                      2
+                    );
+                    stopLossValue = yValue - (yValue * percent) / 100;
+                  }
+                }
+
+                setLongPositionArr((prevState) => [
+                  ...prevState,
+                  {
+                    currentVal: yValue,
+                    targetVal: targetValue,
+                    stopLossVal: stopLossValue,
+                    xValue: xScale.invert(mouseX),
+                    x1Value: xScale.invert(mouseX),
+                    x2Value: xScale.invert(mouseX + width),
+                    percent,
+                    id: Math.random().toString(16).slice(2),
+                    isShortPosition: positionName === "short",
+                    selected: true,
+                  },
+                ]);
+                disableAllTools();
+              }}
+            />
+          </>
+        )}
+
+        {longPositionArr.map((v) => {
+          return (
+            <LongPosition
+              saveInteractiveNode={saveInteractiveNode}
+              currentObj={v}
+              key={v.id}
+              onDeleteMain={onDelete}
+              isPriceObj={true}
+              isEnabled={!!positionName}
+              onSelected={onSelected}
+            />
+          );
+        })}
 
         <ZoomButtons />
         <OHLCTooltip origin={[8, 16]} />

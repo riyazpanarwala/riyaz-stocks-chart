@@ -37,7 +37,18 @@ const CandleStickChart = () => {
   const [measurementEnable, setMeasurementEnable] = useState(false);
   const [textEnable, setTextEnable] = useState(false);
   const [indicatorName, setIndicatorName] = useState("");
+  const [positionName, setPositionName] = useState("");
   const { companyArr, companyObj, setCompany } = useParseCsv();
+
+  const handleLongPositionClick = () => {
+    disableAllTools();
+    setPositionName("long");
+  };
+
+  const handleShortPositionClick = () => {
+    disableAllTools();
+    setPositionName("short");
+  };
 
   const handleEMAClick = () => {
     setIndicatorName("ema");
@@ -66,6 +77,7 @@ const CandleStickChart = () => {
     setMeasurementEnable(false);
     setTrendLineEnable(false);
     setTextEnable(false);
+    setPositionName("");
   };
 
   const setCandleArr = (arr) => {
@@ -186,6 +198,9 @@ const CandleStickChart = () => {
           indicatorName={indicatorName}
           handleEMAClick={handleEMAClick}
           handleRSIClick={handleRSIClick}
+          positionName={positionName}
+          handleLongPositionClick={handleLongPositionClick}
+          handleShortPositionClick={handleShortPositionClick}
         />
         <main className="mainChart">
           <div style={{ margin: "20px" }}>
@@ -207,6 +222,7 @@ const CandleStickChart = () => {
                   measurementEnable={measurementEnable}
                   textEnable={textEnable}
                   indicatorName={indicatorName}
+                  positionName={positionName}
                 />
               </div>
             ) : (
