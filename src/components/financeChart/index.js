@@ -268,11 +268,7 @@ const FinanceChart = ({
         <YAxis showGridLines tickFormat={pricesDisplayFormat} />
         <CandlestickSeries />
 
-        {indicatorName === "ema" ? (
-          <EMAChart ema26={ema26} ema12={ema12} />
-        ) : (
-          ""
-        )}
+        {indicatorName === 1 ? <EMAChart ema26={ema26} ema12={ema12} /> : ""}
 
         <MouseCoordinateY
           rectWidth={margin.right}
@@ -384,7 +380,7 @@ const FinanceChart = ({
                     x2Value: xScale.invert(mouseX + width),
                     percent,
                     id: Math.random().toString(16).slice(2),
-                    isShortPosition: positionName === "short",
+                    isShortPosition: positionName === 2,
                     selected: true,
                   },
                 ]);
@@ -416,7 +412,7 @@ const FinanceChart = ({
               const xValue = xScale.invert(mouseX); // Convert pixel to date
               const yValue = chartConfig.yScale.invert(mouseY); // Convert pixel to value
 
-              if (shapeName === "Circle") {
+              if (shapeName === 1) {
                 setCircles((prevCircles) => [
                   ...prevCircles,
                   {
@@ -452,7 +448,7 @@ const FinanceChart = ({
         <OHLCTooltip origin={[8, 16]} />
       </Chart>
 
-      {indicatorName === "rsi" ? (
+      {indicatorName === 2 ? (
         <Chart
           id={4}
           yExtents={[0, 100]}

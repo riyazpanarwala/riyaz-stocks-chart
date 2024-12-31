@@ -17,13 +17,11 @@ const Sidebar = ({
   textEnable,
   handleTextClick,
   indicatorName,
-  handleEMAClick,
-  handleRSIClick,
+  handleIndicatorClick,
   positionName,
-  handleLongPositionClick,
-  handleShortPositionClick,
+  handlePositionClick,
   shapeName,
-  handleShapeCircleClick,
+  handleShapeClick,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -36,16 +34,14 @@ const Sidebar = ({
   };
 
   const indicatorArr = [
-    { id: 1, name: "EMA", isActive: indicatorName === "ema" },
-    { id: 2, name: "RSI", isActive: indicatorName === "rsi" },
+    { id: 1, name: "EMA", isActive: indicatorName === 1 },
+    { id: 2, name: "RSI", isActive: indicatorName === 2 },
   ];
   const positionArr = [
-    { id: 1, name: "Long Position", isActive: positionName === "long" },
-    { id: 2, name: "Short Position", isActive: positionName === "short" },
+    { id: 1, name: "Long Position", isActive: positionName === 1 },
+    { id: 2, name: "Short Position", isActive: positionName === 2 },
   ];
-  const shapeArr = [
-    { id: 1, name: "Circle", isActive: shapeName === "Circle" },
-  ];
+  const shapeArr = [{ id: 1, name: "Circle", isActive: shapeName === 1 }];
 
   return (
     <>
@@ -97,11 +93,7 @@ const Sidebar = ({
           }}
           onClick={(e, id) => {
             closeSidebar();
-            if (id === 1) {
-              handleEMAClick(e);
-            } else if (id === 2) {
-              handleRSIClick(e);
-            }
+            handleIndicatorClick(id);
           }}
         />
         <TooltipSubMenu
@@ -113,11 +105,7 @@ const Sidebar = ({
           }}
           onClick={(e, id) => {
             closeSidebar();
-            if (id === 1) {
-              handleLongPositionClick(e);
-            } else if (id === 2) {
-              handleShortPositionClick(e);
-            }
+            handlePositionClick(id);
           }}
         />
         <TooltipSubMenu
@@ -129,9 +117,7 @@ const Sidebar = ({
           }}
           onClick={(e, id) => {
             closeSidebar();
-            if (id === 1) {
-              handleShapeCircleClick(e);
-            }
+            handleShapeClick(id);
           }}
         />
       </div>

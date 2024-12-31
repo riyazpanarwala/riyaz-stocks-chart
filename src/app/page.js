@@ -41,27 +41,14 @@ const CandleStickChart = () => {
   const [shapeName, setShapeName] = useState("");
   const { companyArr, companyObj, setCompany } = useParseCsv();
 
-  const handleShapeCircleClick = () => {
+  const handleShapeClick = (id) => {
     disableAllTools();
-    setShapeName("Circle");
+    setShapeName(id);
   };
 
-  const handleLongPositionClick = () => {
+  const handlePositionClick = (id) => {
     disableAllTools();
-    setPositionName("long");
-  };
-
-  const handleShortPositionClick = () => {
-    disableAllTools();
-    setPositionName("short");
-  };
-
-  const handleEMAClick = () => {
-    setIndicatorName("ema");
-  };
-
-  const handleRSIClick = () => {
-    setIndicatorName("rsi");
+    setPositionName(id);
   };
 
   const handleTrendLineClick = () => {
@@ -203,13 +190,11 @@ const CandleStickChart = () => {
           textEnable={textEnable}
           handleTextClick={handleTextClick}
           indicatorName={indicatorName}
-          handleEMAClick={handleEMAClick}
-          handleRSIClick={handleRSIClick}
+          handleIndicatorClick={setIndicatorName}
           positionName={positionName}
-          handleLongPositionClick={handleLongPositionClick}
-          handleShortPositionClick={handleShortPositionClick}
+          handlePositionClick={handlePositionClick}
           shapeName={shapeName}
-          handleShapeCircleClick={handleShapeCircleClick}
+          handleShapeClick={handleShapeClick}
         />
         <main className="mainChart">
           <div style={{ margin: "20px" }}>
