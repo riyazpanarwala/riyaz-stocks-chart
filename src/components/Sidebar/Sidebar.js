@@ -5,6 +5,7 @@ import { LiaRulerHorizontalSolid } from "react-icons/lia";
 import { GrIndicator } from "react-icons/gr";
 import { CiText } from "react-icons/ci";
 import { FcPositiveDynamic } from "react-icons/fc";
+import { FaShapes } from "react-icons/fa";
 import TooltipSubMenu from "./toolTipMenu";
 import styles from "./Sidebar.module.scss";
 
@@ -21,6 +22,8 @@ const Sidebar = ({
   positionName,
   handleLongPositionClick,
   handleShortPositionClick,
+  shapeName,
+  handleShapeCircleClick,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -39,6 +42,9 @@ const Sidebar = ({
   const positionArr = [
     { id: 1, name: "Long Position", isActive: positionName === "long" },
     { id: 2, name: "Short Position", isActive: positionName === "short" },
+  ];
+  const shapeArr = [
+    { id: 1, name: "Circle", isActive: shapeName === "Circle" },
   ];
 
   return (
@@ -111,6 +117,20 @@ const Sidebar = ({
               handleLongPositionClick(e);
             } else if (id === 2) {
               handleShortPositionClick(e);
+            }
+          }}
+        />
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{
+            name: "Shapes",
+            icon: <FaShapes className={styles.icon} />,
+            subMenu: shapeArr,
+          }}
+          onClick={(e, id) => {
+            closeSidebar();
+            if (id === 1) {
+              handleShapeCircleClick(e);
             }
           }}
         />

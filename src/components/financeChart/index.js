@@ -29,6 +29,7 @@ import RSIChart from "./RSI";
 import useData from "./useData";
 import toObject from "../utils/toObject";
 import LongPosition from "./LongPosition";
+import CustomShapes from "./CustomShapes";
 
 const FinanceChart = ({
   initialData,
@@ -40,10 +41,12 @@ const FinanceChart = ({
   height,
   indicatorName,
   positionName,
+  shapeName,
 }) => {
   const [trendLines, setTrendLines] = useState([]);
   const [textList, setTextList] = useState([]);
   const [longPositionArr, setLongPositionArr] = useState([]);
+  const [circles, setCircles] = useState([]);
   const trendLineRef = useRef(trendLines);
   const textListRef = useRef(textList);
   const { calculatedData, ema12, ema26, rsiCalculator, rsiYAccessor } = useData(
@@ -404,6 +407,46 @@ const FinanceChart = ({
             />
           );
         })}
+
+        {shapeName && (
+          <ClickCallback
+            onClick={(e, moreProps) => {
+              const { mouseXY, xScale, chartConfig } = moreProps;
+              const [mouseX, mouseY] = mouseXY;
+              const xValue = xScale.invert(mouseX); // Convert pixel to date
+              const yValue = chartConfig.yScale.invert(mouseY); // Convert pixel to value
+
+              if (shapeName === "Circle") {
+                setCircles((prevCircles) => [
+                  ...prevCircles,
+                  {
+                    id: Math.random().toString(16).slice(2),
+                    x: xValue,
+                    y: yValue,
+                    radius: 50,
+                    color: "rgb(0, 0, 0, 0.3)",
+                  },
+                ]);
+              }
+
+              disableAllTools();
+            }}
+          />
+        )}
+
+        <CustomShapes
+          circles={circles}
+          onCircleWholeDragComplete={(newCircle) => {
+            setCircles((prevCircles) =>
+              prevCircles.map((circle) => {
+                if (circle.id === newCircle.id) {
+                  return newCircle;
+                }
+                return circle;
+              })
+            );
+          }}
+        />
 
         <ZoomButtons />
         <OHLCTooltip origin={[8, 16]} />
