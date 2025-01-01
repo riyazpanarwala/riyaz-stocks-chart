@@ -43,6 +43,7 @@ const Sidebar = ({
   ];
   const shapeArr = [
     { id: "circle", name: "Circle", isActive: shapeName === "circle" },
+    { id: "rectangle", name: "Rectangle", isActive: shapeName === "rectangle" },
   ];
 
   return (

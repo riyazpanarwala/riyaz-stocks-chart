@@ -31,6 +31,7 @@ import useData from "./useData";
 import toObject from "../utils/toObject";
 import LongPosition from "./LongPosition";
 import CustomShapes from "./CustomShapes";
+import CustomShapeRectangle from "./Rectangle/index";
 
 const FinanceChart = ({
   isIntraday,
@@ -49,6 +50,7 @@ const FinanceChart = ({
   const [textList, setTextList] = useState([]);
   const [longPositionArr, setLongPositionArr] = useState([]);
   const [circles, setCircles] = useState([]);
+  const [rectangles, setRectangles] = useState([]);
   const trendLineRef = useRef(trendLines);
   const textListRef = useRef(textList);
   const { calculatedData, ema12, ema26, rsiCalculator, rsiYAccessor } = useData(
@@ -233,6 +235,17 @@ const FinanceChart = ({
           return { ...circle, [keyname]: isEnable };
         }
         return circle;
+      })
+    );
+  };
+
+  const onWholeDragCompleteRect = (newRect) => {
+    setRectangles((rects) =>
+      rects.map((rect) => {
+        if (rect.id === newRect.id) {
+          return newRect;
+        }
+        return rect;
       })
     );
   };
@@ -463,6 +476,23 @@ const FinanceChart = ({
                     isCirlceselected: true,
                   },
                 ]);
+              } else if (shapeName === "rectangle") {
+                const width = 200;
+                const height = 100;
+                setRectangles((prevRec) => [
+                  ...prevRec,
+                  {
+                    id: Math.random().toString(16).slice(2),
+                    x1: xValue,
+                    y1: yValue,
+                    x2: xScale.invert(mouseX + width),
+                    y2: chartConfig.yScale.invert(mouseY + height),
+                    color: "rgba(70, 130, 180, 0.5)",
+                    lineWidth: 1,
+                    selected: true,
+                    strokeStyle: "steelblue",
+                  },
+                ]);
               }
 
               disableAllTools();
@@ -474,6 +504,11 @@ const FinanceChart = ({
           circles={circles}
           onCircleWholeDragComplete={onChangeCircle}
           onMouseDownClick={onChangeCircle1}
+        />
+
+        <CustomShapeRectangle
+          rectangles={rectangles}
+          onWholeDragCompleteRect={onWholeDragCompleteRect}
         />
 
         <ZoomButtons />
