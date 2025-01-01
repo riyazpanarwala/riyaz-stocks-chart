@@ -34,13 +34,7 @@ const CustomShapes = ({
             {/* radius drag */}
             {v.selected ? (
               <CustomCircle
-                circle={{
-                  ...v,
-                  x: v.x,
-                  y: v.y,
-                  radius: 5,
-                  color: "white",
-                }}
+                circle={v}
                 onCircleDrag={onCircleDrag}
                 onCircleDragComplete={onCircleDragComplete}
                 isRadius

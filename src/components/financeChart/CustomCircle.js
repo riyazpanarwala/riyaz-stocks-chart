@@ -20,7 +20,7 @@ const CustomCircle = ({
       const x = xScale(circle.x);
       const y = chartConfig.yScale(circle.y);
       const newRadius = Math.sqrt((mouseX - x) ** 2 + (mouseY - y) ** 2);
-      newCircle = { ...circle, radius: newRadius, color: "rgb(0, 0, 0, 0.3)" };
+      newCircle = { ...circle, radius: newRadius };
     } else {
       const xValue = xScale.invert(mouseX);
       const yValue = chartConfig.yScale.invert(mouseY);
@@ -33,21 +33,34 @@ const CustomCircle = ({
     onCircleDragComplete(circle.id);
   };
 
+  const getExtraWidth = () => {
+    if (isRadius) {
+      return circle.radius - circle.radiusDrag;
+    }
+    return 0;
+  };
+
   // Render method for GenericChartComponent
   const render = (ctx, moreProps) => {
     const { xScale, chartConfig } = moreProps;
     const yScale = chartConfig.yScale;
 
+    let color = circle.color;
+    let radius = circle.radius;
+    if (isRadius) {
+      color = circle.radiusColor;
+      radius = circle.radiusDrag;
+    }
     // Draw all circles
-    const x = xScale(circle.x);
+    const x = xScale(circle.x) + getExtraWidth();
     const y = yScale(circle.y);
 
-    ctx.lineWidth = 1;
-    ctx.fillStyle = circle.color;
-    ctx.strokeStyle = circle.strokeStyle || "#000";
+    ctx.lineWidth = circle.lineWidth;
+    ctx.fillStyle = color;
+    ctx.strokeStyle = circle.strokeStyle;
 
     ctx.beginPath();
-    ctx.arc(x, y, circle.radius, 0, Math.PI * 2, false);
+    ctx.arc(x, y, radius, 0, Math.PI * 2, false);
     ctx.fill();
     ctx.closePath();
     ctx.stroke();
@@ -60,10 +73,13 @@ const CustomCircle = ({
       xScale,
     } = moreProps;
 
-    const x = xScale(circle.x);
+    const x = xScale(circle.x) + getExtraWidth();
     const y = yScale(circle.y);
     const distance = Math.sqrt((mouseX - x) ** 2 + (mouseY - y) ** 2);
 
+    if (isRadius) {
+      return distance <= circle.radiusDrag;
+    }
     return distance <= circle.radius;
   };
 

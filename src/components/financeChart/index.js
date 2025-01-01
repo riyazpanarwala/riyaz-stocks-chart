@@ -444,6 +444,10 @@ const FinanceChart = ({
                     y: yValue,
                     radius: 50,
                     color: "rgb(0, 0, 0, 0.3)",
+                    radiusColor: "white",
+                    strokeStyle: "#000",
+                    radiusDrag: 5,
+                    lineWidth: 1,
                     selected: true,
                   },
                 ]);
