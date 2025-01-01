@@ -4,8 +4,7 @@ import CustomCircle from "./CustomCircle";
 const CustomShapes = ({
   circles,
   onCircleWholeDragComplete,
-  onClickWhenHover,
-  onClickOutside,
+  onMouseDownClick,
 }) => {
   const [newCircle, setNewCircle] = useState({});
 
@@ -23,26 +22,13 @@ const CustomShapes = ({
       {newCircle.x ? <CustomCircle circle={newCircle} /> : ""}
       {circles.map((v) => {
         return (
-          <React.Fragment key={v.id}>
-            <CustomCircle
-              circle={v}
-              onCircleDrag={onCircleDrag}
-              onCircleDragComplete={onCircleDragComplete}
-              onClickWhenHover={onClickWhenHover}
-              onClickOutside={onClickOutside}
-            />
-            {/* radius drag */}
-            {v.selected ? (
-              <CustomCircle
-                circle={v}
-                onCircleDrag={onCircleDrag}
-                onCircleDragComplete={onCircleDragComplete}
-                isRadius
-              />
-            ) : (
-              ""
-            )}
-          </React.Fragment>
+          <CustomCircle
+            circle={v}
+            key={v.id}
+            onCircleDrag={onCircleDrag}
+            onCircleDragComplete={onCircleDragComplete}
+            onMouseDownClick={onMouseDownClick}
+          />
         );
       })}
     </>

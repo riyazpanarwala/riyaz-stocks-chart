@@ -226,6 +226,17 @@ const FinanceChart = ({
     );
   };
 
+  const onChangeCircle1 = (id, keyname, isEnable) => {
+    setCircles((prevCircles) =>
+      prevCircles.map((circle) => {
+        if (id === circle.id) {
+          return { ...circle, [keyname]: isEnable };
+        }
+        return circle;
+      })
+    );
+  };
+
   const onSelected = (isSelected, mainId) => {
     setLongPositionArr((prevState) =>
       prevState.map((v) => {
@@ -449,6 +460,7 @@ const FinanceChart = ({
                     radiusDrag: 5,
                     lineWidth: 1,
                     selected: true,
+                    isCirlceselected: true,
                   },
                 ]);
               }
@@ -461,8 +473,7 @@ const FinanceChart = ({
         <CustomShapes
           circles={circles}
           onCircleWholeDragComplete={onChangeCircle}
-          onClickWhenHover={onChangeCircle}
-          onClickOutside={onChangeCircle}
+          onMouseDownClick={onChangeCircle1}
         />
 
         <ZoomButtons />
