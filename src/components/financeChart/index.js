@@ -24,6 +24,7 @@ import {
   InteractiveText,
   ClickCallback,
 } from "react-financial-charts";
+import HighLowTooltip from "./HighLowTooltip";
 import EMAChart from "./ema";
 import RSIChart from "./RSI";
 import useData from "./useData";
@@ -32,6 +33,7 @@ import LongPosition from "./LongPosition";
 import CustomShapes from "./CustomShapes";
 
 const FinanceChart = ({
+  isIntraday,
   initialData,
   trendLineEnable,
   measurementEnable,
@@ -461,6 +463,11 @@ const FinanceChart = ({
 
         <ZoomButtons />
         <OHLCTooltip origin={[8, 16]} />
+        {isIntraday ? (
+          <HighLowTooltip origin={[8, 32]} ohlcData={initialData} />
+        ) : (
+          ""
+        )}
       </Chart>
 
       {indicatorName === "rsi" ? (

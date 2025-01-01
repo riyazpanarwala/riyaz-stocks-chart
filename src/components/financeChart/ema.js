@@ -19,7 +19,7 @@ const EMAChart = ({ ema26, ema12 }) => {
         fillStyle={ema12.stroke()}
       />
       <MovingAverageTooltip
-        origin={[8, 24]}
+        origin={[8, 40]}
         options={[
           {
             yAccessor: ema26.accessor(),

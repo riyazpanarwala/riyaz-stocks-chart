@@ -210,6 +210,7 @@ const CandleStickChart = () => {
             {candleData.length ? (
               <div className="finance-charts">
                 <FinanceChart
+                  isIntraday={intradayObj.value === "intraday"}
                   initialData={candleData}
                   trendLineEnable={trendLineEnable}
                   disableAllTools={disableAllTools}
