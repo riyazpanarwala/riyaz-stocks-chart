@@ -157,6 +157,8 @@ const FinanceChart = ({
     }
 
     handleRiskRewardDelete();
+
+    handleCircleDelete();
   };
 
   const handleChoosePosition = (event, interactives, moreProps) => {
@@ -205,6 +207,21 @@ const FinanceChart = ({
 
   const handleRiskRewardDelete = () => {
     setLongPositionArr((prevState) => prevState.filter((v) => !v.selected));
+  };
+
+  const handleCircleDelete = () => {
+    setCircles((prevState) => prevState.filter((v) => !v.selected));
+  };
+
+  const onChangeCircle = (newCircle) => {
+    setCircles((prevCircles) =>
+      prevCircles.map((circle) => {
+        if (newCircle.id === circle.id) {
+          return newCircle;
+        }
+        return circle;
+      })
+    );
   };
 
   const onSelected = (isSelected, mainId) => {
@@ -268,7 +285,11 @@ const FinanceChart = ({
         <YAxis showGridLines tickFormat={pricesDisplayFormat} />
         <CandlestickSeries />
 
-        {indicatorName === 1 ? <EMAChart ema26={ema26} ema12={ema12} /> : ""}
+        {indicatorName === "ema" ? (
+          <EMAChart ema26={ema26} ema12={ema12} />
+        ) : (
+          ""
+        )}
 
         <MouseCoordinateY
           rectWidth={margin.right}
@@ -380,7 +401,7 @@ const FinanceChart = ({
                     x2Value: xScale.invert(mouseX + width),
                     percent,
                     id: Math.random().toString(16).slice(2),
-                    isShortPosition: positionName === 2,
+                    isShortPosition: positionName === "short",
                     selected: true,
                   },
                 ]);
@@ -412,7 +433,7 @@ const FinanceChart = ({
               const xValue = xScale.invert(mouseX); // Convert pixel to date
               const yValue = chartConfig.yScale.invert(mouseY); // Convert pixel to value
 
-              if (shapeName === 1) {
+              if (shapeName === "circle") {
                 setCircles((prevCircles) => [
                   ...prevCircles,
                   {
@@ -421,6 +442,7 @@ const FinanceChart = ({
                     y: yValue,
                     radius: 50,
                     color: "rgb(0, 0, 0, 0.3)",
+                    selected: true,
                   },
                 ]);
               }
@@ -432,23 +454,16 @@ const FinanceChart = ({
 
         <CustomShapes
           circles={circles}
-          onCircleWholeDragComplete={(newCircle) => {
-            setCircles((prevCircles) =>
-              prevCircles.map((circle) => {
-                if (circle.id === newCircle.id) {
-                  return newCircle;
-                }
-                return circle;
-              })
-            );
-          }}
+          onCircleWholeDragComplete={onChangeCircle}
+          onClickWhenHover={onChangeCircle}
+          onClickOutside={onChangeCircle}
         />
 
         <ZoomButtons />
         <OHLCTooltip origin={[8, 16]} />
       </Chart>
 
-      {indicatorName === 2 ? (
+      {indicatorName === "rsi" ? (
         <Chart
           id={4}
           yExtents={[0, 100]}

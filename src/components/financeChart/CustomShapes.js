@@ -1,7 +1,12 @@
 import React, { useState } from "react";
 import CustomCircle from "./CustomCircle";
 
-const CustomShapes = ({ circles, onCircleWholeDragComplete }) => {
+const CustomShapes = ({
+  circles,
+  onCircleWholeDragComplete,
+  onClickWhenHover,
+  onClickOutside,
+}) => {
   const [newCircle, setNewCircle] = useState({});
 
   const onCircleDrag = (newCircleObj) => {
@@ -23,20 +28,26 @@ const CustomShapes = ({ circles, onCircleWholeDragComplete }) => {
               circle={v}
               onCircleDrag={onCircleDrag}
               onCircleDragComplete={onCircleDragComplete}
+              onClickWhenHover={onClickWhenHover}
+              onClickOutside={onClickOutside}
             />
             {/* radius drag */}
-            <CustomCircle
-              circle={{
-                ...v,
-                x: v.x,
-                y: v.y,
-                radius: 5,
-                color: "white",
-              }}
-              onCircleDrag={onCircleDrag}
-              onCircleDragComplete={onCircleDragComplete}
-              isRadius
-            />
+            {v.selected ? (
+              <CustomCircle
+                circle={{
+                  ...v,
+                  x: v.x,
+                  y: v.y,
+                  radius: 5,
+                  color: "white",
+                }}
+                onCircleDrag={onCircleDrag}
+                onCircleDragComplete={onCircleDragComplete}
+                isRadius
+              />
+            ) : (
+              ""
+            )}
           </React.Fragment>
         );
       })}

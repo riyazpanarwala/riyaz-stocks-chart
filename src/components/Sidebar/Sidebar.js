@@ -34,14 +34,16 @@ const Sidebar = ({
   };
 
   const indicatorArr = [
-    { id: 1, name: "EMA", isActive: indicatorName === 1 },
-    { id: 2, name: "RSI", isActive: indicatorName === 2 },
+    { id: "ema", name: "EMA", isActive: indicatorName === "ema" },
+    { id: "rsi", name: "RSI", isActive: indicatorName === "rsi" },
   ];
   const positionArr = [
-    { id: 1, name: "Long Position", isActive: positionName === 1 },
-    { id: 2, name: "Short Position", isActive: positionName === 2 },
+    { id: "long", name: "Long Position", isActive: positionName === "long" },
+    { id: "short", name: "Short Position", isActive: positionName === "short" },
   ];
-  const shapeArr = [{ id: 1, name: "Circle", isActive: shapeName === 1 }];
+  const shapeArr = [
+    { id: "circle", name: "Circle", isActive: shapeName === "circle" },
+  ];
 
   return (
     <>

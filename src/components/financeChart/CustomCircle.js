@@ -6,6 +6,8 @@ const CustomCircle = ({
   onCircleDrag,
   onCircleDragComplete,
   isRadius,
+  onClickWhenHover,
+  onClickOutside,
 }) => {
   const handleDragStart = (e, moreProps) => {};
 
@@ -65,20 +67,29 @@ const CustomCircle = ({
     return distance <= circle.radius;
   };
 
+  const handleMouseDown = (e, moreProps) => {
+    if (onClickWhenHover !== undefined && onClickOutside !== undefined) {
+      if (isHover(moreProps)) {
+        onClickWhenHover({ ...circle, selected: true });
+      } else {
+        onClickOutside({ ...circle, selected: false });
+      }
+    }
+  };
+
   return (
-    <>
-      <GenericChartComponent
-        clip={false}
-        onDragStart={handleDragStart}
-        isHover={isHover}
-        onDrag={handleDrag}
-        onDragComplete={handleDragComplete}
-        canvasToDraw={getMouseCanvas}
-        canvasDraw={render}
-        enableDragOnHover
-        drawOn={["pan", "mousemove", "click", "drag"]}
-      />
-    </>
+    <GenericChartComponent
+      clip={false}
+      onDragStart={handleDragStart}
+      isHover={isHover}
+      onDrag={handleDrag}
+      onDragComplete={handleDragComplete}
+      onMouseDown={handleMouseDown}
+      canvasToDraw={getMouseCanvas}
+      canvasDraw={render}
+      enableDragOnHover
+      drawOn={["pan", "mousemove", "click", "drag"]}
+    />
   );
 };
 
