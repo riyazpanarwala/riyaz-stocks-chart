@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import CustomCircle from "./CustomCircle";
-import ClickableCircle from "./ClickableCircle";
+import Circle from "./Circle";
+import ClickableCircle from "../ClickableCircle";
 
-const CustomShapes = ({
+const CustomShapeCircle = ({
   circles,
   onCircleWholeDragComplete,
   onMouseDownClick,
@@ -35,7 +35,7 @@ const CustomShapes = ({
 
   return (
     <>
-      {newCircle.x ? <CustomCircle circle={newCircle} /> : ""}
+      {newCircle.x ? <Circle circle={newCircle} /> : ""}
       {circles.map((v) => {
         const strokeWidth = 1;
         const circleRadius = 5;
@@ -44,7 +44,7 @@ const CustomShapes = ({
 
         return (
           <React.Fragment key={v.id}>
-            <CustomCircle
+            <Circle
               circle={v}
               onCircleDrag={onCircleDrag}
               onCircleDragComplete={onCircleDragComplete}
@@ -77,4 +77,4 @@ const CustomShapes = ({
   );
 };
 
-export default CustomShapes;
+export default CustomShapeCircle;

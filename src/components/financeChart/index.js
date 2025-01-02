@@ -30,7 +30,7 @@ import RSIChart from "./RSI";
 import useData from "./useData";
 import toObject from "../utils/toObject";
 import LongPosition from "./LongPosition";
-import CustomShapes from "./CustomShapes";
+import CustomShapeCircle from "./Circle/index";
 import CustomShapeRectangle from "./Rectangle/index";
 
 const FinanceChart = ({
@@ -516,7 +516,7 @@ const FinanceChart = ({
           />
         )}
 
-        <CustomShapes
+        <CustomShapeCircle
           circles={circles}
           onCircleWholeDragComplete={onChangeCircle}
           onMouseDownClick={onChangeCircle1}

@@ -1,7 +1,7 @@
 import React from "react";
 import { getMouseCanvas, GenericChartComponent } from "react-financial-charts";
 
-const CustomCircle = ({
+const Circle = ({
   circle,
   onCircleDrag,
   onCircleDragComplete,
@@ -81,4 +81,4 @@ const CustomCircle = ({
   );
 };
 
-export default CustomCircle;
+export default Circle;
