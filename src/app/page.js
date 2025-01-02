@@ -9,26 +9,15 @@ import {
 import Tiles from "../components/tiles";
 import FinanceChart from "../components/financeChart";
 import useParseCsv from "../components/utils/parseCsv";
-
-const intraArr = [
-  { label: "Intraday", value: "intraday" },
-  { label: "historical", value: "historical" },
-];
-
-const intervalArr = [
-  { label: "1 Minute", value: "1minute" },
-  { label: "30 Minute", value: "30minute" },
-];
-
-const intervalArr1 = [
-  { label: "30 Minute", value: "30minute" },
-  { label: "Daily", value: "day" },
-  { label: "Weekly", value: "week" },
-  { label: "Monthly", value: "month" },
-];
+import {
+  intraArr,
+  intervalArr,
+  intervalArr1,
+  periods,
+} from "../components/utils/data";
 
 const CandleStickChart = () => {
-  const [period, setPeriod] = useState("1m");
+  const [period, setPeriod] = useState(periods[0]);
   const [intervalObj, setInterval] = useState(intervalArr[0]);
   const [intradayObj, setIntradayOrHistoric] = useState(intraArr[0]);
   const [apiCall, setApiCall] = useState(0);
@@ -200,6 +189,7 @@ const CandleStickChart = () => {
           <div style={{ margin: "20px" }}>
             {intradayObj.value === "historical" && (
               <Tiles
+                periods={periods}
                 selectedPeriod={period}
                 setSelectedPeriod={(val) => {
                   setPeriod(val);

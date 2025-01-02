@@ -6,8 +6,14 @@ import {
   getHistoricData,
   getIntradayData,
 } from "../../components/getIntervalData";
-import companyArr from "../../components/utils/companyArr";
 import Tiles from "../../components/tiles";
+import useParseCsv from "../../components/utils/parseCsv";
+import {
+  intraArr,
+  intervalArr,
+  intervalArr1,
+  periods,
+} from "../../components/utils/data";
 
 /*
 {
@@ -21,19 +27,18 @@ import Tiles from "../../components/tiles";
 */
 
 const CandleStickChart = () => {
-  const [period, setPeriod] = useState("1m");
-  const [companyName, setCompany] = useState(companyArr[0].value);
-  const [interval, setInterval] = useState("1minute");
-  const [intradayOrHistoric, setIntradayOrHistoric] = useState("intraday");
+  const [period, setPeriod] = useState(periods[0]);
+  const [intervalObj, setInterval] = useState(intervalArr[0]);
+  const [intradayObj, setIntradayOrHistoric] = useState(intraArr[0]);
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
   const [timeData, setTimeData] = useState([]);
+  const { companyArr, companyObj, setCompany } = useParseCsv();
 
   const getOptions = () => {
-    const index = companyArr.findIndex((v) => v.value === companyName);
     return {
       title: {
-        text: index !== -1 ? companyArr[index].name : "",
+        text: getCompanyName(),
         left: "center",
       },
       tooltip: {
@@ -72,8 +77,9 @@ const CandleStickChart = () => {
   const setCandleArr = (arr) => {
     let timeArr = [];
     let dataArr = [];
-    let candles = arr.data.candles.reverse();
-    candles.forEach((item, i) => {
+    let candles = arr.data.candles?.reverse();
+
+    candles?.forEach((item, i) => {
       dataArr = [...dataArr, [item[1], item[4], item[3], item[2]]];
       timeArr = [...timeArr, item[0]];
     });
@@ -82,91 +88,110 @@ const CandleStickChart = () => {
     setCandleData(dataArr);
   };
 
+  const getCompanyName = () => {
+    return companyObj?.label;
+  };
+
   const isBSE = () => {
-    const index = companyArr.findIndex((v) => v.value === companyName);
-    return index !== -1 ? companyArr[index].isBSE : false;
+    return companyObj?.isBSE;
   };
 
-  const callHistoricApi = () => {
-    getHistoricData(setCandleArr, interval, companyName, isBSE(), period);
+  const callHistoricApi = async () => {
+    const arr = await getHistoricData(
+      intervalObj.value,
+      companyObj.value,
+      isBSE(),
+      period
+    );
+    setCandleArr(arr);
   };
 
-  const callIntradayApi = () => {
-    getIntradayData(setCandleArr, interval, companyName, isBSE());
+  const callIntradayApi = async () => {
+    const arr = await getIntradayData(
+      intervalObj.value,
+      companyObj.value,
+      isBSE()
+    );
+    setCandleArr(arr);
   };
 
-  const handleIntervalChange = (e) => {
-    setInterval(e.target.value);
+  const handleIntervalChange = (obj) => {
+    setInterval(obj);
   };
 
-  const handleCompanyChange = (e) => {
-    setCompany(e.target.value);
+  const handleCompanyChange = (companyObj) => {
+    setCompany(companyObj);
   };
 
-  const handleIntradayChange = (e) => {
-    const val = e.target.value;
+  const handleIntradayChange = (obj) => {
+    const val = obj.value;
     if (val === "intraday") {
-      setInterval("1minute");
+      setInterval(intervalArr[0]);
     } else {
-      setInterval("30minute");
+      setInterval(intervalArr1[0]);
     }
-    setIntradayOrHistoric(val);
+    setIntradayOrHistoric(obj);
   };
-
-  /*
-  const nseData = () => {
-    fetch("/api/allIndex?symbol=JPP&interval=5minute", {
-      method: "GET",
-    })
-      .then((res) => {
-        return res.json();
-      })
-      .then((data) => {
-        console.log(data);
-      });
-  };
-  */
 
   useEffect(() => {
-    if (interval && intradayOrHistoric && apiCall > 0) {
-      if (intradayOrHistoric === "intraday") {
+    if (
+      intervalObj.value &&
+      intradayObj.value &&
+      companyObj.value &&
+      apiCall > 0
+    ) {
+      setCandleData([]);
+      if (intradayObj.value === "intraday") {
         callIntradayApi();
       } else {
         callHistoricApi();
       }
-      // nseData();
     }
   }, [apiCall]);
 
   useEffect(() => {
     setApiCall((prevState) => prevState + 1);
-  }, [interval, intradayOrHistoric, companyName, period]);
+  }, [intervalObj, intradayObj, companyObj, period]);
+
+  if (!companyArr.length) {
+    return "please wait";
+  }
 
   return (
-    <div>
+    <>
       <HeaderWithDropdowns
-        interval={interval}
-        intradayOrHistoric={intradayOrHistoric}
-        companyName={companyName}
+        intervalObj={intervalObj}
+        intradayObj={intradayObj}
+        companyObj={companyObj}
         handleIntervalChange={handleIntervalChange}
         handleIntradayChange={handleIntradayChange}
         handleCompanyChange={handleCompanyChange}
+        companyArr={companyArr}
+        intraArr={intraArr}
+        intervalArr={
+          intradayObj.value === "intraday" ? intervalArr : intervalArr1
+        }
       />
-      <div style={{ margin: "20px" }}>
-        {intradayOrHistoric === "historical" && (
-          <Tiles
-            selectedPeriod={period}
-            setSelectedPeriod={(val) => {
-              setPeriod(val);
-            }}
-          />
-        )}
-        <ReactECharts
-          option={getOptions()}
-          style={{ height: 400, width: "100%" }}
-        />
+      <div style={{ display: "flex" }}>
+        <main className="mainChart">
+          <div style={{ margin: "20px" }}>
+            {intradayObj.value === "historical" && (
+              <Tiles
+                periods={periods}
+                selectedPeriod={period}
+                setSelectedPeriod={(val) => {
+                  setPeriod(val);
+                }}
+              />
+            )}
+            <ReactECharts
+              option={getOptions()}
+              style={{ height: 400, width: "100%" }}
+            />
+          </div>
+        </main>
       </div>
-    </div>
+    </>
   );
 };
 

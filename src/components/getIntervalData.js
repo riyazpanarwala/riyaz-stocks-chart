@@ -1,4 +1,5 @@
 import axios from "axios";
+import { dateObj } from "./utils/data";
 
 const baseurl = "https://api.upstox.com/v2/";
 
@@ -9,16 +10,7 @@ export const getHistoricData = async (interval, companyName, isBSE, isFrom) => {
   const instrumentKey = `${isBSE ? "BSE_EQ|" : "NSE_EQ|"}${companyName}`;
   let currentDate = new Date();
   let toDate = currentDate.toISOString().split("T")[0];
-  let fromDate = "";
-  if (isFrom === "1m") {
-    fromDate = new Date(currentDate.setDate(currentDate.getDate() - 30));
-  } else if (isFrom === "3m") {
-    fromDate = new Date(currentDate.setDate(currentDate.getDate() - 30 * 3));
-  } else if (isFrom === "6m") {
-    fromDate = new Date(currentDate.setDate(currentDate.getDate() - 30 * 6));
-  } else {
-    fromDate = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
-  }
+  let fromDate = dateObj[isFrom]();
   fromDate = fromDate.toISOString().split("T")[0];
   const newUrl = `${baseurl}historical-candle/${instrumentKey}/${interval}/${toDate}/${fromDate}`;
 

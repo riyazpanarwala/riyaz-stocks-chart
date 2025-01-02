@@ -1,9 +1,6 @@
 import React from "react";
 
-const Tiles = ({ selectedPeriod, setSelectedPeriod }) => {
-  // Array of time period tiles
-  const periods = ["1m", "3m", "6m", "1y"];
-
+const Tiles = ({ periods, selectedPeriod, setSelectedPeriod }) => {
   return (
     <div style={styles.header}>
       <div style={styles.tilesContainer}>
