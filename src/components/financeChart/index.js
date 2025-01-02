@@ -163,6 +163,8 @@ const FinanceChart = ({
     handleRiskRewardDelete();
 
     handleCircleDelete();
+
+    handleRectDelete();
   };
 
   const handleChoosePosition = (event, interactives, moreProps) => {
@@ -217,6 +219,10 @@ const FinanceChart = ({
     setCircles((prevState) => prevState.filter((v) => !v.selected));
   };
 
+  const handleRectDelete = () => {
+    setRectangles((prevState) => prevState.filter((v) => !v.selected));
+  };
+
   const onChangeCircle = (newCircle) => {
     setCircles((prevCircles) =>
       prevCircles.map((circle) => {
@@ -235,6 +241,17 @@ const FinanceChart = ({
           return { ...circle, [keyname]: isEnable };
         }
         return circle;
+      })
+    );
+  };
+
+  const onChangeRectangles = (id, isEnable) => {
+    setRectangles((rects) =>
+      rects.map((rect) => {
+        if (rect.id === id) {
+          return { ...rect, selected: isEnable };
+        }
+        return rect;
       })
     );
   };
@@ -509,6 +526,7 @@ const FinanceChart = ({
         <CustomShapeRectangle
           rectangles={rectangles}
           onWholeDragCompleteRect={onWholeDragCompleteRect}
+          onMouseDownClick={onChangeRectangles}
         />
 
         <ZoomButtons />

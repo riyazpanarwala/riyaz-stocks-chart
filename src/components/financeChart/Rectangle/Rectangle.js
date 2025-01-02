@@ -1,8 +1,14 @@
 import React, { useState } from "react";
 import { getMouseCanvas, GenericChartComponent } from "react-financial-charts";
 
-const Rectangle = ({ rect, onDrag, onDragComplete }) => {
+const Rectangle = ({ rect, onDrag, onDragComplete, onMouseDownClick }) => {
   const [start, setStart] = useState([]);
+
+  const handleMouseDown = (e, moreProps) => {
+    if (onMouseDownClick !== undefined) {
+      onMouseDownClick(rect.id, isHover(moreProps));
+    }
+  };
 
   const handleDragStart = (e, moreProps) => {
     const { mouseXY } = moreProps;
@@ -33,13 +39,7 @@ const Rectangle = ({ rect, onDrag, onDragComplete }) => {
   };
 
   const render = (ctx, moreProps) => {
-    const { xScale, chartConfig } = moreProps;
-    const yScale = chartConfig.yScale;
-
-    const x1 = xScale(rect.x1);
-    const y1 = yScale(rect.y1);
-    const x2 = xScale(rect.x2);
-    const y2 = yScale(rect.y2);
+    const { x1, x2, y1, y2 } = helpers(moreProps);
 
     ctx.beginPath();
     ctx.rect(
@@ -95,6 +95,7 @@ const Rectangle = ({ rect, onDrag, onDragComplete }) => {
         onDragStart={handleDragStart}
         onDrag={handleDrag}
         onDragComplete={handleDragComplete}
+        onMouseDown={handleMouseDown}
         canvasToDraw={getMouseCanvas}
         canvasDraw={render}
         enableDragOnHover
