@@ -234,11 +234,11 @@ const FinanceChart = ({
     );
   };
 
-  const onChangeCircle1 = (id, keyname, isEnable) => {
+  const onChangeCircle1 = (id, isEnable) => {
     setCircles((prevCircles) =>
       prevCircles.map((circle) => {
         if (id === circle.id) {
-          return { ...circle, [keyname]: isEnable };
+          return { ...circle, selected: isEnable };
         }
         return circle;
       })
@@ -477,20 +477,19 @@ const FinanceChart = ({
               const yValue = chartConfig.yScale.invert(mouseY); // Convert pixel to value
 
               if (shapeName === "circle") {
+                const radius = 50;
                 setCircles((prevCircles) => [
                   ...prevCircles,
                   {
                     id: Math.random().toString(16).slice(2),
                     x: xValue,
                     y: yValue,
-                    radius: 50,
+                    x1: xScale.invert(mouseX + radius),
+                    radius: radius,
                     color: "rgb(0, 0, 0, 0.3)",
-                    radiusColor: "white",
                     strokeStyle: "#000",
-                    radiusDrag: 5,
                     lineWidth: 1,
                     selected: true,
-                    isCirlceselected: true,
                   },
                 ]);
               } else if (shapeName === "rectangle") {
