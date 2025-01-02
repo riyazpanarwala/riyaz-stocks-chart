@@ -6,6 +6,8 @@ const ClickableCircle = ({
   onDragStart,
   onDrag,
   onDragComplete,
+  onHover,
+  onUnHover,
   show = false,
   strokeStyle,
   strokeWidth,
@@ -61,6 +63,8 @@ const ClickableCircle = ({
       onDragStart={onDragStart}
       onDrag={onDrag}
       onDragComplete={onDragComplete}
+      onHover={onHover}
+      onUnHover={onUnHover}
       canvasDraw={drawOnCanvas}
       canvasToDraw={getMouseCanvas}
       drawOn={["pan", "mousemove", "drag"]}

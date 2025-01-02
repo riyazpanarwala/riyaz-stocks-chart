@@ -14,7 +14,7 @@ const CustomShapeRectangle = ({
   };
 
   const onDragComplete = () => {
-    onWholeDragCompleteRect(newRect);
+    onWholeDragCompleteRect({ ...newRect, selected: true });
     setNewRect({});
   };
 
@@ -95,20 +95,10 @@ const CustomShapeRectangle = ({
               onDragComplete={onDragComplete}
               onMouseDownClick={onMouseDownClick}
             />
-            <ClickableCircle
-              show={rect.selected}
-              cx={(rect.x1 + rect.x2) / 2}
-              cy={(rect.y1 + rect.y2) / 2}
-              r={3}
-              fillStyle={circlefillStyle}
-              strokeStyle={stroke}
-              strokeWidth={strokeWidth}
-              interactiveCursorClass={"react-financial-charts-move-cursor"}
-            />
             {circleArr.map((v) => {
               return (
                 <ClickableCircle
-                  show
+                  show={rect.hover || rect.selected}
                   key={v.cx + v.cy}
                   cx={v.cx}
                   cy={v.cy}
@@ -123,6 +113,12 @@ const CustomShapeRectangle = ({
                     handleEdgeDrag(moreProps, rect, v.xKey, v.yKey);
                   }}
                   onDragComplete={onDragComplete}
+                  onHover={() => {
+                    onWholeDragCompleteRect({ ...rect, hover: true });
+                  }}
+                  onUnHover={() => {
+                    onWholeDragCompleteRect({ ...rect, hover: false });
+                  }}
                 />
               );
             })}

@@ -70,7 +70,7 @@ const Rectangle = ({ rect, onDrag, onDragComplete, onMouseDownClick }) => {
 
   const helpers = (moreProps) => {
     const {
-      chartConfig: { yScale },
+      chartConfig: { yScale, height, width },
       xScale,
     } = moreProps;
 
@@ -80,28 +80,28 @@ const Rectangle = ({ rect, onDrag, onDragComplete, onMouseDownClick }) => {
     const y2 = yScale(rect.y2);
 
     return {
-      x1,
-      x2,
-      y1,
-      y2,
+      x1: x1 > width ? width : x1,
+      x2: x2 > width ? width : x2,
+      y1: y1 > height ? height : y1,
+      y2: y2 > height ? height : y2,
     };
   };
 
   return (
-    <>
-      <GenericChartComponent
-        clip={false}
-        isHover={isHover}
-        onDragStart={handleDragStart}
-        onDrag={handleDrag}
-        onDragComplete={handleDragComplete}
-        onMouseDown={handleMouseDown}
-        canvasToDraw={getMouseCanvas}
-        canvasDraw={render}
-        enableDragOnHover
-        drawOn={["pan", "mousemove", "click", "drag"]}
-      />
-    </>
+    <GenericChartComponent
+      selected
+      interactiveCursorClass={"react-financial-charts-move-cursor"}
+      clip={false}
+      isHover={isHover}
+      onDragStart={handleDragStart}
+      onDrag={handleDrag}
+      onDragComplete={handleDragComplete}
+      onMouseDown={handleMouseDown}
+      canvasToDraw={getMouseCanvas}
+      canvasDraw={render}
+      enableDragOnHover
+      drawOn={["pan", "mousemove", "click", "drag"]}
+    />
   );
 };
 
