@@ -53,10 +53,14 @@ const FinanceChart = ({
   const [rectangles, setRectangles] = useState([]);
   const trendLineRef = useRef(trendLines);
   const textListRef = useRef(textList);
-  const { calculatedData, ema12, ema26, rsiCalculator, rsiYAccessor } = useData(
-    initialData,
-    indicatorName
-  );
+  const {
+    calculatedData,
+    ema12,
+    ema26,
+    rsiCalculator,
+    rsiYAccessor,
+    angles,
+  } = useData(initialData, indicatorName);
   const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
     (d) => new Date(d.date)
   );
@@ -329,7 +333,7 @@ const FinanceChart = ({
         <CandlestickSeries />
 
         {indicatorName === "ema" ? (
-          <EMAChart ema26={ema26} ema12={ema12} />
+          <EMAChart ema26={ema26} ema12={ema12} angles={angles} />
         ) : (
           ""
         )}

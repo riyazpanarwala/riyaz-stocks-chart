@@ -5,7 +5,7 @@ import {
   MovingAverageTooltip,
 } from "react-financial-charts";
 
-const EMAChart = ({ ema26, ema12 }) => {
+const EMAChart = ({ ema26, ema12, angles }) => {
   return (
     <>
       <LineSeries yAccessor={ema26.accessor()} strokeStyle={ema26.stroke()} />
@@ -32,6 +32,12 @@ const EMAChart = ({ ema26, ema12 }) => {
             type: "EMA",
             stroke: ema12.stroke(),
             windowSize: ema12.options().windowSize,
+          },
+          {
+            yAccessor: (d) => angles[d.idx.index],
+            type: "Angle:",
+            stroke: ema26.stroke(),
+            windowSize: "",
           },
         ]}
       />
