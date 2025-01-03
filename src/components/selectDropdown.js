@@ -5,12 +5,15 @@ const HeaderWithDropdowns = ({
   intervalObj,
   intradayObj,
   companyObj,
+  indexObj,
   handleIntervalChange,
   handleIntradayChange,
   handleCompanyChange,
+  handleIndexChange,
   companyArr,
   intraArr,
   intervalArr,
+  indexArr,
 }) => {
   return (
     <header style={styles.header}>
@@ -34,6 +37,13 @@ const HeaderWithDropdowns = ({
           onChange={handleCompanyChange}
           value={companyObj}
           width="350px"
+        />
+
+        <ReactSelect
+          options={indexArr}
+          onChange={handleIndexChange}
+          value={indexObj}
+          width="auto"
         />
       </div>
     </header>

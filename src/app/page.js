@@ -14,12 +14,15 @@ import {
   intervalArr,
   intervalArr1,
   periods,
+  indexArr,
 } from "../components/utils/data";
 
 const CandleStickChart = () => {
   const [period, setPeriod] = useState(periods[0]);
   const [intervalObj, setInterval] = useState(intervalArr[0]);
   const [intradayObj, setIntradayOrHistoric] = useState(intraArr[0]);
+  const [indexObj, setIndex] = useState(indexArr[0]);
+  const [newIndexArr, setNewIndexArr] = useState(indexArr);
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -90,15 +93,11 @@ const CandleStickChart = () => {
     return companyObj?.label;
   };
 
-  const isBSE = () => {
-    return companyObj?.isBSE;
-  };
-
   const callHistoricApi = async () => {
     const arr = await getHistoricData(
       intervalObj.value,
       companyObj.value,
-      isBSE(),
+      indexObj.value,
       period
     );
     setCandleArr(arr);
@@ -108,7 +107,7 @@ const CandleStickChart = () => {
     const arr = await getIntradayData(
       intervalObj.value,
       companyObj.value,
-      isBSE()
+      indexObj.value
     );
     setCandleArr(arr);
   };
@@ -118,7 +117,21 @@ const CandleStickChart = () => {
   };
 
   const handleCompanyChange = (companyObj) => {
+    if (companyObj.nse && companyObj.bse) {
+      setNewIndexArr(indexArr);
+      setIndex(indexArr[0]);
+    } else if (companyObj.nse) {
+      setNewIndexArr([indexArr[0]]);
+      setIndex(indexArr[0]);
+    } else if (companyObj.bse) {
+      setNewIndexArr([indexArr[1]]);
+      setIndex(indexArr[1]);
+    }
     setCompany(companyObj);
+  };
+
+  const handleIndexChange = (obj) => {
+    setIndex(obj);
   };
 
   const handleIntradayChange = (obj) => {
@@ -136,6 +149,7 @@ const CandleStickChart = () => {
       intervalObj.value &&
       intradayObj.value &&
       companyObj.value &&
+      indexObj.value &&
       apiCall > 0
     ) {
       setCandleData([]);
@@ -149,7 +163,7 @@ const CandleStickChart = () => {
 
   useEffect(() => {
     setApiCall((prevState) => prevState + 1);
-  }, [intervalObj, intradayObj, companyObj, period]);
+  }, [intervalObj, intradayObj, companyObj, period, indexObj]);
 
   if (!companyArr.length) {
     return "please wait";
@@ -161,14 +175,17 @@ const CandleStickChart = () => {
         intervalObj={intervalObj}
         intradayObj={intradayObj}
         companyObj={companyObj}
+        indexObj={indexObj}
         handleIntervalChange={handleIntervalChange}
         handleIntradayChange={handleIntradayChange}
         handleCompanyChange={handleCompanyChange}
+        handleIndexChange={handleIndexChange}
         companyArr={companyArr}
         intraArr={intraArr}
         intervalArr={
           intradayObj.value === "intraday" ? intervalArr : intervalArr1
         }
+        indexArr={newIndexArr}
       />
       <div style={{ display: "flex" }}>
         <Sidebar

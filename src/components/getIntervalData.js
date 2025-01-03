@@ -3,11 +3,16 @@ import { dateObj } from "./utils/data";
 
 const baseurl = "https://api.upstox.com/v2/";
 
-export const getHistoricData = async (interval, companyName, isBSE, isFrom) => {
+export const getHistoricData = async (
+  interval,
+  companyName,
+  indexName,
+  isFrom
+) => {
   const headers = {
     Accept: "application/json",
   };
-  const instrumentKey = `${isBSE ? "BSE_EQ|" : "NSE_EQ|"}${companyName}`;
+  const instrumentKey = `${indexName}|${companyName}`;
   let currentDate = new Date();
   let toDate = currentDate.toISOString().split("T")[0];
   let fromDate = dateObj[isFrom]();
@@ -24,12 +29,12 @@ export const getHistoricData = async (interval, companyName, isBSE, isFrom) => {
   }
 };
 
-export const getIntradayData = async (interval, companyName, isBSE) => {
+export const getIntradayData = async (interval, companyName, indexName) => {
   const headers = {
     Accept: "application/json",
   };
 
-  const instrumentKey = `${isBSE ? "BSE_EQ|" : "NSE_EQ|"}${companyName}`;
+  const instrumentKey = `${indexName}|${companyName}`;
   const newUrl = `${baseurl}historical-candle/intraday/${instrumentKey}/${interval}`;
 
   try {

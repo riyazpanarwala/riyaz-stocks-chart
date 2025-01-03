@@ -24,3 +24,8 @@ export const dateObj = {
   "2y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 2)),
   "5y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 5)),
 };
+
+export const indexArr = [
+  { label: "NSE", value: "NSE_EQ" },
+  { label: "BSE", value: "BSE_EQ" },
+];
