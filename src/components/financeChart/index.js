@@ -42,6 +42,7 @@ const FinanceChart = ({
   disableAllTools,
   width,
   height,
+  ratio,
   indicatorName,
   positionName,
   shapeName,
@@ -308,7 +309,7 @@ const FinanceChart = ({
   return (
     <ChartCanvas
       height={height}
-      ratio={3}
+      ratio={ratio}
       width={width}
       margin={margin}
       data={data}
