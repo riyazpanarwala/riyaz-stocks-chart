@@ -37,18 +37,34 @@ const ema2 = calculateEMA(
 );
 */
 
-export const calculateAngle = (data, ema1, ema2, emaPeriod1, emaPeriod2) => {
-  const slopes = data.map((d, i) => {
-    if (i >= emaPeriod1 && i >= emaPeriod2) {
-      const slope1 = calculateSlope(
-        { time: i - 1, value: data[i - 1].ema12 },
-        { time: i, value: data[i].ema12 }
-      );
-      const slope2 = calculateSlope(
-        { time: i - 1, value: data[i - 1].ema26 },
-        { time: i, value: data[i].ema26 }
-      );
-      return calculateAngleFromSlopes(slope1, slope2);
+export const calculateSlopeFromIndex = (
+  data,
+  baseIdx,
+  lastIdx,
+  emakey1,
+  emakey2
+) => {
+  const slope1 = calculateSlope(
+    { time: lastIdx, value: data[lastIdx][emakey1] },
+    { time: baseIdx, value: data[baseIdx][emakey1] }
+  );
+  const slope2 = calculateSlope(
+    { time: lastIdx, value: data[lastIdx][emakey2] },
+    { time: baseIdx, value: data[baseIdx][emakey2] }
+  );
+  return calculateAngleFromSlopes(slope1, slope2);
+};
+
+export const calculateAngle = (
+  data,
+  emakey1,
+  emakey2,
+  emaPeriod1,
+  emaPeriod2
+) => {
+  const slopes = data.map((d, idx) => {
+    if (idx >= emaPeriod1 && idx >= emaPeriod2) {
+      return calculateSlopeFromIndex(data, idx, idx - 1, emakey1, emakey2);
     }
     return null;
   });
