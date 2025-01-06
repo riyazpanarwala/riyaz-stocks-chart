@@ -15,7 +15,7 @@ import {
   CrossHairCursor,
   EdgeIndicator,
   MouseCoordinateY,
-  ZoomButtons,
+  //  ZoomButtons,
   TrendLine,
   isDefined,
   isNotDefined,
@@ -74,13 +74,13 @@ const FinanceChart = ({
   );
   const pricesDisplayFormat = format(".2f");
   const max = xAccessor(data[data.length - 1]);
-  const min = xAccessor(data[Math.max(0, data.length - 100)]);
-  const xExtents = [min, max + 5];
+  const min = 0; // xAccessor(data[Math.max(0, data.length - 100)]);
+  const xExtents = [min - 5, max + 5];
 
   const gridHeight = height - margin.top - margin.bottom;
 
   const elderRayHeight = 0;
-  const barChartHeight = gridHeight / 4;
+  const barChartHeight = gridHeight / 5;
   const barChartOrigin = (_, h) => [0, h - barChartHeight - elderRayHeight];
   const chartHeight = gridHeight - barChartHeight - elderRayHeight;
 
@@ -533,7 +533,7 @@ const FinanceChart = ({
           onMouseDownClick={onChangeRectangles}
         />
 
-        <ZoomButtons />
+        {/* <ZoomButtons /> */}
         <OHLCTooltip origin={[8, 16]} />
         {isIntraday ? (
           <HighLowTooltip origin={[8, 32]} ohlcData={initialData} />
