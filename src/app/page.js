@@ -119,15 +119,19 @@ const CandleStickChart = () => {
           handleEMAangleClick={handleEMAangleClick}
         />
         <main className="mainChart">
-          <div style={{ margin: "20px" }}>
-            {intradayObj.value === "historical" && (
-              <Tiles
-                periods={periods}
-                selectedPeriod={period}
-                setSelectedPeriod={handlePeriodChange}
-              />
-            )}
-            <h1>{getCompanyName()}</h1>
+          <div>
+            <div style={{ display: "flex" }}>
+              {intradayObj.value === "historical" && (
+                <Tiles
+                  periods={periods}
+                  selectedPeriod={period}
+                  setSelectedPeriod={handlePeriodChange}
+                />
+              )}
+              <div className="inlineDiv">
+                <h1>{getCompanyName()}</h1>
+              </div>
+            </div>
             {candleData.length ? (
               <div className="finance-charts">
                 <FinanceChart

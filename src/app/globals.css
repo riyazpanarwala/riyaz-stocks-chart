@@ -56,3 +56,8 @@ a {
     margin-left: 0px;
   }
 }
+
+.inlineDiv {
+  text-align: right;
+  width: 100%;
+}
