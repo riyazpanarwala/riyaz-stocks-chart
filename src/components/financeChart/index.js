@@ -32,6 +32,7 @@ import toObject from "../utils/toObject";
 import LongPosition from "./LongPosition";
 import CustomShapeCircle from "./Circle/index";
 import CustomShapeRectangle from "./Rectangle/index";
+import AngleCalculator from "./AngleCalculator";
 
 const FinanceChart = ({
   isIntraday,
@@ -46,6 +47,7 @@ const FinanceChart = ({
   indicatorName,
   positionName,
   shapeName,
+  isAngleEnabled,
 }) => {
   const [trendLines, setTrendLines] = useState([]);
   const [textList, setTextList] = useState([]);
@@ -334,7 +336,10 @@ const FinanceChart = ({
         <CandlestickSeries />
 
         {indicatorName === "ema" ? (
-          <EMAChart ema26={ema26} ema12={ema12} angles={angles} />
+          <>
+            <EMAChart ema26={ema26} ema12={ema12} angles={angles} />
+            {isAngleEnabled ? <AngleCalculator enabled /> : ""}
+          </>
         ) : (
           ""
         )}

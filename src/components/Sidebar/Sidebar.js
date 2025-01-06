@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FaBars } from "react-icons/fa";
-import { MdTrendingFlat } from "react-icons/md";
+import { MdTrendingFlat, MdOutlineRotate90DegreesCw } from "react-icons/md";
 import { LiaRulerHorizontalSolid } from "react-icons/lia";
 import { GrIndicator } from "react-icons/gr";
 import { CiText } from "react-icons/ci";
@@ -22,6 +22,8 @@ const Sidebar = ({
   handlePositionClick,
   shapeName,
   handleShapeClick,
+  isAngleEnabled,
+  handleEMAangleClick,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -99,6 +101,22 @@ const Sidebar = ({
             handleIndicatorClick(id);
           }}
         />
+        {indicatorName === "ema" ? (
+          <div
+            className={`${styles.button} ${
+              isAngleEnabled ? styles.active : ""
+            }`}
+            onClick={(e) => {
+              closeSidebar();
+              handleEMAangleClick(e);
+            }}
+          >
+            <MdOutlineRotate90DegreesCw className={styles.icon} />
+            <span>EMA Angle</span>
+          </div>
+        ) : (
+          ""
+        )}
         <TooltipSubMenu
           styles={styles}
           tooltipObj={{

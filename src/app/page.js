@@ -19,6 +19,7 @@ const CandleStickChart = () => {
   const [indicatorName, setIndicatorName] = useState("");
   const [positionName, setPositionName] = useState("");
   const [shapeName, setShapeName] = useState("");
+  const [isAngleEnabled, setAngleEnabled] = useState(false);
   const {
     intervalObj,
     intradayObj,
@@ -34,6 +35,11 @@ const CandleStickChart = () => {
     candleData,
     period,
   } = useCommonHeader();
+
+  const handleEMAangleClick = () => {
+    disableAllTools();
+    setAngleEnabled(true);
+  };
 
   const handleShapeClick = (id) => {
     disableAllTools();
@@ -61,6 +67,7 @@ const CandleStickChart = () => {
   };
 
   const disableAllTools = () => {
+    setAngleEnabled(false);
     setMeasurementEnable(false);
     setTrendLineEnable(false);
     setTextEnable(false);
@@ -108,6 +115,8 @@ const CandleStickChart = () => {
           handlePositionClick={handlePositionClick}
           shapeName={shapeName}
           handleShapeClick={handleShapeClick}
+          isAngleEnabled={isAngleEnabled}
+          handleEMAangleClick={handleEMAangleClick}
         />
         <main className="mainChart">
           <div style={{ margin: "20px" }}>
@@ -131,6 +140,7 @@ const CandleStickChart = () => {
                   indicatorName={indicatorName}
                   positionName={positionName}
                   shapeName={shapeName}
+                  isAngleEnabled={isAngleEnabled}
                 />
               </div>
             ) : (

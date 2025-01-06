@@ -11,8 +11,8 @@ import { getHistoricData, getIntradayData } from "./getIntervalData";
 
 const useCommonHeader = (isEchart) => {
   const [period, setPeriod] = useState(periods[0]);
-  const [intervalObj, setInterval] = useState(intervalArr[0]);
-  const [intradayObj, setIntradayOrHistoric] = useState(intraArr[0]);
+  const [intervalObj, setInterval] = useState(intervalArr1[0]);
+  const [intradayObj, setIntradayOrHistoric] = useState(intraArr[1]);
   const [indexObj, setIndex] = useState(indexArr[0]);
   const [newIndexArr, setNewIndexArr] = useState(indexArr);
   const [apiCall, setApiCall] = useState(0);
