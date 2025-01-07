@@ -9,7 +9,9 @@ import {
 } from "./utils/data";
 import { getHistoricData, getIntradayData } from "./getIntervalData";
 
-const isBreakOutDisplay = false;
+// const breakoutName = "volume";
+// const breakoutName = "support";
+const breakoutName = "";
 
 const useCommonHeader = (isEchart) => {
   const [period, setPeriod] = useState(periods[0]);
@@ -43,9 +45,9 @@ const useCommonHeader = (isEchart) => {
         const volume = stockData[i].volume;
 
         if (price > resistance[i] && volume > avgVolume) {
-          breakoutsArr.push({ date: stockData[i].date, price, bull: true });
+          breakoutsArr.push({ ...stockData[i], bull: true });
         } else if (price < support[i] && volume > avgVolume) {
-          breakoutsArr.push({ date: stockData[i].date, price, bear: true });
+          breakoutsArr.push({ ...stockData[i], bear: true });
         }
       } else {
         resistance[i] = null;
@@ -58,8 +60,9 @@ const useCommonHeader = (isEchart) => {
 
   // Function to detect volume breakout
   const detectVolumeBreakout = (data, period = 20, multiplier = 1.5) => {
+    let breakoutsArr = [];
     // Assuming a simple breakout detection based on volume being 1.5 times the average of the past 10 days
-    const breakoutData = data.map((d, i) => {
+    data.forEach((d, i) => {
       if (i < period) return d;
       const past10DaysVol =
         data.slice(i - period, i).reduce((acc, curr) => acc + curr.volume, 0) /
@@ -67,13 +70,13 @@ const useCommonHeader = (isEchart) => {
 
       if (d.volume > multiplier * past10DaysVol) {
         if (d.close > d.open) {
-          return { ...d, breakoutPos: true };
+          breakoutsArr = [...breakoutsArr, { ...d, bull: true }];
+        } else {
+          breakoutsArr = [...breakoutsArr, { ...d, bear: true }];
         }
-        return { ...d, breakoutNeg: true };
       }
-      return d;
     });
-    return breakoutData;
+    setBreakouts(breakoutsArr);
   };
 
   // Function to calculate OBV
@@ -119,11 +122,13 @@ const useCommonHeader = (isEchart) => {
           },
         ];
       });
-      dataArr = detectVolumeBreakout(dataArr);
+
       dataArr = calculateOBV(dataArr);
 
-      if (isBreakOutDisplay) {
+      if (breakoutName === "support") {
         detectBreakouts(dataArr);
+      } else if (breakoutName === "volume") {
+        detectVolumeBreakout(dataArr);
       }
     }
 

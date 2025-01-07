@@ -105,12 +105,6 @@ const FinanceChart = ({
   };
 
   const volumeColor = (data) => {
-    if (data.breakoutPos) {
-      return "green";
-    } else if (data.breakoutNeg) {
-      return "red";
-    }
-
     return data.close > data.open
       ? "rgba(38, 166, 154, 0.3)"
       : "rgba(239, 83, 80, 0.3)";
@@ -320,7 +314,7 @@ const FinanceChart = ({
         "M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z",
       pathWidth: 12,
       pathHeight: 12,
-      tooltip: breakoutObj.price,
+      tooltip: `(${breakoutObj.close}) ${breakoutObj.date}`,
       y: ({ yScale, datum }) => yScale(datum.close),
     };
   };
