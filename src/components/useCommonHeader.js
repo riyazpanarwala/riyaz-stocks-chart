@@ -20,6 +20,43 @@ const useCommonHeader = (isEchart) => {
   const [timeData, setTimeData] = useState([]);
   const { companyArr, companyObj, setCompany } = useParseCsv();
 
+  // Function to detect volume breakout
+  const detectVolumeBreakout = (data, period = 10, multiplier = 1.5) => {
+    // Assuming a simple breakout detection based on volume being 1.5 times the average of the past 10 days
+    const breakoutData = data.map((d, i) => {
+      if (i < period) return d;
+      const past10DaysVol =
+        data.slice(i - period, i).reduce((acc, curr) => acc + curr.volume, 0) /
+        period;
+
+      if (d.volume > multiplier * past10DaysVol) {
+        if (d.close > d.open) {
+          return { ...d, breakoutPos: true };
+        }
+        return { ...d, breakoutNeg: true };
+      }
+      return d;
+    });
+    return breakoutData;
+  };
+
+  // Function to calculate OBV
+  const calculateOBV = (data) => {
+    let obv = 0;
+    return data.map((d, i) => {
+      if (i === 0) {
+        return { ...d, obv };
+      }
+      const prevClose = data[i - 1].close;
+      if (d.close > prevClose) {
+        obv += d.volume;
+      } else if (d.close < prevClose) {
+        obv -= d.volume;
+      }
+      return { ...d, obv };
+    });
+  };
+
   const setCandleArr = (arr) => {
     let timeArr = [];
     let dataArr = [];
@@ -46,6 +83,8 @@ const useCommonHeader = (isEchart) => {
           },
         ];
       });
+      dataArr = detectVolumeBreakout(dataArr);
+      dataArr = calculateOBV(dataArr);
     }
 
     setTimeData(timeArr);

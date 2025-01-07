@@ -7,6 +7,8 @@ import {
   Chart,
   ChartCanvas,
   BarSeries,
+  LineSeries,
+  CurrentCoordinate,
   CandlestickSeries,
   OHLCTooltip,
   lastVisibleItemBasedZoomAnchor,
@@ -33,6 +35,7 @@ import LongPosition from "./LongPosition";
 import CustomShapeCircle from "./Circle/index";
 import CustomShapeRectangle from "./Rectangle/index";
 import AngleCalculator from "./AngleCalculator";
+import CustomTooltip from "./CustomTooltip";
 
 const FinanceChart = ({
   isIntraday,
@@ -99,6 +102,12 @@ const FinanceChart = ({
   };
 
   const volumeColor = (data) => {
+    if (data.breakoutPos) {
+      return "green";
+    } else if (data.breakoutNeg) {
+      return "red";
+    }
+
     return data.close > data.open
       ? "rgba(38, 166, 154, 0.3)"
       : "rgba(239, 83, 80, 0.3)";
@@ -562,6 +571,26 @@ const FinanceChart = ({
       ) : (
         ""
       )}
+
+      <Chart
+        id={5}
+        yExtents={(d) => d.obv}
+        height={barChartHeight}
+        origin={barChartOrigin}
+      >
+        <XAxis />
+        <YAxis ticks={2} />
+
+        <LineSeries yAccessor={(d) => d.obv} stroke="#4682B4" />
+        <CurrentCoordinate yAccessor={(d) => d.obv} fillStyle={"#4682B4"} />
+
+        <CustomTooltip
+          origin={[8, 16]}
+          yAccessor={(d) => d.obv}
+          displayFormat={format(".2s")}
+          tooltipName="OBV"
+        />
+      </Chart>
 
       <CrossHairCursor />
       <DrawingObjectSelector
