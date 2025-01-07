@@ -9,6 +9,8 @@ import {
 } from "./utils/data";
 import { getHistoricData, getIntradayData } from "./getIntervalData";
 
+const isBreakOutDisplay = false;
+
 const useCommonHeader = (isEchart) => {
   const [period, setPeriod] = useState(periods[0]);
   const [intervalObj, setInterval] = useState(intervalArr1[0]);
@@ -19,9 +21,43 @@ const useCommonHeader = (isEchart) => {
   const [candleData, setCandleData] = useState([]);
   const [timeData, setTimeData] = useState([]);
   const { companyArr, companyObj, setCompany } = useParseCsv();
+  const [breakouts, setBreakouts] = useState([]);
+
+  const detectBreakouts = (stockData, windowSize = 20) => {
+    const resistance = [];
+    const support = [];
+    const breakoutsArr = [];
+
+    for (let i = 0; i < stockData.length; i++) {
+      if (i >= windowSize) {
+        const windowData = stockData.slice(i - windowSize, i);
+        const highs = windowData.map((d) => d.high);
+        const lows = windowData.map((d) => d.low);
+        const avgVolume =
+          windowData.reduce((sum, d) => sum + d.volume, 0) / windowSize;
+
+        resistance[i] = Math.max(...highs);
+        support[i] = Math.min(...lows);
+
+        const price = stockData[i].close;
+        const volume = stockData[i].volume;
+
+        if (price > resistance[i] && volume > avgVolume) {
+          breakoutsArr.push({ date: stockData[i].date, price, bull: true });
+        } else if (price < support[i] && volume > avgVolume) {
+          breakoutsArr.push({ date: stockData[i].date, price, bear: true });
+        }
+      } else {
+        resistance[i] = null;
+        support[i] = null;
+      }
+    }
+
+    setBreakouts(breakoutsArr);
+  };
 
   // Function to detect volume breakout
-  const detectVolumeBreakout = (data, period = 10, multiplier = 1.5) => {
+  const detectVolumeBreakout = (data, period = 20, multiplier = 1.5) => {
     // Assuming a simple breakout detection based on volume being 1.5 times the average of the past 10 days
     const breakoutData = data.map((d, i) => {
       if (i < period) return d;
@@ -85,6 +121,10 @@ const useCommonHeader = (isEchart) => {
       });
       dataArr = detectVolumeBreakout(dataArr);
       dataArr = calculateOBV(dataArr);
+
+      if (isBreakOutDisplay) {
+        detectBreakouts(dataArr);
+      }
     }
 
     setTimeData(timeArr);
@@ -182,6 +222,7 @@ const useCommonHeader = (isEchart) => {
     candleData,
     timeData,
     period,
+    breakouts,
   };
 };
 

@@ -34,6 +34,7 @@ const CandleStickChart = () => {
     newIndexArr,
     candleData,
     period,
+    breakouts,
   } = useCommonHeader();
 
   const handleEMAangleClick = () => {
@@ -145,6 +146,7 @@ const CandleStickChart = () => {
                   positionName={positionName}
                   shapeName={shapeName}
                   isAngleEnabled={isAngleEnabled}
+                  breakouts={breakouts}
                 />
               </div>
             ) : (
