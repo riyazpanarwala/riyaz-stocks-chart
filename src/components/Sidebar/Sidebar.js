@@ -4,7 +4,7 @@ import { MdTrendingFlat, MdOutlineRotate90DegreesCw } from "react-icons/md";
 import { LiaRulerHorizontalSolid } from "react-icons/lia";
 import { GrIndicator } from "react-icons/gr";
 import { CiText } from "react-icons/ci";
-import { FcPositiveDynamic } from "react-icons/fc";
+import { FcPositiveDynamic, FcBullish } from "react-icons/fc";
 import { FaShapes } from "react-icons/fa";
 import TooltipSubMenu from "./toolTipMenu";
 import styles from "./Sidebar.module.scss";
@@ -24,6 +24,8 @@ const Sidebar = ({
   handleShapeClick,
   isAngleEnabled,
   handleEMAangleClick,
+  breakoutName,
+  hangleBreakoutClick,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -46,6 +48,19 @@ const Sidebar = ({
   const shapeArr = [
     { id: "circle", name: "Circle", isActive: shapeName === "circle" },
     { id: "rectangle", name: "Rectangle", isActive: shapeName === "rectangle" },
+  ];
+
+  const breakoutsArr = [
+    {
+      id: "volume",
+      name: "Volume (MA20)",
+      isActive: breakoutName === "volume",
+    },
+    {
+      id: "support",
+      name: "Support & Resistance (MA20)",
+      isActive: breakoutName === "support",
+    },
   ];
 
   return (
@@ -139,6 +154,18 @@ const Sidebar = ({
           onClick={(e, id) => {
             closeSidebar();
             handleShapeClick(id);
+          }}
+        />
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{
+            name: "Breakout",
+            icon: <FcBullish className={styles.icon} />,
+            subMenu: breakoutsArr,
+          }}
+          onClick={(e, id) => {
+            closeSidebar();
+            hangleBreakoutClick(id);
           }}
         />
       </div>

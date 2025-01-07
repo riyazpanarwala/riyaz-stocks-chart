@@ -25,8 +25,6 @@ import {
   Measurement,
   InteractiveText,
   ClickCallback,
-  Annotate,
-  SvgPathAnnotation,
 } from "react-financial-charts";
 import HighLowTooltip from "./HighLowTooltip";
 import EMAChart from "./ema";
@@ -38,6 +36,7 @@ import CustomShapeCircle from "./Circle/index";
 import CustomShapeRectangle from "./Rectangle/index";
 import AngleCalculator from "./AngleCalculator";
 import CustomTooltip from "./CustomTooltip";
+import Breakout from "./Breakout";
 
 const FinanceChart = ({
   isIntraday,
@@ -53,7 +52,7 @@ const FinanceChart = ({
   positionName,
   shapeName,
   isAngleEnabled,
-  breakouts,
+  breakoutName,
 }) => {
   const [trendLines, setTrendLines] = useState([]);
   const [textList, setTextList] = useState([]);
@@ -307,18 +306,6 @@ const FinanceChart = ({
     }
   };
 
-  const breakoutPath = (breakoutObj) => {
-    return {
-      fill: breakoutObj.bull ? "Green" : "red",
-      path: () =>
-        "M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z",
-      pathWidth: 12,
-      pathHeight: 12,
-      tooltip: `(${breakoutObj.close}) ${breakoutObj.date}`,
-      y: ({ yScale, datum }) => yScale(datum.close),
-    };
-  };
-
   useEffect(() => {
     document.addEventListener("keyup", onKeyPress);
     return () => {
@@ -353,16 +340,11 @@ const FinanceChart = ({
         <YAxis showGridLines tickFormat={pricesDisplayFormat} />
         <CandlestickSeries />
 
-        {breakouts.map((breakout) => {
-          return (
-            <Annotate
-              key={breakout.date}
-              with={SvgPathAnnotation}
-              when={(d) => d.date === breakout.date}
-              usingProps={breakoutPath(breakout)}
-            />
-          );
-        })}
+        {breakoutName ? (
+          <Breakout breakoutName={breakoutName} data={initialData} />
+        ) : (
+          ""
+        )}
 
         {indicatorName === "ema" ? (
           <>
