@@ -49,7 +49,15 @@ const useData = (initialData, indicatorName) => {
   } else if (indicatorName === "dmi") {
     const { plusDI, minusDI, adx } = calculateDMI(initialData);
     calculatedData = initialData.map((v, i) => {
-      return { ...v, plusDI: plusDI[i], minusDI: minusDI[i], adx: adx[i] };
+      if (i === 0) {
+        return v;
+      }
+      return {
+        ...v,
+        plusDI: plusDI[i - 1],
+        minusDI: minusDI[i - 1],
+        adx: adx[i - 1],
+      };
     });
   }
 
