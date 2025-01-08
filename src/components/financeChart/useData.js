@@ -2,6 +2,7 @@ import React from "react";
 import { ema, rsi } from "react-financial-charts";
 import { calculateAngle } from "./calculateAngle";
 import calculateDMI from "./calculateDMI";
+import calculateOBV from "./calculateOBV";
 
 const emaPeriod1 = 15;
 const emaPeriod2 = 45;
@@ -59,6 +60,8 @@ const useData = (initialData, indicatorName) => {
         adx: adx[i - 1],
       };
     });
+  } else if (indicatorName === "obv") {
+    calculatedData = calculateOBV(initialData);
   }
 
   return {

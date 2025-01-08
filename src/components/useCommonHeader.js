@@ -20,23 +20,6 @@ const useCommonHeader = (isEchart) => {
   const [timeData, setTimeData] = useState([]);
   const { companyArr, companyObj, setCompany } = useParseCsv();
 
-  // Function to calculate OBV
-  const calculateOBV = (data) => {
-    let obv = 0;
-    return data.map((d, i) => {
-      if (i === 0) {
-        return { ...d, obv };
-      }
-      const prevClose = data[i - 1].close;
-      if (d.close > prevClose) {
-        obv += d.volume;
-      } else if (d.close < prevClose) {
-        obv -= d.volume;
-      }
-      return { ...d, obv };
-    });
-  };
-
   const setCandleArr = (arr) => {
     let timeArr = [];
     let dataArr = [];
@@ -63,8 +46,6 @@ const useCommonHeader = (isEchart) => {
           },
         ];
       });
-
-      dataArr = calculateOBV(dataArr);
     }
 
     setTimeData(timeArr);

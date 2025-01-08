@@ -39,6 +39,13 @@ import CustomTooltip from "./CustomTooltip";
 import Breakout from "./Breakout";
 import DMI from "./DMI";
 
+const indicatorYExtentsObj = {
+  ema: (d) => [d.high, d.low],
+  rsi: (d) => [0, 100],
+  obv: (d) => [0, d.obv],
+  dmi: (d) => [d.plusDI + 10, d.minusDI - 10, d.adx + 10],
+};
+
 const FinanceChart = ({
   isIntraday,
   initialData,
@@ -347,15 +354,6 @@ const FinanceChart = ({
           ""
         )}
 
-        {indicatorName === "ema" ? (
-          <>
-            <EMAChart ema26={ema26} ema12={ema12} angles={angles} />
-            {isAngleEnabled ? <AngleCalculator enabled /> : ""}
-          </>
-        ) : (
-          ""
-        )}
-
         <MouseCoordinateY
           rectWidth={margin.right}
           displayFormat={pricesDisplayFormat}
@@ -550,6 +548,12 @@ const FinanceChart = ({
           onMouseDownClick={onChangeRectangles}
         />
 
+        {indicatorName === "ema" && isAngleEnabled ? (
+          <AngleCalculator enabled />
+        ) : (
+          ""
+        )}
+
         {/* <ZoomButtons /> */}
         <OHLCTooltip origin={[8, 16]} />
         {isIntraday ? (
@@ -559,56 +563,56 @@ const FinanceChart = ({
         )}
       </Chart>
 
-      {indicatorName === "rsi" ? (
+      {indicatorName ? (
         <Chart
           id={4}
-          yExtents={[0, 100]}
+          yExtents={indicatorYExtentsObj[indicatorName]}
           height={barChartHeight}
           origin={barChartOrigin}
         >
           <XAxis />
-          <YAxis tickValues={[30, 50, 70]} />
 
-          <RSIChart rsiYAccessor={rsiYAccessor} rsiCalculator={rsiCalculator} />
-        </Chart>
-      ) : (
-        ""
-      )}
+          {indicatorName === "rsi" ? (
+            <YAxis tickValues={[30, 50, 70]} />
+          ) : (
+            <YAxis />
+          )}
 
-      {indicatorName === "obv" ? (
-        <Chart
-          id={5}
-          yExtents={(d) => d.obv}
-          height={barChartHeight}
-          origin={barChartOrigin}
-        >
-          <XAxis />
-          <YAxis ticks={2} />
+          {indicatorName === "ema" ? (
+            <EMAChart ema26={ema26} ema12={ema12} angles={angles} />
+          ) : (
+            ""
+          )}
 
-          <LineSeries yAccessor={(d) => d.obv} stroke="#4682B4" />
-          <CurrentCoordinate yAccessor={(d) => d.obv} fillStyle={"#4682B4"} />
+          {indicatorName === "rsi" ? (
+            <RSIChart
+              rsiYAccessor={rsiYAccessor}
+              rsiCalculator={rsiCalculator}
+            />
+          ) : (
+            ""
+          )}
 
-          <CustomTooltip
-            origin={[8, 16]}
-            yAccessor={(d) => d.obv}
-            displayFormat={format(".2s")}
-            tooltipName="OBV"
-          />
-        </Chart>
-      ) : (
-        ""
-      )}
+          {indicatorName === "obv" ? (
+            <>
+              <LineSeries yAccessor={(d) => d.obv} stroke="#4682B4" />
+              <CurrentCoordinate
+                yAccessor={(d) => d.obv}
+                fillStyle={"#4682B4"}
+              />
 
-      {indicatorName === "dmi" ? (
-        <Chart
-          id={6}
-          yExtents={(d) => [d.plusDI + 10, d.minusDI - 10, d.adx + 10]}
-          height={barChartHeight}
-          origin={barChartOrigin}
-        >
-          <XAxis />
-          <YAxis />
-          <DMI />
+              <CustomTooltip
+                origin={[8, 16]}
+                yAccessor={(d) => d.obv}
+                displayFormat={format(".2s")}
+                tooltipName="OBV"
+              />
+            </>
+          ) : (
+            ""
+          )}
+
+          {indicatorName === "dmi" ? <DMI /> : ""}
         </Chart>
       ) : (
         ""

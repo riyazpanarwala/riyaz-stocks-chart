@@ -1,9 +1,6 @@
 import React from "react";
-import {
-  CurrentCoordinate,
-  LineSeries,
-  MovingAverageTooltip,
-} from "react-financial-charts";
+import { CurrentCoordinate, LineSeries } from "react-financial-charts";
+import CustomTooltip from "./CustomTooltip";
 
 const EMAChart = ({ ema26, ema12, angles }) => {
   return (
@@ -18,28 +15,23 @@ const EMAChart = ({ ema26, ema12, angles }) => {
         yAccessor={ema12.accessor()}
         fillStyle={ema12.stroke()}
       />
-      <MovingAverageTooltip
-        origin={[8, 40]}
-        options={[
-          {
-            yAccessor: ema26.accessor(),
-            type: "EMA",
-            stroke: ema26.stroke(),
-            windowSize: ema26.options().windowSize,
-          },
-          {
-            yAccessor: ema12.accessor(),
-            type: "EMA",
-            stroke: ema12.stroke(),
-            windowSize: ema12.options().windowSize,
-          },
-          {
-            yAccessor: (d) => angles[d.idx.index],
-            type: "Angle:",
-            stroke: ema26.stroke(),
-            windowSize: "",
-          },
-        ]}
+      <CustomTooltip
+        origin={[8, 16]}
+        yAccessor={ema26.accessor()}
+        tooltipName={`EMA(${ema26.options().windowSize})`}
+        textFill={ema26.stroke()}
+      />
+      <CustomTooltip
+        origin={[8, 32]}
+        yAccessor={ema12.accessor()}
+        tooltipName={`EMA(${ema12.options().windowSize})`}
+        textFill={ema12.stroke()}
+      />
+      <CustomTooltip
+        origin={[8, 48]}
+        yAccessor={(d) => angles[d.idx.index]}
+        tooltipName={`Angle`}
+        textFill={ema26.stroke()}
       />
     </>
   );
