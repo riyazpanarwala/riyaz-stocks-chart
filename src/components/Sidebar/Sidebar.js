@@ -41,6 +41,7 @@ const Sidebar = ({
     { id: "ema", name: "EMA", isActive: indicatorName === "ema" },
     { id: "rsi", name: "RSI", isActive: indicatorName === "rsi" },
     { id: "dmi", name: "DMI", isActive: indicatorName === "dmi" },
+    { id: "obv", name: "OBV", isActive: indicatorName === "obv" },
   ];
   const positionArr = [
     { id: "long", name: "Long Position", isActive: positionName === "long" },

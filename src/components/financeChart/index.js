@@ -575,25 +575,29 @@ const FinanceChart = ({
         ""
       )}
 
-      <Chart
-        id={5}
-        yExtents={(d) => d.obv}
-        height={barChartHeight}
-        origin={barChartOrigin}
-      >
-        <XAxis />
-        <YAxis ticks={2} />
+      {indicatorName === "obv" ? (
+        <Chart
+          id={5}
+          yExtents={(d) => d.obv}
+          height={barChartHeight}
+          origin={barChartOrigin}
+        >
+          <XAxis />
+          <YAxis ticks={2} />
 
-        <LineSeries yAccessor={(d) => d.obv} stroke="#4682B4" />
-        <CurrentCoordinate yAccessor={(d) => d.obv} fillStyle={"#4682B4"} />
+          <LineSeries yAccessor={(d) => d.obv} stroke="#4682B4" />
+          <CurrentCoordinate yAccessor={(d) => d.obv} fillStyle={"#4682B4"} />
 
-        <CustomTooltip
-          origin={[8, 16]}
-          yAccessor={(d) => d.obv}
-          displayFormat={format(".2s")}
-          tooltipName="OBV"
-        />
-      </Chart>
+          <CustomTooltip
+            origin={[8, 16]}
+            yAccessor={(d) => d.obv}
+            displayFormat={format(".2s")}
+            tooltipName="OBV"
+          />
+        </Chart>
+      ) : (
+        ""
+      )}
 
       {indicatorName === "dmi" ? (
         <Chart
@@ -602,6 +606,8 @@ const FinanceChart = ({
           height={barChartHeight}
           origin={barChartOrigin}
         >
+          <XAxis />
+          <YAxis />
           <DMI />
         </Chart>
       ) : (
