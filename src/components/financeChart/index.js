@@ -598,7 +598,7 @@ const FinanceChart = ({
       {indicatorName === "dmi" ? (
         <Chart
           id={6}
-          yExtents={(d) => [d.plusDI + 10, d.minusDI - 10]}
+          yExtents={(d) => [d.plusDI + 10, d.minusDI - 10, d.adx + 10]}
           height={barChartHeight}
           origin={barChartOrigin}
         >

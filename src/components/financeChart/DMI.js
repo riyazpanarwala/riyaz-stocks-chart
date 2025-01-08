@@ -4,6 +4,7 @@ import {
   MouseCoordinateX,
   MouseCoordinateY,
   CurrentCoordinate,
+  EdgeIndicator,
 } from "react-financial-charts";
 import { format } from "d3-format";
 import { timeFormat } from "d3-time-format";
@@ -46,6 +47,31 @@ const DMI = () => {
         yAccessor={(d) => d.minusDI}
         tooltipName="DI-"
         textFill={minusDIColor}
+      />
+
+      <EdgeIndicator
+        itemType="last" // Show edge for the last visible item
+        orient="right" // Place on the right side of the chart
+        edgeAt="right" // Align to the right axis
+        yAccessor={(d) => d.adx} // Use the closing price
+        fill={adxColor} // Color based on price movement
+        textFill="#FFFFFF" // Text color inside the edge
+      />
+      <EdgeIndicator
+        itemType="last" // Show edge for the last visible item
+        orient="right" // Place on the right side of the chart
+        edgeAt="right" // Align to the right axis
+        yAccessor={(d) => d.plusDI} // Use the closing price
+        fill={plusDIColor} // Color based on price movement
+        textFill="#FFFFFF" // Text color inside the edge
+      />
+      <EdgeIndicator
+        itemType="last" // Show edge for the last visible item
+        orient="right" // Place on the right side of the chart
+        edgeAt="right" // Align to the right axis
+        yAccessor={(d) => d.minusDI} // Use the closing price
+        fill={minusDIColor} // Color based on price movement
+        textFill="#FFFFFF" // Text color inside the edge
       />
     </>
   );
