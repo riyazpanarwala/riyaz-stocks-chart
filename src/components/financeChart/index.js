@@ -37,6 +37,7 @@ import CustomShapeRectangle from "./Rectangle/index";
 import AngleCalculator from "./AngleCalculator";
 import CustomTooltip from "./CustomTooltip";
 import Breakout from "./Breakout";
+import DMI from "./DMI";
 
 const FinanceChart = ({
   isIntraday,
@@ -87,7 +88,7 @@ const FinanceChart = ({
   const gridHeight = height - margin.top - margin.bottom;
 
   const elderRayHeight = 0;
-  const barChartHeight = gridHeight / 5;
+  const barChartHeight = gridHeight / 4;
   const barChartOrigin = (_, h) => [0, h - barChartHeight - elderRayHeight];
   const chartHeight = gridHeight - barChartHeight - elderRayHeight;
 
@@ -594,6 +595,19 @@ const FinanceChart = ({
         />
       </Chart>
 
+      {indicatorName === "dmi" ? (
+        <Chart
+          id={6}
+          yExtents={(d) => [d.plusDI + 10, d.minusDI - 10]}
+          height={barChartHeight}
+          origin={barChartOrigin}
+        >
+          <DMI />
+        </Chart>
+      ) : (
+        ""
+      )}
+
       <CrossHairCursor />
       <DrawingObjectSelector
         enabled={true}
@@ -612,6 +626,6 @@ const FinanceChart = ({
 
 export default withSize({
   style: {
-    minHeight: 500,
+    minHeight: 550,
   },
 })(withDeviceRatio()(FinanceChart));

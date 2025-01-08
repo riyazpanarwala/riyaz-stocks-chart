@@ -59,7 +59,6 @@ const Breakout = ({ breakoutName, data }) => {
   };
 
   useEffect(() => {
-    console.log("heyyeeyey");
     if (breakoutName === "support") {
       detectBreakouts([...data]);
     } else if (breakoutName === "volume") {
