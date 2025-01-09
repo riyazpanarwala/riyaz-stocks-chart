@@ -1,13 +1,11 @@
 import React from "react";
 import {
   LineSeries,
-  MouseCoordinateX,
   MouseCoordinateY,
   CurrentCoordinate,
   EdgeIndicator,
 } from "react-financial-charts";
 import { format } from "d3-format";
-import { timeFormat } from "d3-time-format";
 import CustomTooltip from "./CustomTooltip";
 
 const DMI = () => {
@@ -16,7 +14,6 @@ const DMI = () => {
   const minusDIColor = "orange";
   return (
     <>
-      <MouseCoordinateX rectWidth={60} displayFormat={timeFormat("%Y-%m-%d")} />
       <MouseCoordinateY rectWidth={60} displayFormat={format(".2f")} />
 
       <CurrentCoordinate yAccessor={(d) => d.plusDI} fillStyle={plusDIColor} />

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { format } from "d3-format";
+import { timeFormat } from "d3-time-format";
 import {
   withDeviceRatio,
   withSize,
@@ -17,6 +18,7 @@ import {
   CrossHairCursor,
   EdgeIndicator,
   MouseCoordinateY,
+  MouseCoordinateX,
   //  ZoomButtons,
   TrendLine,
   isDefined,
@@ -365,6 +367,10 @@ const FinanceChart = ({
         <MouseCoordinateY
           rectWidth={margin.right}
           displayFormat={pricesDisplayFormat}
+        />
+        <MouseCoordinateX
+          rectWidth={margin.top}
+          displayFormat={timeFormat("%Y-%m-%d")}
         />
         <EdgeIndicator
           itemType="last"
