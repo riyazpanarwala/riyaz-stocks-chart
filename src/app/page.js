@@ -115,7 +115,7 @@ const CandleStickChart = () => {
         }
         indexArr={newIndexArr}
       />
-      <div style={{ display: "flex" }}>
+      <div style={{ display: "flex", position: "relative" }}>
         <Sidebar
           handleTrendLineClick={handleTrendLineClick}
           trendLineEnable={trendLineEnable}
@@ -138,7 +138,7 @@ const CandleStickChart = () => {
         />
         <main className="mainChart">
           <div>
-            <div style={{ display: "flex" }}>
+            <div className="tileDiv">
               {intradayObj.value === "historical" && (
                 <Tiles
                   periods={periods}
@@ -147,7 +147,7 @@ const CandleStickChart = () => {
                 />
               )}
               <div className="inlineDiv">
-                <h1>{getCompanyName()}</h1>
+                <h2>{getCompanyName()}</h2>
               </div>
             </div>
             {candleData.length ? (
