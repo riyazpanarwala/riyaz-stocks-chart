@@ -37,7 +37,7 @@ const ema2 = calculateEMA(
 );
 */
 
-export const calculateSlopeFromIndex = (
+export const emaAngleIndividual = (
   data,
   baseIdx,
   lastIdx,
@@ -55,20 +55,12 @@ export const calculateSlopeFromIndex = (
   return calculateAngleFromSlopes(slope1, slope2);
 };
 
-export const calculateAngle = (
-  data,
-  emakey1,
-  emakey2,
-  emaPeriod1,
-  emaPeriod2
-) => {
+export const emaAngle = (data, emakey1, emakey2, emaPeriod1, emaPeriod2) => {
   const slopes = data.map((d, idx) => {
     if (idx >= emaPeriod1 && idx >= emaPeriod2) {
-      return calculateSlopeFromIndex(data, idx, idx - 1, emakey1, emakey2);
+      return emaAngleIndividual(data, idx, idx - 1, emakey1, emakey2);
     }
     return null;
   });
   return slopes;
 };
-
-export default calculateAngle;

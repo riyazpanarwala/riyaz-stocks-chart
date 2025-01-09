@@ -28,7 +28,7 @@ const calculateADX = (plusDI, minusDI, period) => {
 };
 
 // Function to calculate DMI
-const calculateDMI = (data, period = 14) => {
+export const dmi = (data, period = 14) => {
   const high = data.map((d) => d.high);
   const low = data.map((d) => d.low);
   const close = data.map((d) => d.close);
@@ -137,5 +137,3 @@ const calculateDMI1 = (data, windowSize = 14) => {
   return data;
 };
 */
-
-export default calculateDMI;

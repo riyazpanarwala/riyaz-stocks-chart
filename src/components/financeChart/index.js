@@ -353,7 +353,7 @@ const FinanceChart = ({
         <CandlestickSeries />
 
         {breakoutName ? (
-          <Breakout breakoutName={breakoutName} data={initialData} />
+          <Breakout patternName={breakoutName} data={initialData} />
         ) : (
           ""
         )}
@@ -370,7 +370,7 @@ const FinanceChart = ({
         />
         <MouseCoordinateX
           rectWidth={margin.top}
-          displayFormat={timeFormat("%Y-%m-%d")}
+          displayFormat={timeFormat(isIntraday ? "%Y-%m-%d %H:%M" : "%Y-%m-%d")}
         />
         <EdgeIndicator
           itemType="last"

@@ -1,5 +1,5 @@
 // Function to calculate OBV
-const calculateOBV = (data) => {
+export const obv = (data) => {
   let obv = 0;
   return data.map((d, i) => {
     if (i === 0) {
@@ -14,5 +14,3 @@ const calculateOBV = (data) => {
     return { ...d, obv };
   });
 };
-
-export default calculateOBV;

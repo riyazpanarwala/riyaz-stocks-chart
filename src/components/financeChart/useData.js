@@ -1,8 +1,6 @@
 import React from "react";
 import { ema, rsi } from "react-financial-charts";
-import { calculateAngle } from "./calculateAngle";
-import calculateDMI from "./calculateDMI";
-import calculateOBV from "./calculateOBV";
+import { dmi, obv, emaAngle } from "./indicator";
 
 const emaPeriod1 = 15;
 const emaPeriod2 = 45;
@@ -30,13 +28,7 @@ const useData = (initialData, indicatorName) => {
       .accessor((d) => d.ema26);
     calculatedData = ema26(ema12(initialData));
 
-    angles = calculateAngle(
-      initialData,
-      "ema12",
-      "ema26",
-      emaPeriod1,
-      emaPeriod2
-    );
+    angles = emaAngle(initialData, "ema12", "ema26", emaPeriod1, emaPeriod2);
   } else if (indicatorName === "rsi") {
     rsiCalculator = rsi()
       .options({ windowSize: 14 })
@@ -48,7 +40,7 @@ const useData = (initialData, indicatorName) => {
     calculatedData = rsiCalculator(initialData);
     rsiYAccessor = rsiCalculator.accessor();
   } else if (indicatorName === "dmi") {
-    const { plusDI, minusDI, adx } = calculateDMI(initialData);
+    const { plusDI, minusDI, adx } = dmi(initialData);
     calculatedData = initialData.map((v, i) => {
       if (i === 0) {
         return v;
@@ -61,7 +53,7 @@ const useData = (initialData, indicatorName) => {
       };
     });
   } else if (indicatorName === "obv") {
-    calculatedData = calculateOBV(initialData);
+    calculatedData = obv(initialData);
   }
 
   return {

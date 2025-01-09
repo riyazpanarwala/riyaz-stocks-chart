@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getMouseCanvas, GenericChartComponent } from "react-financial-charts";
-import { calculateSlopeFromIndex } from "./calculateAngle";
+import { emaAngleIndividual } from "./indicator";
 
 const AngleCalculator = ({
   enabled,
@@ -54,7 +54,7 @@ const AngleCalculator = ({
     const endIdx = end.item.idx.index;
     const startIdx = start.item.idx.index;
     const barCount = Math.abs(endIdx - startIdx);
-    const angle = calculateSlopeFromIndex(
+    const angle = emaAngleIndividual(
       plotData,
       startIdx,
       endIdx,
