@@ -15,7 +15,7 @@ const AnnotateChart = ({
   const getColor = (patternObj) => {
     if (patternObj.bull) return "Green";
     if (patternObj.bear) return "red";
-    return "yellow";
+    return patternObj.isVolume ? "darkblue" : "mediumslateblue";
   };
 
   const anotateFunc = (patternObj) => {
