@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Annotate, SvgPathAnnotation } from "react-financial-charts";
+import {
+  Annotate,
+  SvgPathAnnotation,
+  ToolTipTSpanLabel,
+  ToolTipText,
+} from "react-financial-charts";
 
 const Breakout = ({ breakoutName, data }) => {
   const [breakouts, setBreakouts] = useState([]);
 
-  const detectBreakouts = (stockData, windowSize = 20) => {
+  const detectBreakouts = (stockData, windowSize = 14) => {
     const resistance = [];
     const support = [];
     const breakoutsArr = [];
@@ -38,7 +43,7 @@ const Breakout = ({ breakoutName, data }) => {
   };
 
   // Function to detect volume breakout
-  const detectVolumeBreakout = (data, period = 20, multiplier = 1.5) => {
+  const detectVolumeBreakout = (data, period = 14, multiplier = 1.5) => {
     let breakoutsArr = [];
     // Assuming a simple breakout detection based on volume being 1.5 times the average of the past 10 days
     data.forEach((d, i) => {
@@ -79,6 +84,20 @@ const Breakout = ({ breakoutName, data }) => {
       y: ({ yScale, datum }) => yScale(datum.close),
     };
   };
+
+  if (!breakouts.length) {
+    return (
+      <g
+        className={"react-financial-charts-tooltip"}
+        transform={`translate(8, 32)`}
+      >
+        <ToolTipText x={0} y={0}>
+          <ToolTipTSpanLabel>{breakoutName}: </ToolTipTSpanLabel>
+          <tspan>No Breakouts detected</tspan>
+        </ToolTipText>
+      </g>
+    );
+  }
 
   return breakouts.map((breakout) => {
     return (

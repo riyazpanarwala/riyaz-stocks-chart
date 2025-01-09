@@ -38,6 +38,7 @@ import AngleCalculator from "./AngleCalculator";
 import CustomTooltip from "./CustomTooltip";
 import Breakout from "./Breakout";
 import DMI from "./DMI";
+import PatternChart from "./PatternChart";
 
 const indicatorYExtentsObj = {
   ema: (d) => [d.high, d.low],
@@ -61,6 +62,7 @@ const FinanceChart = ({
   shapeName,
   isAngleEnabled,
   breakoutName,
+  patternName,
 }) => {
   const [trendLines, setTrendLines] = useState([]);
   const [textList, setTextList] = useState([]);
@@ -350,6 +352,12 @@ const FinanceChart = ({
 
         {breakoutName ? (
           <Breakout breakoutName={breakoutName} data={initialData} />
+        ) : (
+          ""
+        )}
+
+        {patternName ? (
+          <PatternChart patternName={patternName} data={initialData} />
         ) : (
           ""
         )}

@@ -1,6 +1,10 @@
 import React, { useState } from "react";
 import { FaBars } from "react-icons/fa";
-import { MdTrendingFlat, MdOutlineRotate90DegreesCw } from "react-icons/md";
+import {
+  MdTrendingFlat,
+  MdOutlineRotate90DegreesCw,
+  MdPattern,
+} from "react-icons/md";
 import { LiaRulerHorizontalSolid } from "react-icons/lia";
 import { GrIndicator } from "react-icons/gr";
 import { CiText } from "react-icons/ci";
@@ -26,6 +30,8 @@ const Sidebar = ({
   handleEMAangleClick,
   breakoutName,
   hangleBreakoutClick,
+  patternName,
+  hanglePatternClick,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -62,6 +68,13 @@ const Sidebar = ({
       id: "support",
       name: "Support & Resistance (MA20)",
       isActive: breakoutName === "support",
+    },
+  ];
+  const patternArr = [
+    {
+      id: "marubozu",
+      name: "Marubozu",
+      isActive: patternName === "marubozu",
     },
   ];
 
@@ -168,6 +181,18 @@ const Sidebar = ({
           onClick={(e, id) => {
             closeSidebar();
             hangleBreakoutClick(id);
+          }}
+        />
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{
+            name: "Pattern",
+            icon: <MdPattern className={styles.icon} />,
+            subMenu: patternArr,
+          }}
+          onClick={(e, id) => {
+            closeSidebar();
+            hanglePatternClick(id);
           }}
         />
       </div>
