@@ -76,6 +76,11 @@ const Sidebar = ({
       name: "Marubozu",
       isActive: patternName === "marubozu",
     },
+    {
+      id: "hammer",
+      name: "Hammer",
+      isActive: patternName === "hammer",
+    },
   ];
 
   return (
