@@ -115,7 +115,7 @@ const CandleStickChart = () => {
         }
         indexArr={newIndexArr}
       />
-      <div style={{ display: "flex", position: "relative" }}>
+      <div style={{ display: "flex" }}>
         <Sidebar
           handleTrendLineClick={handleTrendLineClick}
           trendLineEnable={trendLineEnable}
