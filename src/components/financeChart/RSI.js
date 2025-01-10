@@ -17,7 +17,7 @@ const RSIChart = ({ rsiYAccessor, rsiCalculator }) => {
       />
 
       <RSITooltip
-        origin={[8, 16]}
+        origin={[8, 32]}
         yAccessor={rsiYAccessor}
         options={rsiCalculator.options()}
       />

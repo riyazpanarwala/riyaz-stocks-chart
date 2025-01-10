@@ -19,6 +19,7 @@ const useCommonHeader = (isEchart) => {
   const [candleData, setCandleData] = useState([]);
   const [timeData, setTimeData] = useState([]);
   const { companyArr, companyObj, setCompany } = useParseCsv();
+  let countdownInterval;
 
   const setCandleArr = (arr) => {
     let timeArr = [];
@@ -52,6 +53,13 @@ const useCommonHeader = (isEchart) => {
     setCandleData(dataArr);
   };
 
+  const startTimer = () => {
+    clearTimeout(countdownInterval);
+    countdownInterval = setTimeout(() => {
+      setApiCall((prevState) => prevState + 1);
+    }, 1000 * 60);
+  };
+
   const callHistoricApi = async () => {
     const arr = await getHistoricData(
       intervalObj.value,
@@ -69,6 +77,7 @@ const useCommonHeader = (isEchart) => {
       indexObj.value
     );
     setCandleArr(arr);
+    startTimer();
   };
 
   const handleIntervalChange = (obj) => {
@@ -108,6 +117,7 @@ const useCommonHeader = (isEchart) => {
   };
 
   useEffect(() => {
+    clearTimeout(countdownInterval);
     if (
       intervalObj.value &&
       intradayObj.value &&
@@ -122,6 +132,8 @@ const useCommonHeader = (isEchart) => {
         callHistoricApi();
       }
     }
+    // Cleanup function to clear the interval when the component unmounts
+    return () => clearTimeout(countdownInterval);
   }, [apiCall]);
 
   useEffect(() => {

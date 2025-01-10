@@ -624,7 +624,7 @@ const FinanceChart = ({
               />
 
               <CustomTooltip
-                origin={[8, 16]}
+                origin={[8, 32]}
                 yAccessor={(d) => d.obv}
                 displayFormat={format(".2s")}
                 tooltipName="OBV"

@@ -28,19 +28,19 @@ const DMI = () => {
       <LineSeries yAccessor={(d) => d.adx} strokeStyle={adxColor} />
 
       <CustomTooltip
-        origin={[8, 16]}
+        origin={[8, 32]}
         yAccessor={(d) => d.adx}
         tooltipName="ADX"
         textFill={adxColor}
       />
       <CustomTooltip
-        origin={[8, 32]}
+        origin={[8, 48]}
         yAccessor={(d) => d.plusDI}
         tooltipName="DI+"
         textFill={plusDIColor}
       />
       <CustomTooltip
-        origin={[8, 48]}
+        origin={[8, 64]}
         yAccessor={(d) => d.minusDI}
         tooltipName="DI-"
         textFill={minusDIColor}
