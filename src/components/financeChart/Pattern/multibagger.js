@@ -1,3 +1,5 @@
+import { rsi } from "react-financial-charts";
+
 export const calculateADX = (candles, index, period) => {
   if (index < period) return null; // Not enough data
 
@@ -67,8 +69,16 @@ export const calculateAverageVolume = (candles, index, period) => {
   return total / period;
 };
 
-export const multibagger = (candles) => {
+export const multibagger = (candles1) => {
   const results = [];
+
+  const rsiCalculator = rsi()
+    .options({ windowSize: 14 })
+    .merge((d, c) => {
+      d.rsi = c;
+    });
+
+  const candles = rsiCalculator(candles1);
 
   for (let i = 1; i < candles.length; i++) {
     const current = candles[i];
@@ -87,8 +97,9 @@ export const multibagger = (candles) => {
     const isVolumeSpike = current.volume > avgVolume * 1.5;
 
     // Criteria 4: RSI Confirmation
-    const rsi = calculateRSI(candles, i, 14); // 14-period RSI
-    const isRSIBullish = rsi >= 50 && rsi <= 70;
+    // const rsi = calculateRSI(candles, i, 14); // 14-period RSI
+    // console.log(rsi, current.rsi);
+    const isRSIBullish = current.rsi >= 50 && rsi <= 70;
 
     // Criteria 5: ADX Confirmation
     const adx = calculateADX(candles, i, 14); // 14-period ADX
