@@ -72,6 +72,11 @@ const Sidebar = ({
   ];
   const patternArr = [
     {
+      id: "multibagger",
+      name: "MultiBagger",
+      isActive: patternName === "multibagger",
+    },
+    {
       id: "marubozu",
       name: "Marubozu",
       isActive: patternName === "marubozu",

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import AnnotateChart from "./AnnotateChart";
 import { volumeBreakout, supportResistanceBreakout } from "./indicator";
 
-const Breakout = ({ patternName, data }) => {
+const Breakout = ({ patternName, data, isIntraday }) => {
   const [dataArr, setDataArr] = useState([]);
 
   useEffect(() => {
@@ -23,6 +23,7 @@ const Breakout = ({ patternName, data }) => {
       tooltipCallback={(patternObj) =>
         `(${patternObj.close}) ${patternObj.date}`
       }
+      origin={isIntraday ? [8, 48] : [8, 32]}
     />
   );
 };

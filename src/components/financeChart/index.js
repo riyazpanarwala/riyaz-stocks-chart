@@ -353,13 +353,21 @@ const FinanceChart = ({
         <CandlestickSeries />
 
         {breakoutName ? (
-          <Breakout patternName={breakoutName} data={initialData} />
+          <Breakout
+            patternName={breakoutName}
+            data={initialData}
+            isIntraday={isIntraday}
+          />
         ) : (
           ""
         )}
 
         {patternName ? (
-          <PatternChart patternName={patternName} data={initialData} />
+          <PatternChart
+            patternName={patternName}
+            data={initialData}
+            isIntraday={isIntraday}
+          />
         ) : (
           ""
         )}

@@ -11,6 +11,7 @@ const AnnotateChart = ({
   tooltipName,
   tooltipTxt,
   tooltipCallback,
+  origin: [x, y],
 }) => {
   const getColor = (patternObj) => {
     if (patternObj.bull) return "Green";
@@ -34,7 +35,7 @@ const AnnotateChart = ({
     return (
       <g
         className={"react-financial-charts-tooltip"}
-        transform={`translate(8, 32)`}
+        transform={`translate(${x}, ${y})`}
       >
         <ToolTipText x={0} y={0}>
           <ToolTipTSpanLabel>{tooltipName}: </ToolTipTSpanLabel>
