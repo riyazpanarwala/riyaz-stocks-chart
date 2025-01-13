@@ -1,12 +1,12 @@
 import { getHistoricData } from "../getIntervalData.js";
-import { calculateRSI, multibagger } from "../financeChart/Pattern";
+import { multibagger } from "../financeChart/Pattern";
 import {
   dmi,
+  rsi,
   volumeBreakout,
   supportResistanceBreakout,
 } from "../financeChart/indicator";
 import fs from "fs";
-import intradayData from "./intraday-jppower.js";
 // const { saveAs } = require("file-saver");
 
 const stockAnalysis = async (
@@ -38,11 +38,11 @@ const stockAnalysis = async (
     ];
   });
 
-  const rsi = calculateRSI(candles, candles.length - 1, 14);
+  const rsiValues = rsi(candles, 14);
   const { plusDI, minusDI, adx } = dmi(candles, 14);
 
   return {
-    rsi: rsi,
+    rsi: rsiValues[rsiValues.length - 1],
     adx: adx[adx.length - 1],
     "DI+": plusDI[plusDI.length - 1],
     "DI-": minusDI[minusDI.length - 1],
@@ -99,7 +99,10 @@ const stocksAnalysis = () => {
       "day",
       item.ISIN,
       item.isBSE ? "BSE_EQ" : "NSE_EQ",
-      "1y"
+      "1y",
+      true,
+      true,
+      true
     );
 
     jsonObj[item.name] = data;
