@@ -8,6 +8,7 @@ import {
   indexArr,
 } from "./utils/data";
 import { getHistoricData, getIntradayData } from "./getIntervalData";
+import isTradingActive from "./utils/isTradingActive";
 
 const useCommonHeader = (isEchart) => {
   const [period, setPeriod] = useState(periods[0]);
@@ -54,10 +55,12 @@ const useCommonHeader = (isEchart) => {
   };
 
   const startTimer = () => {
-    clearTimeout(countdownInterval);
-    countdownInterval = setTimeout(() => {
-      setApiCall((prevState) => prevState + 1);
-    }, 1000 * 60);
+    if (isTradingActive()) {
+      clearTimeout(countdownInterval);
+      countdownInterval = setTimeout(() => {
+        setApiCall((prevState) => prevState + 1);
+      }, 1000 * 60);
+    }
   };
 
   const callHistoricApi = async () => {
