@@ -6,6 +6,7 @@ import {
   macd,
   atr,
   roc,
+  sma,
   volumeBreakout,
   supportResistanceBreakout,
 } from "../financeChart/indicator";
@@ -47,6 +48,8 @@ const stockAnalysis = async (
   const atrValues = atr(candles);
   const roc21 = roc(candles, 21);
   const roc125 = roc(candles, 125);
+  const sma50 = sma(candles, 50, "close");
+  const sma200 = sma(candles, 200, "close");
 
   return {
     "RSI(14)": rsiValues[rsiValues.length - 1],
@@ -61,25 +64,27 @@ const stockAnalysis = async (
     "Day ATR": atrValues[atrValues.length - 1],
     "Day ROC(21)": roc21[roc21.length - 1],
     "Day ROC(125)": roc125[roc125.length - 1],
+    "SMA(50)": sma50[sma50.length - 1],
+    "SMA(200)": sma200[sma200.length - 1],
   };
 };
 
 const aa = [
   { name: "JPPOWER", ISIN: "INE351F01018", isBSE: false },
-  { name: "MAZDOCK", ISIN: "INE249Z01020", isBSE: false },
-  { name: "NHPC", ISIN: "INE848E01016", isBSE: false },
-  { name: "COALINDIA", ISIN: "INE522F01014", isBSE: false },
-  { name: "IRFC", ISIN: "INE053F01010", isBSE: false },
-  { name: "ONGC", ISIN: "INE213A01029", isBSE: false },
-  { name: "RPOWER", ISIN: "INE614G01033", isBSE: false },
-  { name: "SUZLON", ISIN: "INE040H01021", isBSE: false },
-  { name: "SEPC", ISIN: "INE964H01014", isBSE: false },
-  { name: "BPCL", ISIN: "INE029A01011", isBSE: false },
-  { name: "GTLINFRA", ISIN: "INE221H01019", isBSE: false },
-  { name: "VEDANTA", ISIN: "INE205A01025", isBSE: false },
-  { name: "BEL", ISIN: "INE263A01024", isBSE: false },
-  { name: "NBCC", ISIN: "INE095N01031", isBSE: false },
-  { name: "SRESTHAFINVEST", ISIN: "INE606K01049", isBSE: true },
+  // { name: "MAZDOCK", ISIN: "INE249Z01020", isBSE: false },
+  // { name: "NHPC", ISIN: "INE848E01016", isBSE: false },
+  // { name: "COALINDIA", ISIN: "INE522F01014", isBSE: false },
+  // { name: "IRFC", ISIN: "INE053F01010", isBSE: false },
+  // { name: "ONGC", ISIN: "INE213A01029", isBSE: false },
+  // { name: "RPOWER", ISIN: "INE614G01033", isBSE: false },
+  // { name: "SUZLON", ISIN: "INE040H01021", isBSE: false },
+  // { name: "SEPC", ISIN: "INE964H01014", isBSE: false },
+  // { name: "BPCL", ISIN: "INE029A01011", isBSE: false },
+  // { name: "GTLINFRA", ISIN: "INE221H01019", isBSE: false },
+  // { name: "VEDANTA", ISIN: "INE205A01025", isBSE: false },
+  // { name: "BEL", ISIN: "INE263A01024", isBSE: false },
+  // { name: "NBCC", ISIN: "INE095N01031", isBSE: false },
+  // { name: "SRESTHAFINVEST", ISIN: "INE606K01049", isBSE: true },
 ];
 
 const saveFile = (jsonObj) => {
