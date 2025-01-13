@@ -1,4 +1,4 @@
-import { getHistoricData } from "../getIntervalData.js";
+import { getHistoricData, getIntradayData } from "../getIntervalData.js";
 import { multibagger } from "../financeChart/Pattern";
 import {
   dmi,
@@ -12,6 +12,33 @@ import {
 } from "../financeChart/indicator";
 import fs from "fs";
 // const { saveAs } = require("file-saver");
+
+const getDayDataFromIntraday = (intradayData) => {
+  const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
+
+  const maxValue = Math.max.apply(
+    Math,
+    intradayData.map((d) => d[2])
+  );
+  const minValue = Math.min.apply(
+    Math,
+    intradayData.map((d) => d[3])
+  );
+
+  return {
+    date: intradayData[0][0].split("T")[0],
+    open: intradayData[0][1],
+    close: intradayData[intradayData.length - 1][4],
+    high: maxValue,
+    low: minValue,
+    volume: total,
+  };
+};
+
+const getIntradayObj = async (companyName, indexName) => {
+  const arr1 = await getIntradayData("30minute", companyName, indexName);
+  return getDayDataFromIntraday(arr1.data.candles?.reverse());
+};
 
 const stockAnalysis = async (
   interval,
@@ -41,6 +68,9 @@ const stockAnalysis = async (
       },
     ];
   });
+
+  const currentObj = await getIntradayObj(companyName, indexName);
+  candles = [...candles, currentObj];
 
   const rsiValues = rsi(candles, 14);
   const { plusDI, minusDI, adx } = dmi(candles, 14);
@@ -129,37 +159,6 @@ const stocksAnalysis = () => {
     }
   });
 };
-
-/*
-const bb = () => {
-  const total = intradayData.reduce((sum, candle) => sum + candle.volume, 0);
-
-  const maxValue = Math.max.apply(
-    Math,
-    intradayData.map(function (d) {
-      return d.high;
-    })
-  );
-  const minValue = Math.min.apply(
-    Math,
-    intradayData.map(function (d) {
-      return d.low;
-    })
-  );
-
-  const dayData = {
-    date: intradayData[0].date.split(" ")[0],
-    open: intradayData[0].open,
-    close: intradayData[intradayData.length - 1].close,
-    high: maxValue,
-    low: minValue,
-    volume: total,
-  };
-  console.log(dayData);
-};
-
-bb();
-*/
 
 stocksAnalysis();
 
