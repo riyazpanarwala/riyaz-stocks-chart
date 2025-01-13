@@ -5,8 +5,14 @@ const smooth = (data, period) => {
     if (i < period) {
       smoothed.push(null); // Not enough data to smooth
     } else {
-      const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
-      smoothed.push(sum / period);
+      if (smoothed[i - 1]) {
+        smoothed.push((smoothed[i - 1] * (period - 1) + data[i]) / period);
+      } else {
+        const sum = data
+          .slice(i - period + 1, i + 1)
+          .reduce((a, b) => a + b, 0);
+        smoothed.push(sum / period);
+      }
     }
   }
   return smoothed;
