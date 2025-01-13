@@ -1,7 +1,8 @@
-import { rsi, sma } from "react-financial-charts";
-import { dmi } from "../indicator";
+// import { rsi, sma } from "react-financial-charts";
+import { dmi, sma, rsi } from "../indicator";
 
-export const calculateRSI = (candles) => {
+/*
+export const calculateRSI1 = (candles) => {
   const rsiCalculator = rsi()
     .options({ windowSize: 14 })
     .merge((d, c) => {
@@ -30,15 +31,20 @@ export const calculateMovingAverage = (candles, windowSize, key) => {
 
   return smaCalc(candles);
 };
+*/
 
-export const multibagger = (candles1) => {
+export const multibagger = (candles) => {
   const results = [];
-  let candles = [];
 
-  candles = calculateRSI(candles1);
-  candles = calculateAverageVolume(candles);
-  candles = calculateMovingAverage(candles, 200, "sma200");
-  candles = calculateMovingAverage(candles, 50, "sma50");
+  // candles = calculateRSI1(candles1);
+  // candles = calculateAverageVolume(candles);
+  // candles = calculateMovingAverage(candles, 200, "sma200");
+  // candles = calculateMovingAverage(candles, 50, "sma50");
+
+  const sma50 = sma(candles, 50, "close");
+  const sma200 = sma(candles, 200, "close");
+  const smaVolume20 = sma(candles, 20, "volume");
+  const rsiValues = rsi(candles);
 
   const { adx } = dmi(candles);
 
@@ -52,15 +58,15 @@ export const multibagger = (candles1) => {
     // Criteria 2: Moving Average Crossover
     // 50-day MA
     // 200-day MA
-    const isMovingAverageBullish = current.sma50 > current.sma200;
+    const isMovingAverageBullish = sma50[i] > sma200[i];
 
     // Criteria 3: Volume Spike
     // 20-day avg volume
-    const isVolumeSpike = current.volume > current.smaVolume20 * 1.5;
+    const isVolumeSpike = current.volume > smaVolume20[i] * 1.5;
 
     // Criteria 4: RSI Confirmation
     // 14-period RSI
-    const isRSIBullish = current.rsi >= 50 && current.rsi <= 70;
+    const isRSIBullish = rsiValues[i] >= 50 && rsiValues[i] <= 70;
 
     // Criteria 5: ADX Confirmation
     // 14-period ADX
@@ -74,7 +80,7 @@ export const multibagger = (candles1) => {
       isRSIBullish &&
       isADXStrongTrend
     ) {
-      results.push({ ...current, rsi, adx });
+      results.push({ ...current, rsi: rsiValues[i], adx: adx[i] });
     }
   }
 
