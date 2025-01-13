@@ -3,6 +3,7 @@ import { multibagger } from "../financeChart/Pattern";
 import {
   dmi,
   rsi,
+  macd,
   volumeBreakout,
   supportResistanceBreakout,
 } from "../financeChart/indicator";
@@ -40,6 +41,7 @@ const stockAnalysis = async (
 
   const rsiValues = rsi(candles, 14);
   const { plusDI, minusDI, adx } = dmi(candles, 14);
+  const { macdLine, signalLine } = macd(candles);
 
   return {
     rsi: rsiValues[rsiValues.length - 1],
@@ -49,6 +51,8 @@ const stockAnalysis = async (
     volumeBreak: isVolumeBreak ? volumeBreakout(candles) : [],
     supportBreak: isSupportBreak ? supportResistanceBreakout(candles) : [],
     multibagger: isMultibagger ? multibagger(candles) : [],
+    macd: macdLine[macdLine.length - 1],
+    macdSignal: signalLine[signalLine.length - 1],
   };
 };
 
@@ -100,9 +104,9 @@ const stocksAnalysis = () => {
       item.ISIN,
       item.isBSE ? "BSE_EQ" : "NSE_EQ",
       "1y",
-      true,
-      true,
-      true
+      false,
+      false,
+      false
     );
 
     jsonObj[item.name] = data;
