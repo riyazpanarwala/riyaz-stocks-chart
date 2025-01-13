@@ -6,3 +6,5 @@ export * from "./sma";
 export * from "./rsi";
 export * from "./macd";
 export * from "./ema";
+export * from "./atr";
+export * from "./roc";

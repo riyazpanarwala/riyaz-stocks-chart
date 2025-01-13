@@ -4,6 +4,8 @@ import {
   dmi,
   rsi,
   macd,
+  atr,
+  roc,
   volumeBreakout,
   supportResistanceBreakout,
 } from "../financeChart/indicator";
@@ -42,17 +44,23 @@ const stockAnalysis = async (
   const rsiValues = rsi(candles, 14);
   const { plusDI, minusDI, adx } = dmi(candles, 14);
   const { macdLine, signalLine } = macd(candles);
+  const atrValues = atr(candles);
+  const roc21 = roc(candles, 21);
+  const roc125 = roc(candles, 125);
 
   return {
-    rsi: rsiValues[rsiValues.length - 1],
-    adx: adx[adx.length - 1],
+    "RSI(14)": rsiValues[rsiValues.length - 1],
+    "DAY ADX": adx[adx.length - 1],
     "DI+": plusDI[plusDI.length - 1],
     "DI-": minusDI[minusDI.length - 1],
     volumeBreak: isVolumeBreak ? volumeBreakout(candles) : [],
     supportBreak: isSupportBreak ? supportResistanceBreakout(candles) : [],
     multibagger: isMultibagger ? multibagger(candles) : [],
-    macd: macdLine[macdLine.length - 1],
-    macdSignal: signalLine[signalLine.length - 1],
+    "DAY MACD(12,26,9)": macdLine[macdLine.length - 1],
+    "DAY MACD SIGNAL": signalLine[signalLine.length - 1],
+    "Day ATR": atrValues[atrValues.length - 1],
+    "Day ROC(21)": roc21[roc21.length - 1],
+    "Day ROC(125)": roc125[roc125.length - 1],
   };
 };
 
