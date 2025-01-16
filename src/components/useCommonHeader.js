@@ -7,7 +7,12 @@ import {
   periods,
   indexArr,
 } from "./utils/data";
-import { getHistoricData, getIntradayData } from "./getIntervalData";
+import {
+  getHistoricData,
+  getIntradayData,
+  getHistoricDataNSE,
+  // getNSEData,
+} from "./getIntervalData";
 import isTradingActive from "./utils/isTradingActive";
 
 const useCommonHeader = (isEchart) => {
@@ -64,13 +69,21 @@ const useCommonHeader = (isEchart) => {
   };
 
   const callHistoricApi = async () => {
-    const arr = await getHistoricData(
-      intervalObj.value,
-      companyObj.value,
-      indexObj.value,
-      period
-    );
-    setCandleArr(arr);
+    if (intervalObj.value === "day" && indexObj.value === "NSE_EQ") {
+      const { candles } = await getHistoricDataNSE(companyObj.symbol, period);
+      setCandleData(candles);
+      // getNSEData("corporateInfo", companyObj.symbol);
+      // getNSEData("details", companyObj.symbol);
+      // getNSEData("tradeInfo", companyObj.symbol);
+    } else {
+      const arr = await getHistoricData(
+        intervalObj.value,
+        companyObj.value,
+        indexObj.value,
+        period
+      );
+      setCandleArr(arr);
+    }
   };
 
   const callIntradayApi = async () => {

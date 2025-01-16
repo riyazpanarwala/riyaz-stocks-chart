@@ -25,7 +25,8 @@
     "react-papaparse": "^4.4.0",
     "react-select": "^5.9.0",
     "react-window": "^1.8.11",
-    "sass": "^1.83.0"
+    "sass": "^1.83.0",
+    "stock-nse-india": "^1.2.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
