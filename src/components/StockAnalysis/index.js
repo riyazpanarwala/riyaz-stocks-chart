@@ -1,4 +1,8 @@
-import { getHistoricData, getIntradayData } from "../getIntervalData.js";
+import {
+  getHistoricData,
+  getIntradayData,
+  getHistoricDataNSE,
+} from "../getIntervalData.js";
 import { multibagger } from "../financeChart/Pattern";
 import {
   dmi,
@@ -12,6 +16,14 @@ import {
 } from "../financeChart/indicator";
 import fs from "fs";
 // const { saveAs } = require("file-saver");
+
+const sleep = (ms) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, ms);
+  });
+};
 
 const getDayDataFromIntraday = (intradayData) => {
   const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
@@ -45,32 +57,44 @@ const stockAnalysis = async (
   companyName,
   indexName,
   isFrom,
+  symbol,
   isVolumeBreak,
   isSupportBreak,
   isMultibagger
 ) => {
-  const arr = await getHistoricData(interval, companyName, indexName, isFrom);
-  const dataArr = arr.data.candles?.reverse();
-
   let candles = [];
-  dataArr?.forEach((item, i) => {
-    const aa = item[0].split("T");
-    const hhmmss = aa[1].split("+")[0];
-    candles = [
-      ...candles,
-      {
-        date: `${aa[0]} ${hhmmss}`,
-        open: item[1],
-        high: item[2],
-        low: item[3],
-        close: item[4],
-        volume: item[5],
-      },
-    ];
-  });
+  let arr = [];
 
-  const currentObj = await getIntradayObj(companyName, indexName);
-  candles = [...candles, currentObj];
+  if (interval === "day" && indexName === "NSE_EQ" && true) {
+    arr = await getHistoricDataNSE(symbol, isFrom);
+    candles = arr.candles;
+  } else {
+    arr = await getHistoricData(interval, companyName, indexName, isFrom);
+    const dataArr = arr.data.candles?.reverse();
+
+    dataArr?.forEach((item, i) => {
+      const aa = item[0].split("T");
+      const hhmmss = aa[1].split("+")[0];
+      candles = [
+        ...candles,
+        {
+          date: `${aa[0]} ${hhmmss}`,
+          open: item[1],
+          high: item[2],
+          low: item[3],
+          close: item[4],
+          volume: item[5],
+        },
+      ];
+    });
+
+    const currentObj = await getIntradayObj(companyName, indexName);
+    candles = [...candles, currentObj];
+  }
+  console.log(symbol);
+  const lastClose = candles[candles.length - 1].close;
+  const prevlastClose = candles[candles.length - 2].close;
+  const percentChange = ((lastClose - prevlastClose) * 100) / prevlastClose;
 
   const rsiValues = rsi(candles, 14);
   const { plusDI, minusDI, adx } = dmi(candles, 14);
@@ -96,29 +120,39 @@ const stockAnalysis = async (
     "Day ROC(125)": roc125[roc125.length - 1],
     "SMA(50)": sma50[sma50.length - 1],
     "SMA(200)": sma200[sma200.length - 1],
+    lastClose: lastClose,
+    percentChange,
   };
 };
 
 const aa = [
-  { name: "JPPOWER", ISIN: "INE351F01018", isBSE: false },
-  // { name: "MAZDOCK", ISIN: "INE249Z01020", isBSE: false },
-  // { name: "NHPC", ISIN: "INE848E01016", isBSE: false },
-  // { name: "COALINDIA", ISIN: "INE522F01014", isBSE: false },
-  // { name: "IRFC", ISIN: "INE053F01010", isBSE: false },
-  // { name: "ONGC", ISIN: "INE213A01029", isBSE: false },
-  // { name: "RPOWER", ISIN: "INE614G01033", isBSE: false },
-  // { name: "SUZLON", ISIN: "INE040H01021", isBSE: false },
-  // { name: "SEPC", ISIN: "INE964H01014", isBSE: false },
-  // { name: "BPCL", ISIN: "INE029A01011", isBSE: false },
-  // { name: "GTLINFRA", ISIN: "INE221H01019", isBSE: false },
-  // { name: "VEDANTA", ISIN: "INE205A01025", isBSE: false },
-  // { name: "BEL", ISIN: "INE263A01024", isBSE: false },
-  // { name: "NBCC", ISIN: "INE095N01031", isBSE: false },
-  // { name: "SRESTHAFINVEST", ISIN: "INE606K01049", isBSE: true },
+  { name: "JPPOWER", symbol: "JPPOWER", ISIN: "INE351F01018", isBSE: false },
+  { name: "MAZDOCK", symbol: "MAZDOCK", ISIN: "INE249Z01020", isBSE: false },
+  { name: "NHPC", symbol: "NHPC", ISIN: "INE848E01016", isBSE: false },
+  {
+    name: "COALINDIA",
+    symbol: "COALINDIA",
+    ISIN: "INE522F01014",
+    isBSE: false,
+  },
+  { name: "IRFC", symbol: "IRFC", ISIN: "INE053F01010", isBSE: false },
+  { name: "ONGC", symbol: "ONGC", ISIN: "INE213A01029", isBSE: false },
+  { name: "RPOWER", symbol: "RPOWER", ISIN: "INE614G01033", isBSE: false },
+  { name: "SUZLON", symbol: "SUZLON", ISIN: "INE040H01021", isBSE: false },
+  { name: "SEPC", symbol: "SEPC", ISIN: "INE964H01014", isBSE: false },
+  { name: "BPCL", symbol: "BPCL", ISIN: "INE029A01011", isBSE: false },
+  { name: "GTLINFRA", symbol: "GTLINFRA", ISIN: "INE221H01019", isBSE: false },
+  { name: "VEDANTA", symbol: "VEDL", ISIN: "INE205A01025", isBSE: false },
+  { name: "BEL", symbol: "BEL", ISIN: "INE263A01024", isBSE: false },
+  { name: "NBCC", symbol: "NBCC", ISIN: "INE095N01031", isBSE: false },
+  { name: "SRESTHAFINVEST", ISIN: "INE606K01049", isBSE: true },
 ];
 
 const saveFile = (jsonObj) => {
-  const fileName = `myData-${new Date().getTime()}.json`;
+  const b = new Date().toJSON().split("T");
+  const fileName = `myData-${b[0]}-${b[1]
+    .split(".")[0]
+    .replaceAll(":", "_")}.json`;
   // Create a blob of the data
   // const fileToSave = new Blob([JSON.stringify(jsonData)], {
   //  type: "application/json",
@@ -138,15 +172,16 @@ const saveFile = (jsonObj) => {
   });
 };
 
-const stocksAnalysis = () => {
+const stocksAnalysis = async () => {
   const jsonObj = {};
 
-  aa.forEach(async (item, i) => {
+  const analyse = async (item, i) => {
     const data = await stockAnalysis(
       "day",
       item.ISIN,
       item.isBSE ? "BSE_EQ" : "NSE_EQ",
       "1y",
+      item.symbol,
       false,
       false,
       false
@@ -157,7 +192,13 @@ const stocksAnalysis = () => {
     if (aa.length === Object.keys(jsonObj).length) {
       saveFile(jsonObj);
     }
-  });
+  };
+
+  aa.slice(0, 5).forEach(analyse);
+  await sleep(2000);
+  aa.slice(5, 10).forEach(analyse);
+  await sleep(2000);
+  aa.slice(10, 15).forEach(analyse);
 };
 
 stocksAnalysis();
