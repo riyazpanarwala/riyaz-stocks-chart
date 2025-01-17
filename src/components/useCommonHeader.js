@@ -69,8 +69,12 @@ const useCommonHeader = (isEchart) => {
     }
   };
 
-  const callHistoricApi = async () => {
-    if (intervalObj.value === "day" && indexObj.value !== "BSE_EQ") {
+  const callHistoricApi = async (isCallNSE) => {
+    if (
+      intervalObj.value === "day" &&
+      indexObj.value !== "BSE_EQ" &&
+      isCallNSE
+    ) {
       let apiName = "historic";
       if (companyObj.index) {
         apiName = "indexHistoric";
