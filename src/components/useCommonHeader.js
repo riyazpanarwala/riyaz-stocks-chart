@@ -6,6 +6,7 @@ import {
   intervalArr1,
   periods,
   indexArr,
+  index1Arr,
 } from "./utils/data";
 import {
   getHistoricData,
@@ -17,10 +18,10 @@ import isTradingActive from "./utils/isTradingActive";
 
 const useCommonHeader = (isEchart) => {
   const [period, setPeriod] = useState(periods[0]);
-  const [intervalObj, setInterval] = useState(intervalArr1[0]);
+  const [intervalObj, setInterval] = useState([]);
   const [intradayObj, setIntradayOrHistoric] = useState(intraArr[1]);
-  const [indexObj, setIndex] = useState(indexArr[0]);
-  const [newIndexArr, setNewIndexArr] = useState(indexArr);
+  const [indexObj, setIndex] = useState({});
+  const [newIndexArr, setNewIndexArr] = useState([]);
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
   const [timeData, setTimeData] = useState([]);
@@ -69,9 +70,19 @@ const useCommonHeader = (isEchart) => {
   };
 
   const callHistoricApi = async () => {
-    if (intervalObj.value === "day" && indexObj.value === "NSE_EQ") {
-      const { candles } = await getHistoricDataNSE(companyObj.symbol, period);
+    if (intervalObj.value === "day" && indexObj.value !== "BSE_EQ") {
+      let apiName = "historic";
+      if (companyObj.index) {
+        apiName = "indexHistoric";
+      }
+      const { candles } = await getHistoricDataNSE(
+        companyObj.symbol,
+        period,
+        apiName
+      );
       setCandleData(candles);
+
+      // getNSEData("F&O", "NIFTY");
       // getNSEData("corporateInfo", companyObj.symbol);
       // getNSEData("details", companyObj.symbol);
       // getNSEData("tradeInfo", companyObj.symbol);
@@ -100,17 +111,30 @@ const useCommonHeader = (isEchart) => {
     setInterval(obj);
   };
 
-  const handleCompanyChange = (companyObj) => {
-    if (companyObj.nse && companyObj.bse) {
+  const setIndexes = ({ nse, bse, index }) => {
+    if (nse && bse) {
       setNewIndexArr(indexArr);
       setIndex(indexArr[0]);
-    } else if (companyObj.nse) {
+    } else if (nse) {
       setNewIndexArr([indexArr[0]]);
       setIndex(indexArr[0]);
-    } else if (companyObj.bse) {
+    } else if (bse) {
       setNewIndexArr([indexArr[1]]);
       setIndex(indexArr[1]);
+    } else if (index) {
+      setNewIndexArr([index1Arr[0]]);
+      setIndex(index1Arr[0]);
     }
+  };
+
+  useEffect(() => {
+    if (!indexObj.value && companyObj.label) {
+      setIndexes(companyObj);
+    }
+  }, [companyObj]);
+
+  const handleCompanyChange = (companyObj) => {
+    setIndexes(companyObj);
     setCompany(companyObj);
   };
 
@@ -118,15 +142,28 @@ const useCommonHeader = (isEchart) => {
     setIndex(obj);
   };
 
-  const handleIntradayChange = (obj) => {
-    const val = obj.value;
-    if (val === "intraday") {
+  const isIntraday = (value) => {
+    return value === "intraday";
+  };
+
+  const setIntervalData = ({ value }) => {
+    if (isIntraday()) {
       setInterval(intervalArr[0]);
     } else {
       setInterval(intervalArr1[0]);
     }
+  };
+
+  const handleIntradayChange = (obj) => {
+    setIntervalData(obj);
     setIntradayOrHistoric(obj);
   };
+
+  useEffect(() => {
+    if (!intervalObj.value) {
+      setIntervalData(intradayObj);
+    }
+  }, [intradayObj]);
 
   const handlePeriodChange = (obj) => {
     setPeriod(obj);
@@ -134,15 +171,9 @@ const useCommonHeader = (isEchart) => {
 
   useEffect(() => {
     clearTimeout(countdownInterval);
-    if (
-      intervalObj.value &&
-      intradayObj.value &&
-      companyObj.value &&
-      indexObj.value &&
-      apiCall > 0
-    ) {
+    if (apiCall > 0) {
       setCandleData([]);
-      if (intradayObj.value === "intraday") {
+      if (isIntraday(intradayObj.value)) {
         callIntradayApi();
       } else {
         callHistoricApi();
@@ -153,7 +184,14 @@ const useCommonHeader = (isEchart) => {
   }, [apiCall]);
 
   useEffect(() => {
-    setApiCall((prevState) => prevState + 1);
+    if (
+      intervalObj.value &&
+      intradayObj.value &&
+      companyObj.value &&
+      indexObj.value
+    ) {
+      setApiCall((prevState) => prevState + 1);
+    }
   }, [intervalObj, intradayObj, companyObj, period, indexObj]);
 
   return {

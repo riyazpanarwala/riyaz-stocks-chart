@@ -29,3 +29,5 @@ export const indexArr = [
   { label: "NSE", value: "NSE_EQ" },
   { label: "BSE", value: "BSE_EQ" },
 ];
+
+export const index1Arr = [{ label: "NSE INDEX", value: "NSE_INDEX" }];

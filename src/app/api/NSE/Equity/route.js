@@ -21,6 +21,16 @@ export async function POST(req) {
         end: toDate,
       };
       data = await nseIndia.getEquityHistoricalData(symbol, range);
+    } else if (apiName === "indexIntraday") {
+      data = await nseIndia.getIndexIntradayData(symbol);
+    } else if (apiName === "F&O") {
+      data = await nseIndia.getIndexOptionChain(symbol);
+    } else if (apiName === "indexHistoric") {
+      const range = {
+        start: fromDate,
+        end: toDate,
+      };
+      data = await nseIndia.getIndexHistoricalData(symbol, range);
     }
 
     return NextResponse.json(data, { status: 200 });

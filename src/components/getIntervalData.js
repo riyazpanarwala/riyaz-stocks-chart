@@ -24,7 +24,15 @@ export const getNSEData = async (apiName, symbol) => {
   }
 };
 
-export const getHistoricDataNSE = async (symbol, isFrom) => {
+export const getUniqueListBy = (arr, key) => {
+  return [...new Map(arr.map((item) => [item[key], item])).values()];
+};
+
+export const getHistoricDataNSE = async (
+  symbol,
+  isFrom,
+  apiName = "historic"
+) => {
   const headers = {
     Accept: "application/json",
   };
@@ -38,28 +46,51 @@ export const getHistoricDataNSE = async (symbol, isFrom) => {
     fromDate,
     toDate,
     symbol,
-    apiName: "historic",
+    apiName,
   };
 
   try {
     const response = await axios.post(nseBaseUrl, payload, { headers });
 
     let candles = [];
-    response.data.forEach((v1) => {
-      v1.data?.reverse().forEach((v) => {
-        candles = [
-          ...candles,
-          {
-            high: v.CH_TRADE_HIGH_PRICE,
-            low: v.CH_TRADE_LOW_PRICE,
-            open: v.CH_OPENING_PRICE,
-            close: v.CH_CLOSING_PRICE,
-            volume: v.CH_TOT_TRADED_QTY,
-            date: v.CH_TIMESTAMP,
-          },
-        ];
+
+    if (apiName === "historic") {
+      response.data.forEach((v1) => {
+        v1.data?.reverse().forEach((v) => {
+          candles = [
+            ...candles,
+            {
+              high: v.CH_TRADE_HIGH_PRICE,
+              low: v.CH_TRADE_LOW_PRICE,
+              open: v.CH_OPENING_PRICE,
+              close: v.CH_CLOSING_PRICE,
+              volume: v.CH_TOT_TRADED_QTY,
+              date: v.CH_TIMESTAMP,
+            },
+          ];
+        });
       });
-    });
+    } else {
+      response.data.forEach((v1) => {
+        let newArr = getUniqueListBy(
+          v1.data.indexCloseOnlineRecords,
+          "EOD_TIMESTAMP"
+        );
+        newArr.forEach((v, i) => {
+          candles = [
+            ...candles,
+            {
+              high: v.EOD_HIGH_INDEX_VAL,
+              low: v.EOD_LOW_INDEX_VAL,
+              open: v.EOD_OPEN_INDEX_VAL,
+              close: v.EOD_CLOSE_INDEX_VAL,
+              volume: v1.data.indexTurnoverRecords[i]?.HIT_TRADED_QTY,
+              date: v.EOD_TIMESTAMP,
+            },
+          ];
+        });
+      });
+    }
 
     return { candles };
   } catch (error) {

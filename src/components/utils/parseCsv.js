@@ -1,6 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { usePapaParse } from "react-papaparse";
 
+const indicesArr = [
+  { name: "NIFTY 50", value: "Nifty 50", symbol: "NIFTY 50" },
+  {
+    name: "NIFTY MIDCAP 100",
+    value: "NIFTY MIDCAP 100",
+    symbol: "NIFTY MIDCAP 100",
+  },
+  {
+    name: "NIFTY SMALLCAP 100",
+    value: "NIFTY SMALLCAP 100",
+    symbol: "NIFTY SMALLCAP 100",
+  },
+  {
+    name: "NIFTY ENERGY",
+    value: "NIFTY ENERGY",
+    symbol: "NIFTY ENERGY",
+  },
+];
+
 const useParseCsv = () => {
   const [nseData, setNseData] = useState([]);
   const [bseData, setBseData] = useState([]);
@@ -22,9 +41,6 @@ const useParseCsv = () => {
           bse: index !== -1,
         };
 
-        if (item[6] === "INE351F01018") {
-          setCompany(obj);
-        }
         merged.push(obj);
       }
     });
@@ -39,6 +55,23 @@ const useParseCsv = () => {
           bse: true,
         });
       }
+    });
+
+    indicesArr.forEach((v) => {
+      let niftyObj = {
+        label: v.name,
+        value: v.value,
+        symbol: v.symbol,
+        nse: false,
+        bse: false,
+        index: true,
+      };
+
+      if (v.value === "Nifty 50") {
+        setCompany(niftyObj);
+      }
+
+      merged.push(niftyObj);
     });
 
     return merged;
