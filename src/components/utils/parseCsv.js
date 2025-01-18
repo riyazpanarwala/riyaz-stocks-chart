@@ -4,21 +4,28 @@ import { usePapaParse } from "react-papaparse";
 const indicesArr = [
   { name: "NIFTY 50", value: "Nifty 50", symbol: "NIFTY 50" },
   {
+    name: "NIFTY BANK",
+    value: "Nifty Bank",
+    symbol: "NIFTY BANK",
+  },
+  {
     name: "NIFTY MIDCAP 100",
     value: "NIFTY MIDCAP 100",
     symbol: "NIFTY MIDCAP 100",
   },
   {
     name: "NIFTY SMALLCAP 100",
-    value: "NIFTY SMALLCAP 100",
+    value: "NIFTY SMLCAP 100",
     symbol: "NIFTY SMALLCAP 100",
   },
   {
     name: "NIFTY ENERGY",
-    value: "NIFTY ENERGY",
+    value: "Nifty Energy",
     symbol: "NIFTY ENERGY",
   },
 ];
+
+const bseIndicesArr = [{ name: "SENSEX", value: "SENSEX", symbol: "SENSEX" }];
 
 const useParseCsv = () => {
   const [nseData, setNseData] = useState([]);
@@ -64,14 +71,25 @@ const useParseCsv = () => {
         symbol: v.symbol,
         nse: false,
         bse: false,
-        index: true,
+        nseIndex: true,
       };
 
-      if (v.value === "Nifty 50") {
-        setCompany(niftyObj);
+      merged.push(niftyObj);
+    });
+
+    bseIndicesArr.forEach((v) => {
+      let obj = {
+        label: v.name,
+        value: v.value,
+        symbol: v.symbol,
+        bseIndex: true,
+      };
+
+      if (v.value === "SENSEX") {
+        setCompany(obj);
       }
 
-      merged.push(niftyObj);
+      merged.push(obj);
     });
 
     return merged;

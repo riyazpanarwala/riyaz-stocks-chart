@@ -16,7 +16,7 @@ const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
   const [measurementEnable, setMeasurementEnable] = useState(false);
   const [textEnable, setTextEnable] = useState(false);
-  const [indicatorName, setIndicatorName] = useState("");
+  const [indicatorName, setIndicatorName] = useState("rsi");
   const [positionName, setPositionName] = useState("");
   const [shapeName, setShapeName] = useState("");
   const [isAngleEnabled, setAngleEnabled] = useState(false);

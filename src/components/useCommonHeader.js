@@ -17,7 +17,7 @@ import {
 import isTradingActive from "./utils/isTradingActive";
 
 const useCommonHeader = (isEchart) => {
-  const [period, setPeriod] = useState(periods[0]);
+  const [period, setPeriod] = useState(periods[1]);
   const [intervalObj, setInterval] = useState([]);
   const [intradayObj, setIntradayOrHistoric] = useState(intraArr[1]);
   const [indexObj, setIndex] = useState({});
@@ -71,12 +71,12 @@ const useCommonHeader = (isEchart) => {
 
   const callHistoricApi = async (isCallNSE) => {
     if (
+      isCallNSE &&
       intervalObj.value === "day" &&
-      indexObj.value !== "BSE_EQ" &&
-      isCallNSE
+      (indexObj.value === "NSE_EQ" || indexObj.value === "NSE_INDEX")
     ) {
       let apiName = "historic";
-      if (companyObj.index) {
+      if (companyObj.nseIndex) {
         apiName = "indexHistoric";
       }
       const { candles } = await getHistoricDataNSE(
@@ -115,7 +115,7 @@ const useCommonHeader = (isEchart) => {
     setInterval(obj);
   };
 
-  const setIndexes = ({ nse, bse, index }) => {
+  const setIndexes = ({ nse, bse, nseIndex, bseIndex }) => {
     if (nse && bse) {
       setNewIndexArr(indexArr);
       setIndex(indexArr[0]);
@@ -125,9 +125,12 @@ const useCommonHeader = (isEchart) => {
     } else if (bse) {
       setNewIndexArr([indexArr[1]]);
       setIndex(indexArr[1]);
-    } else if (index) {
+    } else if (nseIndex) {
       setNewIndexArr([index1Arr[0]]);
       setIndex(index1Arr[0]);
+    } else if (bseIndex) {
+      setNewIndexArr([index1Arr[1]]);
+      setIndex(index1Arr[1]);
     }
   };
 
@@ -151,7 +154,7 @@ const useCommonHeader = (isEchart) => {
   };
 
   const setIntervalData = ({ value }) => {
-    if (isIntraday()) {
+    if (isIntraday(value)) {
       setInterval(intervalArr[0]);
     } else {
       setInterval(intervalArr1[0]);
