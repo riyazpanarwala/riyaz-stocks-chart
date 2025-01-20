@@ -15,7 +15,8 @@ const Breakout = ({ patternName, data, isIntraday }) => {
     } else if (patternName === "volume") {
       setDataArr(volumeBreakout(data));
     } else if (patternName === "buysell") {
-      setDataArr(calculateBuySellBreakouts(data));
+      const { breakoutsArr } = calculateBuySellBreakouts(data);
+      setDataArr(breakoutsArr);
     } else {
       setDataArr([]);
     }

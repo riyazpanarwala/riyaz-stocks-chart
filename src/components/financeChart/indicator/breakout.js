@@ -76,5 +76,64 @@ export const calculateBuySellBreakouts = (data, period = 20) => {
     }
   }
 
-  return breakoutsArr;
+  return { breakoutsArr };
+};
+
+// Function to calculate the moving average
+const calculateMovingAverage = (data, period) => {
+  return data.map((_, idx, arr) => {
+    if (idx < period - 1) return null;
+    const slice = arr.slice(idx - period + 1, idx + 1);
+    const sum = slice.reduce((acc, val) => acc + val.close, 0);
+    return sum / period;
+  });
+};
+
+// Function to calculate the upper and lower channels
+const calculateChannels = (data, period, multiplier) => {
+  const movingAverage = calculateMovingAverage(data, period);
+  const channels = data.map((d, idx) => {
+    if (idx < period - 1) return { upper: null, lower: null };
+    const slice = data.slice(idx - period + 1, idx + 1);
+    const mean = movingAverage[idx];
+    const deviation =
+      slice.reduce((acc, val) => acc + Math.abs(val.close - mean), 0) / period;
+    return {
+      upper: mean + multiplier * deviation,
+      lower: mean - multiplier * deviation,
+    };
+  });
+  return channels;
+};
+
+// Function to identify breakouts
+export const calculateAdaptiveBuySellBreakouts = (
+  data,
+  period = 20,
+  multiplier = 2
+) => {
+  const channels = calculateChannels(data, period, multiplier);
+  const breakoutsArr = [];
+
+  data.forEach((d, idx) => {
+    if (idx < period - 1) return;
+    const { upper, lower } = channels[idx];
+    if (d.close > upper) {
+      if (breakoutsArr[breakoutsArr.length - 1]?.bull !== true) {
+        breakoutsArr.push({
+          ...d,
+          bull: true,
+        });
+      }
+    } else if (d.close < lower) {
+      if (breakoutsArr[breakoutsArr.length - 1]?.bear !== true) {
+        breakoutsArr.push({
+          ...d,
+          bear: true,
+        });
+      }
+    }
+  });
+
+  return { channels, breakoutsArr };
 };
