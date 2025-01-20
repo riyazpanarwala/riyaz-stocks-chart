@@ -27,12 +27,17 @@ const EMAChart = ({ ema26, ema12, angles }) => {
         tooltipName={`EMA(${ema12.options().windowSize})`}
         textFill={ema12.stroke()}
       />
-      <CustomTooltip
-        origin={[8, 64]}
-        yAccessor={(d) => angles[d.idx.index]}
-        tooltipName={`Angle`}
-        textFill={ema26.stroke()}
-      />
+
+      {angles ? (
+        <CustomTooltip
+          origin={[8, 64]}
+          yAccessor={(d) => angles[d.idx.index]}
+          tooltipName={`Angle`}
+          textFill={ema26.stroke()}
+        />
+      ) : (
+        ""
+      )}
     </>
   );
 };

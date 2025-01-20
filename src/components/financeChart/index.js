@@ -40,6 +40,7 @@ import AngleCalculator from "./AngleCalculator";
 import CustomTooltip from "./CustomTooltip";
 import Breakout from "./Breakout";
 import DMI from "./DMI";
+import MACDChart from "./MACDChart";
 import PatternChart from "./PatternChart";
 
 const indicatorYExtentsObj = {
@@ -47,6 +48,7 @@ const indicatorYExtentsObj = {
   rsi: (d) => [0, 100],
   obv: (d) => [0, d.obv],
   dmi: (d) => [d.plusDI + 10, d.minusDI - 10, d.adx + 10],
+  macd: (d) => [d.high, d.low],
 };
 
 const FinanceChart = ({
@@ -80,6 +82,7 @@ const FinanceChart = ({
     rsiCalculator,
     rsiYAccessor,
     angles,
+    macdCalculator,
   } = useData(initialData, indicatorName);
   const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
     (d) => new Date(d.date)
@@ -576,6 +579,12 @@ const FinanceChart = ({
           ""
         )}
 
+        {indicatorName === "macd" ? (
+          <EMAChart ema26={ema26} ema12={ema12} />
+        ) : (
+          ""
+        )}
+
         {/* <ZoomButtons /> */}
         <OHLCTooltip origin={[8, 16]} />
         {isIntraday ? (
@@ -588,7 +597,11 @@ const FinanceChart = ({
       {indicatorName ? (
         <Chart
           id={4}
-          yExtents={indicatorYExtentsObj[indicatorName]}
+          yExtents={
+            indicatorName === "macd"
+              ? macdCalculator.accessor()
+              : indicatorYExtentsObj[indicatorName]
+          }
           height={barChartHeight}
           origin={barChartOrigin}
         >
@@ -635,6 +648,12 @@ const FinanceChart = ({
           )}
 
           {indicatorName === "dmi" ? <DMI /> : ""}
+
+          {indicatorName === "macd" ? (
+            <MACDChart macdCalculator={macdCalculator} />
+          ) : (
+            ""
+          )}
         </Chart>
       ) : (
         ""
