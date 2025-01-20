@@ -1,5 +1,5 @@
 import React from "react";
-import { ema, rsi, macd } from "react-financial-charts";
+import { ema, rsi, macd, sma } from "react-financial-charts";
 import { dmi, obv, emaAngle } from "./indicator";
 
 const emaPeriod1 = 15;
@@ -10,6 +10,7 @@ const useData = (initialData, indicatorName) => {
   let calculatedData = initialData;
   let angles;
   let macdCalculator;
+  let sma20, sma50, sma200;
 
   if (indicatorName === "ema") {
     ema12 = ema()
@@ -84,6 +85,32 @@ const useData = (initialData, indicatorName) => {
       .accessor((d) => d.macd);
 
     calculatedData = macdCalculator(ema12(ema26(initialData)));
+  } else if (indicatorName === "sma") {
+    sma20 = sma()
+      .id(1)
+      .options({ windowSize: 20 })
+      .merge((d, c) => {
+        d.sma20 = c;
+      })
+      .accessor((d) => d.sma20);
+
+    sma50 = sma()
+      .id(2)
+      .options({ windowSize: 50 })
+      .merge((d, c) => {
+        d.sma50 = c;
+      })
+      .accessor((d) => d.sma50);
+
+    sma200 = sma()
+      .id(3)
+      .options({ windowSize: 200 })
+      .merge((d, c) => {
+        d.sma200 = c;
+      })
+      .accessor((d) => d.sma200);
+
+    calculatedData = sma200(sma50(sma20(initialData)));
   }
 
   return {
@@ -94,6 +121,9 @@ const useData = (initialData, indicatorName) => {
     rsiYAccessor,
     angles,
     macdCalculator,
+    sma20,
+    sma50,
+    sma200,
   };
 };
 

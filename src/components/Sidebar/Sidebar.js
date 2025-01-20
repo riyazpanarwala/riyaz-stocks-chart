@@ -44,6 +44,7 @@ const Sidebar = ({
   };
 
   const indicatorArr = [
+    { id: "sma", name: "SMA(20,50,200)", isActive: indicatorName === "sma" },
     { id: "ema", name: "EMA", isActive: indicatorName === "ema" },
     { id: "rsi", name: "RSI", isActive: indicatorName === "rsi" },
     { id: "dmi", name: "DMI", isActive: indicatorName === "dmi" },

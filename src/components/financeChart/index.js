@@ -41,9 +41,11 @@ import CustomTooltip from "./CustomTooltip";
 import Breakout from "./Breakout";
 import DMI from "./DMI";
 import MACDChart from "./MACDChart";
+import SMAChart from "./SMAChart";
 import PatternChart from "./PatternChart";
 
 const indicatorYExtentsObj = {
+  sma: (d) => [d.high, d.low],
   ema: (d) => [d.high, d.low],
   rsi: (d) => [0, 100],
   obv: (d) => [0, d.obv],
@@ -83,6 +85,9 @@ const FinanceChart = ({
     rsiYAccessor,
     angles,
     macdCalculator,
+    sma20,
+    sma50,
+    sma200,
   } = useData(initialData, indicatorName);
   const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
     (d) => new Date(d.date)
@@ -581,6 +586,19 @@ const FinanceChart = ({
 
         {indicatorName === "macd" ? (
           <EMAChart ema26={ema26} ema12={ema12} />
+        ) : (
+          ""
+        )}
+
+        {indicatorName === "sma" ? (
+          <SMAChart
+            smaArr={[
+              { id: "sma20", val: sma20 },
+              { id: "sma50", val: sma50 },
+              { id: "sma200", val: sma200 },
+            ]}
+            isIntraday={isIntraday}
+          />
         ) : (
           ""
         )}
