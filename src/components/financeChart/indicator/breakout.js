@@ -52,7 +52,7 @@ export const supportResistanceBreakout = (stockData, windowSize = 14) => {
   return breakoutsArr;
 };
 
-export const calculateBuySellBreakouts = (data, period = 14) => {
+export const calculateBuySellBreakouts = (data, period = 20) => {
   let breakoutsArr = [];
 
   for (let i = period; i < data.length; i++) {
@@ -62,17 +62,15 @@ export const calculateBuySellBreakouts = (data, period = 14) => {
     if (data[i].close > high) {
       if (breakoutsArr[breakoutsArr.length - 1]?.bull !== true) {
         breakoutsArr.push({
-          date: data[i].date,
+          ...data[i],
           bull: true,
-          price: data[i].close,
         });
       }
     } else if (data[i].close < low) {
       if (breakoutsArr[breakoutsArr.length - 1]?.bear !== true) {
         breakoutsArr.push({
-          date: data[i].date,
+          ...data[i],
           bear: true,
-          price: data[i].close,
         });
       }
     }

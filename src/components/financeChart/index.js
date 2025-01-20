@@ -108,7 +108,7 @@ const FinanceChart = ({
   };
 
   const candleChartExtents = (data) => {
-    return [data.high, data.low];
+    return [data.high + (data.high * 0.1) / 100, data.low];
   };
 
   const yEdgeIndicator = (data) => {
