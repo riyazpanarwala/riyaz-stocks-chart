@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import AnnotateChart from "./AnnotateChart";
-import { volumeBreakout, supportResistanceBreakout } from "./indicator";
+import {
+  volumeBreakout,
+  supportResistanceBreakout,
+  calculateBuySellBreakouts,
+} from "./indicator";
 
 const Breakout = ({ patternName, data, isIntraday }) => {
   const [dataArr, setDataArr] = useState([]);
@@ -10,6 +14,8 @@ const Breakout = ({ patternName, data, isIntraday }) => {
       setDataArr(supportResistanceBreakout(data));
     } else if (patternName === "volume") {
       setDataArr(volumeBreakout(data));
+    } else if (patternName === "buysell") {
+      setDataArr(calculateBuySellBreakouts(data));
     } else {
       setDataArr([]);
     }

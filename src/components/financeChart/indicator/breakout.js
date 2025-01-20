@@ -51,3 +51,32 @@ export const supportResistanceBreakout = (stockData, windowSize = 14) => {
 
   return breakoutsArr;
 };
+
+export const calculateBuySellBreakouts = (data, period = 14) => {
+  let breakoutsArr = [];
+
+  for (let i = period; i < data.length; i++) {
+    const high = Math.max(...data.slice(i - period, i).map((d) => d.high));
+    const low = Math.min(...data.slice(i - period, i).map((d) => d.low));
+
+    if (data[i].close > high) {
+      if (breakoutsArr[breakoutsArr.length - 1]?.bull !== true) {
+        breakoutsArr.push({
+          date: data[i].date,
+          bull: true,
+          price: data[i].close,
+        });
+      }
+    } else if (data[i].close < low) {
+      if (breakoutsArr[breakoutsArr.length - 1]?.bear !== true) {
+        breakoutsArr.push({
+          date: data[i].date,
+          bear: true,
+          price: data[i].close,
+        });
+      }
+    }
+  }
+
+  return breakoutsArr;
+};

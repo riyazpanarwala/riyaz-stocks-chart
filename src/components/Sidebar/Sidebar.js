@@ -60,6 +60,11 @@ const Sidebar = ({
 
   const breakoutsArr = [
     {
+      id: "buysell",
+      name: "Buy and Sell(14)",
+      isActive: breakoutName === "buysell",
+    },
+    {
       id: "volume",
       name: "Volume (MA20)",
       isActive: breakoutName === "volume",
