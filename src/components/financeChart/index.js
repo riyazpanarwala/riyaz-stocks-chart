@@ -584,7 +584,7 @@ const FinanceChart = ({
           ""
         )}
 
-        {indicatorName === "macd" ? (
+        {indicatorName === "macd" || indicatorName === "zerolagmacd" ? (
           <EMAChart ema26={ema26} ema12={ema12} />
         ) : (
           ""
@@ -616,8 +616,8 @@ const FinanceChart = ({
         <Chart
           id={4}
           yExtents={
-            indicatorName === "macd"
-              ? macdCalculator.accessor()
+            indicatorName === "macd" || indicatorName === "zerolagmacd"
+              ? (d) => d.macd
               : indicatorYExtentsObj[indicatorName]
           }
           height={barChartHeight}
@@ -667,7 +667,7 @@ const FinanceChart = ({
 
           {indicatorName === "dmi" ? <DMI /> : ""}
 
-          {indicatorName === "macd" ? (
+          {indicatorName === "macd" || indicatorName === "zerolagmacd" ? (
             <MACDChart macdCalculator={macdCalculator} />
           ) : (
             ""

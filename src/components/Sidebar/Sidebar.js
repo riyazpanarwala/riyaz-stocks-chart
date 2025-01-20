@@ -50,6 +50,11 @@ const Sidebar = ({
     { id: "dmi", name: "DMI", isActive: indicatorName === "dmi" },
     { id: "obv", name: "OBV", isActive: indicatorName === "obv" },
     { id: "macd", name: "MACD(12,26,9)", isActive: indicatorName === "macd" },
+    {
+      id: "zerolagmacd",
+      name: "ZERO LAG MACD(12,26,9)",
+      isActive: indicatorName === "zerolagmacd",
+    },
   ];
   const positionArr = [
     { id: "long", name: "Long Position", isActive: positionName === "long" },

@@ -1,6 +1,6 @@
 import React from "react";
 import { ema, rsi, macd, sma } from "react-financial-charts";
-import { dmi, obv, emaAngle } from "./indicator";
+import { dmi, obv, emaAngle, zeroLagMACD } from "./indicator";
 
 const emaPeriod1 = 15;
 const emaPeriod2 = 45;
@@ -57,9 +57,12 @@ const useData = (initialData, indicatorName) => {
   } else if (indicatorName === "obv") {
     calculatedData = obv(initialData);
   } else if (indicatorName === "macd") {
+    const shortPeriod = 12;
+    const longPeriod = 26;
+    const signalPeriod = 9;
     ema12 = ema()
       .id(1)
-      .options({ windowSize: 12 })
+      .options({ windowSize: shortPeriod })
       .merge((d, c) => {
         d.ema12 = c;
       })
@@ -67,7 +70,7 @@ const useData = (initialData, indicatorName) => {
 
     ema26 = ema()
       .id(0)
-      .options({ windowSize: 26 })
+      .options({ windowSize: longPeriod })
       .merge((d, c) => {
         d.ema26 = c;
       })
@@ -75,9 +78,9 @@ const useData = (initialData, indicatorName) => {
 
     macdCalculator = macd()
       .options({
-        fast: 12,
-        slow: 26,
-        signal: 9,
+        fast: shortPeriod,
+        slow: longPeriod,
+        signal: signalPeriod,
       })
       .merge((d, c) => {
         d.macd = c;
@@ -85,6 +88,57 @@ const useData = (initialData, indicatorName) => {
       .accessor((d) => d.macd);
 
     calculatedData = macdCalculator(ema12(ema26(initialData)));
+  } else if (indicatorName === "zerolagmacd") {
+    const shortPeriod = 12;
+    const longPeriod = 26;
+    const signalPeriod = 9;
+    ema12 = ema()
+      .id(1)
+      .options({ windowSize: shortPeriod })
+      .merge((d, c) => {
+        d.ema12 = c;
+      })
+      .accessor((d) => d.ema12);
+
+    ema26 = ema()
+      .id(0)
+      .options({ windowSize: longPeriod })
+      .merge((d, c) => {
+        d.ema26 = c;
+      })
+      .accessor((d) => d.ema26);
+
+    const { macdLine, signalLine, histogram } = zeroLagMACD(
+      initialData,
+      shortPeriod,
+      longPeriod,
+      signalPeriod
+    );
+
+    const macdCalc = (data) => {
+      let startIdx = longPeriod - 1;
+      for (let i = startIdx; i < data.length; i++) {
+        data[i].macd = {
+          macd: macdLine[i - startIdx],
+          signal: signalLine[i - startIdx],
+          divergence: histogram[i - startIdx],
+        };
+      }
+      return data;
+    };
+
+    macdCalculator = {
+      options: () => {
+        return {
+          fast: shortPeriod,
+          slow: longPeriod,
+          signal: signalPeriod,
+        };
+      },
+      accessor: (d) => d.macd,
+    };
+
+    calculatedData = macdCalc(ema12(ema26(initialData)));
   } else if (indicatorName === "sma") {
     sma20 = sma()
       .id(1)
