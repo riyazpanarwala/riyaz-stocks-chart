@@ -11,6 +11,7 @@ import {
   atr,
   roc,
   sma,
+  ema,
   volumeBreakout,
   supportResistanceBreakout,
 } from "../financeChart/indicator";
@@ -65,7 +66,7 @@ const stockAnalysis = async (
   let candles = [];
   let arr = [];
 
-  if (interval === "day" && indexName === "NSE_EQ" && true) {
+  if (interval === "day" && indexName === "NSE_EQ" && false) {
     arr = await getHistoricDataNSE(symbol, isFrom);
     candles = arr.candles;
   } else {
@@ -104,6 +105,8 @@ const stockAnalysis = async (
   const roc125 = roc(candles, 125);
   const sma50 = sma(candles, 50, "close");
   const sma200 = sma(candles, 200, "close");
+  const ema50 = ema(candles, 50, true);
+  const ema200 = ema(candles, 200, true);
 
   return {
     "RSI(14)": rsiValues[rsiValues.length - 1],
@@ -120,6 +123,8 @@ const stockAnalysis = async (
     "Day ROC(125)": roc125[roc125.length - 1],
     "SMA(50)": sma50[sma50.length - 1],
     "SMA(200)": sma200[sma200.length - 1],
+    "EMA(50)": ema50[ema50.length - 1],
+    "EMA(200)": ema200[ema200.length - 1],
     lastClose: lastClose,
     percentChange,
   };
