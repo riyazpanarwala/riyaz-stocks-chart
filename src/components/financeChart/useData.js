@@ -2,8 +2,8 @@ import React from "react";
 import { ema, rsi, macd, sma } from "react-financial-charts";
 import { dmi, obv, emaAngle, zeroLagMACD } from "./indicator";
 
-const emaPeriod1 = 15;
-const emaPeriod2 = 45;
+const emaPeriod1 = 50;
+const emaPeriod2 = 200;
 
 const useData = (initialData, indicatorName) => {
   let ema12, ema26, rsiCalculator, rsiYAccessor;
