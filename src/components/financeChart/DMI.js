@@ -1,10 +1,10 @@
 import React from "react";
-import { LineSeries } from "@riyazpanarwala/series";
 import {
+  LineSeries,
   MouseCoordinateY,
   CurrentCoordinate,
   EdgeIndicator,
-} from "@riyazpanarwala/coordinates";
+} from "@riyazpanarwala/react-financial-charts";
 import { format } from "d3-format";
 import CustomTooltip from "./CustomTooltip";
 

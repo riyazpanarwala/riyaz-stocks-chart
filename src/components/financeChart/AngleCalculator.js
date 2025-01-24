@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { getMouseCanvas, GenericChartComponent } from "@riyazpanarwala/core";
+import {
+  getMouseCanvas,
+  GenericChartComponent,
+} from "@riyazpanarwala/react-financial-charts";
 import { emaAngleIndividual } from "./indicator";
 
 const AngleCalculator = ({

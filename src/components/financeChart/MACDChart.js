@@ -1,11 +1,12 @@
 import React from "react";
-import { MACDTooltip } from "@riyazpanarwala/tooltip";
-import { MACDSeries } from "@riyazpanarwala/series";
 import {
+  MACDTooltip,
+  MACDSeries,
   MouseCoordinateX,
   MouseCoordinateY,
-} from "@riyazpanarwala/coordinates";
-import { XAxis, YAxis } from "@riyazpanarwala/axes";
+  XAxis,
+  YAxis,
+} from "@riyazpanarwala/react-financial-charts";
 import { format } from "d3-format";
 import { timeFormat } from "d3-time-format";
 

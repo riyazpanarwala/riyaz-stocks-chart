@@ -1,6 +1,5 @@
 import React from "react";
-import { RSISeries } from "@riyazpanarwala/series";
-import { RSITooltip } from "@riyazpanarwala/tooltip";
+import { RSISeries, RSITooltip } from "@riyazpanarwala/react-financial-charts";
 
 const RSIChart = ({ rsiYAccessor, rsiCalculator }) => {
   return (

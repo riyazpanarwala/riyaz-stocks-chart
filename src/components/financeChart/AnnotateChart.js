@@ -1,6 +1,10 @@
 import React from "react";
-import { Annotate, SvgPathAnnotation } from "@riyazpanarwala/annotations";
-import { ToolTipTSpanLabel, ToolTipText } from "@riyazpanarwala/tooltip";
+import {
+  Annotate,
+  SvgPathAnnotation,
+  ToolTipTSpanLabel,
+  ToolTipText,
+} from "@riyazpanarwala/react-financial-charts";
 
 const AnnotateChart = ({
   dataArr,

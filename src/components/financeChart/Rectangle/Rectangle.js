@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { getMouseCanvas, GenericChartComponent } from "@riyazpanarwala/core";
+import {
+  getMouseCanvas,
+  GenericChartComponent,
+} from "@riyazpanarwala/react-financial-charts";
 
 const Rectangle = ({ rect, onDrag, onDragComplete, onMouseDownClick }) => {
   const [start, setStart] = useState([]);
