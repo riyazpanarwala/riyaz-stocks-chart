@@ -1,5 +1,5 @@
 import React from "react";
-import { ema, rsi, macd, sma } from "react-financial-charts";
+import { ema, rsi, macd, sma } from "@riyazpanarwala/indicators";
 import { dmi, obv, emaAngle, zeroLagMACD } from "./indicator";
 
 const emaPeriod1 = 50;

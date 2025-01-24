@@ -1,5 +1,6 @@
 import React, { Fragment } from "react";
-import { CurrentCoordinate, LineSeries } from "react-financial-charts";
+import { LineSeries } from "@riyazpanarwala/series";
+import { CurrentCoordinate } from "@riyazpanarwala/coordinates";
 import CustomTooltip from "./CustomTooltip";
 
 const SMAChart = ({ smaArr, isIntraday }) => {

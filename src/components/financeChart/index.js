@@ -1,33 +1,37 @@
 import React, { useState, useRef, useEffect } from "react";
 import { format } from "d3-format";
 import { timeFormat } from "d3-time-format";
+import { withDeviceRatio, withSize } from "@riyazpanarwala/utils";
+import { discontinuousTimeScaleProviderBuilder } from "@riyazpanarwala/scales";
 import {
-  withDeviceRatio,
-  withSize,
-  discontinuousTimeScaleProviderBuilder,
-  Chart,
-  ChartCanvas,
-  BarSeries,
-  LineSeries,
-  CurrentCoordinate,
-  CandlestickSeries,
-  OHLCTooltip,
-  lastVisibleItemBasedZoomAnchor,
-  XAxis,
-  YAxis,
-  CrossHairCursor,
-  EdgeIndicator,
-  MouseCoordinateY,
-  MouseCoordinateX,
-  //  ZoomButtons,
-  TrendLine,
   isDefined,
   isNotDefined,
-  DrawingObjectSelector,
+  lastVisibleItemBasedZoomAnchor,
+  Chart,
+  ChartCanvas,
+} from "@riyazpanarwala/core";
+import {
+  BarSeries,
+  LineSeries,
+  CandlestickSeries,
+} from "@riyazpanarwala/series";
+import {
+  CurrentCoordinate,
+  MouseCoordinateY,
+  MouseCoordinateX,
+  EdgeIndicator,
+  CrossHairCursor,
+} from "@riyazpanarwala/coordinates";
+import { XAxis, YAxis } from "@riyazpanarwala/axes";
+import { OHLCTooltip } from "@riyazpanarwala/tooltip";
+import {
+  TrendLine,
   Measurement,
   InteractiveText,
+  DrawingObjectSelector,
   ClickCallback,
-} from "react-financial-charts";
+  //  ZoomButtons,
+} from "@riyazpanarwala/interactive";
 import HighLowTooltip from "./HighLowTooltip";
 import EMAChart from "./ema";
 import RSIChart from "./RSI";
@@ -89,16 +93,16 @@ const FinanceChart = ({
     sma50,
     sma200,
   } = useData(initialData, indicatorName);
-  const ScaleProvider =
-    discontinuousTimeScaleProviderBuilder().inputDateAccessor(
-      (d) => new Date(d.date)
-    );
+  const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
+    (d) => new Date(d.date)
+  );
 
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
   let interactiveNodes = {};
 
-  const { data, xScale, xAccessor, displayXAccessor } =
-    ScaleProvider(calculatedData);
+  const { data, xScale, xAccessor, displayXAccessor } = ScaleProvider(
+    calculatedData
+  );
   const pricesDisplayFormat = format(".2f");
   const max = xAccessor(data[data.length - 1]);
   const min = 0; // xAccessor(data[Math.max(0, data.length - 100)]);

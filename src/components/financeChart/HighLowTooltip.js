@@ -1,5 +1,5 @@
 import React from "react";
-import { ToolTipText, ToolTipTSpanLabel } from "react-financial-charts";
+import { ToolTipTSpanLabel, ToolTipText } from "@riyazpanarwala/tooltip";
 
 const defaultTexts = {
   h: "Day High: ",

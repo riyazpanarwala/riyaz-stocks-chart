@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { InteractiveYCoordinate } from "react-financial-charts";
+import { InteractiveYCoordinate } from "@riyazpanarwala/interactive";
 
 const alert = {
   ...InteractiveYCoordinate.defaultProps.defaultPriceCoordinate,
