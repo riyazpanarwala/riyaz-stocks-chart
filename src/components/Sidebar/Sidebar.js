@@ -55,6 +55,11 @@ const Sidebar = ({
       name: "ZERO LAG MACD(12,26,9)",
       isActive: indicatorName === "zerolagmacd",
     },
+    {
+      id: "supertrend",
+      name: "SUPERTREND",
+      isActive: indicatorName === "supertrend",
+    },
   ];
   const positionArr = [
     { id: "long", name: "Long Position", isActive: positionName === "long" },

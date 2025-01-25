@@ -1,6 +1,6 @@
 import React from "react";
 import { ema, rsi, macd, sma } from "@riyazpanarwala/indicators";
-import { dmi, obv, emaAngle, zeroLagMACD } from "./indicator";
+import { dmi, obv, emaAngle, zeroLagMACD, supertrend } from "./indicator";
 
 const emaPeriod1 = 50;
 const emaPeriod2 = 200;
@@ -165,6 +165,8 @@ const useData = (initialData, indicatorName) => {
       .accessor((d) => d.sma200);
 
     calculatedData = sma200(sma50(sma20(initialData)));
+  } else if (indicatorName === "supertrend") {
+    calculatedData = supertrend(initialData);
   }
 
   return {

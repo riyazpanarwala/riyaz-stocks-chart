@@ -8,3 +8,4 @@ export * from "./macd";
 export * from "./ema";
 export * from "./atr";
 export * from "./roc";
+export * from "./supertrend";

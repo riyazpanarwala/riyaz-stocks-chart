@@ -47,6 +47,7 @@ import DMI from "./DMI";
 import MACDChart from "./MACDChart";
 import SMAChart from "./SMAChart";
 import PatternChart from "./PatternChart";
+import SuperTrendChart from "./SuperTrendChart";
 
 const indicatorYExtentsObj = {
   sma: (d) => [d.high, d.low],
@@ -55,6 +56,7 @@ const indicatorYExtentsObj = {
   obv: (d) => [0, d.obv],
   dmi: (d) => [d.plusDI + 10, d.minusDI - 10, d.adx + 10],
   macd: (d) => [d.high, d.low],
+  supertrend: (d) => [d.high, d.low],
 };
 
 const FinanceChart = ({
@@ -611,6 +613,8 @@ const FinanceChart = ({
         ) : (
           ""
         )}
+
+        {indicatorName === "supertrend" ? <SuperTrendChart /> : ""}
 
         {/* <ZoomButtons /> */}
         <OHLCTooltip origin={[8, 16]} />
