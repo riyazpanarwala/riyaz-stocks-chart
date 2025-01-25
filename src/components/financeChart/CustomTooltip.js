@@ -1,11 +1,10 @@
 import React from "react";
+import { ToolTipTSpanLabel, ToolTipText } from "@riyazpanarwala/tooltip";
 import {
   functor,
   isDefined,
   GenericChartComponent,
-  ToolTipTSpanLabel,
-  ToolTipText,
-} from "@riyazpanarwala/react-financial-charts";
+} from "@riyazpanarwala/core";
 import { format } from "d3-format";
 
 const CustomTooltip = ({

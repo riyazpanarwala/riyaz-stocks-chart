@@ -1,33 +1,37 @@
 import React, { useState, useRef, useEffect } from "react";
 import { format } from "d3-format";
 import { timeFormat } from "d3-time-format";
+import { withDeviceRatio, withSize } from "@riyazpanarwala/utils";
+import { discontinuousTimeScaleProviderBuilder } from "@riyazpanarwala/scales";
 import {
-  withDeviceRatio,
-  withSize,
-  discontinuousTimeScaleProviderBuilder,
   isDefined,
   isNotDefined,
   lastVisibleItemBasedZoomAnchor,
   Chart,
   ChartCanvas,
+} from "@riyazpanarwala/core";
+import {
   BarSeries,
   LineSeries,
   CandlestickSeries,
+} from "@riyazpanarwala/series";
+import {
   CurrentCoordinate,
   MouseCoordinateY,
   MouseCoordinateX,
   EdgeIndicator,
   CrossHairCursor,
-  XAxis,
-  YAxis,
-  OHLCTooltip,
+} from "@riyazpanarwala/coordinates";
+import { XAxis, YAxis } from "@riyazpanarwala/axes";
+import { OHLCTooltip } from "@riyazpanarwala/tooltip";
+import {
   TrendLine,
   Measurement,
   InteractiveText,
   DrawingObjectSelector,
   ClickCallback,
   //  ZoomButtons,
-} from "@riyazpanarwala/react-financial-charts";
+} from "@riyazpanarwala/interactive";
 import HighLowTooltip from "./HighLowTooltip";
 import EMAChart from "./ema";
 import RSIChart from "./RSI";

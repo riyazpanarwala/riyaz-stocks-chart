@@ -1,8 +1,6 @@
 import React from "react";
-import {
-  LineSeries,
-  CurrentCoordinate,
-} from "@riyazpanarwala/react-financial-charts";
+import { LineSeries } from "@riyazpanarwala/series";
+import { CurrentCoordinate } from "@riyazpanarwala/coordinates";
 import CustomTooltip from "./CustomTooltip";
 
 const EMAChart = ({ ema26, ema12, angles }) => {

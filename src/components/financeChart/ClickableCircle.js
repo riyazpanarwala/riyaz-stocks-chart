@@ -1,8 +1,5 @@
 import React from "react";
-import {
-  getMouseCanvas,
-  GenericChartComponent,
-} from "@riyazpanarwala/react-financial-charts";
+import { getMouseCanvas, GenericChartComponent } from "@riyazpanarwala/core";
 
 const ClickableCircle = ({
   interactiveCursorClass,

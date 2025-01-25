@@ -1,4 +1,4 @@
-// import { rsi, sma } from "@riyazpanarwala/react-financial-charts";
+// import { rsi, sma } from "@riyazpanarwala/indicators";
 import { dmi, sma, rsi } from "../indicator";
 
 /*
