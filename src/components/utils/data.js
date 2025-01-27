@@ -5,7 +5,9 @@ export const intraArr = [
 
 export const intervalArr = [
   { label: "1 Minute", value: "1minute" },
-  { label: "30 Minute", value: "30minute" },
+  { label: "5 Minute", value: "5minute", val: 5 },
+  { label: "15 Minute", value: "15minute", val: 15 },
+  { label: "30 Minute", value: "30minute", val: 30 },
 ];
 
 export const intervalArr1 = [

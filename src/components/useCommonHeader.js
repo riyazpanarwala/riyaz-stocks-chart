@@ -15,6 +15,7 @@ import {
   // getNSEData,
 } from "./getIntervalData";
 import isTradingActive from "./utils/isTradingActive";
+import _ from "lodash";
 
 const useCommonHeader = (isEchart) => {
   const [period, setPeriod] = useState(periods[1]);
@@ -27,6 +28,43 @@ const useCommonHeader = (isEchart) => {
   const [timeData, setTimeData] = useState([]);
   const { companyArr, companyObj, setCompany } = useParseCsv();
   let countdownInterval;
+
+  const getDataFromIntraday = (intradayData) => {
+    const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
+
+    const maxValue = Math.max.apply(
+      Math,
+      intradayData.map((d) => d[2])
+    );
+    const minValue = Math.min.apply(
+      Math,
+      intradayData.map((d) => d[3])
+    );
+
+    return {
+      date: intradayData[0][0],
+      open: intradayData[0][1],
+      close: intradayData[intradayData.length - 1][4],
+      high: maxValue,
+      low: minValue,
+      volume: total,
+    };
+  };
+
+  const setCandleArrOtherTimeframes = (arr) => {
+    let candleData = arr.data.candles?.reverse();
+
+    // Size of chunk
+    let chunkSize = intervalObj.val;
+    // Use _.chunk() to split the array into chunks of size
+    let chunks = _.chunk(candleData, chunkSize);
+    let candleArr = [];
+    chunks.forEach((v) => {
+      candleArr = [...candleArr, getDataFromIntraday(v)];
+    });
+
+    setCandleData(candleArr);
+  };
 
   const setCandleArr = (arr) => {
     let timeArr = [];
@@ -102,12 +140,21 @@ const useCommonHeader = (isEchart) => {
   };
 
   const callIntradayApi = async () => {
+    let interval = intervalObj.value;
+    if (intervalObj.val) {
+      interval = "1minute";
+    }
     const arr = await getIntradayData(
-      intervalObj.value,
+      interval,
       companyObj.value,
       indexObj.value
     );
-    setCandleArr(arr);
+
+    if (intervalObj.val) {
+      setCandleArrOtherTimeframes(arr);
+    } else {
+      setCandleArr(arr);
+    }
     startTimer();
   };
 
