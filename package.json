@@ -9,7 +9,6 @@
     "lint": "next lint",
     "stockAnalysis": "node --experimental-specifier-resolution=node src/components/StockAnalysis/index.js"
   },
-  "type": "module",
   "dependencies": {
     "@riyazpanarwala/react-financial-charts": "^2.0.9",
     "axios": "^1.7.9",
@@ -26,7 +25,8 @@
     "react-select": "^5.10.0",
     "react-window": "^1.8.11",
     "sass": "^1.83.4",
-    "stock-nse-india": "^1.2.0"
+    "stock-nse-india": "^1.2.0",
+    "technicalindicators": "^3.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
