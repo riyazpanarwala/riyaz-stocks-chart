@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import AnnotateChart from "./AnnotateChart";
-import { marubozu, hammer, morningstar, multibagger } from "./Pattern";
+import { marubozu, hammer, multibagger } from "./Pattern";
+import getPatternArr from "../Sidebar/patternArr";
+import { patterndetectionWithLength } from "../utils/patterndetection";
 
 const PatternChart = ({ patternName, data, isIntraday }) => {
   const [dataArr, setDataArr] = useState([]);
+  const patternArr = getPatternArr(patternName);
 
   const displayTooltip = (obj) => {
     const dateStr = obj.date.split(" ")[0];
@@ -19,10 +22,11 @@ const PatternChart = ({ patternName, data, isIntraday }) => {
       setDataArr([...bullish, ...bearish]);
     } else if (patternName === "hammer") {
       setDataArr(hammer(data));
-    } else if (patternName === "morningstar") {
-      setDataArr(morningstar(data));
     } else if (patternName === "multibagger") {
       setDataArr(multibagger(data));
+    } else if (patternName) {
+      let obj = patternArr.filter((v) => v.id === patternName);
+      setDataArr(patterndetectionWithLength(data, patternName, obj[0].len));
     } else {
       setDataArr([]);
     }

@@ -12,6 +12,7 @@ import { FcPositiveDynamic, FcBullish } from "react-icons/fc";
 import { FaShapes } from "react-icons/fa";
 import TooltipSubMenu from "./toolTipMenu";
 import styles from "./Sidebar.module.scss";
+import getPatternArr from "./patternArr";
 
 const Sidebar = ({
   handleTrendLineClick,
@@ -87,28 +88,7 @@ const Sidebar = ({
       isActive: breakoutName === "support",
     },
   ];
-  const patternArr = [
-    {
-      id: "multibagger",
-      name: "MultiBagger",
-      isActive: patternName === "multibagger",
-    },
-    {
-      id: "marubozu",
-      name: "Marubozu",
-      isActive: patternName === "marubozu",
-    },
-    {
-      id: "hammer",
-      name: "Hammer",
-      isActive: patternName === "hammer",
-    },
-    {
-      id: "morningstar",
-      name: "Morning Star",
-      isActive: patternName === "morningstar",
-    },
-  ];
+  const patternArr = getPatternArr(patternName);
 
   return (
     <>
