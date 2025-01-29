@@ -57,10 +57,17 @@ const Sidebar = ({
       isActive: indicatorName === "zerolagmacd",
     },
     {
+      id: "mfi",
+      name: "MFI",
+      isActive: indicatorName === "mfi",
+    },
+    /*
+    {
       id: "supertrend",
       name: "SUPERTREND",
       isActive: indicatorName === "supertrend",
     },
+    */
   ];
   const positionArr = [
     { id: "long", name: "Long Position", isActive: positionName === "long" },

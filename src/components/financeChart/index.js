@@ -48,6 +48,7 @@ import MACDChart from "./MACDChart";
 import SMAChart from "./SMAChart";
 import PatternChart from "./PatternChart";
 import SuperTrendChart from "./SuperTrendChart";
+import IndicatorChart from "./IndicatorChart";
 
 const indicatorYExtentsObj = {
   sma: (d) => [d.high, d.low],
@@ -57,6 +58,7 @@ const indicatorYExtentsObj = {
   dmi: (d) => [d.plusDI + 10, d.minusDI - 10, d.adx + 10],
   macd: (d) => [d.high, d.low],
   supertrend: (d) => [d.high, d.low],
+  mfi: (d) => [0, d.mfi],
 };
 
 const FinanceChart = ({
@@ -649,6 +651,12 @@ const FinanceChart = ({
               rsiYAccessor={rsiYAccessor}
               rsiCalculator={rsiCalculator}
             />
+          ) : (
+            ""
+          )}
+
+          {indicatorName === "mfi" ? (
+            <IndicatorChart keyVal="mfi" tooltipName={indicatorName} />
           ) : (
             ""
           )}
