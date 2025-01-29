@@ -14,9 +14,10 @@ import {
   ema,
   volumeBreakout,
   supportResistanceBreakout,
+  mfi,
 } from "../financeChart/indicator";
-import fs from "fs";
-// const { saveAs } = require("file-saver");
+import { saveAs } from "file-saver";
+// import fs from "fs";
 
 const sleep = (ms) => {
   return new Promise((resolve) => {
@@ -107,9 +108,11 @@ const stockAnalysis = async (
   const sma200 = sma(candles, 200, "close");
   const ema50 = ema(candles, 50, true);
   const ema200 = ema(candles, 200, true);
+  const mfiValues = mfi(candles, 14);
 
   return {
     "RSI(14)": rsiValues[rsiValues.length - 1],
+    "MFI(14)": mfiValues[mfiValues.length - 1].mfi,
     "DAY ADX": adx[adx.length - 1],
     "DI+": plusDI[plusDI.length - 1],
     "DI-": minusDI[minusDI.length - 1],
@@ -159,13 +162,14 @@ const saveFile = (jsonObj) => {
     .split(".")[0]
     .replaceAll(":", "_")}.json`;
   // Create a blob of the data
-  // const fileToSave = new Blob([JSON.stringify(jsonData)], {
-  //  type: "application/json",
-  //});
+  const fileToSave = new Blob([JSON.stringify(jsonObj)], {
+    type: "application/json",
+  });
 
   // Save the file
-  // saveAs(fileToSave, fileName);
+  saveAs(fileToSave, fileName);
 
+  /*
   const fileToSave = JSON.stringify(jsonObj, null, 2);
 
   fs.writeFile(fileName, fileToSave, "utf8", (err) => {
@@ -175,6 +179,7 @@ const saveFile = (jsonObj) => {
       console.log("Data written to file");
     }
   });
+  */
 };
 
 const stocksAnalysis = async () => {
@@ -206,6 +211,6 @@ const stocksAnalysis = async () => {
   aa.slice(10, 15).forEach(analyse);
 };
 
-stocksAnalysis();
+// stocksAnalysis();
 
-// export default stocksAnalysis;
+export default stocksAnalysis;

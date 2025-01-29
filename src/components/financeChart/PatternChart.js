@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
 import AnnotateChart from "./AnnotateChart";
-import { marubozu, hammer, multibagger } from "./Pattern";
+import {
+  marubozu,
+  hammer,
+  multibagger,
+  patterndetectionWithLength,
+} from "./Pattern";
 import getPatternArr from "../Sidebar/patternArr";
-import { patterndetectionWithLength } from "../utils/patterndetection";
 
 const PatternChart = ({ patternName, data, isIntraday }) => {
   const [dataArr, setDataArr] = useState([]);

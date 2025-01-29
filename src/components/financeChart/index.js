@@ -58,7 +58,7 @@ const indicatorYExtentsObj = {
   dmi: (d) => [d.plusDI + 10, d.minusDI - 10, d.adx + 10],
   macd: (d) => [d.high, d.low],
   supertrend: (d) => [d.high, d.low],
-  mfi: (d) => [0, d.mfi],
+  mfi: (d) => [0, 100],
 };
 
 const FinanceChart = ({
@@ -642,6 +642,8 @@ const FinanceChart = ({
 
           {indicatorName === "rsi" ? (
             <YAxis tickValues={[30, 50, 70]} />
+          ) : indicatorName === "mfi" ? (
+            <YAxis tickValues={[20, 50, 80]} />
           ) : (
             <YAxis />
           )}

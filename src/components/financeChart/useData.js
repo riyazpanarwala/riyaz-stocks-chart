@@ -1,7 +1,6 @@
 import React from "react";
 import { ema, rsi, macd, sma } from "@riyazpanarwala/indicators";
-import { dmi, obv, emaAngle, zeroLagMACD, supertrend } from "./indicator";
-import mfi from "../utils/mfi";
+import { dmi, obv, emaAngle, zeroLagMACD, supertrend, mfi } from "./indicator";
 
 const emaPeriod1 = 50;
 const emaPeriod2 = 200;

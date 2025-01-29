@@ -1,6 +1,6 @@
-const { mfi } = require("technicalindicators");
+const mfiCalc = require("technicalindicators").mfi;
 
-const mfiCalc = (arr) => {
+export const mfi = (arr) => {
   let period = 14;
   let input = {
     high: arr.map((v) => v.high),
@@ -10,7 +10,7 @@ const mfiCalc = (arr) => {
     period: period,
   };
 
-  const mfiData = mfi(input);
+  const mfiData = mfiCalc(input);
 
   let newArr = [];
   arr.forEach((v, i) => {
@@ -23,5 +23,3 @@ const mfiCalc = (arr) => {
 
   return newArr;
 };
-
-export default mfiCalc;
