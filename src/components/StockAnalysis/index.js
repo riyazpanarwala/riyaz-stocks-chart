@@ -27,31 +27,9 @@ const sleep = (ms) => {
   });
 };
 
-const getDayDataFromIntraday = (intradayData) => {
-  const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
-
-  const maxValue = Math.max.apply(
-    Math,
-    intradayData.map((d) => d[2])
-  );
-  const minValue = Math.min.apply(
-    Math,
-    intradayData.map((d) => d[3])
-  );
-
-  return {
-    date: intradayData[0][0].split("T")[0],
-    open: intradayData[0][1],
-    close: intradayData[intradayData.length - 1][4],
-    high: maxValue,
-    low: minValue,
-    volume: total,
-  };
-};
-
-const getIntradayObj = async (companyName, indexName) => {
-  const arr1 = await getIntradayData("30minute", companyName, indexName);
-  return getDayDataFromIntraday(arr1.data.candles?.reverse());
+const getIntradayObj = async (symbol) => {
+  const arr1 = await getHistoricDataNSE(symbol, "1m");
+  return arr1.candles[arr1.candles.length - 1];
 };
 
 const stockAnalysis = async (
@@ -90,8 +68,17 @@ const stockAnalysis = async (
       ];
     });
 
-    const currentObj = await getIntradayObj(companyName, indexName);
-    candles = [...candles, currentObj];
+    if (indexName === "NSE_EQ") {
+      const currentObj = await getIntradayObj(symbol);
+      const currentDate = new Date().toISOString().split("T")[0];
+      const lastCandleDate = candles[candles.length - 1].date.split(" ")[0];
+      if (
+        currentObj.date === currentDate &&
+        currentObj.date !== lastCandleDate
+      ) {
+        candles = [...candles, currentObj];
+      }
+    }
   }
   console.log(symbol);
   const lastClose = candles[candles.length - 1].close;
