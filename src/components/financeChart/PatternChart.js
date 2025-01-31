@@ -4,6 +4,7 @@ import {
   marubozu,
   hammer,
   multibagger,
+  cupandhandle,
   patterndetectionWithLength,
 } from "./Pattern";
 import getPatternArr from "../Sidebar/patternArr";
@@ -28,6 +29,9 @@ const PatternChart = ({ patternName, data, isIntraday }) => {
       setDataArr(hammer(data));
     } else if (patternName === "multibagger") {
       setDataArr(multibagger(data));
+    } else if (patternName === "cupandhandle") {
+      console.log(cupandhandle(data));
+      setDataArr([]);
     } else if (patternName) {
       let obj = patternArr.filter((v) => v.id === patternName);
       setDataArr(patterndetectionWithLength(data, patternName, obj[0].len));

@@ -1,6 +1,11 @@
 const patternArr = (patternName) => {
   return [
     {
+      id: "cupandhandle",
+      name: "Cup and Handle",
+      isActive: patternName === "cupandhandle",
+    },
+    {
       id: "multibagger",
       name: "MultiBagger",
       isActive: patternName === "multibagger",
