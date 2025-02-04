@@ -49,11 +49,13 @@ import SMAChart from "./SMAChart";
 import PatternChart from "./PatternChart";
 import SuperTrendChart from "./SuperTrendChart";
 import IndicatorChart from "./IndicatorChart";
+import STOChart from "./STOChart";
 
 const indicatorYExtentsObj = {
   sma: (d) => [d.high, d.low],
   ema: (d) => [d.high, d.low],
   rsi: (d) => [0, 100],
+  sto: (d) => [0, 100],
   obv: (d) => [0, d.obv],
   dmi: (d) => [d.plusDI + 10, d.minusDI - 10, d.adx + 10],
   macd: (d) => [d.high, d.low],
@@ -656,6 +658,8 @@ const FinanceChart = ({
           ) : (
             ""
           )}
+
+          {indicatorName === "sto" ? <STOChart /> : ""}
 
           {indicatorName === "mfi" ? (
             <IndicatorChart keyVal="mfi" tooltipName={indicatorName} />

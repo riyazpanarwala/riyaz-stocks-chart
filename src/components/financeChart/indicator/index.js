@@ -10,3 +10,4 @@ export * from "./atr";
 export * from "./roc";
 export * from "./supertrend";
 export * from "./mfi";
+export * from "./sto";

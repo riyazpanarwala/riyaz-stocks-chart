@@ -61,6 +61,11 @@ const Sidebar = ({
       name: "MFI",
       isActive: indicatorName === "mfi",
     },
+    {
+      id: "sto",
+      name: "Stochastic(20,3)",
+      isActive: indicatorName === "sto",
+    },
     /*
     {
       id: "supertrend",
