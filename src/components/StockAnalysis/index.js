@@ -173,15 +173,13 @@ const stocksAnalysis = async (arrObj = aa) => {
   const jsonObj = {};
 
   const analyse = async (item, i) => {
-    let indexName = "";
+    let indexName = "NSE_EQ";
     if (item.bseIndex) {
       indexName = "BSE_INDEX";
     } else if (item.nseIndex) {
       indexName = "NSE_INDEX";
     } else if (item.isBSE) {
       indexName = "BSE_EQ";
-    } else if (item.isNSE) {
-      indexName = "NSE_EQ";
     }
     const data = await stockAnalysis(
       "day",
