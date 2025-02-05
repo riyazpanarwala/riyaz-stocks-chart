@@ -121,26 +121,26 @@ const stockAnalysis = async (
 };
 
 const aa = [
-  { name: "JPPOWER", symbol: "JPPOWER", ISIN: "INE351F01018", isBSE: false },
-  { name: "MAZDOCK", symbol: "MAZDOCK", ISIN: "INE249Z01020", isBSE: false },
-  { name: "NHPC", symbol: "NHPC", ISIN: "INE848E01016", isBSE: false },
+  { label: "JPPOWER", symbol: "JPPOWER", ISIN: "INE351F01018", isBSE: false },
+  { label: "MAZDOCK", symbol: "MAZDOCK", ISIN: "INE249Z01020", isBSE: false },
+  { label: "NHPC", symbol: "NHPC", ISIN: "INE848E01016", isBSE: false },
   {
-    name: "COALINDIA",
+    label: "COALINDIA",
     symbol: "COALINDIA",
     ISIN: "INE522F01014",
     isBSE: false,
   },
-  { name: "IRFC", symbol: "IRFC", ISIN: "INE053F01010", isBSE: false },
-  { name: "ONGC", symbol: "ONGC", ISIN: "INE213A01029", isBSE: false },
-  { name: "RPOWER", symbol: "RPOWER", ISIN: "INE614G01033", isBSE: false },
-  { name: "SUZLON", symbol: "SUZLON", ISIN: "INE040H01021", isBSE: false },
-  { name: "SEPC", symbol: "SEPC", ISIN: "INE964H01014", isBSE: false },
-  { name: "BPCL", symbol: "BPCL", ISIN: "INE029A01011", isBSE: false },
-  { name: "GTLINFRA", symbol: "GTLINFRA", ISIN: "INE221H01019", isBSE: false },
-  { name: "VEDANTA", symbol: "VEDL", ISIN: "INE205A01025", isBSE: false },
-  { name: "BEL", symbol: "BEL", ISIN: "INE263A01024", isBSE: false },
-  { name: "NBCC", symbol: "NBCC", ISIN: "INE095N01031", isBSE: false },
-  { name: "SRESTHAFINVEST", ISIN: "INE606K01049", isBSE: true },
+  { label: "IRFC", symbol: "IRFC", ISIN: "INE053F01010", isBSE: false },
+  { label: "ONGC", symbol: "ONGC", ISIN: "INE213A01029", isBSE: false },
+  { label: "RPOWER", symbol: "RPOWER", ISIN: "INE614G01033", isBSE: false },
+  { label: "SUZLON", symbol: "SUZLON", ISIN: "INE040H01021", isBSE: false },
+  { label: "SEPC", symbol: "SEPC", ISIN: "INE964H01014", isBSE: false },
+  { label: "BPCL", symbol: "BPCL", ISIN: "INE029A01011", isBSE: false },
+  { label: "GTLINFRA", symbol: "GTLINFRA", ISIN: "INE221H01019", isBSE: false },
+  { label: "VEDANTA", symbol: "VEDL", ISIN: "INE205A01025", isBSE: false },
+  { label: "BEL", symbol: "BEL", ISIN: "INE263A01024", isBSE: false },
+  { label: "NBCC", symbol: "NBCC", ISIN: "INE095N01031", isBSE: false },
+  { label: "SRESTHAFINVEST", ISIN: "INE606K01049", isBSE: true },
 ];
 
 const saveFile = (jsonObj) => {
@@ -169,14 +169,24 @@ const saveFile = (jsonObj) => {
   */
 };
 
-const stocksAnalysis = async () => {
+const stocksAnalysis = async (arrObj = aa) => {
   const jsonObj = {};
 
   const analyse = async (item, i) => {
+    let indexName = "";
+    if (item.bseIndex) {
+      indexName = "BSE_INDEX";
+    } else if (item.nseIndex) {
+      indexName = "NSE_INDEX";
+    } else if (item.isBSE) {
+      indexName = "BSE_EQ";
+    } else if (item.isNSE) {
+      indexName = "NSE_EQ";
+    }
     const data = await stockAnalysis(
       "day",
-      item.ISIN,
-      item.isBSE ? "BSE_EQ" : "NSE_EQ",
+      item.ISIN || item.symbol,
+      indexName,
       "1y",
       item.symbol,
       false,
@@ -184,18 +194,17 @@ const stocksAnalysis = async () => {
       false
     );
 
-    jsonObj[item.name] = data;
+    jsonObj[item.label] = data;
 
-    if (aa.length === Object.keys(jsonObj).length) {
+    if (arrObj.length === Object.keys(jsonObj).length) {
       saveFile(jsonObj);
     }
   };
 
-  aa.slice(0, 5).forEach(analyse);
-  await sleep(2000);
-  aa.slice(5, 10).forEach(analyse);
-  await sleep(2000);
-  aa.slice(10, 15).forEach(analyse);
+  for (let i = 0; i < arrObj.length; i = i + 5) {
+    arrObj.slice(i, i + 5).forEach(analyse);
+    await sleep(2000);
+  }
 };
 
 // stocksAnalysis();

@@ -67,6 +67,26 @@ a {
   display: flex;
 }
 
+/* Button Styles */
+.custom-button {
+  background-color: #0070f3;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.custom-button:hover {
+  background-color: #005bb5;
+}
+
+.custom-button:active {
+  background-color: #003e80;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .mainChart {

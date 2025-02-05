@@ -11,6 +11,7 @@ import {
   periods,
 } from "../components/utils/data";
 import useCommonHeader from "../components/useCommonHeader";
+import stocksAnalysis from "../components/StockAnalysis";
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -93,6 +94,10 @@ const CandleStickChart = () => {
     return companyObj?.label;
   };
 
+  const downloadReport = () => {
+    stocksAnalysis([companyObj]);
+  };
+
   if (!companyArr.length) {
     return "please wait";
   }
@@ -148,6 +153,11 @@ const CandleStickChart = () => {
               )}
               <div className="inlineDiv">
                 <h2>{getCompanyName()}</h2>
+              </div>
+              <div className="inlineDiv">
+                <button onClick={downloadReport} className="custom-button">
+                  Download Report
+                </button>
               </div>
             </div>
             {candleData.length ? (

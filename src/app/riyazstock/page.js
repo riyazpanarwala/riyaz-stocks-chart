@@ -9,7 +9,7 @@ const App = () => {
 
   return (
     <div>
-      <button onClick={onClick} style={{ fontSize: "40px" }}>
+      <button onClick={onClick} className="custom-button">
         Click
       </button>
     </div>
