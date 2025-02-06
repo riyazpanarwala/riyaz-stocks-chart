@@ -23,7 +23,6 @@ import {
   CrossHairCursor,
 } from "@riyazpanarwala/coordinates";
 import { XAxis, YAxis } from "@riyazpanarwala/axes";
-import { OHLCTooltip } from "@riyazpanarwala/tooltip";
 import {
   TrendLine,
   Measurement,
@@ -32,6 +31,7 @@ import {
   ClickCallback,
   //  ZoomButtons,
 } from "@riyazpanarwala/interactive";
+import { OHLCTooltip } from "./OHLCTooltip";
 import HighLowTooltip from "./HighLowTooltip";
 import EMAChart from "./ema";
 import RSIChart from "./RSI";
