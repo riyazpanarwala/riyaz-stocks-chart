@@ -10,7 +10,7 @@
     "stockAnalysis": "node --experimental-specifier-resolution=node src/components/StockAnalysis/index.js"
   },
   "dependencies": {
-    "@riyazpanarwala/react-financial-charts": "^2.0.9",
+    "@riyazpanarwala/react-financial-charts": "^2.0.10",
     "axios": "^1.7.9",
     "classnames": "^2.5.1",
     "d3-format": "^3.1.0",
