@@ -51,11 +51,9 @@ const useCommonHeader = (isEchart) => {
     };
   };
 
-  const setCandleArrOtherTimeframes = (arr) => {
+  const setCandleArrOtherTimeframes = (arr, chunkSize) => {
     let candleData = arr.data.candles?.reverse();
 
-    // Size of chunk
-    let chunkSize = intervalObj.val;
     // Use _.chunk() to split the array into chunks of size
     let chunks = _.chunk(candleData, chunkSize);
     let candleArr = [];
@@ -66,7 +64,7 @@ const useCommonHeader = (isEchart) => {
     setCandleData(candleArr);
   };
 
-  const setCandleArr = (arr) => {
+  const setCandleArr = async (arr, isIntradayCall) => {
     let timeArr = [];
     let dataArr = [];
     let candles = arr.data.candles?.reverse();
@@ -92,6 +90,19 @@ const useCommonHeader = (isEchart) => {
           },
         ];
       });
+
+      if (isIntradayCall) {
+        const currentDay = new Date().getDay();
+        if (!(currentDay === 0 || currentDay === 6)) {
+          const arr1 = await getIntradayData(
+            "30minute",
+            companyObj.value,
+            indexObj.value
+          );
+          let candleData = arr1.data.candles?.reverse();
+          dataArr = [...dataArr, getDataFromIntraday(candleData)];
+        }
+      }
     }
 
     setTimeData(timeArr);
@@ -135,7 +146,7 @@ const useCommonHeader = (isEchart) => {
         indexObj.value,
         period
       );
-      setCandleArr(arr);
+      setCandleArr(arr, intervalObj.value === "day");
     }
   };
 
@@ -151,7 +162,7 @@ const useCommonHeader = (isEchart) => {
     );
 
     if (intervalObj.val) {
-      setCandleArrOtherTimeframes(arr);
+      setCandleArrOtherTimeframes(arr, intervalObj.val);
     } else {
       setCandleArr(arr);
     }
