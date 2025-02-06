@@ -143,3 +143,21 @@ export const getIntradayData = async (interval, companyName, indexName) => {
     return { error: true, data: { candles: [] } };
   }
 };
+
+export const getMarketTimings = async () => {
+  const headers = {
+    Accept: "application/json",
+  };
+
+  const todayDate = new Date().toISOString().split("T")[0];
+  const newUrl = `${baseurl}market/timings/${todayDate}`;
+
+  try {
+    const response = await axios.get(newUrl, { headers });
+    return response.data;
+  } catch (error) {
+    // Print an error message if the request was not successful
+    console.error(`Error: ${error.response.status} - ${error.response.data}`);
+    return { error: true, data: { candles: [] } };
+  }
+};

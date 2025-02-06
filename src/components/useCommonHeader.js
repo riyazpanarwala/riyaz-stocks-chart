@@ -12,6 +12,7 @@ import {
   getHistoricData,
   getIntradayData,
   getHistoricDataNSE,
+  getMarketTimings,
   // getNSEData,
 } from "./getIntervalData";
 import isTradingActive from "./utils/isTradingActive";
@@ -26,8 +27,20 @@ const useCommonHeader = (isEchart) => {
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
   const [timeData, setTimeData] = useState([]);
+  const [marketTimings, setMartketTimings] = useState([]);
   const { companyArr, companyObj, setCompany } = useParseCsv();
   let countdownInterval;
+
+  const isMarketOpen = (exchangeName = "NSE") => {
+    const indexData = marketTimings.filter((v) => v.exchange === exchangeName);
+    return indexData.length;
+    /*
+    const indexStartTime = new Date(indexData[0].start_time);
+    const indexEndTime = new Date(indexData[0].end_time);
+    const currentime = new Date().getTime();
+    return indexEndTime >= currentime && indexStartTime <= currentime;
+    */
+  };
 
   const getDataFromIntraday = (intradayData) => {
     const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
@@ -92,8 +105,7 @@ const useCommonHeader = (isEchart) => {
       });
 
       if (isIntradayCall) {
-        const currentDay = new Date().getDay();
-        if (!(currentDay === 0 || currentDay === 6)) {
+        if (isMarketOpen()) {
           const arr1 = await getIntradayData(
             "30minute",
             companyObj.value,
@@ -258,6 +270,15 @@ const useCommonHeader = (isEchart) => {
       setApiCall((prevState) => prevState + 1);
     }
   }, [intervalObj, intradayObj, companyObj, period, indexObj]);
+
+  const setMarketTimings = async () => {
+    const response = await getMarketTimings();
+    setMartketTimings(response.data);
+  };
+
+  useEffect(() => {
+    setMarketTimings();
+  }, []);
 
   return {
     intervalObj,
