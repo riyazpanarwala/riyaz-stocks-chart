@@ -174,7 +174,7 @@ const useData = (initialData, indicatorName) => {
 
     calculatedData = sma200(sma50(sma20(initialData)));
   } else if (indicatorName === "supertrend") {
-    calculatedData = supertrend(initialData);
+    calculatedData = supertrend(initialData, true);
   } else if (indicatorName === "mfi") {
     calculatedData = mfi(initialData);
   } else if (indicatorName === "sto") {

@@ -15,6 +15,7 @@ import {
   volumeBreakout,
   supportResistanceBreakout,
   mfi,
+  supertrend,
 } from "../financeChart/indicator";
 import { saveAs } from "file-saver";
 // import fs from "fs";
@@ -96,6 +97,7 @@ const stockAnalysis = async (
   const ema50 = ema(candles, 50, true);
   const ema200 = ema(candles, 200, true);
   const mfiValues = mfi(candles, 14);
+  const trend = supertrend(candles);
 
   return {
     "RSI(14)": rsiValues[rsiValues.length - 1],
@@ -103,9 +105,9 @@ const stockAnalysis = async (
     "DAY ADX": adx[adx.length - 1],
     "DI+": plusDI[plusDI.length - 1],
     "DI-": minusDI[minusDI.length - 1],
-    volumeBreak: isVolumeBreak ? volumeBreakout(candles) : [],
-    supportBreak: isSupportBreak ? supportResistanceBreakout(candles) : [],
-    multibagger: isMultibagger ? multibagger(candles) : [],
+    // volumeBreak: isVolumeBreak ? volumeBreakout(candles) : [],
+    // supportBreak: isSupportBreak ? supportResistanceBreakout(candles) : [],
+    // multibagger: isMultibagger ? multibagger(candles) : [],
     "DAY MACD(12,26,9)": macdLine[macdLine.length - 1],
     "DAY MACD SIGNAL": signalLine[signalLine.length - 1],
     "Day ATR": atrValues[atrValues.length - 1],
@@ -117,6 +119,7 @@ const stockAnalysis = async (
     "EMA(200)": ema200[ema200.length - 1],
     lastClose: lastClose,
     percentChange,
+    supertrend: trend,
   };
 };
 

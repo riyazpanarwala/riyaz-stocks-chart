@@ -66,13 +66,11 @@ const Sidebar = ({
       name: "Stochastic(20,3)",
       isActive: indicatorName === "sto",
     },
-    /*
     {
       id: "supertrend",
       name: "SUPERTREND",
       isActive: indicatorName === "supertrend",
     },
-    */
   ];
   const positionArr = [
     { id: "long", name: "Long Position", isActive: positionName === "long" },
