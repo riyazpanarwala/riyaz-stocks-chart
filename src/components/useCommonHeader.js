@@ -107,7 +107,7 @@ const useCommonHeader = (isEchart) => {
       if (isIntradayCall) {
         if (isMarketOpen()) {
           const arr1 = await getIntradayData(
-            "30minute",
+            "1minute",
             companyObj.value,
             indexObj.value
           );
