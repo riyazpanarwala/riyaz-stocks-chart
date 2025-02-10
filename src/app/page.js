@@ -39,6 +39,11 @@ const CandleStickChart = () => {
     period,
   } = useCommonHeader();
 
+  const handleWatchListClick = (obj) => {
+    disableAllTools();
+    handleCompanyChange(obj);
+  };
+
   const hanglePatternClick = (id) => {
     disableAllTools();
     setPatternName(id);
@@ -95,7 +100,7 @@ const CandleStickChart = () => {
   };
 
   const downloadReport = () => {
-    stocksAnalysis([companyObj]);
+    stocksAnalysis([companyObj], indexObj.value);
   };
 
   if (!companyArr.length) {
@@ -140,6 +145,8 @@ const CandleStickChart = () => {
           hangleBreakoutClick={hangleBreakoutClick}
           patternName={patternName}
           hanglePatternClick={hanglePatternClick}
+          handleWatchListClick={handleWatchListClick}
+          companyObj={companyObj}
         />
         <main className="mainChart">
           <div>

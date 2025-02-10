@@ -19,6 +19,7 @@ export const intervalArr1 = [
 export const periods = ["6m", "1y", "2y", "5y"];
 
 export const dateObj = {
+  "1d": () => new Date(new Date().setDate(new Date().getDate() - 1)),
   "1m": () => new Date(new Date().setDate(new Date().getDate() - 30)),
   "3m": () => new Date(new Date().setDate(new Date().getDate() - 30 * 3)),
   "6m": () => new Date(new Date().setDate(new Date().getDate() - 30 * 6)),

@@ -18,6 +18,7 @@ import {
   supertrend,
 } from "../financeChart/indicator";
 import { saveAs } from "file-saver";
+import watchlistArray from "../utils/watchListArr";
 // import fs from "fs";
 
 const sleep = (ms) => {
@@ -29,7 +30,7 @@ const sleep = (ms) => {
 };
 
 const getIntradayObj = async (symbol) => {
-  const arr1 = await getHistoricDataNSE(symbol, "1m");
+  const arr1 = await getHistoricDataNSE(symbol, "1d");
   return arr1.candles[arr1.candles.length - 1];
 };
 
@@ -123,28 +124,7 @@ const stockAnalysis = async (
   };
 };
 
-const aa = [
-  { label: "JPPOWER", symbol: "JPPOWER", ISIN: "INE351F01018", isBSE: false },
-  { label: "MAZDOCK", symbol: "MAZDOCK", ISIN: "INE249Z01020", isBSE: false },
-  { label: "NHPC", symbol: "NHPC", ISIN: "INE848E01016", isBSE: false },
-  {
-    label: "COALINDIA",
-    symbol: "COALINDIA",
-    ISIN: "INE522F01014",
-    isBSE: false,
-  },
-  { label: "IRFC", symbol: "IRFC", ISIN: "INE053F01010", isBSE: false },
-  { label: "ONGC", symbol: "ONGC", ISIN: "INE213A01029", isBSE: false },
-  { label: "RPOWER", symbol: "RPOWER", ISIN: "INE614G01033", isBSE: false },
-  { label: "SUZLON", symbol: "SUZLON", ISIN: "INE040H01021", isBSE: false },
-  { label: "SEPC", symbol: "SEPC", ISIN: "INE964H01014", isBSE: false },
-  { label: "BPCL", symbol: "BPCL", ISIN: "INE029A01011", isBSE: false },
-  { label: "GTLINFRA", symbol: "GTLINFRA", ISIN: "INE221H01019", isBSE: false },
-  { label: "VEDANTA", symbol: "VEDL", ISIN: "INE205A01025", isBSE: false },
-  { label: "BEL", symbol: "BEL", ISIN: "INE263A01024", isBSE: false },
-  { label: "NBCC", symbol: "NBCC", ISIN: "INE095N01031", isBSE: false },
-  { label: "SRESTHAFINVEST", ISIN: "INE606K01049", isBSE: true },
-];
+const watchlistArray1 = watchlistArray("");
 
 const saveFile = (jsonObj) => {
   const b = new Date().toJSON().split("T");
@@ -172,22 +152,14 @@ const saveFile = (jsonObj) => {
   */
 };
 
-const stocksAnalysis = async (arrObj = aa) => {
+const stocksAnalysis = async (arrObj = watchlistArray1, indexVal) => {
   const jsonObj = {};
 
   const analyse = async (item, i) => {
-    let indexName = "NSE_EQ";
-    if (item.bseIndex) {
-      indexName = "BSE_INDEX";
-    } else if (item.nseIndex) {
-      indexName = "NSE_INDEX";
-    } else if (item.isBSE) {
-      indexName = "BSE_EQ";
-    }
     const data = await stockAnalysis(
       "day",
-      item.ISIN || item.symbol,
-      indexName,
+      item.value,
+      indexVal || item.indexName,
       "1y",
       item.symbol,
       false,

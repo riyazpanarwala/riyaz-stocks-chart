@@ -25,11 +25,11 @@ const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
                 }`}
                 onClick={(e) => {
                   setTooltipOpen(false);
-                  onClick(e, v.id);
+                  onClick(e, v.id ? v.id : v);
                 }}
-                key={v.id}
+                key={v.id || v.value}
               >
-                {v.name}
+                {v.name || v.label}
               </div>
             );
           })}

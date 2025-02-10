@@ -7,12 +7,13 @@ import {
 } from "react-icons/md";
 import { LiaRulerHorizontalSolid } from "react-icons/lia";
 import { GrIndicator } from "react-icons/gr";
-import { CiText } from "react-icons/ci";
+import { CiText, CiViewList } from "react-icons/ci";
 import { FcPositiveDynamic, FcBullish } from "react-icons/fc";
 import { FaShapes } from "react-icons/fa";
 import TooltipSubMenu from "./toolTipMenu";
 import styles from "./Sidebar.module.scss";
 import getPatternArr from "./patternArr";
+import watchlistArray from "../utils/watchListArr";
 
 const Sidebar = ({
   handleTrendLineClick,
@@ -33,6 +34,8 @@ const Sidebar = ({
   hangleBreakoutClick,
   patternName,
   hanglePatternClick,
+  handleWatchListClick,
+  companyObj,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -99,6 +102,7 @@ const Sidebar = ({
     },
   ];
   const patternArr = getPatternArr(patternName);
+  const watchlistArray1 = watchlistArray(companyObj.value);
 
   return (
     <>
@@ -109,6 +113,18 @@ const Sidebar = ({
 
       {/* Sidebar */}
       <div className={`${styles.sidebar} ${isOpen ? styles.open : ""}`}>
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{
+            name: "WatchList",
+            icon: <CiViewList className={styles.icon} />,
+            subMenu: watchlistArray1,
+          }}
+          onClick={(e, id) => {
+            closeSidebar();
+            handleWatchListClick(id);
+          }}
+        />
         <div
           className={`${styles.button} ${trendLineEnable ? styles.active : ""}`}
           onClick={(e) => {
