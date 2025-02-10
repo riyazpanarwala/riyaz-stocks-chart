@@ -1,5 +1,5 @@
 import React from "react";
-import { ema, rsi, macd, sma } from "@riyazpanarwala/indicators";
+import { ema, rsi, macd, sma, bollingerBand } from "@riyazpanarwala/indicators";
 import {
   dmi,
   obv,
@@ -19,6 +19,7 @@ const useData = (initialData, indicatorName) => {
   let angles;
   let macdCalculator;
   let sma20, sma50, sma200;
+  let bb;
 
   if (indicatorName === "ema") {
     ema12 = ema()
@@ -179,6 +180,21 @@ const useData = (initialData, indicatorName) => {
     calculatedData = mfi(initialData);
   } else if (indicatorName === "sto") {
     calculatedData = sto(initialData);
+  } else if (indicatorName === "bolinger") {
+    sma20 = sma()
+      .options({ windowSize: 20 })
+      .merge((d, c) => {
+        d.sma20 = c;
+      })
+      .accessor((d) => d.sma20);
+
+    bb = bollingerBand()
+      .merge((d, c) => {
+        d.bb = c;
+      })
+      .accessor((d) => d.bb);
+
+    calculatedData = sma20(bb(initialData));
   }
 
   return {
@@ -192,6 +208,7 @@ const useData = (initialData, indicatorName) => {
     sma20,
     sma50,
     sma200,
+    bb,
   };
 };
 

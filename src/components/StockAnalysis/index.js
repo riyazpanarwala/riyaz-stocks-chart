@@ -16,6 +16,7 @@ import {
   supportResistanceBreakout,
   mfi,
   supertrend,
+  bb,
 } from "../financeChart/indicator";
 import { saveAs } from "file-saver";
 import watchlistArray from "../utils/watchListArr";
@@ -99,6 +100,8 @@ const stockAnalysis = async (
   const ema200 = ema(candles, 200, true);
   const mfiValues = mfi(candles, 14);
   const trend = supertrend(candles);
+  const bolingerData = bb(candles);
+  const bbband = bolingerData[bolingerData.length - 1].bb;
 
   return {
     "RSI(14)": rsiValues[rsiValues.length - 1],
@@ -121,6 +124,11 @@ const stockAnalysis = async (
     lastClose: lastClose,
     percentChange,
     supertrend: trend,
+    "Bolinger Band(20,2)": {
+      UB: bbband.top,
+      LB: bbband.bottom,
+      SMA20: bbband.middle,
+    },
   };
 };
 

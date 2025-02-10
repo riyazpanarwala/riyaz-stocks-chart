@@ -51,14 +51,18 @@ const Sidebar = ({
     { id: "sma", name: "SMA(20,50,200)", isActive: indicatorName === "sma" },
     { id: "ema", name: "EMA", isActive: indicatorName === "ema" },
     { id: "rsi", name: "RSI", isActive: indicatorName === "rsi" },
-    { id: "dmi", name: "DMI", isActive: indicatorName === "dmi" },
-    { id: "obv", name: "OBV", isActive: indicatorName === "obv" },
     { id: "macd", name: "MACD(12,26,9)", isActive: indicatorName === "macd" },
+    {
+      id: "bolinger",
+      name: "Bolinger Band(20,2)",
+      isActive: indicatorName === "bolinger",
+    },
     {
       id: "zerolagmacd",
       name: "ZERO LAG MACD(12,26,9)",
       isActive: indicatorName === "zerolagmacd",
     },
+    { id: "dmi", name: "DMI", isActive: indicatorName === "dmi" },
     {
       id: "mfi",
       name: "MFI",
@@ -74,6 +78,7 @@ const Sidebar = ({
       name: "SUPERTREND",
       isActive: indicatorName === "supertrend",
     },
+    { id: "obv", name: "OBV", isActive: indicatorName === "obv" },
   ];
   const positionArr = [
     { id: "long", name: "Long Position", isActive: positionName === "long" },

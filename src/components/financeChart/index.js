@@ -50,6 +50,7 @@ import PatternChart from "./PatternChart";
 import SuperTrendChart from "./SuperTrendChart";
 import IndicatorChart from "./IndicatorChart";
 import STOChart from "./STOChart";
+import BolingerChart from "./BolingerChart";
 
 const indicatorYExtentsObj = {
   sma: (d) => [d.high, d.low],
@@ -61,6 +62,7 @@ const indicatorYExtentsObj = {
   macd: (d) => [d.high, d.low],
   supertrend: (d) => [d.high, d.low],
   mfi: (d) => [0, 100],
+  bolinger: (d) => [d.high, d.low],
 };
 
 const FinanceChart = ({
@@ -98,17 +100,18 @@ const FinanceChart = ({
     sma20,
     sma50,
     sma200,
+    bb,
   } = useData(initialData, indicatorName);
-  const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
-    (d) => new Date(d.date)
-  );
+  const ScaleProvider =
+    discontinuousTimeScaleProviderBuilder().inputDateAccessor(
+      (d) => new Date(d.date)
+    );
 
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
   let interactiveNodes = {};
 
-  const { data, xScale, xAccessor, displayXAccessor } = ScaleProvider(
-    calculatedData
-  );
+  const { data, xScale, xAccessor, displayXAccessor } =
+    ScaleProvider(calculatedData);
   const pricesDisplayFormat = format(".2f");
   const max = xAccessor(data[data.length - 1]);
   const min = 0; // xAccessor(data[Math.max(0, data.length - 100)]);
@@ -619,6 +622,12 @@ const FinanceChart = ({
         )}
 
         {indicatorName === "supertrend" ? <SuperTrendChart /> : ""}
+
+        {indicatorName === "bolinger" ? (
+          <BolingerChart bb={bb} sma20={sma20} />
+        ) : (
+          ""
+        )}
 
         {/* <ZoomButtons /> */}
         <OHLCTooltip origin={[8, 16]} />
