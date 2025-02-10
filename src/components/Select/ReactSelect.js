@@ -18,10 +18,21 @@ const ReactSelect = ({ options, value, onChange, placeholder, width }) => {
     }),
   };
 
+  const customFilter = (option, searchText) => {
+    if (
+      option.data.label?.toLowerCase().includes(searchText.toLowerCase()) ||
+      option.data.symbol?.toLowerCase().includes(searchText.toLowerCase())
+    ) {
+      return true;
+    }
+    return false;
+  };
+
   return (
     <Select
       options={options}
       value={value && [value]}
+      filterOption={customFilter}
       onChange={onChange}
       classNamePrefix="react-select"
       placeholder={placeholder}

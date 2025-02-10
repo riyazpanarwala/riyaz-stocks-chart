@@ -113,18 +113,6 @@ const Sidebar = ({
 
       {/* Sidebar */}
       <div className={`${styles.sidebar} ${isOpen ? styles.open : ""}`}>
-        <TooltipSubMenu
-          styles={styles}
-          tooltipObj={{
-            name: "WatchList",
-            icon: <CiViewList className={styles.icon} />,
-            subMenu: watchlistArray1,
-          }}
-          onClick={(e, id) => {
-            closeSidebar();
-            handleWatchListClick(id);
-          }}
-        />
         <div
           className={`${styles.button} ${trendLineEnable ? styles.active : ""}`}
           onClick={(e) => {
@@ -157,6 +145,18 @@ const Sidebar = ({
           <LiaRulerHorizontalSolid className={styles.icon} />
           <span>Measurement</span>
         </div>
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{
+            name: "WatchList",
+            icon: <CiViewList className={styles.icon} />,
+            subMenu: watchlistArray1,
+          }}
+          onClick={(e, id) => {
+            closeSidebar();
+            handleWatchListClick(id);
+          }}
+        />
         <TooltipSubMenu
           styles={styles}
           tooltipObj={{
