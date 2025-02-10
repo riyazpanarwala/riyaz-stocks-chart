@@ -153,7 +153,7 @@ const saveFile = (jsonObj) => {
 };
 
 const stocksAnalysis = async (arrObj = watchlistArray1, indexVal) => {
-  const jsonObj = {};
+  const jsonObj = [];
 
   const analyse = async (item, i) => {
     const data = await stockAnalysis(
@@ -167,10 +167,11 @@ const stocksAnalysis = async (arrObj = watchlistArray1, indexVal) => {
       false
     );
 
-    jsonObj[item.label] = data;
+    data.name = item.label;
+    jsonObj.push(data);
 
-    if (arrObj.length === Object.keys(jsonObj).length) {
-      saveFile(jsonObj);
+    if (arrObj.length === jsonObj.length) {
+      saveFile(jsonObj.sort((a, b) => b.percentChange - a.percentChange));
     }
   };
 
