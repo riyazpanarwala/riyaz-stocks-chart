@@ -102,16 +102,16 @@ const FinanceChart = ({
     sma200,
     bb,
   } = useData(initialData, indicatorName);
-  const ScaleProvider =
-    discontinuousTimeScaleProviderBuilder().inputDateAccessor(
-      (d) => new Date(d.date)
-    );
+  const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
+    (d) => new Date(d.date)
+  );
 
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
   let interactiveNodes = {};
 
-  const { data, xScale, xAccessor, displayXAccessor } =
-    ScaleProvider(calculatedData);
+  const { data, xScale, xAccessor, displayXAccessor } = ScaleProvider(
+    calculatedData
+  );
   const pricesDisplayFormat = format(".2f");
   const max = xAccessor(data[data.length - 1]);
   const min = 0; // xAccessor(data[Math.max(0, data.length - 100)]);
@@ -129,7 +129,17 @@ const FinanceChart = ({
   };
 
   const candleChartExtents = (data) => {
-    return [data.high + (data.high * 0.1) / 100, data.low];
+    let high = data.high;
+    let low = data.low;
+    if (data.bb && indicatorName === "bolinger") {
+      high = data.bb.top;
+      low = data.bb.bottom;
+    } else if (data.trend && indicatorName === "supertrend") {
+      const trendVal = data.trend;
+      high = high > trendVal ? high : trendVal;
+      low = low < trendVal ? low : trendVal;
+    }
+    return [high + (high * 0.1) / 100, low - (low * 0.1) / 100];
   };
 
   const yEdgeIndicator = (data) => {
