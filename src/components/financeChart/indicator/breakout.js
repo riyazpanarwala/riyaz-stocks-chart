@@ -10,9 +10,13 @@ export const volumeBreakout = (data, period = 14, multiplier = 1.5) => {
 
     if (d.volume > multiplier * past10DaysVol) {
       if (d.close > d.open) {
-        breakoutsArr = [...breakoutsArr, { ...d, bull: true }];
+        if (breakoutsArr[breakoutsArr.length - 1]?.bull !== true) {
+          breakoutsArr = [...breakoutsArr, { ...d, bull: true }];
+        }
       } else {
-        breakoutsArr = [...breakoutsArr, { ...d, bear: true }];
+        if (breakoutsArr[breakoutsArr.length - 1]?.bear !== true) {
+          breakoutsArr = [...breakoutsArr, { ...d, bear: true }];
+        }
       }
     }
   });
@@ -39,9 +43,13 @@ export const supportResistanceBreakout = (stockData, windowSize = 14) => {
       const volume = stockData[i].volume;
 
       if (price > resistance[i] && volume > avgVolume) {
-        breakoutsArr.push({ ...stockData[i], bull: true });
+        if (breakoutsArr[breakoutsArr.length - 1]?.bull !== true) {
+          breakoutsArr.push({ ...stockData[i], bull: true });
+        }
       } else if (price < support[i] && volume > avgVolume) {
-        breakoutsArr.push({ ...stockData[i], bear: true });
+        if (breakoutsArr[breakoutsArr.length - 1]?.bear !== true) {
+          breakoutsArr.push({ ...stockData[i], bear: true });
+        }
       }
     } else {
       resistance[i] = null;
