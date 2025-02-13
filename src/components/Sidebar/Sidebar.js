@@ -65,8 +65,13 @@ const Sidebar = ({
     { id: "dmi", name: "DMI", isActive: indicatorName === "dmi" },
     {
       id: "mfi",
-      name: "MFI",
+      name: "MFI(14)",
       isActive: indicatorName === "mfi",
+    },
+    {
+      id: "cci",
+      name: "CCI(20)",
+      isActive: indicatorName === "cci",
     },
     {
       id: "sto",

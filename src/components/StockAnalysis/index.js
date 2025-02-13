@@ -17,6 +17,7 @@ import {
   mfi,
   supertrend,
   bb,
+  cci,
 } from "../financeChart/indicator";
 import { saveAs } from "file-saver";
 import watchlistArray from "../utils/watchListArr";
@@ -102,10 +103,12 @@ const stockAnalysis = async (
   const trend = supertrend(candles);
   const bolingerData = bb(candles);
   const bbband = bolingerData[bolingerData.length - 1].bb;
+  const cciValues = cci(candles, 20);
 
   return {
     "RSI(14)": rsiValues[rsiValues.length - 1],
     "MFI(14)": mfiValues[mfiValues.length - 1].mfi,
+    "CCI(20)": cciValues[cciValues.length - 1].cci,
     "DAY ADX": adx[adx.length - 1],
     "DI+": plusDI[plusDI.length - 1],
     "DI-": minusDI[minusDI.length - 1],

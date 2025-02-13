@@ -8,6 +8,7 @@ import {
   supertrend,
   mfi,
   sto,
+  cci,
 } from "./indicator";
 
 const emaPeriod1 = 50;
@@ -195,6 +196,8 @@ const useData = (initialData, indicatorName) => {
       .accessor((d) => d.bb);
 
     calculatedData = sma20(bb(initialData));
+  } else if (indicatorName === "cci") {
+    calculatedData = cci(initialData);
   }
 
   return {

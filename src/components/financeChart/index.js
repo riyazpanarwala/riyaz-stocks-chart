@@ -63,6 +63,7 @@ const indicatorYExtentsObj = {
   supertrend: (d) => [d.high, d.low],
   mfi: (d) => [0, 100],
   bolinger: (d) => [d.high, d.low],
+  cci: (d) => [0, d.cci + 20],
 };
 
 const FinanceChart = ({
@@ -682,6 +683,12 @@ const FinanceChart = ({
 
           {indicatorName === "mfi" ? (
             <IndicatorChart keyVal="mfi" tooltipName={indicatorName} />
+          ) : (
+            ""
+          )}
+
+          {indicatorName === "cci" ? (
+            <IndicatorChart keyVal="cci" tooltipName={indicatorName} />
           ) : (
             ""
           )}

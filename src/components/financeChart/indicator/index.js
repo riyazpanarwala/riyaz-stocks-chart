@@ -12,3 +12,4 @@ export * from "./supertrend";
 export * from "./mfi";
 export * from "./sto";
 export * from "./bb";
+export * from "./cci";

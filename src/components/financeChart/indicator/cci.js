@@ -1,6 +1,6 @@
-const mfiCalc = require("technicalindicators").mfi;
+const cciCalc = require("technicalindicators").cci;
 
-export const mfi = (arr, period = 14) => {
+export const cci = (arr, period = 20) => {
   let input = {
     high: arr.map((v) => v.high),
     low: arr.map((v) => v.low),
@@ -9,14 +9,14 @@ export const mfi = (arr, period = 14) => {
     period: period,
   };
 
-  const mfiData = mfiCalc(input);
+  const cciData = cciCalc(input);
 
   let newArr = [];
   arr.forEach((v, i) => {
     if (i < period + 1) {
-      newArr = [...newArr, { ...v, mfi: "" }];
+      newArr = [...newArr, { ...v, cci: "" }];
     } else {
-      newArr = [...newArr, { ...v, mfi: mfiData[i - period - 1] }];
+      newArr = [...newArr, { ...v, cci: cciData[i - period - 1] }];
     }
   });
 
