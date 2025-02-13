@@ -1,0 +1,52 @@
+.card {
+  border: 1px solid #ddd;
+  padding: 16px;
+  border-radius: 8px;
+  background: white;
+  margin-bottom: 16px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.card-title {
+  color: #333;
+}
+
+.status {
+  font-weight: bold;
+}
+
+.red {
+  color: red;
+}
+
+.green {
+  color: green;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #ddd;
+  border-radius: 4px;
+  margin-top: 8px;
+  position: relative;
+}
+
+.progress {
+  height: 100%;
+  border-radius: 4px;
+}
+
+.progress.red {
+  background: red;
+}
+
+.progress.green {
+  background: green;
+}

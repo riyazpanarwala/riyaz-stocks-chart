@@ -1,0 +1,40 @@
+.table-container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  background: white;
+  margin-top: 16px;
+  display: inline-block;
+  margin-right: 20px;
+}
+
+.table-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+th {
+  background: #f4f4f4;
+}
+
+.red-text {
+  color: red;
+  font-weight: bold;
+}
+
+.blue {
+  color: blue;
+}

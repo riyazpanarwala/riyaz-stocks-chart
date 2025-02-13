@@ -11,7 +11,7 @@ import {
   periods,
 } from "../components/utils/data";
 import useCommonHeader from "../components/useCommonHeader";
-import stocksAnalysis from "../components/StockAnalysis";
+import TechnicalInfo from "../components/TechnicalInfo";
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -23,6 +23,7 @@ const CandleStickChart = () => {
   const [isAngleEnabled, setAngleEnabled] = useState(false);
   const [breakoutName, setBreakoutName] = useState("");
   const [patternName, setPatternName] = useState("");
+  const [modal, setModalOpen] = useState(false);
   const {
     intervalObj,
     intradayObj,
@@ -100,7 +101,7 @@ const CandleStickChart = () => {
   };
 
   const downloadReport = () => {
-    stocksAnalysis([companyObj], indexObj.value);
+    setModalOpen(true);
   };
 
   if (!companyArr.length) {
@@ -189,6 +190,16 @@ const CandleStickChart = () => {
             )}
           </div>
         </main>
+
+        {modal && (
+          <TechnicalInfo
+            companyObj={companyObj}
+            indexName={indexObj.value}
+            onClose={() => {
+              setModalOpen(false);
+            }}
+          />
+        )}
       </div>
     </>
   );
