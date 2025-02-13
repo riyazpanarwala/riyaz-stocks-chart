@@ -18,6 +18,7 @@ import {
   supertrend,
   bb,
   cci,
+  sto,
 } from "../financeChart/indicator";
 import { saveAs } from "file-saver";
 import watchlistArray from "../utils/watchListArr";
@@ -104,17 +105,16 @@ const stockAnalysis = async (
   const bolingerData = bb(candles);
   const bbband = bolingerData[bolingerData.length - 1].bb;
   const cciValues = cci(candles, 20);
+  const stoVal = sto(candles, 20, 3);
 
   return {
     "RSI(14)": rsiValues[rsiValues.length - 1],
     "MFI(14)": mfiValues[mfiValues.length - 1].mfi,
     "CCI(20)": cciValues[cciValues.length - 1].cci,
+    "Stochastic(20,3)": stoVal[stoVal.length - 1].fullSTO,
     "DAY ADX": adx[adx.length - 1],
     "DI+": plusDI[plusDI.length - 1],
     "DI-": minusDI[minusDI.length - 1],
-    // volumeBreak: isVolumeBreak ? volumeBreakout(candles) : [],
-    // supportBreak: isSupportBreak ? supportResistanceBreakout(candles) : [],
-    // multibagger: isMultibagger ? multibagger(candles) : [],
     "DAY MACD(12,26,9)": macdLine[macdLine.length - 1],
     "DAY MACD SIGNAL": signalLine[signalLine.length - 1],
     "Day ATR": atrValues[atrValues.length - 1],
