@@ -2,7 +2,12 @@ import React, { useEffect, useState } from "react";
 import { usePapaParse } from "react-papaparse";
 
 const indicesArr = [
-  { name: "NIFTY 50", value: "Nifty 50", symbol: "NIFTY 50" },
+  {
+    name: "NIFTY 50",
+    value: "Nifty 50",
+    symbol: "NIFTY 50",
+    yahooSymbol: "^NSEI",
+  },
   {
     name: "NIFTY BANK",
     value: "Nifty Bank",
@@ -25,7 +30,9 @@ const indicesArr = [
   },
 ];
 
-const bseIndicesArr = [{ name: "SENSEX", value: "SENSEX", symbol: "SENSEX" }];
+const bseIndicesArr = [
+  { name: "SENSEX", value: "SENSEX", symbol: "SENSEX", yahooSymbol: "^BSESN" },
+];
 
 const useParseCsv = () => {
   const [nseData, setNseData] = useState([]);
@@ -72,6 +79,7 @@ const useParseCsv = () => {
         nse: false,
         bse: false,
         nseIndex: true,
+        yahooSymbol: v.yahooSymbol,
       };
 
       merged.push(niftyObj);
@@ -83,6 +91,7 @@ const useParseCsv = () => {
         value: v.value,
         symbol: v.symbol,
         bseIndex: true,
+        yahooSymbol: v.yahooSymbol,
       };
 
       if (v.value === "SENSEX") {

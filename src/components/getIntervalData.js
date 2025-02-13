@@ -4,6 +4,27 @@ import { dateObj } from "./utils/data";
 const baseurl = "https://api.upstox.com/v2/";
 const nseBaseUrl = `/api/NSE/Equity`;
 
+export const getNSEDataYahooFinance = async (symbol, interval, range) => {
+  const headers = {
+    Accept: "application/json",
+  };
+
+  const payload = {
+    symbol,
+    interval,
+    range,
+  };
+
+  try {
+    const response = await axios.post(`/api/finance`, payload, { headers });
+    return response.data;
+  } catch (error) {
+    // Print an error message if the request was not successful
+    console.error(`Error: ${error.response.status} - ${error.response.data}`);
+    return { error: true, data: { candles: [] } };
+  }
+};
+
 export const getNSEData = async (apiName, symbol) => {
   const headers = {
     Accept: "application/json",
