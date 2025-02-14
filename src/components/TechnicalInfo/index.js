@@ -37,7 +37,8 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
         Level: `K:${sto.K}, D:${sto.D}`,
         Indication: "",
       },
-      { Indicator: "ROC(21)", Level: data["Day ROC(21)"], Indication: "" },
+      { Indicator: "ROC(20)", Level: data["Day ROC(20)"], Indication: "" },
+      { Indicator: "ROC(125)", Level: data["Day ROC(125)"], Indication: "" },
       { Indicator: "CCI(20)", Level: data["CCI(20)"], Indication: "" },
       {
         Indicator: "Williamson%R(14) ",

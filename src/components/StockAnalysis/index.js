@@ -140,7 +140,7 @@ export const stockAnalysis = async (
   const { plusDI, minusDI, adx } = dmi(candles, 14);
   const { macdLine, signalLine } = macd(candles);
   const atrValues = atr(candles);
-  const roc21 = roc(candles, 21);
+  const roc20 = roc(candles, 20);
   const roc125 = roc(candles, 125);
   const sma5 = sma(candles, 5, "close");
   const sma10 = sma(candles, 10, "close");
@@ -178,7 +178,7 @@ export const stockAnalysis = async (
     "DAY MACD(12,26,9)": round2Decimal(macdLine[macdLine.length - 1]),
     "DAY MACD SIGNAL": signalLine[signalLine.length - 1],
     "Day ATR": round2Decimal(atrValues[atrValues.length - 1]),
-    "Day ROC(21)": round2Decimal(roc21[roc21.length - 1]),
+    "Day ROC(20)": round2Decimal(roc20[roc20.length - 1]),
     "Day ROC(125)": round2Decimal(roc125[roc125.length - 1]),
     "SMA(5)": round2Decimal(sma5[sma5.length - 1]),
     "SMA(10)": round2Decimal(sma10[sma10.length - 1]),
