@@ -11,9 +11,9 @@ export const intervalArr = [
 ];
 
 export const intervalArr1 = [
-  { label: "Daily", value: "day" },
-  { label: "Weekly", value: "week" },
-  { label: "Monthly", value: "month" },
+  { label: "Daily", value: "day", interval: "1d" },
+  { label: "Weekly", value: "week", interval: "1wk" },
+  { label: "Monthly", value: "month", interval: "1mo" },
 ];
 
 export const periods = ["6m", "1y", "2y", "5y"];

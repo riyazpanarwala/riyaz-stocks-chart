@@ -4,19 +4,19 @@ import { dateObj } from "./utils/data";
 const baseurl = "https://api.upstox.com/v2/";
 const nseBaseUrl = `/api/NSE/Equity`;
 
-export const getNSEDataYahooFinance = async (symbol, interval, range) => {
+export const getNSEDataYahooFinance = async (symbol, interval, isFrom) => {
   const headers = {
     Accept: "application/json",
   };
 
-  const payload = {
-    symbol,
-    interval,
-    range,
-  };
+  let fromDate = dateObj[isFrom]();
+  fromDate = fromDate.toISOString().split("T")[0];
 
   try {
-    const response = await axios.post(`/api/finance`, payload, { headers });
+    const response = await axios.get(
+      `/api/finance?symbol=${symbol}&interval=${interval}&fromDate=${fromDate}`,
+      { headers }
+    );
     return response.data;
   } catch (error) {
     // Print an error message if the request was not successful

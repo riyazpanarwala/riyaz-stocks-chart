@@ -2,6 +2,7 @@ import {
   getHistoricData,
   getIntradayData,
   getHistoricDataNSE,
+  getNSEDataYahooFinance,
 } from "../getIntervalData.js";
 import { multibagger } from "../financeChart/Pattern";
 import {
@@ -90,39 +91,43 @@ export const stockAnalysis = async (
     arr = await getHistoricDataNSE(symbol, isFrom);
     candles = arr.candles;
   } else {
-    arr = await getHistoricData(interval, companyName, indexName, isFrom);
-    const dataArr = arr.data.candles?.reverse();
+    if (indexName === "NSE_EQ") {
+      candles = await getNSEDataYahooFinance(symbol + ".NS", "1d", isFrom);
+    } else {
+      arr = await getHistoricData(interval, companyName, indexName, isFrom);
+      const dataArr = arr.data.candles?.reverse();
 
-    dataArr?.forEach((item, i) => {
-      const aa = item[0].split("T");
-      const hhmmss = aa[1].split("+")[0];
-      candles = [
-        ...candles,
-        {
-          date: `${aa[0]} ${hhmmss}`,
-          open: item[1],
-          high: item[2],
-          low: item[3],
-          close: item[4],
-          volume: item[5],
-        },
-      ];
-    });
-    const lastCandleDate = candles[candles.length - 1].date.split(" ")[0];
-    const currentDate = new Date().toISOString().split("T")[0];
-    if (lastCandleDate !== currentDate) {
-      let currentObj;
-      let currentHour = new Date().getHours();
-      if (currentHour >= 17 && indexName === "NSE_EQ") {
-        currentObj = await getIntradayObj(symbol);
-      } else {
-        currentObj = await getIntradayObj1(companyName, indexName);
-      }
-      if (
-        currentObj.date === currentDate &&
-        currentObj.date !== lastCandleDate
-      ) {
-        candles = [...candles, currentObj];
+      dataArr?.forEach((item, i) => {
+        const aa = item[0].split("T");
+        const hhmmss = aa[1].split("+")[0];
+        candles = [
+          ...candles,
+          {
+            date: `${aa[0]} ${hhmmss}`,
+            open: item[1],
+            high: item[2],
+            low: item[3],
+            close: item[4],
+            volume: item[5],
+          },
+        ];
+      });
+      const lastCandleDate = candles[candles.length - 1].date.split(" ")[0];
+      const currentDate = new Date().toISOString().split("T")[0];
+      if (lastCandleDate !== currentDate) {
+        let currentObj;
+        let currentHour = new Date().getHours();
+        if (currentHour >= 17 && indexName === "NSE_EQ") {
+          currentObj = await getIntradayObj(symbol);
+        } else {
+          currentObj = await getIntradayObj1(companyName, indexName);
+        }
+        if (
+          currentObj.date === currentDate &&
+          currentObj.date !== lastCandleDate
+        ) {
+          candles = [...candles, currentObj];
+        }
       }
     }
   }

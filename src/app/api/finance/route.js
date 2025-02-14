@@ -1,29 +1,23 @@
 import { NextResponse } from "next/server";
 // import axios from "axios";
 // import moment from "moment";
-// import yahooFinance from "yahoo-finance2";
+import yahooFinance from "yahoo-finance2";
 
 const round2Decimal = (value) => {
   return parseFloat((Math.round(value * 100) / 100).toFixed(2), 10);
 };
 
 export async function GET(req) {
-  return NextResponse.json({ message: "success" }, { status: 200 });
-}
-
-/*
-export async function POST(req) {
   try {
-    const { symbol = "^NSEI", interval = "1d", toDate } = await req.json();
-    let data = {};
-
-    // const symbol = "^BSESN"; // Sensex symbol for Yahoo Finance
-    // const fromDate = "2024-02-13"; // Set the historical start date
-    // const toDate = "2025-02-13"; // Set the end date
+    const { searchParams } = new URL(req.url);
+    const symbol = searchParams.get("symbol");
+    const interval = searchParams.get("interval");
+    const fromDate = searchParams.get("fromDate");
+    const toDate = searchParams.get("toDate");
 
     const queryObj = {
       interval,
-      period1: moment().format("YYYY-MM-DD"),
+      period1: fromDate,
     };
 
     if (toDate) {
@@ -31,7 +25,7 @@ export async function POST(req) {
     }
 
     const result = await yahooFinance.chart(symbol, queryObj);
-    data = result.quotes.filter((v) => v.close !== null);
+    const data = result.quotes.filter((v) => v.close !== null);
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
@@ -43,7 +37,6 @@ export async function POST(req) {
     );
   }
 }
-*/
 
 /*
 export async function POST(req) {

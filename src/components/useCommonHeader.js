@@ -13,6 +13,7 @@ import {
   getIntradayData,
   getHistoricDataNSE,
   getMarketTimings,
+  getNSEDataYahooFinance,
   // getNSEData,
 } from "./getIntervalData";
 import isTradingActive from "./utils/isTradingActive";
@@ -152,13 +153,22 @@ const useCommonHeader = (isEchart) => {
       // getNSEData("details", companyObj.symbol);
       // getNSEData("tradeInfo", companyObj.symbol);
     } else {
-      const arr = await getHistoricData(
-        intervalObj.value,
-        companyObj.value,
-        indexObj.value,
-        period
-      );
-      setCandleArr(arr, intervalObj.value === "day");
+      if (companyObj.yahooSymbol || indexObj.value === "NSE_EQ") {
+        const arr = await getNSEDataYahooFinance(
+          companyObj.yahooSymbol || companyObj.symbol + ".NS",
+          intervalObj.interval,
+          period
+        );
+        setCandleData(arr);
+      } else {
+        const arr = await getHistoricData(
+          intervalObj.value,
+          companyObj.value,
+          indexObj.value,
+          period
+        );
+        setCandleArr(arr, intervalObj.value === "day");
+      }
     }
   };
 
