@@ -100,7 +100,7 @@ const CandleStickChart = () => {
     return companyObj?.label;
   };
 
-  const downloadReport = () => {
+  const analysisClick = () => {
     setModalOpen(true);
   };
 
@@ -163,8 +163,8 @@ const CandleStickChart = () => {
                 <h2>{getCompanyName()}</h2>
               </div>
               <div className="inlineDiv">
-                <button onClick={downloadReport} className="custom-button">
-                  Download Report
+                <button onClick={analysisClick} className="custom-button">
+                  Technical Analysis
                 </button>
               </div>
             </div>
