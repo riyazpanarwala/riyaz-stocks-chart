@@ -40,6 +40,33 @@ const round2Decimal = (value) => {
   return "";
 };
 
+const getDayDataFromIntraday = (intradayData) => {
+  const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
+
+  const maxValue = Math.max.apply(
+    Math,
+    intradayData.map((d) => d[2])
+  );
+  const minValue = Math.min.apply(
+    Math,
+    intradayData.map((d) => d[3])
+  );
+
+  return {
+    date: intradayData[0][0].split("T")[0],
+    open: intradayData[0][1],
+    close: intradayData[intradayData.length - 1][4],
+    high: maxValue,
+    low: minValue,
+    volume: total,
+  };
+};
+
+const getIntradayObj1 = async (companyName, indexName) => {
+  const arr1 = await getIntradayData("1minute", companyName, indexName);
+  return getDayDataFromIntraday(arr1.data.candles?.reverse());
+};
+
 const getIntradayObj = async (symbol) => {
   const arr1 = await getHistoricDataNSE(symbol, "1d");
   return arr1.candles[arr1.candles.length - 1];
@@ -80,11 +107,16 @@ export const stockAnalysis = async (
         },
       ];
     });
-
-    if (indexName === "NSE_EQ") {
-      const currentObj = await getIntradayObj(symbol);
-      const currentDate = new Date().toISOString().split("T")[0];
-      const lastCandleDate = candles[candles.length - 1].date.split(" ")[0];
+    const lastCandleDate = candles[candles.length - 1].date.split(" ")[0];
+    const currentDate = new Date().toISOString().split("T")[0];
+    if (lastCandleDate !== currentDate) {
+      let currentObj;
+      let currentHour = new Date().getHours();
+      if (currentHour >= 17 && indexName === "NSE_EQ") {
+        currentObj = await getIntradayObj(symbol);
+      } else {
+        currentObj = await getIntradayObj1(companyName, indexName);
+      }
       if (
         currentObj.date === currentDate &&
         currentObj.date !== lastCandleDate
