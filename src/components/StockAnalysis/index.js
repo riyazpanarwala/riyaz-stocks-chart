@@ -20,6 +20,7 @@ import {
   cci,
   sto,
   williamson,
+  crossover,
 } from "../financeChart/indicator";
 import { saveAs } from "file-saver";
 import watchlistArray from "../utils/watchListArr";
@@ -151,6 +152,9 @@ export const stockAnalysis = async (
   const cciValues = cci(candles, 20);
   const stoVal = sto(candles, 20, 3);
   const williamson14 = williamson(candles, 14);
+  const shortTermMACross = crossover(sma5, sma20);
+  const mediumTermMACross = crossover(sma20, sma50);
+  const longTermMACross = crossover(sma50, sma200);
 
   return {
     "RSI(14)": round2Decimal(rsiValues[rsiValues.length - 1]),
@@ -177,6 +181,12 @@ export const stockAnalysis = async (
     "SMA(50)": round2Decimal(sma50[sma50.length - 1]),
     "SMA(100)": round2Decimal(sma100[sma100.length - 1]),
     "SMA(200)": round2Decimal(sma200[sma200.length - 1]),
+    "shortTermMACross(5,20)":
+      shortTermMACross[shortTermMACross.length - 1]?.type,
+    "mediumTermMACross(20,50)":
+      mediumTermMACross[mediumTermMACross.length - 1]?.type,
+    "longTermMACross(50,200)":
+      longTermMACross[longTermMACross.length - 1]?.type,
     "EMA(50)": round2Decimal(ema50[ema50.length - 1]),
     "EMA(200)": round2Decimal(ema200[ema200.length - 1]),
     lastClose: lastClose,

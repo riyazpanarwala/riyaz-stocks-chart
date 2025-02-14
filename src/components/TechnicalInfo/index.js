@@ -8,6 +8,7 @@ import "./App.css";
 const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
   const [technicalIndicators, setTechnicalIndicators] = useState([]);
   const [movingAverages, setMovingAvg] = useState([]);
+  const [maCrossOvers, setMACrossOvers] = useState([]);
   const summaryData = [];
 
   const fetchData = async () => {
@@ -85,6 +86,24 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
         Indication: data.lastClose < data["SMA(200)"] ? "Bearish" : "Bullish",
       },
     ]);
+
+    setMACrossOvers([
+      {
+        Period: "Short Term",
+        "Moving Average Crossover": "5 & 20 DMA Crossover",
+        Indication: data["shortTermMACross(5,20)"],
+      },
+      {
+        Period: "Medium Term",
+        "Moving Average Crossover": "20 & 50 DMA Crossover",
+        Indication: data["mediumTermMACross(20,50)"],
+      },
+      {
+        Period: "Long Term",
+        "Moving Average Crossover": "50 & 200 DMA Crossover",
+        Indication: data["longTermMACross(50,200)"],
+      },
+    ]);
   };
 
   useEffect(() => {
@@ -113,6 +132,11 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
           title="Technical Indicators"
           columns={["Indicator", "Level", "Indication"]}
           data={technicalIndicators}
+        />
+        <Table
+          title="Moving Averages Crossovers"
+          columns={["Period", "Moving Average Crossover", "Indication"]}
+          data={maCrossOvers}
         />
       </Modal>
     </div>
