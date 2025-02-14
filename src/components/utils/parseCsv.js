@@ -12,11 +12,13 @@ const indicesArr = [
     name: "NIFTY BANK",
     value: "Nifty Bank",
     symbol: "NIFTY BANK",
+    yahooSymbol: "^NSEBANK",
   },
   {
     name: "NIFTY MIDCAP 100",
     value: "NIFTY MIDCAP 100",
     symbol: "NIFTY MIDCAP 100",
+    yahooSymbol: "NIFTY_MIDCAP_100.NS",
   },
   {
     name: "NIFTY SMALLCAP 100",
@@ -27,6 +29,7 @@ const indicesArr = [
     name: "NIFTY ENERGY",
     value: "Nifty Energy",
     symbol: "NIFTY ENERGY",
+    yahooSymbol: "^CNXENERGY",
   },
 ];
 

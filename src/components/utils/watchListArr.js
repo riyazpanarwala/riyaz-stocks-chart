@@ -128,6 +128,7 @@ const watchlistArray = (companyId) => {
     },
     {
       label: "SRESTHAFINVEST",
+      symbol: "SRESTHA",
       value: "INE606K01049",
       nse: false,
       bse: true,
