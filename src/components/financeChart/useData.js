@@ -14,8 +14,9 @@ import {
 const emaPeriod1 = 50;
 const emaPeriod2 = 200;
 
-const useData = (initialData, indicatorName) => {
+const useData = (initialData, indicatorName, isIntraday) => {
   let ema12, ema26, rsiCalculator, rsiYAccessor;
+  let ema5, ema8, ema13;
   let calculatedData = initialData;
   let angles;
   let macdCalculator;
@@ -23,24 +24,52 @@ const useData = (initialData, indicatorName) => {
   let bb;
 
   if (indicatorName === "ema") {
-    ema12 = ema()
-      .id(1)
-      .options({ windowSize: emaPeriod1 })
-      .merge((d, c) => {
-        d.ema12 = c;
-      })
-      .accessor((d) => d.ema12);
+    if (isIntraday) {
+      ema5 = ema()
+        .id(1)
+        .options({ windowSize: 5 })
+        .merge((d, c) => {
+          d.ema5 = c;
+        })
+        .accessor((d) => d.ema5);
+      /*
+      ema8 = ema()
+        .id(2)
+        .options({ windowSize: 8 })
+        .merge((d, c) => {
+          d.ema8 = c;
+        })
+        .accessor((d) => d.ema8);
+*/
+      ema13 = ema()
+        .id(3)
+        .options({ windowSize: 13 })
+        .merge((d, c) => {
+          d.ema13 = c;
+        })
+        .accessor((d) => d.ema13);
+      calculatedData = ema13(ema5(initialData));
+      angles = "";
+    } else {
+      ema12 = ema()
+        .id(1)
+        .options({ windowSize: emaPeriod1 })
+        .merge((d, c) => {
+          d.ema12 = c;
+        })
+        .accessor((d) => d.ema12);
 
-    ema26 = ema()
-      .id(2)
-      .options({ windowSize: emaPeriod2 })
-      .merge((d, c) => {
-        d.ema26 = c;
-      })
-      .accessor((d) => d.ema26);
-    calculatedData = ema26(ema12(initialData));
+      ema26 = ema()
+        .id(2)
+        .options({ windowSize: emaPeriod2 })
+        .merge((d, c) => {
+          d.ema26 = c;
+        })
+        .accessor((d) => d.ema26);
+      calculatedData = ema26(ema12(initialData));
 
-    angles = emaAngle(initialData, "ema12", "ema26", emaPeriod1, emaPeriod2);
+      angles = emaAngle(initialData, "ema12", "ema26", emaPeriod1, emaPeriod2);
+    }
   } else if (indicatorName === "rsi") {
     rsiCalculator = rsi()
       .options({ windowSize: 14 })
@@ -212,6 +241,9 @@ const useData = (initialData, indicatorName) => {
     sma50,
     sma200,
     bb,
+    ema5,
+    ema8,
+    ema13,
   };
 };
 

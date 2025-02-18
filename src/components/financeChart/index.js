@@ -102,7 +102,10 @@ const FinanceChart = ({
     sma50,
     sma200,
     bb,
-  } = useData(initialData, indicatorName);
+    ema5,
+    ema8,
+    ema13,
+  } = useData(initialData, indicatorName, isIntraday);
   const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
     (d) => new Date(d.date)
   );
@@ -627,7 +630,22 @@ const FinanceChart = ({
         )}
 
         {indicatorName === "ema" ? (
-          <EMAChart ema26={ema26} ema12={ema12} angles={angles} />
+          <EMAChart
+            emaArr={
+              isIntraday
+                ? [
+                    { id: "ema5", val: ema5 },
+                    // { id: "ema8", val: ema8 },
+                    { id: "ema13", val: ema13 },
+                  ]
+                : [
+                    { id: "ema12", val: ema12 },
+                    { id: "ema26", val: ema26 },
+                  ]
+            }
+            angles={angles}
+            isIntraday={isIntraday}
+          />
         ) : (
           ""
         )}

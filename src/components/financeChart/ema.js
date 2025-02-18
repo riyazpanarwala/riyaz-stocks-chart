@@ -1,40 +1,37 @@
-import React from "react";
+import React, { Fragment } from "react";
 import { LineSeries } from "@riyazpanarwala/series";
 import { CurrentCoordinate } from "@riyazpanarwala/coordinates";
 import CustomTooltip from "./CustomTooltip";
 
-const EMAChart = ({ ema26, ema12, angles }) => {
+const EMAChart = ({ emaArr, angles, isIntraday }) => {
   return (
     <>
-      <LineSeries yAccessor={ema26.accessor()} strokeStyle={ema26.stroke()} />
-      <CurrentCoordinate
-        yAccessor={ema26.accessor()}
-        fillStyle={ema26.stroke()}
-      />
-      <LineSeries yAccessor={ema12.accessor()} strokeStyle={ema12.stroke()} />
-      <CurrentCoordinate
-        yAccessor={ema12.accessor()}
-        fillStyle={ema12.stroke()}
-      />
-      <CustomTooltip
-        origin={[8, 32]}
-        yAccessor={ema26.accessor()}
-        tooltipName={`EMA(${ema26.options().windowSize})`}
-        textFill={ema26.stroke()}
-      />
-      <CustomTooltip
-        origin={[8, 48]}
-        yAccessor={ema12.accessor()}
-        tooltipName={`EMA(${ema12.options().windowSize})`}
-        textFill={ema12.stroke()}
-      />
+      {emaArr.map((v, i) => {
+        const { val } = v;
+        const yVal = (isIntraday ? 48 : 32) + i * 16;
+        return (
+          <Fragment key={v.id}>
+            <LineSeries yAccessor={val.accessor()} strokeStyle={val.stroke()} />
+            <CurrentCoordinate
+              yAccessor={val.accessor()}
+              fillStyle={val.stroke()}
+            />
+            <CustomTooltip
+              origin={[8, yVal]}
+              yAccessor={val.accessor()}
+              tooltipName={`EMA(${val.options().windowSize})`}
+              textFill={val.stroke()}
+            />
+          </Fragment>
+        );
+      })}
 
       {angles ? (
         <CustomTooltip
-          origin={[8, 64]}
+          origin={[8, (isIntraday ? 48 : 32) + emaArr.length * 16]}
           yAccessor={(d) => angles[d.idx.index]}
           tooltipName={`Angle`}
-          textFill={ema26.stroke()}
+          textFill={emaArr[0].val.stroke()}
         />
       ) : (
         ""
