@@ -51,6 +51,7 @@ import SuperTrendChart from "./SuperTrendChart";
 import IndicatorChart from "./IndicatorChart";
 import STOChart from "./STOChart";
 import BolingerChart from "./BolingerChart";
+import MACrossOverChart from "./MACrossOverChart";
 
 const indicatorYExtentsObj = {
   sma: (d) => [d.high, d.low],
@@ -64,6 +65,9 @@ const indicatorYExtentsObj = {
   mfi: (d) => [0, 100],
   bolinger: (d) => [d.high, d.low],
   cci: (d) => [0, d.cci + 20],
+  "5-20-sma": (d) => [d.high, d.low],
+  "20-50-sma": (d) => [d.high, d.low],
+  "50-200-sma": (d) => [d.high, d.low],
 };
 
 const FinanceChart = ({
@@ -105,6 +109,8 @@ const FinanceChart = ({
     ema5,
     ema8,
     ema13,
+    ma1,
+    ma2,
   } = useData(initialData, indicatorName, isIntraday);
   const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
     (d) => new Date(d.date)
@@ -654,6 +660,14 @@ const FinanceChart = ({
 
         {indicatorName === "bolinger" ? (
           <BolingerChart bb={bb} sma20={sma20} />
+        ) : (
+          ""
+        )}
+
+        {indicatorName === "5-20-sma" ||
+        indicatorName === "20-50-sma" ||
+        indicatorName === "50-200-sma" ? (
+          <MACrossOverChart ma1={ma1} ma2={ma2} indicatorName={indicatorName} />
         ) : (
           ""
         )}

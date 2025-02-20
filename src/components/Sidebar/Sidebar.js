@@ -111,6 +111,25 @@ const Sidebar = ({
       isActive: breakoutName === "support",
     },
   ];
+
+  const crossOverArr = [
+    {
+      id: "5-20-sma",
+      name: "5 & 20 SMA",
+      isActive: indicatorName === "5-20-sma",
+    },
+    {
+      id: "20-50-sma",
+      name: "20 & 50 SMA",
+      isActive: indicatorName === "20-50-sma",
+    },
+    {
+      id: "50-200-sma",
+      name: "50 & 200 SMA",
+      isActive: indicatorName === "50-200-sma",
+    },
+  ];
+
   const patternArr = getPatternArr(patternName);
   const watchlistArray1 = watchlistArray(companyObj.value);
 
@@ -173,6 +192,18 @@ const Sidebar = ({
             name: "Indicator",
             icon: <GrIndicator className={styles.icon} />,
             subMenu: indicatorArr,
+          }}
+          onClick={(e, id) => {
+            closeSidebar();
+            handleIndicatorClick(id);
+          }}
+        />
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{
+            name: "MACrossOver",
+            icon: <MdPattern className={styles.icon} />,
+            subMenu: crossOverArr,
           }}
           onClick={(e, id) => {
             closeSidebar();

@@ -1,5 +1,12 @@
 import React from "react";
-import { ema, rsi, macd, sma, bollingerBand } from "@riyazpanarwala/indicators";
+import {
+  ema,
+  rsi,
+  macd,
+  sma,
+  bollingerBand,
+  algo,
+} from "@riyazpanarwala/indicators";
 import {
   dmi,
   obv,
@@ -21,6 +28,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
   let angles;
   let macdCalculator;
   let sma20, sma50, sma200;
+  let ma1, ma2;
   let bb;
 
   if (indicatorName === "ema") {
@@ -227,6 +235,57 @@ const useData = (initialData, indicatorName, isIntraday) => {
     calculatedData = sma20(bb(initialData));
   } else if (indicatorName === "cci") {
     calculatedData = cci(initialData);
+  } else if (
+    indicatorName === "5-20-sma" ||
+    indicatorName === "20-50-sma" ||
+    indicatorName === "50-200-sma"
+  ) {
+    let period1 = 50;
+    let period2 = 200;
+    if (indicatorName === "5-20-sma") {
+      period1 = 5;
+      period2 = 20;
+    } else if (indicatorName === "20-50-sma") {
+      period1 = 20;
+      period2 = 50;
+    }
+    ma1 = sma()
+      .id(0)
+      .options({ windowSize: period1 })
+      .merge((d, c) => {
+        d[`ma${period1}`] = c;
+      })
+      .accessor((d) => d[`ma${period1}`]);
+
+    ma2 = sma()
+      .id(2)
+      .options({ windowSize: period2 })
+      .merge((d, c) => {
+        d[`ma${period2}`] = c;
+      })
+      .accessor((d) => d[`ma${period2}`]);
+
+    const buySell = algo()
+      .windowSize(2)
+      .accumulator(([prev, now]) => {
+        const {
+          [`ma${period1}`]: prevShortTerm,
+          [`ma${period2}`]: prevLongTerm,
+        } = prev;
+        const {
+          [`ma${period1}`]: nowShortTerm,
+          [`ma${period2}`]: nowLongTerm,
+        } = now;
+        if (prevShortTerm < prevLongTerm && nowShortTerm > nowLongTerm)
+          return `LONG${indicatorName}`;
+        if (prevShortTerm > prevLongTerm && nowShortTerm < nowLongTerm)
+          return `SHORT${indicatorName}`;
+      })
+      .merge((d, c) => {
+        d.longShort = c;
+      });
+
+    calculatedData = buySell(ma2(ma1(initialData)));
   }
 
   return {
@@ -244,6 +303,8 @@ const useData = (initialData, indicatorName, isIntraday) => {
     ema5,
     ema8,
     ema13,
+    ma1,
+    ma2,
   };
 };
 
