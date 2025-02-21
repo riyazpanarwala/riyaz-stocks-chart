@@ -176,7 +176,7 @@ export const stockAnalysis = async (
     "DI+": plusDI[plusDI.length - 1],
     "DI-": minusDI[minusDI.length - 1],
     "DAY MACD(12,26,9)": round2Decimal(macdLine[macdLine.length - 1]),
-    "DAY MACD SIGNAL": signalLine[signalLine.length - 1],
+    "DAY MACD SIGNAL": round2Decimal(signalLine[signalLine.length - 1]),
     "Day ATR": round2Decimal(atrValues[atrValues.length - 1]),
     "Day ROC(20)": round2Decimal(roc20[roc20.length - 1]),
     "Day ROC(125)": round2Decimal(roc125[roc125.length - 1]),

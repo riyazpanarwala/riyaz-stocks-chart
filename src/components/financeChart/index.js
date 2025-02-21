@@ -112,16 +112,16 @@ const FinanceChart = ({
     ma1,
     ma2,
   } = useData(initialData, indicatorName, isIntraday);
-  const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
-    (d) => new Date(d.date)
-  );
+  const ScaleProvider =
+    discontinuousTimeScaleProviderBuilder().inputDateAccessor(
+      (d) => new Date(d.date)
+    );
 
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
   let interactiveNodes = {};
 
-  const { data, xScale, xAccessor, displayXAccessor } = ScaleProvider(
-    calculatedData
-  );
+  const { data, xScale, xAccessor, displayXAccessor } =
+    ScaleProvider(calculatedData);
   const pricesDisplayFormat = format(".2f");
   const max = xAccessor(data[data.length - 1]);
   const min = 0; // xAccessor(data[Math.max(0, data.length - 100)]);
@@ -618,7 +618,13 @@ const FinanceChart = ({
         )}
 
         {indicatorName === "macd" || indicatorName === "zerolagmacd" ? (
-          <EMAChart ema26={ema26} ema12={ema12} />
+          <EMAChart
+            emaArr={[
+              { id: "ema12", val: ema12 },
+              { id: "ema26", val: ema26 },
+            ]}
+            isIntraday={isIntraday}
+          />
         ) : (
           ""
         )}

@@ -25,6 +25,19 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
     }
   };
 
+  const getMACDIndication = (macdLine, signalLine) => {
+    if (macdLine > 0) {
+      if (macdLine >= signalLine) {
+        return "Bullish";
+      }
+    } else {
+      if (macdLine <= signalLine) {
+        return "Bearish";
+      }
+    }
+    return "Neutral";
+  };
+
   const getCCIIndication = (val) => {
     if (val < -200) {
       return "Oversold";
@@ -54,6 +67,8 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
     const sto = data["Stochastic(20,3)"];
     const rsiValue = data["RSI(14)"];
     const cciValue = data["CCI(20)"];
+    const macdLine = data["DAY MACD(12,26,9)"];
+    const signalLine = data["DAY MACD SIGNAL"];
 
     setTechnicalIndicators([
       {
@@ -63,8 +78,8 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
       },
       {
         Indicator: "MACD(12,26,9)",
-        Level: data["DAY MACD(12,26,9)"],
-        Indication: "",
+        Level: macdLine,
+        Indication: getMACDIndication(macdLine, signalLine),
       },
       {
         Indicator: "Stochastic(20,3)",
