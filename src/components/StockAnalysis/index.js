@@ -91,7 +91,7 @@ export const stockAnalysis = async (
     arr = await getHistoricDataNSE(symbol, isFrom);
     candles = arr.candles;
   } else {
-    if (indexName === "NSE_EQ") {
+    if (indexName === "NSE_EQ" && false) {
       candles = await getNSEDataYahooFinance(symbol + ".NS", "1d", isFrom);
     } else {
       arr = await getHistoricData(interval, companyName, indexName, isFrom);

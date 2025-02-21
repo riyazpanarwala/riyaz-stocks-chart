@@ -19,6 +19,8 @@ import {
 import isTradingActive from "./utils/isTradingActive";
 import _ from "lodash";
 
+const isYahooFinanceEnable = false;
+
 const useCommonHeader = (isEchart) => {
   const [period, setPeriod] = useState(periods[1]);
   const [intervalObj, setInterval] = useState([]);
@@ -153,7 +155,10 @@ const useCommonHeader = (isEchart) => {
       // getNSEData("details", companyObj.symbol);
       // getNSEData("tradeInfo", companyObj.symbol);
     } else {
-      if (companyObj.yahooSymbol || indexObj.value === "NSE_EQ") {
+      if (
+        isYahooFinanceEnable &&
+        (companyObj.yahooSymbol || indexObj.value === "NSE_EQ")
+      ) {
         const arr = await getNSEDataYahooFinance(
           companyObj.yahooSymbol || companyObj.symbol + ".NS",
           intervalObj.interval,
