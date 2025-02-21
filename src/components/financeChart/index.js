@@ -667,7 +667,12 @@ const FinanceChart = ({
         {indicatorName === "5-20-sma" ||
         indicatorName === "20-50-sma" ||
         indicatorName === "50-200-sma" ? (
-          <MACrossOverChart ma1={ma1} ma2={ma2} indicatorName={indicatorName} />
+          <MACrossOverChart
+            ma1={ma1}
+            ma2={ma2}
+            indicatorName={indicatorName}
+            isIntraday={isIntraday}
+          />
         ) : (
           ""
         )}

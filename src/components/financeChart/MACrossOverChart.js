@@ -4,7 +4,7 @@ import { CurrentCoordinate } from "@riyazpanarwala/coordinates";
 import { Annotate, SvgPathAnnotation } from "@riyazpanarwala/annotations";
 import CustomTooltip from "./CustomTooltip";
 
-const MACrossOverChart = ({ ma1, ma2, indicatorName }) => {
+const MACrossOverChart = ({ ma1, ma2, indicatorName, isIntraday }) => {
   const defaultAnnotationProps = {
     onClick: console.log.bind(console),
   };
@@ -16,7 +16,7 @@ const MACrossOverChart = ({ ma1, ma2, indicatorName }) => {
     path: () => "M12 4L6 10H10V20H14V10H18L12 4Z",
     pathWidth: 12,
     pathHeight: 12,
-    tooltip: "Go long",
+    tooltip: (datum) => `Go long (Close:${datum.close} date:${datum.date})`,
   };
 
   const shortAnnotationProps = {
@@ -26,8 +26,10 @@ const MACrossOverChart = ({ ma1, ma2, indicatorName }) => {
     path: () => "M12 20L18 14H14V4H10V14H6L12 20Z",
     pathWidth: 12,
     pathHeight: 12,
-    tooltip: "Go short",
+    tooltip: (datum) => `Go short (Close:${datum.close} date:${datum.date})`,
   };
+
+  const yVal = isIntraday ? 48 : 32;
 
   return (
     <>
@@ -38,13 +40,13 @@ const MACrossOverChart = ({ ma1, ma2, indicatorName }) => {
       <CurrentCoordinate yAccessor={ma2.accessor()} fillStyle={ma2.stroke()} />
 
       <CustomTooltip
-        origin={[8, 32]}
+        origin={[8, yVal]}
         yAccessor={ma1.accessor()}
         tooltipName={`SMA(${ma1.options().windowSize})`}
         textFill={ma1.stroke()}
       />
       <CustomTooltip
-        origin={[8, 48]}
+        origin={[8, yVal + 16]}
         yAccessor={ma2.accessor()}
         tooltipName={`SMA(${ma2.options().windowSize})`}
         textFill={ma2.stroke()}
