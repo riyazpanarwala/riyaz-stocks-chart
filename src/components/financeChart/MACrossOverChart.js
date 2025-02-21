@@ -1,12 +1,7 @@
 import React from "react";
 import { LineSeries } from "@riyazpanarwala/series";
 import { CurrentCoordinate } from "@riyazpanarwala/coordinates";
-import {
-  Annotate,
-  SvgPathAnnotation,
-  // buyPath,
-  // sellPath,
-} from "@riyazpanarwala/annotations";
+import { Annotate, SvgPathAnnotation } from "@riyazpanarwala/annotations";
 import CustomTooltip from "./CustomTooltip";
 
 const MACrossOverChart = ({ ma1, ma2, indicatorName }) => {
@@ -18,9 +13,7 @@ const MACrossOverChart = ({ ma1, ma2, indicatorName }) => {
     ...defaultAnnotationProps,
     y: ({ yScale, datum }) => yScale(datum.low),
     fill: "#006517",
-    // path: () => buyPath,
-    path: () =>
-      "M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z",
+    path: () => "M12 4L6 10H10V20H14V10H18L12 4Z",
     pathWidth: 12,
     pathHeight: 12,
     tooltip: "Go long",
@@ -30,9 +23,7 @@ const MACrossOverChart = ({ ma1, ma2, indicatorName }) => {
     ...defaultAnnotationProps,
     y: ({ yScale, datum }) => yScale(datum.high),
     fill: "#FF0000",
-    // path: () => sellPath,
-    path: () =>
-      "M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z",
+    path: () => "M12 20L18 14H14V4H10V14H6L12 20Z",
     pathWidth: 12,
     pathHeight: 12,
     tooltip: "Go short",
