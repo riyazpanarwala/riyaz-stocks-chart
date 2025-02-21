@@ -11,6 +11,34 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
   const [maCrossOvers, setMACrossOvers] = useState([]);
   const summaryData = [];
 
+  const getRSIIndication = (val) => {
+    if (val < 25) {
+      return "Oversold";
+    } else if (val >= 25 && val < 45) {
+      return "Bearish";
+    } else if (val >= 45 && val < 55) {
+      return "Neutral";
+    } else if (val >= 55 && val < 75) {
+      return "Bullish";
+    } else if (val >= 75) {
+      return "Overbought";
+    }
+  };
+
+  const getCCIIndication = (val) => {
+    if (val < -200) {
+      return "Oversold";
+    } else if (val >= -200 && val < -50) {
+      return "Bearish";
+    } else if (val >= -50 && val < 50) {
+      return "Neutral";
+    } else if (val >= 50 && val < 200) {
+      return "Bullish";
+    } else if (val >= 200) {
+      return "Overbought";
+    }
+  };
+
   const fetchData = async () => {
     const data = await stockAnalysis(
       "day",
@@ -24,9 +52,15 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
 
     const bb = data["Bolinger Band(20,2)"];
     const sto = data["Stochastic(20,3)"];
+    const rsiValue = data["RSI(14)"];
+    const cciValue = data["CCI(20)"];
 
     setTechnicalIndicators([
-      { Indicator: "RSI(14)", Level: data["RSI(14)"], Indication: "" },
+      {
+        Indicator: "RSI(14)",
+        Level: rsiValue,
+        Indication: getRSIIndication(rsiValue),
+      },
       {
         Indicator: "MACD(12,26,9)",
         Level: data["DAY MACD(12,26,9)"],
@@ -39,7 +73,11 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
       },
       { Indicator: "ROC(20)", Level: data["Day ROC(20)"], Indication: "" },
       { Indicator: "ROC(125)", Level: data["Day ROC(125)"], Indication: "" },
-      { Indicator: "CCI(20)", Level: data["CCI(20)"], Indication: "" },
+      {
+        Indicator: "CCI(20)",
+        Level: cciValue,
+        Indication: getCCIIndication(cciValue),
+      },
       {
         Indicator: "Williamson%R(14) ",
         Level: data["Williamson%R(14)"],
