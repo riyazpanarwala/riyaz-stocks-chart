@@ -66,7 +66,10 @@ const getDayDataFromIntraday = (intradayData) => {
 
 const getIntradayObj1 = async (companyName, indexName) => {
   const arr1 = await getIntradayData("1minute", companyName, indexName);
-  return getDayDataFromIntraday(arr1.data.candles?.reverse());
+  if (arr1.data.candles?.length) {
+    return getDayDataFromIntraday(arr1.data.candles?.reverse());
+  }
+  return "";
 };
 
 const getIntradayObj = async (symbol) => {
@@ -82,7 +85,8 @@ export const stockAnalysis = async (
   symbol,
   isVolumeBreak,
   isSupportBreak,
-  isMultibagger
+  isMultibagger,
+  isMarketOpen
 ) => {
   let candles = [];
   let arr = [];
@@ -112,21 +116,24 @@ export const stockAnalysis = async (
           },
         ];
       });
-      const lastCandleDate = candles[candles.length - 1].date.split(" ")[0];
-      const currentDate = new Date().toISOString().split("T")[0];
-      if (lastCandleDate !== currentDate) {
-        let currentObj;
-        let currentHour = new Date().getHours();
-        if (currentHour >= 17 && indexName === "NSE_EQ") {
-          currentObj = await getIntradayObj(symbol);
-        } else {
-          currentObj = await getIntradayObj1(companyName, indexName);
-        }
-        if (
-          currentObj.date === currentDate &&
-          currentObj.date !== lastCandleDate
-        ) {
-          candles = [...candles, currentObj];
+      if ((isMarketOpen && isMarketOpen()) || !isMarketOpen) {
+        const lastCandleDate = candles[candles.length - 1].date.split(" ")[0];
+        const currentDate = new Date().toISOString().split("T")[0];
+        if (lastCandleDate !== currentDate) {
+          let currentObj;
+          let currentHour = new Date().getHours();
+          if (currentHour >= 17 && indexName === "NSE_EQ") {
+            currentObj = await getIntradayObj(symbol);
+          } else {
+            currentObj = await getIntradayObj1(companyName, indexName);
+          }
+          if (
+            currentObj &&
+            currentObj.date === currentDate &&
+            currentObj.date !== lastCandleDate
+          ) {
+            candles = [...candles, currentObj];
+          }
         }
       }
     }

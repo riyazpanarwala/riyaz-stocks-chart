@@ -310,6 +310,7 @@ const useCommonHeader = (isEchart) => {
     candleData,
     timeData,
     period,
+    isMarketOpen,
   };
 };
 

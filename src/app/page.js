@@ -38,6 +38,7 @@ const CandleStickChart = () => {
     newIndexArr,
     candleData,
     period,
+    isMarketOpen,
   } = useCommonHeader();
 
   const handleWatchListClick = (obj) => {
@@ -198,6 +199,7 @@ const CandleStickChart = () => {
             onClose={() => {
               setModalOpen(false);
             }}
+            isMarketOpen={isMarketOpen}
           />
         )}
       </div>
