@@ -52,6 +52,27 @@ const TechnicalInfo = ({ companyObj, indexName, onClose, isMarketOpen }) => {
     }
   };
 
+  const getWilliamsonIndication = (val) => {
+    if (val >= -100 && val < -80) {
+      return "Oversold";
+    } else if (val >= -80 && val < -50) {
+      return "Bearish";
+    } else if (val >= -50 && val < -20) {
+      return "Bullish";
+    } else {
+      return "Overbought";
+    }
+  };
+
+  const getROC20Indication = (val) => {
+    if (val > 0) {
+      return "Bullish";
+    } else if (val < 0) {
+      return "Bearish";
+    }
+    return "Neutral";
+  };
+
   const fetchData = async () => {
     const data = await stockAnalysis(
       "day",
@@ -73,6 +94,8 @@ const TechnicalInfo = ({ companyObj, indexName, onClose, isMarketOpen }) => {
     const cciValue = data["CCI(20)"];
     const macdLine = data["DAY MACD(12,26,9)"];
     const signalLine = data["DAY MACD SIGNAL"];
+    const willValue = data["Williamson%R(14)"];
+    const roc20Val = data["Day ROC(20)"];
 
     setTechnicalIndicators([
       {
@@ -90,7 +113,11 @@ const TechnicalInfo = ({ companyObj, indexName, onClose, isMarketOpen }) => {
         Level: `K:${sto.K}, D:${sto.D}`,
         Indication: "",
       },
-      { Indicator: "ROC(20)", Level: data["Day ROC(20)"], Indication: "" },
+      {
+        Indicator: "ROC(20)",
+        Level: roc20Val,
+        Indication: getROC20Indication(roc20Val),
+      },
       { Indicator: "ROC(125)", Level: data["Day ROC(125)"], Indication: "" },
       {
         Indicator: "CCI(20)",
@@ -99,8 +126,8 @@ const TechnicalInfo = ({ companyObj, indexName, onClose, isMarketOpen }) => {
       },
       {
         Indicator: "Williamson%R(14) ",
-        Level: data["Williamson%R(14)"],
-        Indication: "",
+        Level: willValue,
+        Indication: getWilliamsonIndication(willValue),
       },
       { Indicator: "MFI(14)", Level: data["MFI(14)"] || "", Indication: "" },
       { Indicator: "ATR(14)", Level: data["Day ATR"], Indication: "" },
