@@ -17,9 +17,8 @@ import {
   // getNSEData,
 } from "./getIntervalData";
 import isTradingActive from "./utils/isTradingActive";
+import isYFinanceEnable from "./utils/isYFinanceEnable";
 import _ from "lodash";
-
-const isYahooFinanceEnable = false;
 
 const useCommonHeader = (isEchart) => {
   const [period, setPeriod] = useState(periods[1]);
@@ -156,7 +155,7 @@ const useCommonHeader = (isEchart) => {
       // getNSEData("tradeInfo", companyObj.symbol);
     } else {
       if (
-        isYahooFinanceEnable &&
+        isYFinanceEnable &&
         (companyObj.yahooSymbol || indexObj.value === "NSE_EQ")
       ) {
         const arr = await getNSEDataYahooFinance(

@@ -25,6 +25,7 @@ import {
 } from "../financeChart/indicator";
 import { saveAs } from "file-saver";
 import watchlistArray from "../utils/watchListArr";
+import isYFinanceEnable from "../utils/isYFinanceEnable";
 // import fs from "fs";
 
 const sleep = (ms) => {
@@ -95,7 +96,7 @@ export const stockAnalysis = async (
     arr = await getHistoricDataNSE(symbol, isFrom);
     candles = arr.candles;
   } else {
-    if (indexName === "NSE_EQ" && false) {
+    if (indexName === "NSE_EQ" && isYFinanceEnable) {
       candles = await getNSEDataYahooFinance(symbol + ".NS", "1d", isFrom);
     } else {
       arr = await getHistoricData(interval, companyName, indexName, isFrom);
