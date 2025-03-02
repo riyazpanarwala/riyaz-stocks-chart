@@ -12,12 +12,12 @@ import {
   getHistoricData,
   getIntradayData,
   getHistoricDataNSE,
-  getMarketTimings,
   getNSEDataYahooFinance,
   // getNSEData,
 } from "./getIntervalData";
-import isTradingActive from "./utils/isTradingActive";
+// import isTradingActive from "./utils/isTradingActive";
 import isYFinanceEnable from "./utils/isYFinanceEnable";
+import { isMarketOpen } from "./utils/indianstockmarket";
 import _ from "lodash";
 
 const useCommonHeader = (isEchart) => {
@@ -29,20 +29,8 @@ const useCommonHeader = (isEchart) => {
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
   const [timeData, setTimeData] = useState([]);
-  const [marketTimings, setMartketTimings] = useState([]);
   const { companyArr, companyObj, setCompany } = useParseCsv();
   let countdownInterval;
-
-  const isMarketOpen = (exchangeName = "NSE") => {
-    const indexData = marketTimings.filter((v) => v.exchange === exchangeName);
-    return indexData.length;
-    /*
-    const indexStartTime = new Date(indexData[0].start_time);
-    const indexEndTime = new Date(indexData[0].end_time);
-    const currentime = new Date().getTime();
-    return indexEndTime >= currentime && indexStartTime <= currentime;
-    */
-  };
 
   const getDataFromIntraday = (intradayData) => {
     const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
@@ -124,11 +112,11 @@ const useCommonHeader = (isEchart) => {
   };
 
   const startTimer = () => {
-    if (isTradingActive()) {
+    if (isMarketOpen()) {
       clearTimeout(countdownInterval);
       countdownInterval = setTimeout(() => {
         setApiCall((prevState) => prevState + 1);
-      }, 1000 * 60);
+      }, 1000 * 30);
     }
   };
 
@@ -192,7 +180,6 @@ const useCommonHeader = (isEchart) => {
     } else {
       setCandleArr(arr);
     }
-    startTimer();
   };
 
   const handleIntervalChange = (obj) => {
@@ -269,6 +256,7 @@ const useCommonHeader = (isEchart) => {
       } else {
         callHistoricApi();
       }
+      startTimer();
     }
     // Cleanup function to clear the interval when the component unmounts
     return () => clearTimeout(countdownInterval);
@@ -285,15 +273,6 @@ const useCommonHeader = (isEchart) => {
     }
   }, [intervalObj, intradayObj, companyObj, period, indexObj]);
 
-  const setMarketTimings = async () => {
-    const response = await getMarketTimings();
-    setMartketTimings(response.data);
-  };
-
-  useEffect(() => {
-    setMarketTimings();
-  }, []);
-
   return {
     intervalObj,
     intradayObj,
@@ -309,7 +288,6 @@ const useCommonHeader = (isEchart) => {
     candleData,
     timeData,
     period,
-    isMarketOpen,
   };
 };
 

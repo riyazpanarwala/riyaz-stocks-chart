@@ -5,7 +5,7 @@ import Modal from "./Modal";
 import { stockAnalysis } from "../StockAnalysis";
 import "./App.css";
 
-const TechnicalInfo = ({ companyObj, indexName, onClose, isMarketOpen }) => {
+const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
   const [technicalIndicators, setTechnicalIndicators] = useState([]);
   const [movingAverages, setMovingAvg] = useState([]);
   const [maCrossOvers, setMACrossOvers] = useState([]);
@@ -79,11 +79,7 @@ const TechnicalInfo = ({ companyObj, indexName, onClose, isMarketOpen }) => {
       companyObj.value,
       indexName || companyObj.indexName,
       "1y",
-      companyObj.symbol,
-      "",
-      "",
-      "",
-      isMarketOpen
+      companyObj.symbol
     );
 
     data.name = companyObj.label;

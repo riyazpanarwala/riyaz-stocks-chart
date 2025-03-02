@@ -26,6 +26,7 @@ import {
 import { saveAs } from "file-saver";
 import watchlistArray from "../utils/watchListArr";
 import isYFinanceEnable from "../utils/isYFinanceEnable";
+import { isMarketOpen } from "../utils/indianstockmarket";
 // import fs from "fs";
 
 const sleep = (ms) => {
@@ -86,8 +87,7 @@ export const stockAnalysis = async (
   symbol,
   isVolumeBreak,
   isSupportBreak,
-  isMultibagger,
-  isMarketOpen
+  isMultibagger
 ) => {
   let candles = [];
   let arr = [];
@@ -117,7 +117,7 @@ export const stockAnalysis = async (
           },
         ];
       });
-      if ((isMarketOpen && isMarketOpen()) || !isMarketOpen) {
+      if (isMarketOpen()) {
         const lastCandleDate = candles[candles.length - 1].date.split(" ")[0];
         const currentDate = new Date().toISOString().split("T")[0];
         if (lastCandleDate !== currentDate) {
