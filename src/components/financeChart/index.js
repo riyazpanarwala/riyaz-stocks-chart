@@ -30,7 +30,7 @@ import {
   InteractiveText,
   DrawingObjectSelector,
   ClickCallback,
-  //  ZoomButtons,
+  ZoomButtons,
 } from "@riyazpanarwala/interactive";
 import HighLowTooltip from "./HighLowTooltip";
 import EMAChart from "./ema";
@@ -683,7 +683,8 @@ const FinanceChart = ({
           ""
         )}
 
-        {/* <ZoomButtons /> */}
+        {window.innerWidth <= 768 ? <ZoomButtons /> : ""}
+
         <OHLCTooltip origin={[8, 16]} />
         {isIntraday ? (
           <HighLowTooltip origin={[8, 32]} ohlcData={initialData} />
