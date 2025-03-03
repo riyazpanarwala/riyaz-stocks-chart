@@ -2,7 +2,10 @@ import React from "react";
 import { RSISeries } from "@riyazpanarwala/series";
 import { RSITooltip } from "@riyazpanarwala/tooltip";
 
-const RSIChart = ({ rsiYAccessor, rsiCalculator }) => {
+const RSIChart = ({ data, rsiYAccessor, rsiCalculator }) => {
+  if (data.length < 2) {
+    return "";
+  }
   return (
     <>
       <RSISeries

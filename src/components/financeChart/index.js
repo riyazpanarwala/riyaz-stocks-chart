@@ -112,16 +112,16 @@ const FinanceChart = ({
     ma1,
     ma2,
   } = useData(initialData, indicatorName, isIntraday);
-  const ScaleProvider =
-    discontinuousTimeScaleProviderBuilder().inputDateAccessor(
-      (d) => new Date(d.date)
-    );
+  const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
+    (d) => new Date(d.date)
+  );
 
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
   let interactiveNodes = {};
 
-  const { data, xScale, xAccessor, displayXAccessor } =
-    ScaleProvider(calculatedData);
+  const { data, xScale, xAccessor, displayXAccessor } = ScaleProvider(
+    calculatedData
+  );
   const pricesDisplayFormat = format(".2f");
   const max = xAccessor(data[data.length - 1]);
   const min = 0; // xAccessor(data[Math.max(0, data.length - 100)]);
@@ -716,6 +716,7 @@ const FinanceChart = ({
 
           {indicatorName === "rsi" ? (
             <RSIChart
+              data={initialData}
               rsiYAccessor={rsiYAccessor}
               rsiCalculator={rsiCalculator}
             />
