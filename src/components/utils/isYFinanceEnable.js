@@ -1,3 +1,3 @@
-const isYFinanceEnable = true;
+const isYFinanceEnable = false;
 
 export default isYFinanceEnable;
