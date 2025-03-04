@@ -102,7 +102,9 @@ const useCommonHeader = (isEchart) => {
             indexObj.value
           );
           let candleData = arr1.data.candles?.reverse();
-          dataArr = [...dataArr, getDataFromIntraday(candleData)];
+          if (candleData.length) {
+            dataArr = [...dataArr, getDataFromIntraday(candleData)];
+          }
         }
       }
     }
