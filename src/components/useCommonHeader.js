@@ -17,7 +17,7 @@ import {
 } from "./getIntervalData";
 // import isTradingActive from "./utils/isTradingActive";
 import isYFinanceEnable from "./utils/isYFinanceEnable";
-import { isMarketOpen } from "./utils/indianstockmarket";
+import { isMarketOpen, isHoliday } from "./utils/indianstockmarket";
 import _ from "lodash";
 
 const useCommonHeader = (isEchart) => {
@@ -95,7 +95,7 @@ const useCommonHeader = (isEchart) => {
       });
 
       if (isIntradayCall) {
-        if (isMarketOpen()) {
+        if (isMarketOpen() || !isHoliday()) {
           const arr1 = await getIntradayData(
             "1minute",
             companyObj.value,
