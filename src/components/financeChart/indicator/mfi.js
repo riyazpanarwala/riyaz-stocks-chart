@@ -9,14 +9,14 @@ export const mfi = (arr, period = 14) => {
     period: period,
   };
 
-  const mfiData = mfiCalc(input);
+  const data = mfiCalc(input);
 
   let newArr = [];
   arr.forEach((v, i) => {
-    if (i < period + 1) {
+    if (i < arr.length - data.length) {
       newArr = [...newArr, { ...v, mfi: "" }];
     } else {
-      newArr = [...newArr, { ...v, mfi: mfiData[i - period - 1] }];
+      newArr = [...newArr, { ...v, mfi: data[i - arr.length + data.length] }];
     }
   });
 

@@ -13,10 +13,10 @@ export const williamson = (arr, period = 14) => {
 
   let newArr = [];
   arr.forEach((v, i) => {
-    if (i < period - 1) {
+    if (i < arr.length - data.length) {
       newArr = [...newArr, { ...v, will: "" }];
     } else {
-      newArr = [...newArr, { ...v, will: data[i - period + 1] }];
+      newArr = [...newArr, { ...v, will: data[i - arr.length + data.length] }];
     }
   });
 

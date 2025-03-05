@@ -9,14 +9,14 @@ export const cci = (arr, period = 20) => {
     period: period,
   };
 
-  const cciData = cciCalc(input);
+  const data = cciCalc(input);
 
   let newArr = [];
   arr.forEach((v, i) => {
-    if (i < period + 1) {
+    if (i < arr.length - data.length) {
       newArr = [...newArr, { ...v, cci: "" }];
     } else {
-      newArr = [...newArr, { ...v, cci: cciData[i - period - 1] }];
+      newArr = [...newArr, { ...v, cci: data[i - arr.length + data.length] }];
     }
   });
 
