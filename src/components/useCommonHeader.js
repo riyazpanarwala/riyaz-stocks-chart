@@ -17,7 +17,12 @@ import {
 } from "./getIntervalData";
 // import isTradingActive from "./utils/isTradingActive";
 import isYFinanceEnable from "./utils/isYFinanceEnable";
-import { isMarketOpen, hasOpened } from "./utils/indianstockmarket";
+import { isMarketOpen } from "./utils/indianstockmarket";
+import {
+  getDataFromIntraday,
+  getCandleArr,
+  getIntradayDataForCurrentDay,
+} from "./common";
 import _ from "lodash";
 
 const useCommonHeader = (isEchart) => {
@@ -31,28 +36,6 @@ const useCommonHeader = (isEchart) => {
   const [timeData, setTimeData] = useState([]);
   const { companyArr, companyObj, setCompany } = useParseCsv();
   let countdownInterval;
-
-  const getDataFromIntraday = (intradayData) => {
-    const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
-
-    const maxValue = Math.max.apply(
-      Math,
-      intradayData.map((d) => d[2])
-    );
-    const minValue = Math.min.apply(
-      Math,
-      intradayData.map((d) => d[3])
-    );
-
-    return {
-      date: intradayData[0][0],
-      open: intradayData[0][1],
-      close: intradayData[intradayData.length - 1][4],
-      high: maxValue,
-      low: minValue,
-      volume: total,
-    };
-  };
 
   const setCandleArrOtherTimeframes = (arr, chunkSize) => {
     let candleData = arr.data.candles?.reverse();
@@ -68,49 +51,19 @@ const useCommonHeader = (isEchart) => {
   };
 
   const setCandleArr = async (arr, isIntradayCall) => {
-    let timeArr = [];
-    let dataArr = [];
-    let candles = arr.data.candles?.reverse();
+    const { dataArr, timeArr } = getCandleArr(arr, isEchart);
 
-    if (isEchart) {
-      candles?.forEach((item) => {
-        dataArr = [...dataArr, [item[1], item[4], item[3], item[2]]];
-        timeArr = [...timeArr, item[0]];
-      });
-    } else {
-      candles?.forEach((item, i) => {
-        const aa = item[0].split("T");
-        const hhmmss = aa[1].split("+")[0];
-        dataArr = [
-          ...dataArr,
-          {
-            date: `${aa[0]} ${hhmmss}`,
-            open: item[1],
-            high: item[2],
-            low: item[3],
-            close: item[4],
-            volume: item[5],
-          },
-        ];
-      });
-
-      if (isIntradayCall) {
-        if (hasOpened()) {
-          const arr1 = await getIntradayData(
-            "1minute",
-            companyObj.value,
-            indexObj.value
-          );
-          let candleData = arr1.data.candles?.reverse();
-          if (candleData.length) {
-            dataArr = [...dataArr, getDataFromIntraday(candleData)];
-          }
-        }
-      }
+    let candles = dataArr;
+    if (isIntradayCall) {
+      candles = await getIntradayDataForCurrentDay(
+        dataArr,
+        indexObj.value,
+        companyObj
+      );
     }
 
     setTimeData(timeArr);
-    setCandleData(dataArr);
+    setCandleData(candles);
   };
 
   const startTimer = () => {

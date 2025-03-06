@@ -107,7 +107,11 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
       companyObj.value,
       indexName || companyObj.indexName,
       "1y",
-      companyObj.symbol
+      companyObj.symbol,
+      "",
+      "",
+      "",
+      companyObj.nseIndex
     );
 
     data.name = companyObj.label;

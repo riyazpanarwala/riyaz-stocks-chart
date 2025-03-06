@@ -1,32 +1,13 @@
 import {
   getHistoricData,
-  getIntradayData,
   getHistoricDataNSE,
   getNSEDataYahooFinance,
 } from "../getIntervalData.js";
-import { multibagger } from "../financeChart/Pattern";
-import {
-  dmi,
-  rsi,
-  macd,
-  atr,
-  roc,
-  sma,
-  ema,
-  volumeBreakout,
-  supportResistanceBreakout,
-  mfi,
-  supertrend,
-  bb,
-  cci,
-  calculateStochastic,
-  williamson,
-  crossover,
-} from "../financeChart/indicator";
 import { saveAs } from "file-saver";
 import watchlistArray from "../utils/watchListArr";
 import isYFinanceEnable from "../utils/isYFinanceEnable";
-import { hasOpened } from "../utils/indianstockmarket";
+import { getCandleArr, getIntradayDataForCurrentDay } from "../common";
+import getStockAnalysis from "./getStockAnalysis";
 // import fs from "fs";
 
 const sleep = (ms) => {
@@ -37,47 +18,7 @@ const sleep = (ms) => {
   });
 };
 
-const round2Decimal = (value) => {
-  if (value) {
-    return (Math.round(value * 100) / 100).toFixed(2);
-  }
-  return "";
-};
-
-const getDayDataFromIntraday = (intradayData) => {
-  const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
-
-  const maxValue = Math.max.apply(
-    Math,
-    intradayData.map((d) => d[2])
-  );
-  const minValue = Math.min.apply(
-    Math,
-    intradayData.map((d) => d[3])
-  );
-
-  return {
-    date: intradayData[0][0].split("T")[0],
-    open: intradayData[0][1],
-    close: intradayData[intradayData.length - 1][4],
-    high: maxValue,
-    low: minValue,
-    volume: total,
-  };
-};
-
-const getIntradayObj1 = async (companyName, indexName) => {
-  const arr1 = await getIntradayData("1minute", companyName, indexName);
-  if (arr1.data.candles?.length) {
-    return getDayDataFromIntraday(arr1.data.candles?.reverse());
-  }
-  return "";
-};
-
-const getIntradayObj = async (symbol) => {
-  const arr1 = await getHistoricDataNSE(symbol, "1d");
-  return arr1.candles[arr1.candles.length - 1];
-};
+const isNSEApi = false;
 
 export const stockAnalysis = async (
   interval,
@@ -87,12 +28,13 @@ export const stockAnalysis = async (
   symbol,
   isVolumeBreak,
   isSupportBreak,
-  isMultibagger
+  isMultibagger,
+  isNseIndex
 ) => {
   let candles = [];
   let arr = [];
 
-  if (interval === "day" && indexName === "NSE_EQ" && false) {
+  if (interval === "day" && indexName === "NSE_EQ" && isNSEApi) {
     arr = await getHistoricDataNSE(symbol, isFrom);
     candles = arr.candles;
   } else {
@@ -100,115 +42,75 @@ export const stockAnalysis = async (
       candles = await getNSEDataYahooFinance(symbol + ".NS", "1d", isFrom);
     } else {
       arr = await getHistoricData(interval, companyName, indexName, isFrom);
-      const dataArr = arr.data.candles?.reverse();
-
-      dataArr?.forEach((item, i) => {
-        const aa = item[0].split("T");
-        const hhmmss = aa[1].split("+")[0];
-        candles = [
-          ...candles,
-          {
-            date: `${aa[0]} ${hhmmss}`,
-            open: item[1],
-            high: item[2],
-            low: item[3],
-            close: item[4],
-            volume: item[5],
-          },
-        ];
+      const { dataArr } = getCandleArr(arr, false);
+      candles = await getIntradayDataForCurrentDay(dataArr, indexName, {
+        symbol,
+        value: companyName,
+        nseIndex: isNseIndex,
       });
-      if (hasOpened()) {
-        const lastCandleDate = candles[candles.length - 1].date.split(" ")[0];
-        const currentDate = new Date().toISOString().split("T")[0];
-        if (lastCandleDate !== currentDate) {
-          let currentObj;
-          let currentHour = new Date().getHours();
-          if (currentHour >= 17 && indexName === "NSE_EQ") {
-            currentObj = await getIntradayObj(symbol);
-          } else {
-            currentObj = await getIntradayObj1(companyName, indexName);
-          }
-          if (
-            currentObj &&
-            currentObj.date === currentDate &&
-            currentObj.date !== lastCandleDate
-          ) {
-            candles = [...candles, currentObj];
-          }
-        }
-      }
     }
   }
   console.log(symbol);
-  const lastClose = candles[candles.length - 1].close;
-  const prevlastClose = candles[candles.length - 2].close;
-  const percentChange = ((lastClose - prevlastClose) * 100) / prevlastClose;
-
-  const rsiValues = rsi(candles, 14);
-  const { plusDI, minusDI, adx } = dmi(candles, 14);
-  const { macdLine, signalLine } = macd(candles);
-  const atrValues = atr(candles);
-  const roc20 = roc(candles, 20);
-  const roc125 = roc(candles, 125);
-  const sma5 = sma(candles, 5, "close");
-  const sma10 = sma(candles, 10, "close");
-  const sma20 = sma(candles, 20, "close");
-  const sma50 = sma(candles, 50, "close");
-  const sma100 = sma(candles, 100, "close");
-  const sma200 = sma(candles, 200, "close");
-  const ema50 = ema(candles, 50, true);
-  const ema200 = ema(candles, 200, true);
-  const mfiValues = mfi(candles, 14);
-  const trend = supertrend(candles);
-  const bolingerData = bb(candles);
-  const bbband = bolingerData[bolingerData.length - 1].bb;
-  const cciValues = cci(candles, 20);
-  const stoVal = calculateStochastic(candles, 20, 3);
-  const williamson14 = williamson(candles, 14);
-  const shortTermMACross = crossover(sma5, sma20);
-  const mediumTermMACross = crossover(sma20, sma50);
-  const longTermMACross = crossover(sma50, sma200);
+  const {
+    lastClose,
+    percentChange,
+    rsi,
+    mfi,
+    cci,
+    willR,
+    sto,
+    adx,
+    plusDI,
+    minusDI,
+    macdLine,
+    signalLine,
+    atr,
+    roc20,
+    roc125,
+    sma5,
+    sma10,
+    sma20,
+    sma50,
+    sma100,
+    sma200,
+    ema50,
+    ema200,
+    supertrend,
+    bb,
+    shortTermMACross,
+    mediumTermMACross,
+    longTermMACross,
+  } = getStockAnalysis(candles);
 
   return {
-    "RSI(14)": round2Decimal(rsiValues[rsiValues.length - 1]),
-    "MFI(14)": round2Decimal(mfiValues[mfiValues.length - 1].mfi),
-    "CCI(20)": round2Decimal(cciValues[cciValues.length - 1].cci),
-    "Williamson%R(14)": round2Decimal(
-      williamson14[williamson14.length - 1].will
-    ),
-    "Stochastic(20,3)": round2Decimal(
-      stoVal.fastKValues[stoVal.fastKValues.length - 1]
-    ),
-    "DAY ADX": round2Decimal(adx[adx.length - 1]),
-    "DI+": plusDI[plusDI.length - 1],
-    "DI-": minusDI[minusDI.length - 1],
-    "DAY MACD(12,26,9)": round2Decimal(macdLine[macdLine.length - 1]),
-    "DAY MACD SIGNAL": round2Decimal(signalLine[signalLine.length - 1]),
-    "Day ATR": round2Decimal(atrValues[atrValues.length - 1]),
-    "Day ROC(20)": round2Decimal(roc20[roc20.length - 1]),
-    "Day ROC(125)": round2Decimal(roc125[roc125.length - 1]),
-    "SMA(5)": round2Decimal(sma5[sma5.length - 1]),
-    "SMA(10)": round2Decimal(sma10[sma10.length - 1]),
-    "SMA(20)": round2Decimal(sma20[sma20.length - 1]),
-    "SMA(50)": round2Decimal(sma50[sma50.length - 1]),
-    "SMA(100)": round2Decimal(sma100[sma100.length - 1]),
-    "SMA(200)": round2Decimal(sma200[sma200.length - 1]),
-    "shortTermMACross(5,20)":
-      shortTermMACross[shortTermMACross.length - 1]?.type,
-    "mediumTermMACross(20,50)":
-      mediumTermMACross[mediumTermMACross.length - 1]?.type,
-    "longTermMACross(50,200)":
-      longTermMACross[longTermMACross.length - 1]?.type,
-    "EMA(50)": round2Decimal(ema50[ema50.length - 1]),
-    "EMA(200)": round2Decimal(ema200[ema200.length - 1]),
+    "RSI(14)": rsi,
+    "MFI(14)": mfi,
+    "CCI(20)": cci,
+    "Williamson%R(14)": willR,
+    "Stochastic(20,3)": sto,
+    "DAY ADX": adx,
+    "DI+": plusDI,
+    "DI-": minusDI,
+    "DAY MACD(12,26,9)": macdLine,
+    "DAY MACD SIGNAL": signalLine,
+    "Day ATR": atr,
+    "Day ROC(20)": roc20,
+    "Day ROC(125)": roc125,
+    "SMA(5)": sma5,
+    "SMA(10)": sma10,
+    "SMA(20)": sma20,
+    "SMA(50)": sma50,
+    "SMA(100)": sma100,
+    "SMA(200)": sma200,
+    "shortTermMACross(5,20)": shortTermMACross,
+    "mediumTermMACross(20,50)": mediumTermMACross,
+    "longTermMACross(50,200)": longTermMACross,
+    "EMA(50)": ema50,
+    "EMA(200)": ema200,
     lastClose: lastClose,
     percentChange,
-    supertrend: trend,
-    "Bolinger Band(20,2)": {
-      UB: round2Decimal(bbband.top),
-      LB: round2Decimal(bbband.bottom),
-      SMA20: round2Decimal(bbband.middle),
-    },
+    supertrend: supertrend,
+    "Bolinger Band(20,2)": bb,
   };
 };
 
