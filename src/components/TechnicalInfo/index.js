@@ -73,6 +73,34 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
     return "Neutral";
   };
 
+  const getStochasticIndication = (val) => {
+    if (val < 20) {
+      return "Oversold";
+    } else if (val >= 20 && val < 45) {
+      return "Bearish";
+    } else if (val >= 45 && val < 55) {
+      return "Neutral";
+    } else if (val >= 55 && val < 80) {
+      return "Bullish";
+    } else {
+      return "Overbought";
+    }
+  };
+
+  const getMFIIndication = (val) => {
+    if (val < 20) {
+      return "Oversold";
+    } else if (val >= 20 && val < 40) {
+      return "Bearish";
+    } else if (val >= 40 && val < 60) {
+      return "Neutral";
+    } else if (val >= 60 && val < 80) {
+      return "Bullish";
+    } else if (val >= 80) {
+      return "Overbought";
+    }
+  };
+
   const fetchData = async () => {
     const data = await stockAnalysis(
       "day",
@@ -92,6 +120,7 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
     const signalLine = data["DAY MACD SIGNAL"];
     const willValue = data["Williamson%R(14)"];
     const roc20Val = data["Day ROC(20)"];
+    const mfiVal = data["MFI(14)"] || "";
 
     setTechnicalIndicators([
       {
@@ -106,8 +135,8 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
       },
       {
         Indicator: "Stochastic(20,3)",
-        Level: `K:${sto.K}, D:${sto.D}`,
-        Indication: "",
+        Level: sto,
+        Indication: getStochasticIndication(sto),
       },
       {
         Indicator: "ROC(20)",
@@ -125,7 +154,11 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
         Level: willValue,
         Indication: getWilliamsonIndication(willValue),
       },
-      { Indicator: "MFI(14)", Level: data["MFI(14)"] || "", Indication: "" },
+      {
+        Indicator: "MFI(14)",
+        Level: mfiVal,
+        Indication: getMFIIndication(mfiVal),
+      },
       { Indicator: "ATR(14)", Level: data["Day ATR"], Indication: "" },
       { Indicator: "ADX(14)", Level: data["DAY ADX"], Indication: "" },
       {

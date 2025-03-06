@@ -19,7 +19,7 @@ import {
   supertrend,
   bb,
   cci,
-  sto,
+  calculateStochastic,
   williamson,
   crossover,
 } from "../financeChart/indicator";
@@ -163,7 +163,7 @@ export const stockAnalysis = async (
   const bolingerData = bb(candles);
   const bbband = bolingerData[bolingerData.length - 1].bb;
   const cciValues = cci(candles, 20);
-  const stoVal = sto(candles, 20, 3);
+  const stoVal = calculateStochastic(candles, 20, 3);
   const williamson14 = williamson(candles, 14);
   const shortTermMACross = crossover(sma5, sma20);
   const mediumTermMACross = crossover(sma20, sma50);
@@ -176,10 +176,9 @@ export const stockAnalysis = async (
     "Williamson%R(14)": round2Decimal(
       williamson14[williamson14.length - 1].will
     ),
-    "Stochastic(20,3)": {
-      K: round2Decimal(stoVal[stoVal.length - 1].fullSTO.K),
-      D: round2Decimal(stoVal[stoVal.length - 1].fullSTO.D),
-    },
+    "Stochastic(20,3)": round2Decimal(
+      stoVal.fastKValues[stoVal.fastKValues.length - 1]
+    ),
     "DAY ADX": round2Decimal(adx[adx.length - 1]),
     "DI+": plusDI[plusDI.length - 1],
     "DI-": minusDI[minusDI.length - 1],
