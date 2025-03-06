@@ -104,13 +104,10 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
   const fetchData = async () => {
     const data = await stockAnalysis(
       "day",
+      "1y",
       companyObj.value,
       indexName || companyObj.indexName,
-      "1y",
       companyObj.symbol,
-      "",
-      "",
-      "",
       companyObj.nseIndex
     );
 

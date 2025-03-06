@@ -22,13 +22,10 @@ const isNSEApi = false;
 
 export const stockAnalysis = async (
   interval,
+  isFrom,
   companyName,
   indexName,
-  isFrom,
   symbol,
-  isVolumeBreak,
-  isSupportBreak,
-  isMultibagger,
   isNseIndex
 ) => {
   let candles = [];
@@ -142,19 +139,17 @@ const saveFile = (jsonObj) => {
   */
 };
 
-const stocksAnalysis = async (arrObj = watchlistArray1, indexVal) => {
+const stocksAnalysis = async (arrObj = watchlistArray1) => {
   const jsonObj = [];
 
   const analyse = async (item, i) => {
     const data = await stockAnalysis(
       "day",
-      item.value,
-      indexVal || item.indexName,
       "1y",
+      item.value,
+      item.indexName,
       item.symbol,
-      false,
-      false,
-      false
+      item.nseIndex
     );
 
     data.name = item.label;
@@ -170,7 +165,5 @@ const stocksAnalysis = async (arrObj = watchlistArray1, indexVal) => {
     await sleep(2000);
   }
 };
-
-// stocksAnalysis();
 
 export default stocksAnalysis;
