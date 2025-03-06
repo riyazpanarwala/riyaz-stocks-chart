@@ -32,7 +32,11 @@ export const stockAnalysis = async (
   let arr = [];
 
   if (interval === "day" && indexName === "NSE_EQ" && isNSEApi) {
-    arr = await getHistoricDataNSE(symbol, isFrom, "historic");
+    let apiName = "historic";
+    if (isNseIndex) {
+      apiName = "indexHistoric";
+    }
+    arr = await getHistoricDataNSE(symbol, isFrom, apiName);
     candles = arr.candles;
   } else {
     if (indexName === "NSE_EQ" && isYFinanceEnable) {
