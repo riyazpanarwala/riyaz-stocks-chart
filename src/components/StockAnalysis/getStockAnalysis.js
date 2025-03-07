@@ -51,6 +51,7 @@ const getStockAnalysis = (candles) => {
   const shortTermMACross = crossover(sma5, sma20);
   const mediumTermMACross = crossover(sma20, sma50);
   const longTermMACross = crossover(sma50, sma200);
+  const atrSma = sma(atrValues, 9, "");
 
   return {
     rsi: round2Decimal(rsiValues[rsiValues.length - 1]),
@@ -64,6 +65,7 @@ const getStockAnalysis = (candles) => {
     macdLine: round2Decimal(macdLine[macdLine.length - 1]),
     signalLine: round2Decimal(signalLine[signalLine.length - 1]),
     atr: round2Decimal(atrValues[atrValues.length - 1]),
+    atrSma: round2Decimal(atrSma[atrSma.length - 1]),
     roc20: round2Decimal(roc20[roc20.length - 1]),
     roc125: round2Decimal(roc125[roc125.length - 1]),
     sma5: round2Decimal(sma5[sma5.length - 1]),

@@ -123,6 +123,7 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
       macdLine,
       signalLine,
       atr,
+      atrSma,
       roc20,
       roc125,
       sma5,
@@ -174,7 +175,11 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
         Level: mfi,
         Indication: getMFIIndication(mfi),
       },
-      { Indicator: "ATR(14)", Level: atr, Indication: "" },
+      {
+        Indicator: "ATR(14)",
+        Level: atr,
+        Indication: atr > atrSma ? "High Volatility" : "Low Volatility",
+      },
       { Indicator: "ADX(14)", Level: adx, Indication: "" },
       {
         Indicator: "Bolinger Band(20,2)",
