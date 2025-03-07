@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import SummaryCard from "./SummaryCard";
 import Table from "./Table";
 import Modal from "./Modal";
-import { stockAnalysis } from "../StockAnalysis";
+import { fetchHistoricData } from "../common";
+import getStockAnalysis from "../StockAnalysis/getStockAnalysis";
 import "./App.css";
 
 const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
@@ -102,32 +103,45 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
   };
 
   const fetchData = async () => {
-    const data = await stockAnalysis(
+    const { candles } = await fetchHistoricData(
+      false,
       "day",
-      "1y",
-      companyObj.value,
+      "1d",
       indexName || companyObj.indexName,
-      companyObj.symbol,
-      companyObj.nseIndex
+      "1y",
+      companyObj
     );
 
-    data.name = companyObj.label;
-
-    const bb = data["Bolinger Band(20,2)"];
-    const sto = data["Stochastic(20,3)"];
-    const rsiValue = data["RSI(14)"];
-    const cciValue = data["CCI(20)"];
-    const macdLine = data["DAY MACD(12,26,9)"];
-    const signalLine = data["DAY MACD SIGNAL"];
-    const willValue = data["Williamson%R(14)"];
-    const roc20Val = data["Day ROC(20)"];
-    const mfiVal = data["MFI(14)"] || "";
+    const {
+      lastClose,
+      rsi,
+      mfi,
+      cci,
+      willR,
+      sto,
+      adx,
+      macdLine,
+      signalLine,
+      atr,
+      roc20,
+      roc125,
+      sma5,
+      sma10,
+      sma20,
+      sma50,
+      sma100,
+      sma200,
+      bb,
+      shortTermMACross,
+      mediumTermMACross,
+      longTermMACross,
+    } = getStockAnalysis(candles);
 
     setTechnicalIndicators([
       {
         Indicator: "RSI(14)",
-        Level: rsiValue,
-        Indication: getRSIIndication(rsiValue),
+        Level: rsi,
+        Indication: getRSIIndication(rsi),
       },
       {
         Indicator: "MACD(12,26,9)",
@@ -141,27 +155,27 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
       },
       {
         Indicator: "ROC(20)",
-        Level: roc20Val,
-        Indication: getROC20Indication(roc20Val),
+        Level: roc20,
+        Indication: getROC20Indication(roc20),
       },
-      { Indicator: "ROC(125)", Level: data["Day ROC(125)"], Indication: "" },
+      { Indicator: "ROC(125)", Level: roc125, Indication: "" },
       {
         Indicator: "CCI(20)",
-        Level: cciValue,
-        Indication: getCCIIndication(cciValue),
+        Level: cci,
+        Indication: getCCIIndication(cci),
       },
       {
         Indicator: "Williamson%R(14) ",
-        Level: willValue,
-        Indication: getWilliamsonIndication(willValue),
+        Level: willR,
+        Indication: getWilliamsonIndication(willR),
       },
       {
         Indicator: "MFI(14)",
-        Level: mfiVal,
-        Indication: getMFIIndication(mfiVal),
+        Level: mfi,
+        Indication: getMFIIndication(mfi),
       },
-      { Indicator: "ATR(14)", Level: data["Day ATR"], Indication: "" },
-      { Indicator: "ADX(14)", Level: data["DAY ADX"], Indication: "" },
+      { Indicator: "ATR(14)", Level: atr, Indication: "" },
+      { Indicator: "ADX(14)", Level: adx, Indication: "" },
       {
         Indicator: "Bolinger Band(20,2)",
         Level: `UB:${bb.UB}, LB:${bb.LB}, SMA20:${bb.SMA20}`,
@@ -172,33 +186,33 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
     setMovingAvg([
       {
         Period: 5,
-        SMA: data["SMA(5)"],
-        Indication: data.lastClose < data["SMA(5)"] ? "Bearish" : "Bullish",
+        SMA: sma5,
+        Indication: lastClose < sma5 ? "Bearish" : "Bullish",
       },
       {
         Period: 10,
-        SMA: data["SMA(10)"],
-        Indication: data.lastClose < data["SMA(10)"] ? "Bearish" : "Bullish",
+        SMA: sma10,
+        Indication: lastClose < sma10 ? "Bearish" : "Bullish",
       },
       {
         Period: 20,
-        SMA: data["SMA(20)"],
-        Indication: data.lastClose < data["SMA(20)"] ? "Bearish" : "Bullish",
+        SMA: sma20,
+        Indication: lastClose < sma20 ? "Bearish" : "Bullish",
       },
       {
         Period: 50,
-        SMA: data["SMA(50)"],
-        Indication: data.lastClose < data["SMA(50)"] ? "Bearish" : "Bullish",
+        SMA: sma50,
+        Indication: lastClose < sma50 ? "Bearish" : "Bullish",
       },
       {
         Period: 100,
-        SMA: data["SMA(100)"],
-        Indication: data.lastClose < data["SMA(100)"] ? "Bearish" : "Bullish",
+        SMA: sma100,
+        Indication: lastClose < sma100 ? "Bearish" : "Bullish",
       },
       {
         Period: 200,
-        SMA: data["SMA(200)"],
-        Indication: data.lastClose < data["SMA(200)"] ? "Bearish" : "Bullish",
+        SMA: sma200,
+        Indication: lastClose < sma200 ? "Bearish" : "Bullish",
       },
     ]);
 
@@ -206,17 +220,17 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
       {
         Period: "Short Term",
         "Moving Average Crossover": "5 & 20 DMA Crossover",
-        Indication: data["shortTermMACross(5,20)"],
+        Indication: shortTermMACross,
       },
       {
         Period: "Medium Term",
         "Moving Average Crossover": "20 & 50 DMA Crossover",
-        Indication: data["mediumTermMACross(20,50)"],
+        Indication: mediumTermMACross,
       },
       {
         Period: "Long Term",
         "Moving Average Crossover": "50 & 200 DMA Crossover",
-        Indication: data["longTermMACross(50,200)"],
+        Indication: longTermMACross,
       },
     ]);
   };

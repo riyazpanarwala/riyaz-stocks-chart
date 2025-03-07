@@ -1,12 +1,6 @@
-import {
-  getHistoricData,
-  getHistoricDataNSE,
-  getNSEDataYahooFinance,
-} from "../getIntervalData.js";
 import { saveAs } from "file-saver";
 import watchlistArray from "../utils/watchListArr";
-import isYFinanceEnable from "../utils/isYFinanceEnable";
-import { getCandleArr, getIntradayDataForCurrentDay } from "../common";
+import { fetchHistoricData } from "../common";
 import getStockAnalysis from "./getStockAnalysis";
 // import fs from "fs";
 
@@ -28,29 +22,22 @@ export const stockAnalysis = async (
   symbol,
   isNseIndex
 ) => {
-  let candles = [];
-  let arr = [];
+  const companyObj = {
+    nseIndex: isNseIndex,
+    symbol: symbol,
+    yahooSymbol: "",
+    value: companyName,
+  };
 
-  if (interval === "day" && indexName === "NSE_EQ" && isNSEApi) {
-    let apiName = "historic";
-    if (isNseIndex) {
-      apiName = "indexHistoric";
-    }
-    arr = await getHistoricDataNSE(symbol, isFrom, apiName);
-    candles = arr.candles;
-  } else {
-    if (indexName === "NSE_EQ" && isYFinanceEnable) {
-      candles = await getNSEDataYahooFinance(symbol + ".NS", "1d", isFrom);
-    } else {
-      arr = await getHistoricData(interval, companyName, indexName, isFrom);
-      const { dataArr } = getCandleArr(arr, false);
-      candles = await getIntradayDataForCurrentDay(dataArr, indexName, {
-        symbol,
-        value: companyName,
-        nseIndex: isNseIndex,
-      });
-    }
-  }
+  const { candles } = await fetchHistoricData(
+    false,
+    interval,
+    "1d",
+    indexName,
+    isFrom,
+    companyObj
+  );
+
   console.log(symbol);
   const {
     lastClose,
