@@ -8,21 +8,10 @@ import {
   indexArr,
   index1Arr,
 } from "./utils/data";
-import {
-  getHistoricData,
-  getIntradayData,
-  getHistoricDataNSE,
-  getNSEDataYahooFinance,
-  // getNSEData,
-} from "./getIntervalData";
+import { getIntradayData } from "./getIntervalData";
 // import isTradingActive from "./utils/isTradingActive";
-import isYFinanceEnable from "./utils/isYFinanceEnable";
 import { isMarketOpen } from "./utils/indianstockmarket";
-import {
-  getDataFromIntraday,
-  getCandleArr,
-  getIntradayDataForCurrentDay,
-} from "./common";
+import { getDataFromIntraday, getCandleArr, fetchHistoricData } from "./common";
 import _ from "lodash";
 
 const useCommonHeader = (isEchart) => {
@@ -50,22 +39,6 @@ const useCommonHeader = (isEchart) => {
     setCandleData(candleArr);
   };
 
-  const setCandleArr = async (arr, isIntradayCall) => {
-    const { dataArr, timeArr } = getCandleArr(arr, isEchart);
-
-    let candles = dataArr;
-    if (isIntradayCall) {
-      candles = await getIntradayDataForCurrentDay(
-        dataArr,
-        indexObj.value,
-        companyObj
-      );
-    }
-
-    setTimeData(timeArr);
-    setCandleData(candles);
-  };
-
   const startTimer = () => {
     if (isMarketOpen()) {
       clearTimeout(countdownInterval);
@@ -75,48 +48,22 @@ const useCommonHeader = (isEchart) => {
     }
   };
 
-  const callHistoricApi = async (isCallNSE) => {
-    if (
-      isCallNSE &&
-      intervalObj.value === "day" &&
-      (indexObj.value === "NSE_EQ" || indexObj.value === "NSE_INDEX")
-    ) {
-      let apiName = "historic";
-      if (companyObj.nseIndex) {
-        apiName = "indexHistoric";
-      }
-      const { candles } = await getHistoricDataNSE(
-        companyObj.symbol,
-        period,
-        apiName
-      );
-      setCandleData(candles);
+  const callHistoricApi = async () => {
+    const interval = intervalObj.interval;
+    const intervalVal = intervalObj.value;
+    const indexName = indexObj.value;
 
-      // getNSEData("F&O", "NIFTY");
-      // getNSEData("corporateInfo", companyObj.symbol);
-      // getNSEData("details", companyObj.symbol);
-      // getNSEData("tradeInfo", companyObj.symbol);
-    } else {
-      if (
-        isYFinanceEnable &&
-        (companyObj.yahooSymbol || indexObj.value === "NSE_EQ")
-      ) {
-        const arr = await getNSEDataYahooFinance(
-          companyObj.yahooSymbol || companyObj.symbol + ".NS",
-          intervalObj.interval,
-          period
-        );
-        setCandleData(arr);
-      } else {
-        const arr = await getHistoricData(
-          intervalObj.value,
-          companyObj.value,
-          indexObj.value,
-          period
-        );
-        setCandleArr(arr, intervalObj.value === "day");
-      }
-    }
+    const { candles, timeArr } = await fetchHistoricData(
+      isEchart,
+      intervalVal,
+      interval,
+      indexName,
+      period,
+      companyObj
+    );
+
+    setTimeData(timeArr);
+    setCandleData(candles);
   };
 
   const callIntradayApi = async () => {
@@ -133,7 +80,9 @@ const useCommonHeader = (isEchart) => {
     if (intervalObj.val) {
       setCandleArrOtherTimeframes(arr, intervalObj.val);
     } else {
-      setCandleArr(arr);
+      const { dataArr, timeArr } = getCandleArr(arr, isEchart);
+      setTimeData(timeArr);
+      setCandleData(dataArr);
     }
   };
 

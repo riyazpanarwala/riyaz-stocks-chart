@@ -1,5 +1,12 @@
 import { hasOpened } from "./utils/indianstockmarket";
-import { getIntradayData, getHistoricDataNSE } from "./getIntervalData";
+import {
+  getIntradayData,
+  getHistoricDataNSE,
+  getHistoricData,
+  getNSEDataYahooFinance,
+  // getNSEData,
+} from "./getIntervalData";
+import isYFinanceEnable from "./utils/isYFinanceEnable";
 
 export const getDataFromIntraday = (intradayData) => {
   const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
@@ -100,4 +107,74 @@ export const getIntradayDataForCurrentDay = async (
     }
   }
   return candles;
+};
+
+const isCallNSE = false;
+
+export const fetchHistoricData = async (
+  isEchart,
+  intervalVal,
+  interval,
+  indexName,
+  period,
+  companyObj
+) => {
+  let candleArr = [];
+  let times = [];
+
+  if (
+    isCallNSE &&
+    intervalVal === "day" &&
+    (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
+  ) {
+    let apiName = "historic";
+    if (companyObj.nseIndex) {
+      apiName = "indexHistoric";
+    }
+    const { candles } = await getHistoricDataNSE(
+      companyObj.symbol,
+      period,
+      apiName
+    );
+    candleArr = candles;
+
+    // getNSEData("F&O", "NIFTY");
+    // getNSEData("corporateInfo", companyObj.symbol);
+    // getNSEData("details", companyObj.symbol);
+    // getNSEData("tradeInfo", companyObj.symbol);
+  } else {
+    if (
+      isYFinanceEnable &&
+      (companyObj.yahooSymbol || indexName === "NSE_EQ")
+    ) {
+      candleArr = await getNSEDataYahooFinance(
+        companyObj.yahooSymbol || companyObj.symbol + ".NS",
+        interval,
+        period
+      );
+    } else {
+      const arr = await getHistoricData(
+        intervalVal,
+        companyObj.value,
+        indexName,
+        period
+      );
+      let { dataArr, timeArr } = getCandleArr(arr, isEchart);
+      if (intervalVal === "day") {
+        dataArr = await getIntradayDataForCurrentDay(
+          dataArr,
+          indexName,
+          companyObj
+        );
+      }
+
+      candleArr = dataArr;
+      times = timeArr;
+    }
+  }
+
+  return {
+    candles: candleArr,
+    timeArr: times,
+  };
 };
