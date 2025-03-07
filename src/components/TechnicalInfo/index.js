@@ -102,6 +102,16 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
     }
   };
 
+  const getADXIndication = (val) => {
+    if (val < 20) {
+      return "Weak Trend";
+    } else if (val >= 20 && val < 25) {
+      return "Moderate Trend";
+    } else {
+      return "Strong Trend";
+    }
+  };
+
   const fetchData = async () => {
     const { candles } = await fetchHistoricData(
       false,
@@ -180,7 +190,11 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
         Level: atr,
         Indication: atr > atrSma ? "High Volatility" : "Low Volatility",
       },
-      { Indicator: "ADX(14)", Level: adx, Indication: "" },
+      {
+        Indicator: "ADX(14)",
+        Level: adx,
+        Indication: getADXIndication(adx),
+      },
       {
         Indicator: "Bolinger Band(20,2)",
         Level: `UB:${bb.UB}, LB:${bb.LB}, SMA20:${bb.SMA20}`,
