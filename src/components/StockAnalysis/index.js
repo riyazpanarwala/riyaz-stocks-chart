@@ -2,6 +2,17 @@ import { saveAs } from "file-saver";
 import watchlistArray from "../utils/watchListArr";
 import { fetchHistoricData } from "../common";
 import getStockAnalysis from "./getStockAnalysis";
+import {
+  getRSIIndication,
+  getMACDIndication,
+  getCCIIndication,
+  getWilliamsonIndication,
+  getROC20Indication,
+  getStochasticIndication,
+  getMFIIndication,
+  getADXIndication,
+  getATRIndication,
+} from "./indication";
 // import fs from "fs";
 
 const sleep = (ms) => {
@@ -53,6 +64,7 @@ export const stockAnalysis = async (
     macdLine,
     signalLine,
     atr,
+    atrSma,
     roc20,
     roc125,
     sma5,
@@ -71,19 +83,22 @@ export const stockAnalysis = async (
   } = getStockAnalysis(candles);
 
   return {
-    "RSI(14)": rsi,
-    "MFI(14)": mfi,
-    "CCI(20)": cci,
-    "Williamson%R(14)": willR,
-    "Stochastic(20,3)": sto,
-    "DAY ADX": adx,
+    "RSI(14)": `${rsi} (${getRSIIndication(rsi)})`,
+    "MFI(14)": `${mfi} (${getMFIIndication(mfi)})`,
+    "CCI(20)": `${cci} (${getCCIIndication(cci)})`,
+    "Williamson%R(14)": `${willR} (${getWilliamsonIndication(willR)})`,
+    "Stochastic(20,3)": `${sto} (${getStochasticIndication(sto)})`,
+    "DAY ADX": `${adx} (${getADXIndication(adx)})`,
+    "Day ATR": `${atr} (${getATRIndication(atr, atrSma)})`,
+    "Day ROC(20)": `${roc20} (${getROC20Indication(roc20)})`,
+    "Day ROC(125)": roc125,
+    "DAY MACD(12,26,9)": `${macdLine} (${getMACDIndication(
+      macdLine,
+      signalLine
+    )})`,
+    "DAY MACD SIGNAL": signalLine,
     "DI+": plusDI,
     "DI-": minusDI,
-    "DAY MACD(12,26,9)": macdLine,
-    "DAY MACD SIGNAL": signalLine,
-    "Day ATR": atr,
-    "Day ROC(20)": roc20,
-    "Day ROC(125)": roc125,
     "SMA(5)": sma5,
     "SMA(10)": sma10,
     "SMA(20)": sma20,
