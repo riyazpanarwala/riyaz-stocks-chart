@@ -19,9 +19,11 @@ export const updateStorageData = (companyObj) => {
 };
 
 export const getStorageData = () => {
-  const storedData = localStorage.getItem(storageKey);
-  if (storedData) {
-    return JSON.parse(storedData);
+  if (typeof window !== "undefined") {
+    const storedData = localStorage.getItem(storageKey);
+    if (storedData) {
+      return JSON.parse(storedData);
+    }
   }
   return [];
 };
