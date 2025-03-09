@@ -14,6 +14,7 @@ import TooltipSubMenu from "./toolTipMenu";
 import styles from "./Sidebar.module.scss";
 import getPatternArr from "./patternArr";
 import watchlistArray from "../utils/watchListArr";
+import { getStorageData } from "../utils/storage";
 
 const Sidebar = ({
   handleTrendLineClick,
@@ -131,7 +132,7 @@ const Sidebar = ({
   ];
 
   const patternArr = getPatternArr(patternName);
-  const watchlistArray1 = watchlistArray(companyObj.value);
+  const watchlistArray1 = getStorageData(); // watchlistArray(companyObj.value);
 
   return (
     <>

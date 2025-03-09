@@ -12,6 +12,11 @@ import {
 } from "../components/utils/data";
 import useCommonHeader from "../components/useCommonHeader";
 import TechnicalInfo from "../components/TechnicalInfo";
+import {
+  setToStorage,
+  updateStorageData,
+  isCompanyExistInStorage,
+} from "../components/utils/storage";
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -39,6 +44,9 @@ const CandleStickChart = () => {
     candleData,
     period,
   } = useCommonHeader();
+  const [isCompanyExist, setCompanyExist] = useState(
+    isCompanyExistInStorage(companyObj)
+  );
 
   const handleWatchListClick = (obj) => {
     disableAllTools();
@@ -104,6 +112,20 @@ const CandleStickChart = () => {
     setModalOpen(true);
   };
 
+  const addToWatchList = () => {
+    setToStorage(companyObj);
+    setCompanyExist(true);
+  };
+
+  const removeFrmWatchList = () => {
+    updateStorageData(companyObj);
+    setCompanyExist(false);
+  };
+
+  useEffect(() => {
+    setCompanyExist(isCompanyExistInStorage(companyObj));
+  }, [companyObj]);
+
   if (!companyArr.length) {
     return "please wait";
   }
@@ -163,9 +185,25 @@ const CandleStickChart = () => {
                 <h2>{getCompanyName()}</h2>
               </div>
               <div className="inlineDiv">
-                <button onClick={analysisClick} className="custom-button">
-                  Technical Analysis
-                </button>
+                <div className="inlineBlkDiv">
+                  <button onClick={analysisClick} className="custom-button">
+                    Technical Analysis
+                  </button>
+                </div>
+                <div className="inlineBlkDiv">
+                  {isCompanyExist ? (
+                    <button
+                      onClick={removeFrmWatchList}
+                      className="custom-button"
+                    >
+                      Remove from WatchList
+                    </button>
+                  ) : (
+                    <button onClick={addToWatchList} className="custom-button">
+                      Add to WatchList
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             {candleData.length ? (
