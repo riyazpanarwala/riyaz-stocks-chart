@@ -13,7 +13,7 @@ import { FaShapes } from "react-icons/fa";
 import TooltipSubMenu from "./toolTipMenu";
 import styles from "./Sidebar.module.scss";
 import getPatternArr from "./patternArr";
-import watchlistArray from "../utils/watchListArr";
+// import watchlistArray from "../utils/watchListArr";
 import { getStorageData } from "../utils/storage";
 
 const Sidebar = ({
@@ -133,6 +133,9 @@ const Sidebar = ({
 
   const patternArr = getPatternArr(patternName);
   const watchlistArray1 = getStorageData(); // watchlistArray(companyObj.value);
+  watchlistArray1.forEach((v) => {
+    v.isActive = companyObj.value === v.value;
+  });
 
   return (
     <>
