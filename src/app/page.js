@@ -124,6 +124,30 @@ const CandleStickChart = () => {
     setCompanyExist(false);
   };
 
+  const enterFullScreen = async () => {
+    handle.enter(); // Enter fullscreen
+    // setIsFullScreen(true);
+
+    // Lock screen orientation if supported
+    if (screen.orientation?.lock) {
+      try {
+        await screen.orientation.lock("landscape");
+      } catch (error) {
+        console.log("Orientation lock failed:", error);
+      }
+    }
+  };
+
+  const exitFullScreen = async () => {
+    handle.exit(); // Exit fullscreen
+    // setIsFullScreen(false);
+
+    // Unlock screen orientation (optional)
+    if (screen.orientation?.unlock) {
+      screen.orientation.unlock();
+    }
+  };
+
   useEffect(() => {
     setCompanyExist(isCompanyExistInStorage(companyObj));
   }, [companyObj]);
@@ -207,7 +231,7 @@ const CandleStickChart = () => {
                   )}
                 </div>
                 <div className="inlineBlkDiv">
-                  <button onClick={handle.enter} className="custom-button">
+                  <button onClick={enterFullScreen} className="custom-button">
                     Full Screen
                   </button>
                 </div>
