@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { FullScreen, useFullScreenHandle } from "react-full-screen";
 import Sidebar from "../components/Sidebar/Sidebar.js";
 import HeaderWithDropdowns from "../components/selectDropdown";
 import Tiles from "../components/tiles";
@@ -47,6 +48,7 @@ const CandleStickChart = () => {
   const [isCompanyExist, setCompanyExist] = useState(
     isCompanyExistInStorage(companyObj)
   );
+  const handle = useFullScreenHandle();
 
   const handleWatchListClick = (obj) => {
     disableAllTools();
@@ -204,25 +206,32 @@ const CandleStickChart = () => {
                     </button>
                   )}
                 </div>
+                <div className="inlineBlkDiv">
+                  <button onClick={handle.enter} className="custom-button">
+                    Full Screen
+                  </button>
+                </div>
               </div>
             </div>
             {candleData.length ? (
-              <div className="finance-charts">
-                <FinanceChart
-                  isIntraday={intradayObj.value === "intraday"}
-                  initialData={candleData}
-                  trendLineEnable={trendLineEnable}
-                  disableAllTools={disableAllTools}
-                  measurementEnable={measurementEnable}
-                  textEnable={textEnable}
-                  indicatorName={indicatorName}
-                  positionName={positionName}
-                  shapeName={shapeName}
-                  isAngleEnabled={isAngleEnabled}
-                  breakoutName={breakoutName}
-                  patternName={patternName}
-                />
-              </div>
+              <FullScreen handle={handle}>
+                <div className="finance-charts">
+                  <FinanceChart
+                    isIntraday={intradayObj.value === "intraday"}
+                    initialData={candleData}
+                    trendLineEnable={trendLineEnable}
+                    disableAllTools={disableAllTools}
+                    measurementEnable={measurementEnable}
+                    textEnable={textEnable}
+                    indicatorName={indicatorName}
+                    positionName={positionName}
+                    shapeName={shapeName}
+                    isAngleEnabled={isAngleEnabled}
+                    breakoutName={breakoutName}
+                    patternName={patternName}
+                  />
+                </div>
+              </FullScreen>
             ) : (
               ""
             )}
