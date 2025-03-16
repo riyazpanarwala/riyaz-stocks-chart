@@ -157,7 +157,7 @@ const CandleStickChart = () => {
   }
 
   return (
-    <>
+    <FullScreen handle={handle}>
       <HeaderWithDropdowns
         intervalObj={intervalObj}
         intradayObj={intradayObj}
@@ -238,24 +238,22 @@ const CandleStickChart = () => {
               </div>
             </div>
             {candleData.length ? (
-              <FullScreen handle={handle}>
-                <div className="finance-charts">
-                  <FinanceChart
-                    isIntraday={intradayObj.value === "intraday"}
-                    initialData={candleData}
-                    trendLineEnable={trendLineEnable}
-                    disableAllTools={disableAllTools}
-                    measurementEnable={measurementEnable}
-                    textEnable={textEnable}
-                    indicatorName={indicatorName}
-                    positionName={positionName}
-                    shapeName={shapeName}
-                    isAngleEnabled={isAngleEnabled}
-                    breakoutName={breakoutName}
-                    patternName={patternName}
-                  />
-                </div>
-              </FullScreen>
+              <div className="finance-charts">
+                <FinanceChart
+                  isIntraday={intradayObj.value === "intraday"}
+                  initialData={candleData}
+                  trendLineEnable={trendLineEnable}
+                  disableAllTools={disableAllTools}
+                  measurementEnable={measurementEnable}
+                  textEnable={textEnable}
+                  indicatorName={indicatorName}
+                  positionName={positionName}
+                  shapeName={shapeName}
+                  isAngleEnabled={isAngleEnabled}
+                  breakoutName={breakoutName}
+                  patternName={patternName}
+                />
+              </div>
             ) : (
               ""
             )}
@@ -272,7 +270,7 @@ const CandleStickChart = () => {
           />
         )}
       </div>
-    </>
+    </FullScreen>
   );
 };
 
