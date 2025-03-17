@@ -157,7 +157,7 @@ const CandleStickChart = () => {
   }
 
   return (
-    <FullScreen handle={handle}>
+    <>
       <HeaderWithDropdowns
         intervalObj={intervalObj}
         intradayObj={intradayObj}
@@ -174,7 +174,7 @@ const CandleStickChart = () => {
         }
         indexArr={newIndexArr}
       />
-      <div style={{ display: "flex", height: "100vh", overflowY: "auto" }}>
+      <div style={{ display: "flex" }}>
         <Sidebar
           handleTrendLineClick={handleTrendLineClick}
           trendLineEnable={trendLineEnable}
@@ -238,22 +238,24 @@ const CandleStickChart = () => {
               </div>
             </div>
             {candleData.length ? (
-              <div className="finance-charts">
-                <FinanceChart
-                  isIntraday={intradayObj.value === "intraday"}
-                  initialData={candleData}
-                  trendLineEnable={trendLineEnable}
-                  disableAllTools={disableAllTools}
-                  measurementEnable={measurementEnable}
-                  textEnable={textEnable}
-                  indicatorName={indicatorName}
-                  positionName={positionName}
-                  shapeName={shapeName}
-                  isAngleEnabled={isAngleEnabled}
-                  breakoutName={breakoutName}
-                  patternName={patternName}
-                />
-              </div>
+              <FullScreen handle={handle}>
+                <div className="finance-charts">
+                  <FinanceChart
+                    isIntraday={intradayObj.value === "intraday"}
+                    initialData={candleData}
+                    trendLineEnable={trendLineEnable}
+                    disableAllTools={disableAllTools}
+                    measurementEnable={measurementEnable}
+                    textEnable={textEnable}
+                    indicatorName={indicatorName}
+                    positionName={positionName}
+                    shapeName={shapeName}
+                    isAngleEnabled={isAngleEnabled}
+                    breakoutName={breakoutName}
+                    patternName={patternName}
+                  />
+                </div>
+              </FullScreen>
             ) : (
               ""
             )}
@@ -270,7 +272,7 @@ const CandleStickChart = () => {
           />
         )}
       </div>
-    </FullScreen>
+    </>
   );
 };
 
