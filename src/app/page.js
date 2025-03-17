@@ -230,7 +230,7 @@ const CandleStickChart = () => {
                     </button>
                   )}
                 </div>
-                <div className="inlineBlkDiv">
+                <div className="inlineBlkDiv mobile-view">
                   <button onClick={enterFullScreen} className="custom-button">
                     Full Screen
                   </button>

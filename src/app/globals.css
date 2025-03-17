@@ -99,10 +99,18 @@ a {
   background-color: #003e80;
 }
 
+.mobile-view {
+  display: none;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .mainChart {
     margin-left: 0px;
+  }
+
+  .mobile-view {
+    display: block;
   }
 
   .grid-container {
