@@ -13,7 +13,7 @@
     "@riyazpanarwala/react-financial-charts": "^2.0.10",
     "@vercel/analytics": "^1.5.0",
     "@zero65tech/indian-stock-market": "^4.3.0",
-    "axios": "^1.7.9",
+    "axios": "^1.8.3",
     "classnames": "^2.5.1",
     "d3-format": "^3.1.0",
     "d3-time-format": "^4.1.0",
