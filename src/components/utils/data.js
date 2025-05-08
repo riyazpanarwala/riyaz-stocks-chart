@@ -4,23 +4,95 @@ export const intraArr = [
 ];
 
 export const intervalArr = [
-  { label: "1 Minute", value: "1minute" },
-  { label: "5 Minute", value: "5minute", val: 5 },
-  { label: "15 Minute", value: "15minute", val: 15 },
-  { label: "30 Minute", value: "30minute" },
+  { label: "1 Minute", value: "1minute", apiInterval: 1, apiUnit: "minutes" },
+  {
+    label: "5 Minute",
+    value: "5minute",
+    apiInterval: 5,
+    apiUnit: "minutes",
+  },
+  {
+    label: "15 Minute",
+    value: "15minute",
+    apiInterval: 15,
+    apiUnit: "minutes",
+  },
+  {
+    label: "30 Minute",
+    value: "30minute",
+    apiInterval: 30,
+    apiUnit: "minutes",
+  },
 ];
 
 export const intervalArr1 = [
-  { label: "Daily", value: "day", interval: "1d" },
-  { label: "Weekly", value: "week", interval: "1wk" },
-  { label: "Monthly", value: "month", interval: "1mo" },
+  {
+    label: "1 Minute",
+    value: "1min",
+    interval: "1min",
+    apiInterval: 1,
+    apiUnit: "minutes",
+  },
+  {
+    label: "5 Minute",
+    value: "5min",
+    interval: "5min",
+    apiInterval: 5,
+    apiUnit: "minutes",
+  },
+  {
+    label: "15 Minute",
+    value: "15min",
+    interval: "15min",
+    apiInterval: 15,
+    apiUnit: "minutes",
+  },
+  {
+    label: "30 Minute",
+    value: "30min",
+    interval: "30min",
+    apiInterval: 30,
+    apiUnit: "minutes",
+  },
+  {
+    label: "1 Hour",
+    value: "1hr",
+    interval: "1hr",
+    apiInterval: 1,
+    apiUnit: "hours",
+  },
+  {
+    label: "Daily",
+    value: "1d",
+    interval: "1d",
+    apiInterval: 1,
+    apiUnit: "days",
+  },
+  {
+    label: "Weekly",
+    value: "1wk",
+    interval: "1wk",
+    apiInterval: 1,
+    apiUnit: "weeks",
+  },
+  {
+    label: "Monthly",
+    value: "1mo",
+    interval: "1mo",
+    apiInterval: 1,
+    apiUnit: "months",
+  },
 ];
 
 export const periods = ["6m", "1y", "2y", "5y"];
+export const periodMinutes = ["1d", "5d", "1m"];
+export const periodHours = ["1d", "5d", "1m", "2m"];
 
 export const dateObj = {
   "1d": () => new Date(new Date().setDate(new Date().getDate() - 1)),
+  "5d": () => new Date(new Date().setDate(new Date().getDate() - 5)),
   "1m": () => new Date(new Date().setDate(new Date().getDate() - 30)),
+  "2m": () => new Date(new Date().setDate(new Date().getDate() - 30 * 2)),
   "3m": () => new Date(new Date().setDate(new Date().getDate() - 30 * 3)),
   "6m": () => new Date(new Date().setDate(new Date().getDate() - 30 * 6)),
   "1y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 1)),

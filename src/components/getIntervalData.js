@@ -1,7 +1,7 @@
 import axios from "axios";
 import { dateObj } from "./utils/data";
 
-const baseurl = "https://api.upstox.com/v2/";
+const baseurl = "https://api.upstox.com/v3/";
 const nseBaseUrl = `/api/NSE/Equity`;
 
 export const getNSEDataYahooFinance = async (symbol, interval, isFrom) => {
@@ -125,7 +125,8 @@ export const getHistoricData = async (
   interval,
   companyName,
   indexName,
-  isFrom
+  isFrom,
+  apiInterval = 1
 ) => {
   const headers = {
     Accept: "application/json",
@@ -135,7 +136,8 @@ export const getHistoricData = async (
   let toDate = currentDate.toISOString().split("T")[0];
   let fromDate = dateObj[isFrom]();
   fromDate = fromDate.toISOString().split("T")[0];
-  const newUrl = `${baseurl}historical-candle/${instrumentKey}/${interval}/${toDate}/${fromDate}`;
+
+  const newUrl = `${baseurl}historical-candle/${instrumentKey}/${interval}/${apiInterval}/${toDate}/${fromDate}`;
 
   try {
     const response = await axios.get(newUrl, { headers });
@@ -147,13 +149,18 @@ export const getHistoricData = async (
   }
 };
 
-export const getIntradayData = async (interval, companyName, indexName) => {
+export const getIntradayData = async (
+  interval,
+  companyName,
+  indexName,
+  apiInterval = 1
+) => {
   const headers = {
     Accept: "application/json",
   };
 
   const instrumentKey = `${indexName}|${companyName}`;
-  const newUrl = `${baseurl}historical-candle/intraday/${instrumentKey}/${interval}`;
+  const newUrl = `${baseurl}historical-candle/intraday/${instrumentKey}/${interval}/${apiInterval}`;
 
   try {
     const response = await axios.get(newUrl, { headers });

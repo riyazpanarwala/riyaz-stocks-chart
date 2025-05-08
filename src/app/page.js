@@ -10,6 +10,8 @@ import {
   intervalArr,
   intervalArr1,
   periods,
+  periodMinutes,
+  periodHours,
 } from "../components/utils/data";
 import useCommonHeader from "../components/useCommonHeader";
 import TechnicalInfo from "../components/TechnicalInfo";
@@ -156,6 +158,15 @@ const CandleStickChart = () => {
     return "please wait";
   }
 
+  let periodArr = [];
+  if (intervalObj.apiUnit === "minutes") {
+    periodArr = periodMinutes;
+  } else if (intervalObj.apiUnit === "hours") {
+    periodArr = periodHours;
+  } else {
+    periodArr = periods;
+  }
+
   return (
     <>
       <HeaderWithDropdowns
@@ -202,7 +213,7 @@ const CandleStickChart = () => {
             <div className="tileDiv">
               {intradayObj.value === "historical" && (
                 <Tiles
-                  periods={periods}
+                  periods={periodArr}
                   selectedPeriod={period}
                   setSelectedPeriod={handlePeriodChange}
                 />

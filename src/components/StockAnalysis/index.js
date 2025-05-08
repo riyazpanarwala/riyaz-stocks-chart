@@ -150,7 +150,7 @@ const stocksAnalysis = async (arrObj = watchlistArray1) => {
 
   const analyse = async (item, i) => {
     const data = await stockAnalysis(
-      "day",
+      "days",
       "1y",
       item.value,
       item.indexName,

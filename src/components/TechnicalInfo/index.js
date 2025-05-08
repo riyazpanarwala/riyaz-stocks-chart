@@ -26,7 +26,7 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
   const fetchData = async () => {
     const { candles } = await fetchHistoricData(
       false,
-      "day",
+      "days",
       "1d",
       indexName || companyObj.indexName,
       "1y",
