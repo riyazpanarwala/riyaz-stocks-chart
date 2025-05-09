@@ -122,7 +122,7 @@ export const fetchHistoricData = async (
 
   if (
     isCallNSE &&
-    intervalVal === "day" &&
+    intervalVal === "days" &&
     (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
   ) {
     let apiName = "historic";
@@ -159,7 +159,7 @@ export const fetchHistoricData = async (
         apiInterval
       );
       let { dataArr, timeArr } = getCandleArr(arr, isEchart);
-      if (intervalVal === "day" && hasOpened()) {
+      if (intervalVal === "days" && hasOpened()) {
         dataArr = await getIntradayDataForCurrentDay(
           dataArr,
           indexName,
