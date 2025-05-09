@@ -71,8 +71,21 @@ const useCommonHeader = (isEchart) => {
     setCandleData(dataArr);
   };
 
+  const setPeriodOnIntervalChange = (obj) => {
+    if (obj.apiUnit === "minutes") {
+      setPeriod(periodMinutes[0]);
+    } else if (obj.apiUnit === "hours") {
+      setPeriod(periodHours[0]);
+    } else {
+      setPeriod(periods[1]);
+    }
+  };
+
   const handleIntervalChange = (obj) => {
     setInterval(obj);
+    if (intervalObj.apiUnit !== obj.apiUnit) {
+      setPeriodOnIntervalChange(obj);
+    }
   };
 
   const setIndexes = ({ nse, bse, nseIndex, bseIndex }) => {
@@ -125,16 +138,6 @@ const useCommonHeader = (isEchart) => {
     setIntervalData(obj);
     setIntradayOrHistoric(obj);
   };
-
-  useEffect(() => {
-    if (intervalObj.apiUnit === "minutes") {
-      setPeriod(periodMinutes[0]);
-    } else if (intervalObj.apiUnit === "hours") {
-      setPeriod(periodHours[0]);
-    } else {
-      setPeriod(periods[1]);
-    }
-  }, [intervalObj]);
 
   useEffect(() => {
     if (!intervalObj.value) {

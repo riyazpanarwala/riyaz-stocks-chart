@@ -159,11 +159,13 @@ const CandleStickChart = () => {
   }
 
   let periodArr = [];
+  let isDisplayHrAndTime = true;
   if (intervalObj.apiUnit === "minutes") {
     periodArr = periodMinutes;
   } else if (intervalObj.apiUnit === "hours") {
     periodArr = periodHours;
   } else {
+    isDisplayHrAndTime = false;
     periodArr = periods;
   }
 
@@ -252,6 +254,9 @@ const CandleStickChart = () => {
               <FullScreen handle={handle}>
                 <div className="finance-charts">
                   <FinanceChart
+                    isDisplayHrAndTime={isDisplayHrAndTime}
+                    isHistoricalMinutes={intervalObj.apiUnit === "minutes"}
+                    isHistoricalHours={intervalObj.apiUnit === "hours"}
                     isIntraday={intradayObj.value === "intraday"}
                     initialData={candleData}
                     trendLineEnable={trendLineEnable}

@@ -84,9 +84,9 @@ export const intervalArr1 = [
   },
 ];
 
-export const periods = ["6m", "1y", "2y", "5y"];
+export const periods = ["6m", "1y", "2y", "5y", "10y"];
 export const periodMinutes = ["1d", "5d", "1m"];
-export const periodHours = ["1d", "5d", "1m", "2m"];
+export const periodHours = ["5d", "1m", "2m"];
 
 export const dateObj = {
   "1d": () => new Date(new Date().setDate(new Date().getDate() - 1)),
@@ -98,6 +98,8 @@ export const dateObj = {
   "1y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
   "2y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 2)),
   "5y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 5)),
+  "10y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 10)),
+  "20y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 20)),
 };
 
 export const indexArr = [

@@ -71,6 +71,9 @@ const indicatorYExtentsObj = {
 };
 
 const FinanceChart = ({
+  isDisplayHrAndTime,
+  isHistoricalMinutes,
+  isHistoricalHours,
   isIntraday,
   initialData,
   trendLineEnable,
@@ -124,7 +127,12 @@ const FinanceChart = ({
   );
   const pricesDisplayFormat = format(".2f");
   const max = xAccessor(data[data.length - 1]);
-  const min = 0; // xAccessor(data[Math.max(0, data.length - 100)]);
+  let min = 0;
+  if (isHistoricalMinutes) {
+    min = xAccessor(data[Math.max(0, data.length - 100)]);
+  } else if (isHistoricalHours) {
+    min = xAccessor(data[Math.max(0, data.length - 200)]);
+  }
   const xExtents = [min - 5, max + 5];
 
   const gridHeight = height - margin.top - margin.bottom;
@@ -419,7 +427,9 @@ const FinanceChart = ({
         />
         <MouseCoordinateX
           rectWidth={margin.top}
-          displayFormat={timeFormat(isIntraday ? "%Y-%m-%d %H:%M" : "%Y-%m-%d")}
+          displayFormat={timeFormat(
+            isIntraday || isDisplayHrAndTime ? "%Y-%m-%d %H:%M" : "%Y-%m-%d"
+          )}
         />
         <EdgeIndicator
           itemType="last"
