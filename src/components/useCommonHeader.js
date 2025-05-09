@@ -5,13 +5,15 @@ import {
   intervalArr,
   intervalArr1,
   periods,
+  periodMinutes,
+  periodHours,
   indexArr,
   index1Arr,
 } from "./utils/data";
 import { getIntradayData } from "./getIntervalData";
 // import isTradingActive from "./utils/isTradingActive";
 import { isMarketOpen } from "./utils/indianstockmarket";
-import { getDataFromIntraday, getCandleArr, fetchHistoricData } from "./common";
+import { getCandleArr, fetchHistoricData } from "./common";
 import _ from "lodash";
 
 const useCommonHeader = (isEchart) => {
@@ -26,19 +28,6 @@ const useCommonHeader = (isEchart) => {
   const { companyArr, companyObj, setCompany } = useParseCsv();
   let countdownInterval;
 
-  const setCandleArrOtherTimeframes = (arr, chunkSize) => {
-    let candleData = arr.data.candles?.reverse();
-
-    // Use _.chunk() to split the array into chunks of size
-    let chunks = _.chunk(candleData, chunkSize);
-    let candleArr = [];
-    chunks.forEach((v) => {
-      candleArr = [...candleArr, getDataFromIntraday(v)];
-    });
-
-    setCandleData(candleArr);
-  };
-
   const startTimer = () => {
     if (isMarketOpen()) {
       clearTimeout(countdownInterval);
@@ -50,7 +39,7 @@ const useCommonHeader = (isEchart) => {
 
   const callHistoricApi = async () => {
     const interval = intervalObj.interval;
-    const intervalVal = intervalObj.value;
+    const intervalVal = intervalObj.apiUnit;
     const indexName = indexObj.value;
 
     const { candles, timeArr } = await fetchHistoricData(
@@ -59,7 +48,8 @@ const useCommonHeader = (isEchart) => {
       interval,
       indexName,
       period,
-      companyObj
+      companyObj,
+      intervalObj.apiInterval
     );
 
     setTimeData(timeArr);
@@ -67,27 +57,35 @@ const useCommonHeader = (isEchart) => {
   };
 
   const callIntradayApi = async () => {
-    let interval = intervalObj.value;
-    if (intervalObj.val) {
-      interval = "1minute";
-    }
+    let interval = intervalObj.apiUnit;
+
     const arr = await getIntradayData(
       interval,
       companyObj.value,
-      indexObj.value
+      indexObj.value,
+      intervalObj.apiInterval
     );
 
-    if (intervalObj.val) {
-      setCandleArrOtherTimeframes(arr, intervalObj.val);
+    const { dataArr, timeArr } = getCandleArr(arr, isEchart);
+    setTimeData(timeArr);
+    setCandleData(dataArr);
+  };
+
+  const setPeriodOnIntervalChange = (obj) => {
+    if (obj.apiUnit === "minutes") {
+      setPeriod(periodMinutes[0]);
+    } else if (obj.apiUnit === "hours") {
+      setPeriod(periodHours[0]);
     } else {
-      const { dataArr, timeArr } = getCandleArr(arr, isEchart);
-      setTimeData(timeArr);
-      setCandleData(dataArr);
+      setPeriod(periods[1]);
     }
   };
 
   const handleIntervalChange = (obj) => {
     setInterval(obj);
+    if (intervalObj.apiUnit !== obj.apiUnit) {
+      setPeriodOnIntervalChange(obj);
+    }
   };
 
   const setIndexes = ({ nse, bse, nseIndex, bseIndex }) => {
@@ -132,7 +130,7 @@ const useCommonHeader = (isEchart) => {
     if (isIntraday(value)) {
       setInterval(intervalArr[0]);
     } else {
-      setInterval(intervalArr1[0]);
+      setInterval(intervalArr1[5]);
     }
   };
 

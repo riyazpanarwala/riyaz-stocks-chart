@@ -83,7 +83,12 @@ export const getIntradayDataForCurrentDay = async (
       const arr1 = await getHistoricDataNSE(cmpnyObj.symbol, "1d", apiName);
       currentObj = arr1.candles[arr1.candles.length - 1];
     } else {
-      const arr1 = await getIntradayData("1minute", cmpnyObj.value, indexName);
+      const arr1 = await getIntradayData(
+        "minutes",
+        cmpnyObj.value,
+        indexName,
+        1
+      );
       let candleData = arr1.data.candles?.reverse();
       if (candleData.length) {
         currentObj = getDataFromIntraday(candleData);
@@ -109,7 +114,8 @@ export const fetchHistoricData = async (
   interval,
   indexName,
   period,
-  companyObj
+  companyObj,
+  apiInterval = 1
 ) => {
   let candleArr = [];
   let times = [];
@@ -149,7 +155,8 @@ export const fetchHistoricData = async (
         intervalVal,
         companyObj.value,
         indexName,
-        period
+        period,
+        apiInterval
       );
       let { dataArr, timeArr } = getCandleArr(arr, isEchart);
       if (intervalVal === "day" && hasOpened()) {
