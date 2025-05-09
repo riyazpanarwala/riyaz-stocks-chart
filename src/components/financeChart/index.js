@@ -126,7 +126,6 @@ const FinanceChart = ({
     calculatedData
   );
   const pricesDisplayFormat = format(".2f");
-  if (data.length === 0) return null;
   const max = xAccessor(data[data.length - 1]);
   let min = 0;
   if (isHistoricalMinutes) {
