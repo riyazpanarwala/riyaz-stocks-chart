@@ -9,9 +9,10 @@ import {
   intraArr,
   intervalArr,
   intervalArr1,
-  periods,
+  periodDays,
   periodMinutes,
   periodHours,
+  periodMax,
 } from "../components/utils/data";
 import useCommonHeader from "../components/useCommonHeader";
 import TechnicalInfo from "../components/TechnicalInfo";
@@ -164,9 +165,12 @@ const CandleStickChart = () => {
     periodArr = periodMinutes;
   } else if (intervalObj.apiUnit === "hours") {
     periodArr = periodHours;
+  } else if (intervalObj.apiUnit === "days") {
+    isDisplayHrAndTime = false;
+    periodArr = periodDays;
   } else {
     isDisplayHrAndTime = false;
-    periodArr = periods;
+    periodArr = periodMax;
   }
 
   return (

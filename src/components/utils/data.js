@@ -34,6 +34,13 @@ export const intervalArr1 = [
     apiUnit: "minutes",
   },
   {
+    label: "3 Minute",
+    value: "3min",
+    interval: "3m",
+    apiInterval: 3,
+    apiUnit: "minutes",
+  },
+  {
     label: "5 Minute",
     value: "5min",
     interval: "5m",
@@ -84,9 +91,10 @@ export const intervalArr1 = [
   },
 ];
 
-export const periods = ["6m", "1y", "2y", "5y", "10y"];
+export const periodDays = ["6m", "1y", "2y", "5y", "10y"];
 export const periodMinutes = ["1d", "5d", "1m"];
 export const periodHours = ["5d", "1m", "2m"];
+export const periodMax = ["6m", "1y", "2y", "5y", "10y", "Max"];
 
 export const dateObj = {
   "1d": () => new Date(new Date().setDate(new Date().getDate() - 1)),
@@ -100,6 +108,7 @@ export const dateObj = {
   "5y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 5)),
   "10y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 10)),
   "20y": () => new Date(new Date().setFullYear(new Date().getFullYear() - 20)),
+  Max: () => new Date("2000-01-01"),
 };
 
 export const indexArr = [

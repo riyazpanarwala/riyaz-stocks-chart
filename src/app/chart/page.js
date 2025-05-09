@@ -6,7 +6,7 @@ import {
   intraArr,
   intervalArr,
   intervalArr1,
-  periods,
+  periodDays,
 } from "../../components/utils/data";
 import useCommonHeader from "../../components/useCommonHeader";
 import Echart from "../../components/Echart";
@@ -67,7 +67,7 @@ const CandleStickChart = () => {
           <div style={{ margin: "20px" }}>
             {intradayObj.value === "historical" && (
               <Tiles
-                periods={periods}
+                periods={periodDays}
                 selectedPeriod={period}
                 setSelectedPeriod={handlePeriodChange}
               />

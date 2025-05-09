@@ -4,9 +4,10 @@ import {
   intraArr,
   intervalArr,
   intervalArr1,
-  periods,
+  periodDays,
   periodMinutes,
   periodHours,
+  periodMax,
   indexArr,
   index1Arr,
 } from "./utils/data";
@@ -17,7 +18,7 @@ import { getCandleArr, fetchHistoricData } from "./common";
 import _ from "lodash";
 
 const useCommonHeader = (isEchart) => {
-  const [period, setPeriod] = useState(periods[1]);
+  const [period, setPeriod] = useState(periodDays[1]);
   const [intervalObj, setInterval] = useState([]);
   const [intradayObj, setIntradayOrHistoric] = useState(intraArr[1]);
   const [indexObj, setIndex] = useState({});
@@ -76,8 +77,10 @@ const useCommonHeader = (isEchart) => {
       setPeriod(periodMinutes[0]);
     } else if (obj.apiUnit === "hours") {
       setPeriod(periodHours[0]);
+    } else if (obj.apiUnit === "days") {
+      setPeriod(periodDays[1]);
     } else {
-      setPeriod(periods[1]);
+      setPeriod(periodMax[0]);
     }
   };
 
@@ -130,8 +133,8 @@ const useCommonHeader = (isEchart) => {
     if (isIntraday(value)) {
       setInterval(intervalArr[0]);
     } else {
-      setInterval(intervalArr1[5]);
-      setPeriod(periods[1]);
+      setInterval(intervalArr1[6]);
+      setPeriod(periodDays[1]);
     }
   };
 
