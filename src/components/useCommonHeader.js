@@ -131,6 +131,7 @@ const useCommonHeader = (isEchart) => {
       setInterval(intervalArr[0]);
     } else {
       setInterval(intervalArr1[5]);
+      setPeriod(periods[1]);
     }
   };
 
