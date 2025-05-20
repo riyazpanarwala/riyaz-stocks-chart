@@ -24,7 +24,7 @@ const HeaderWithDropdowns = ({
               options={intervalArr}
               onChange={handleIntervalChange}
               value={intervalObj}
-              width="140px"
+              minWidth="140px"
             />
           </div>
           <div className="grid-item">
