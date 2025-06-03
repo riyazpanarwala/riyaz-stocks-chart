@@ -17,19 +17,31 @@ import {
 } from "../StockAnalysis/indication";
 import "./App.css";
 
+const tabs = ["Days", "Weeks", "Months"];
+
 const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
   const [technicalIndicators, setTechnicalIndicators] = useState([]);
   const [movingAverages, setMovingAvg] = useState([]);
   const [maCrossOvers, setMACrossOvers] = useState([]);
+  const [activeTab, setActiveTab] = useState(tabs[0]);
   const summaryData = [];
 
   const fetchData = async () => {
+    let unitName = "days";
+    let period = "1y";
+    if (activeTab === "Weeks") {
+      unitName = "weeks";
+      period = "5y";
+    } else if (activeTab === "Months") {
+      unitName = "months";
+      period = "Max";
+    }
     const { candles } = await fetchHistoricData(
       false,
-      "days",
+      unitName,
       "1d",
       indexName || companyObj.indexName,
-      "1y",
+      period,
       companyObj
     );
 
@@ -165,13 +177,28 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
     ]);
   };
 
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+  };
+
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [activeTab]);
 
   return (
     <div className="container">
       <Modal isOpen={true} onClose={onClose}>
+        <div className="modal-tabs-header">
+          {tabs.map((tab) => (
+            <button
+              key={tab}
+              className={`modal-tab-btn${activeTab === tab ? " active" : ""}`}
+              onClick={() => handleTabClick(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
         <div className="summary-grid">
           {summaryData.map((item, index) => (
             <SummaryCard
