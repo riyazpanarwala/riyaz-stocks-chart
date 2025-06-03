@@ -1,5 +1,5 @@
 import React from "react";
-import "./SummaryCard.css";
+import "./SummaryCard.scss";
 
 const SummaryCard = ({ title, value, status }) => {
   return (

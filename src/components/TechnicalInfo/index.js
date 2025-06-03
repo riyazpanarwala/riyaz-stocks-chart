@@ -32,8 +32,8 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
     if (activeTab === "Weeks") {
       unitName = "weeks";
       period = "5y";
-    } else if (activeTab === "month") {
-      unitName = "Months";
+    } else if (activeTab === "Months") {
+      unitName = "months";
       period = "Max";
     }
     const { candles } = await fetchHistoricData(
