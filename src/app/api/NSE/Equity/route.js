@@ -31,6 +31,8 @@ export async function POST(req) {
         end: toDate,
       };
       data = await nseIndia.getIndexHistoricalData(symbol, range);
+    } else if (apiName === "optionChain") {
+      data = await nseIndia.getEquityOptionChain(symbol);
     }
 
     return NextResponse.json(data, { status: 200 });
