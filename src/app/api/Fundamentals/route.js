@@ -91,13 +91,6 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const symbol = searchParams.get("symbol");
 
-    if (!symbol) {
-      return NextResponse.json(
-        { error: "Symbol parameter is required" },
-        { status: 400 }
-      );
-    }
-
     // Validate symbol parameter
     if (
       !symbol ||
@@ -105,7 +98,10 @@ export async function GET(req) {
       !/^[A-Za-z0-9\-\.]+$/.test(symbol)
     ) {
       return NextResponse.json(
-        { error: "Invalid symbol parameter" },
+        {
+          error:
+            "Symbol parameter is required and must be a valid alphanumeric string",
+        },
         { status: 400 }
       );
     }
