@@ -61,8 +61,8 @@ async function getFinancialFundamentals(symbol) {
     });
 
     if (price && bookValue) {
-      const priceNum = parseFloat(price);
-      const bookValueNum = parseFloat(bookValue);
+      const priceNum = parseFloat(price.replace(/,/g, ""));
+      const bookValueNum = parseFloat(bookValue.replace(/,/g, ""));
       if (!isNaN(priceNum) && !isNaN(bookValueNum) && bookValueNum !== 0) {
         pb = (priceNum / bookValueNum).toFixed(2);
       }
