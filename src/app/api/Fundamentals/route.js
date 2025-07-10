@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import axios from "axios";
 import * as cheerio from "cheerio";
 
+// This is for tempoary purpose need to remove this in future.
 async function getFinancialFundamentals(symbol) {
   const url = `https://www.screener.in/company/${symbol}/consolidated/`;
 
