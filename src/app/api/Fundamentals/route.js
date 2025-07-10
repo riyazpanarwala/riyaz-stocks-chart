@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
-const cheerio = require("cheerio");
+import * as cheerio from "cheerio";
 
-async function getEPSandBookValue(symbol) {
+// This is for tempoary purpose need to remove this in future.
+async function getFinancialFundamentals(symbol) {
   const url = `https://www.screener.in/company/${symbol}/consolidated/`;
 
   try {
     const response = await axios.get(url, {
       headers: { "User-Agent": "Mozilla/5.0" },
+      timeout: 10000, // 10 second timeout
     });
 
     const $ = cheerio.load(response.data);
@@ -20,7 +22,10 @@ async function getEPSandBookValue(symbol) {
           .find("td")
           .slice(1)
           .each((_, td) => {
-            epsValues.push($(td).text().trim());
+            const value = $(td).text().trim();
+            if (value && !isNaN(parseFloat(value))) {
+              epsValues.push(value);
+            }
           });
       }
     });
@@ -36,6 +41,9 @@ async function getEPSandBookValue(symbol) {
     $("li.flex").each((_, li) => {
       const label = $(li).find(".name").text().trim();
       const numberval = $(li).find(".number").text().trim();
+
+      // Skip if no valid number value
+      if (!numberval) return;
 
       if (label === "Book Value") {
         bookValue = numberval;
@@ -53,7 +61,11 @@ async function getEPSandBookValue(symbol) {
     });
 
     if (price && bookValue) {
-      pb = (parseFloat(price) / parseFloat(bookValue)).toFixed(2);
+      const priceNum = parseFloat(price.replace(/,/g, ""));
+      const bookValueNum = parseFloat(bookValue.replace(/,/g, ""));
+      if (!isNaN(priceNum) && !isNaN(bookValueNum) && bookValueNum !== 0) {
+        pb = (priceNum / bookValueNum).toFixed(2);
+      }
     }
 
     return {
@@ -79,7 +91,22 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const symbol = searchParams.get("symbol");
 
-    const data = await getEPSandBookValue(symbol);
+    // Validate symbol parameter
+    if (
+      !symbol ||
+      typeof symbol !== "string" ||
+      !/^[A-Za-z0-9\-\.]+$/.test(symbol)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Symbol parameter is required and must be a valid alphanumeric string",
+        },
+        { status: 400 }
+      );
+    }
+
+    const data = await getFinancialFundamentals(symbol);
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
