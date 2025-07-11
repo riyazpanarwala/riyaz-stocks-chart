@@ -161,6 +161,15 @@ async function extractFinancialsFromUrl(
       roe,
       marketCap,
       roce,
+      PE:
+        currentPrice && safe(combinedEPS) && safe(combinedEPS) !== 0
+          ? (currentPrice / safe(combinedEPS)).toFixed(2)
+          : "Not Found",
+      PB:
+        currentPrice && safe(bookValuePerShare) && safe(bookValuePerShare) !== 0
+          ? (currentPrice / safe(bookValuePerShare)).toFixed(2)
+          : "Not Found",
+      currentPrice,
     };
   } catch (err) {
     console.error("❌ Failed to parse XML:", err.message);
