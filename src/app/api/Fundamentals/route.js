@@ -161,6 +161,9 @@ async function extractFinancialsFromUrl(
       roe,
       marketCap,
       roce,
+      PE: (currentPrice / combinedEPS).toFixed(2),
+      PB: (currentPrice / bookValuePerShare).toFixed(2),
+      currentPrice,
     };
   } catch (err) {
     console.error("❌ Failed to parse XML:", err.message);
