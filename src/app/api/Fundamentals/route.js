@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
-import xml2js from "xml2js";
+import { XMLParser } from "fast-xml-parser";
 import { NseIndia } from "stock-nse-india";
 const nseIndia = new NseIndia();
 
@@ -22,7 +22,6 @@ export function getCachedData(symbol) {
 }
 
 export function setCachedData(symbol, data, ttl = 1000 * 60 * 15) {
-  // 15 mins default
   financialDataCache.set(symbol, {
     data,
     timestamp: Date.now(),
@@ -34,13 +33,13 @@ function getValue(field, contextRef = null) {
   if (!field) return "Not Found";
   if (Array.isArray(field)) {
     if (contextRef) {
-      const match = field.find((f) => f.$?.contextRef === contextRef);
-      return match?._ || "Not Found";
+      const match = field.find((f) => f["@_contextRef"] === contextRef);
+      return match?.["#text"] || "Not Found";
     }
-    return field[0]?._ || "Not Found";
+    return field[0]?.["#text"] || "Not Found";
   }
-  if (contextRef && field.$?.contextRef !== contextRef) return "Not Found";
-  return field._ || "Not Found";
+  if (contextRef && field["@_contextRef"] !== contextRef) return "Not Found";
+  return field["#text"] || "Not Found";
 }
 
 async function extractFinancialsFromUrl(
@@ -48,7 +47,6 @@ async function extractFinancialsFromUrl(
   currentPrice,
   contextRef = null
 ) {
-  // Validate URL to prevent SSRF
   const allowedDomains = [
     "nseindia.com",
     "www.nseindia.com",
@@ -71,14 +69,13 @@ async function extractFinancialsFromUrl(
           "application/xml,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
       responseType: "text",
+      timeout: 8000,
     });
 
-    const xml = response.data;
-    const parser = new xml2js.Parser({ explicitArray: false });
-    const result = await parser.parseStringPromise(xml);
+    const parser = new XMLParser({ ignoreAttributes: false });
+    const result = parser.parse(response.data);
     const xbrl = result["xbrli:xbrl"];
 
-    // Raw values
     const basicEPS = getValue(
       xbrl[
         "in-capmkt:BasicEarningsLossPerShareFromContinuingAndDiscontinuedOperations"
@@ -117,7 +114,6 @@ async function extractFinancialsFromUrl(
 
     const safe = (val) => (val && !isNaN(val) ? parseFloat(val) : 0);
 
-    // Derived
     const totalEquity = safe(equity) + safe(otherEquity);
     const numShares = safe(equity) / safe(faceValue);
     const bookValuePerShare = numShares
@@ -181,6 +177,7 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const symbol = searchParams.get("symbol");
+    const price = searchParams.get("price") || 24;
 
     if (
       !symbol ||
@@ -196,7 +193,6 @@ export async function GET(req) {
       );
     }
 
-    // Check cache
     const cached = getCachedData(symbol);
     if (cached) {
       return NextResponse.json({ ...cached, fromCache: true }, { status: 200 });
@@ -204,7 +200,6 @@ export async function GET(req) {
 
     const data1 = await nseIndia.getEquityCorporateInfo(symbol);
 
-    // Validate API response structure
     if (!data1?.financial_results?.data?.[0]?.xbrl_attachment) {
       return NextResponse.json(
         {
@@ -215,11 +210,10 @@ export async function GET(req) {
     }
 
     const url = data1.financial_results.data[0].xbrl_attachment;
+    // const priceInfo = await nseIndia.getEquityDetails(symbol);
+    // const actualCurrentPrice = priceInfo?.priceInfo?.lastPrice || 0;
 
-    const priceInfo = await nseIndia.getEquityDetails(symbol);
-    const actualCurrentPrice = priceInfo?.priceInfo?.lastPrice || 0;
-
-    const data = await extractFinancialsFromUrl(url, actualCurrentPrice);
+    const data = await extractFinancialsFromUrl(url, price);
     if (data) {
       setCachedData(symbol, data);
     }
