@@ -177,7 +177,14 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const symbol = searchParams.get("symbol");
-    const price = searchParams.get("price") || 24;
+    const price = searchParams.get("price");
+
+    if (!price) {
+      return NextResponse.json(
+        { error: "Price parameter is required for accurate calculations" },
+        { status: 400 }
+      );
+    }
 
     if (
       !symbol ||
