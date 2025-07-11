@@ -4,6 +4,32 @@ import xml2js from "xml2js";
 import { NseIndia } from "stock-nse-india";
 const nseIndia = new NseIndia();
 
+const financialDataCache = new Map();
+
+export function getCachedData(symbol) {
+  const entry = financialDataCache.get(symbol);
+  if (!entry) return null;
+
+  const now = Date.now();
+  const { data, timestamp, ttl } = entry;
+
+  if (now - timestamp < ttl) {
+    return data;
+  } else {
+    financialDataCache.delete(symbol);
+    return null;
+  }
+}
+
+export function setCachedData(symbol, data, ttl = 1000 * 60 * 15) {
+  // 15 mins default
+  financialDataCache.set(symbol, {
+    data,
+    timestamp: Date.now(),
+    ttl,
+  });
+}
+
 function getValue(field, contextRef = null) {
   if (!field) return "Not Found";
   if (Array.isArray(field)) {
@@ -23,11 +49,15 @@ async function extractFinancialsFromUrl(
   contextRef = null
 ) {
   // Validate URL to prevent SSRF
-  const allowedDomains = ["nseindia.com", "www.nseindia.com"];
+  const allowedDomains = [
+    "nseindia.com",
+    "www.nseindia.com",
+    "nsearchives.nseindia.com",
+  ];
   const url = new URL(xmlUrl);
   if (!allowedDomains.includes(url.hostname)) {
     console.error("Invalid URL domain");
-    return "Invalid URL domain";
+    return { error: "Invalid URL domain" };
   }
 
   try {
@@ -134,7 +164,7 @@ async function extractFinancialsFromUrl(
     };
   } catch (err) {
     console.error("❌ Failed to parse XML:", err.message);
-    return "❌ Failed to parse XML:" + err.message;
+    return { error: "Failed to parse XML: " + err.message };
   }
 }
 
@@ -157,6 +187,12 @@ export async function GET(req) {
       );
     }
 
+    // Check cache
+    const cached = getCachedData(symbol);
+    if (cached) {
+      return NextResponse.json({ ...cached, fromCache: true }, { status: 200 });
+    }
+
     const data1 = await nseIndia.getEquityCorporateInfo(symbol);
 
     // Validate API response structure
@@ -175,6 +211,9 @@ export async function GET(req) {
     const actualCurrentPrice = priceInfo?.priceInfo?.lastPrice || 0;
 
     const data = await extractFinancialsFromUrl(url, actualCurrentPrice);
+    if (data) {
+      setCachedData(symbol, data);
+    }
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
