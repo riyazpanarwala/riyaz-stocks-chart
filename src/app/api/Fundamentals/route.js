@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import xml2js from "xml2js";
 import { NseIndia } from "stock-nse-india";
 const nseIndia = new NseIndia();
-const xml2js = require("xml2js");
-
-const currentPrice = 24; // manually passed
 
 function getValue(field, contextRef = null) {
   if (!field) return "Not Found";
@@ -24,6 +22,14 @@ async function extractFinancialsFromUrl(
   currentPrice,
   contextRef = null
 ) {
+  // Validate URL to prevent SSRF
+  const allowedDomains = ["nseindia.com", "www.nseindia.com"];
+  const url = new URL(xmlUrl);
+  if (!allowedDomains.includes(url.hostname)) {
+    console.error("Invalid URL domain");
+    return "Invalid URL domain";
+  }
+
   try {
     const response = await axios.get(xmlUrl, {
       headers: {
@@ -79,10 +85,14 @@ async function extractFinancialsFromUrl(
       contextRef
     );
 
-    const safe = (v) => (isNaN(parseFloat(v)) ? 0 : parseFloat(v));
+    const safe = (val) => (val && !isNaN(val) ? parseFloat(val) : 0);
 
     // Derived
-    const bookValue = (safe(equity) + safe(otherEquity)).toFixed(2);
+    const totalEquity = safe(equity) + safe(otherEquity);
+    const numShares = safe(equity) / safe(faceValue);
+    const bookValuePerShare = numShares
+      ? (totalEquity / numShares).toFixed(2)
+      : "Not Found";
     const combinedEPS = (
       safe(basicEPS) +
       safe(dilutedEPS) +
@@ -90,20 +100,20 @@ async function extractFinancialsFromUrl(
     ).toFixed(2);
 
     const roe =
-      safe(netProfit) && safe(netWorth)
+      safe(netProfit) && safe(netWorth) && safe(netWorth) !== 0
         ? ((safe(netProfit) / safe(netWorth)) * 100).toFixed(2) + "%"
         : "Not Found";
 
     const marketCap =
       safe(equity) && safe(faceValue) && currentPrice
-        ? (safe(equity) * safe(faceValue) * currentPrice).toFixed(2)
+        ? ((safe(equity) / safe(faceValue)) * currentPrice).toFixed(2)
         : "Not Found";
 
     const EBIT = safe(profitBeforeTax) + safe(financeCosts);
     const capitalEmployed = safe(totalAssets) - safe(currentLiabilities);
 
     const roce =
-      EBIT && capitalEmployed
+      EBIT && capitalEmployed && capitalEmployed !== 0
         ? ((EBIT / capitalEmployed) * 100).toFixed(2) + "%"
         : "Not Found";
 
@@ -117,14 +127,14 @@ async function extractFinancialsFromUrl(
       equity,
       otherEquity,
       faceValue,
-      bookValue,
+      bookValuePerShare,
       roe,
       marketCap,
       roce,
     };
   } catch (err) {
     console.error("❌ Failed to parse XML:", err.message);
-    return null;
+    return "❌ Failed to parse XML:" + err.message;
   }
 }
 
@@ -148,9 +158,23 @@ export async function GET(req) {
     }
 
     const data1 = await nseIndia.getEquityCorporateInfo(symbol);
+
+    // Validate API response structure
+    if (!data1?.financial_results?.data?.[0]?.xbrl_attachment) {
+      return NextResponse.json(
+        {
+          error: "Invalid API response structure or no XBRL data available",
+        },
+        { status: 400 }
+      );
+    }
+
     const url = data1.financial_results.data[0].xbrl_attachment;
 
-    const data = await extractFinancialsFromUrl(url, currentPrice);
+    const priceInfo = await nseIndia.getEquityDetails(symbol);
+    const actualCurrentPrice = priceInfo?.priceInfo?.lastPrice || 0;
+
+    const data = await extractFinancialsFromUrl(url, actualCurrentPrice);
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
