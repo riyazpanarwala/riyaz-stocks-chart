@@ -161,8 +161,14 @@ async function extractFinancialsFromUrl(
       roe,
       marketCap,
       roce,
-      PE: (currentPrice / combinedEPS).toFixed(2),
-      PB: (currentPrice / bookValuePerShare).toFixed(2),
+      PE:
+        currentPrice && safe(combinedEPS) && safe(combinedEPS) !== 0
+          ? (currentPrice / safe(combinedEPS)).toFixed(2)
+          : "Not Found",
+      PB:
+        currentPrice && safe(bookValuePerShare) && safe(bookValuePerShare) !== 0
+          ? (currentPrice / safe(bookValuePerShare)).toFixed(2)
+          : "Not Found",
       currentPrice,
     };
   } catch (err) {
