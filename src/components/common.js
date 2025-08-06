@@ -66,7 +66,7 @@ export const getIntradayDataForCurrentDay = async (
   indexName,
   cmpnyObj
 ) => {
-  const lastCandleDate = candles[candles.length - 1].date.split(" ")[0];
+  const lastCandleDate = candles[candles.length - 1]?.date.split(" ")[0];
   const currentDate = new Date().toISOString().split("T")[0];
 
   if (lastCandleDate !== currentDate) {
