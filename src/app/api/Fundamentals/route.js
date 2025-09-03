@@ -173,6 +173,37 @@ async function extractFinancialsFromUrl(
   }
 }
 
+/**
+ * Calculate TTM EPS from NSE financial_results
+ * @param {Array} financialResults - Array of quarterly results from NSE API
+ * @param {number} issuedSize - Total number of shares issued (from corporate info)
+ * @returns {number} EPS TTM
+ */
+function calculateTTMEPS(financialResults, issuedSize) {
+  if (!Array.isArray(financialResults) || financialResults.length < 4) {
+    return 0;
+  }
+
+  // Take the latest 4 quarters
+  const last4Quarters = financialResults
+    .slice(0, 4) // assumes API gives latest first, else sort by to_date
+    .map((q) => Number(q.proLossAftTax) || 0);
+
+  // Sum of Net Profit (PAT) in Lakhs
+  const totalPATLakhs = last4Quarters.reduce((sum, val) => sum + val, 0);
+
+  // Convert Lakhs -> Crores
+  const totalPATCrores = totalPATLakhs / 100;
+
+  // Convert Issued Size -> Crores
+  const sharesCrores = issuedSize / 1e7;
+
+  // EPS TTM
+  const epsTTM = totalPATCrores / sharesCrores;
+
+  return Number(epsTTM.toFixed(2));
+}
+
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
@@ -216,11 +247,20 @@ export async function GET(req) {
       );
     }
 
-    const url = data1.financial_results.data[0].xbrl_attachment;
-    // const priceInfo = await nseIndia.getEquityDetails(symbol);
-    // const actualCurrentPrice = priceInfo?.priceInfo?.lastPrice || 0;
+    const priceInfo = await nseIndia.getEquityDetails(symbol);
+    const actualCurrentPrice = priceInfo?.priceInfo?.lastPrice || 0;
+    const issuedSize = priceInfo?.securityInfo.issuedSize;
 
-    const data = await extractFinancialsFromUrl(url, price);
+    const epsTTM = calculateTTMEPS(data1.financial_results.data, issuedSize);
+
+    // const url = data1.financial_results.data[0].xbrl_attachment;
+    // const data = await extractFinancialsFromUrl(url, price);
+
+    const data = {
+      currrenPrice: actualCurrentPrice,
+      epsTTM,
+      PE: epsTTM ? Number((actualCurrentPrice / epsTTM).toFixed(2)) : "NA",
+    };
     if (data) {
       setCachedData(symbol, data);
     }
