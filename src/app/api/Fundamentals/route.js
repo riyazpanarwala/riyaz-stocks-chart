@@ -173,10 +173,48 @@ async function extractFinancialsFromUrl(
   }
 }
 
+function calculateMetrics(financialResults, issuedSize, currentPrice) {
+  if (!Array.isArray(financialResults) || financialResults.length < 4) {
+    return { epsTTM: 0, marketCap: 0, peRatio: null };
+  }
+
+  // Take the latest 4 quarters PAT
+  const last4Quarters = financialResults
+    .slice(0, 4) // assumes API gives latest first, else sort by to_date
+    .map((q) => Number(q.proLossAftTax) || 0);
+
+  // Sum of Net Profit (PAT) in Lakhs
+  const totalPATLakhs = last4Quarters.reduce((sum, val) => sum + val, 0);
+
+  // Convert Lakhs -> Crores
+  const totalPATCrores = totalPATLakhs / 100;
+
+  // Convert Issued Size -> Crores
+  const sharesCrores = issuedSize / 1e7;
+
+  // EPS TTM
+  const epsTTM = totalPATCrores / sharesCrores;
+
+  // Market Cap in Crores
+  const marketCapCr = (issuedSize * currentPrice) / 1e7;
+
+  // P/E ratio
+  const peRatio = epsTTM > 0 ? currentPrice / epsTTM : null;
+
+  return {
+    currentPrice,
+    epsTTM: Number(epsTTM.toFixed(2)),
+    marketCapCr: Number(marketCapCr.toFixed(2)) + " Cr", // in Crores
+    peRatio: peRatio !== null ? Number(peRatio.toFixed(2)) : null,
+  };
+}
+
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const symbol = searchParams.get("symbol");
+
+    /*
     const price = searchParams.get("price");
 
     if (!price) {
@@ -185,6 +223,7 @@ export async function GET(req) {
         { status: 400 }
       );
     }
+    */
 
     if (
       !symbol ||
@@ -216,11 +255,18 @@ export async function GET(req) {
       );
     }
 
-    const url = data1.financial_results.data[0].xbrl_attachment;
-    // const priceInfo = await nseIndia.getEquityDetails(symbol);
-    // const actualCurrentPrice = priceInfo?.priceInfo?.lastPrice || 0;
+    const priceInfo = await nseIndia.getEquityDetails(symbol);
+    const actualCurrentPrice = priceInfo?.priceInfo?.close || 0;
+    const issuedSize = priceInfo?.securityInfo.issuedSize;
 
-    const data = await extractFinancialsFromUrl(url, price);
+    const data = calculateMetrics(
+      data1.financial_results.data,
+      issuedSize,
+      actualCurrentPrice
+    );
+
+    // const url = data1.financial_results.data[0].xbrl_attachment;
+    // const data = await extractFinancialsFromUrl(url, price);
     if (data) {
       setCachedData(symbol, data);
     }
