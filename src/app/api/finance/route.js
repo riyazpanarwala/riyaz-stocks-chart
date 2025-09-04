@@ -12,14 +12,16 @@ const round2Decimal = (value) => {
 };
 
 export function extractFinancials(data) {
-  const { price, defaultKeyStatistics } = data || {};
+  const { price, defaultKeyStatistics, financialData } = data || {};
 
   const { regularMarketPrice, marketCap } = price || {};
   const {
     netIncomeToCommon,
     sharesOutstanding,
     trailingEps,
+    bookValue,
   } = defaultKeyStatistics;
+  const { totalDebt, debtToEquity } = financialData || {};
 
   // Market Cap in Crores (1 Cr = 1e7)
   const marketCapCr = marketCap / 1e7;
@@ -33,15 +35,26 @@ export function extractFinancials(data) {
   // PE Ratio
   const peRatio = eps && eps > 0 ? regularMarketPrice / eps : null;
 
+  // Recalculate Book Value (approx)
+  // Yahoo gives bookValue per share, but we try to recompute using debt + equity logic
+  let recalculatedBookValue = null;
+  if (sharesOutstanding && totalDebt && debtToEquity) {
+    // Equity = Debt / (D/E ratio)
+    const equity = totalDebt / debtToEquity;
+    recalculatedBookValue = (equity * 100) / sharesOutstanding;
+  }
+
   // Format everything to 2 decimals
   const format = (val) =>
     val !== null && val !== undefined ? val.toFixed(2) : "N/A";
 
   return {
-    currentPrice: format(regularMarketPrice),
-    marketCapCr: format(marketCapCr),
-    "eps(TTM)": format(eps),
-    peRatio: format(peRatio),
+    "Price (₹)": format(regularMarketPrice),
+    "Market Cap (Cr)": format(marketCapCr),
+    "EPS (TTM)": format(eps),
+    "PE (TTM)": format(peRatio),
+    "Book Value (Recalc)": format(recalculatedBookValue),
+    "Book Value (Reported)": bookValue,
   };
 }
 
