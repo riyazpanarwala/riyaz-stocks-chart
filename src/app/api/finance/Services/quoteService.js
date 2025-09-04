@@ -24,7 +24,9 @@ export async function getQuoteSummary(symbol) {
   const extracted = extractFinancials(data);
 
   if (extracted) {
-    setCachedData(symbol, extracted);
+    const snapshot = { ...extracted };
+    setCachedData(symbol, snapshot);
+    return { ...snapshot };
   }
 
   return extracted;

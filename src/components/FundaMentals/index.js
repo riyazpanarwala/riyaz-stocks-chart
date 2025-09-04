@@ -7,7 +7,9 @@ const Fundamentals = ({ companyObj, indexObj }) => {
 
   const extractFinancials = async () => {
     const headers = { Accept: "application/json" };
-    const symbol = companyObj.yahooSymbol || companyObj.symbol + ".NS";
+    let symbol =
+      companyObj.yahooSymbol ||
+      `${companyObj.symbol}.${indexObj.value === "BSE_EQ" ? "BO" : "NS"}`;
 
     try {
       const response = await axios.get(
@@ -32,7 +34,7 @@ const Fundamentals = ({ companyObj, indexObj }) => {
   useEffect(() => {
     setFundamentals([]);
 
-    if (indexObj.value === "NSE_EQ") {
+    if (indexObj.value === "NSE_EQ" || indexObj.value === "BSE_EQ") {
       extractFinancials();
     }
   }, [companyObj, indexObj]);
