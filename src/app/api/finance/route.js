@@ -36,11 +36,10 @@ export function extractFinancials(data) {
   const peRatio = eps && eps > 0 ? regularMarketPrice / eps : null;
 
   // Recalculate Book Value (approx)
-  // Yahoo gives bookValue per share, but we try to recompute using debt + equity logic
   let recalculatedBookValue = null;
+  let equity = null;
   if (sharesOutstanding && totalDebt && debtToEquity) {
-    // Equity = Debt / (D/E ratio)
-    const equity = totalDebt / debtToEquity;
+    equity = totalDebt / debtToEquity;
     recalculatedBookValue = (equity * 100) / sharesOutstanding;
   }
 
@@ -54,7 +53,7 @@ export function extractFinancials(data) {
     "EPS (TTM)": format(eps),
     "PE (TTM)": format(peRatio),
     "Book Value (Recalc)": format(recalculatedBookValue),
-    "Book Value (Reported)": bookValue,
+    "Book Value (Reported)": format(bookValue),
   };
 }
 
