@@ -8,9 +8,9 @@ const round2Decimal = (value) => {
 };
 
 export function extractFinancials(data) {
-  const { price, defaultKeyStatistics } = data;
+  const { price, defaultKeyStatistics } = data || {};
 
-  const { regularMarketPrice, marketCap } = price;
+  const { regularMarketPrice, marketCap } = price || {};
   const {
     netIncomeToCommon,
     sharesOutstanding,
@@ -48,7 +48,14 @@ export async function GET(req) {
     const interval = searchParams.get("interval");
     const fromDate = searchParams.get("fromDate");
     const toDate = searchParams.get("toDate");
-    const isQuote = searchParams.get("isQuote");
+    const isQuote = searchParams.get("isQuote") === "true";
+
+    if (!symbol || !/^[A-Za-z0-9.\-^=]+$/.test(symbol)) {
+      return NextResponse.json(
+        { error: "Invalid or missing symbol." },
+        { status: 400 }
+      );
+    }
 
     const queryObj = {
       interval,
