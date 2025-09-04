@@ -7,6 +7,40 @@ const round2Decimal = (value) => {
   return parseFloat((Math.round(value * 100) / 100).toFixed(2), 10);
 };
 
+export function extractFinancials(data) {
+  const { price, defaultKeyStatistics } = data;
+
+  const { regularMarketPrice, marketCap } = price;
+  const {
+    netIncomeToCommon,
+    sharesOutstanding,
+    trailingEps,
+  } = defaultKeyStatistics;
+
+  // Market Cap in Crores (1 Cr = 1e7)
+  const marketCapCr = marketCap / 1e7;
+
+  // EPS Calculation
+  const eps =
+    netIncomeToCommon && sharesOutstanding
+      ? netIncomeToCommon / sharesOutstanding
+      : trailingEps;
+
+  // PE Ratio
+  const peRatio = eps && eps > 0 ? regularMarketPrice / eps : null;
+
+  // Format everything to 2 decimals
+  const format = (val) =>
+    val !== null && val !== undefined ? val.toFixed(2) : "N/A";
+
+  return {
+    currentPrice: format(regularMarketPrice),
+    marketCapCr: format(marketCapCr),
+    "eps(TTM)": format(eps),
+    peRatio: format(peRatio),
+  };
+}
+
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
@@ -14,6 +48,7 @@ export async function GET(req) {
     const interval = searchParams.get("interval");
     const fromDate = searchParams.get("fromDate");
     const toDate = searchParams.get("toDate");
+    const isQuote = searchParams.get("isQuote");
 
     const queryObj = {
       interval,
@@ -24,9 +59,21 @@ export async function GET(req) {
       queryObj.period2 = toDate;
     }
 
-    const result = await yahooFinance.chart(symbol, queryObj);
-    const data = result.quotes.filter((v) => v.close !== null);
+    let data;
+    if (isQuote) {
+      const queryOptions = {
+        modules: ["defaultKeyStatistics", "price", "financialData"],
+      };
+      const data1 = await yahooFinance.quoteSummary(symbol, queryOptions);
 
+      data = extractFinancials(data1);
+
+      // const queryOptions = { lang: "en-US", reportsCount: 5 };
+      // data = await yahooFinance.insights(symbol, queryOptions);
+    } else {
+      const result = await yahooFinance.chart(symbol, queryObj);
+      data = result.quotes.filter((v) => v.close !== null);
+    }
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
     // Handle errors
