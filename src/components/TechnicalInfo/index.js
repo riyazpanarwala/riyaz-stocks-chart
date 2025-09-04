@@ -25,7 +25,6 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
   const [movingAverages, setMovingAvg] = useState([]);
   const [maCrossOvers, setMACrossOvers] = useState([]);
   const [activeTab, setActiveTab] = useState(tabs[0]);
-  const [fundamentals, setFundamentals] = useState([]);
   const summaryData = [];
 
   const fetchData = async () => {
@@ -179,39 +178,12 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
     ]);
   };
 
-  const extractFinancials = async () => {
-    const headers = {
-      Accept: "application/json",
-    };
-
-    const symbol = companyObj.yahooSymbol || companyObj.symbol + ".NS";
-
-    try {
-      const response = await axios.get(
-        `/api/finance?symbol=${symbol}&isQuote=true`,
-        { headers }
-      );
-
-      const fundamentals = [];
-      for (const prop in response.data) {
-        fundamentals.push({ Name: prop, Value: response.data[prop] });
-      }
-
-      return setFundamentals(fundamentals);
-    } catch (error) {
-      // Print an error message if the request was not successful
-      console.error(`Error: ${error.response.status} - ${error.response.data}`);
-      return { error: true, data: { candles: [] } };
-    }
-  };
-
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
 
   useEffect(() => {
     fetchData();
-    extractFinancials();
   }, [activeTab]);
 
   return (
@@ -252,11 +224,6 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
           title="Moving Averages Crossovers"
           columns={["Period", "Moving Average Crossover", "Indication"]}
           data={maCrossOvers}
-        />
-        <Table
-          title="Fundamentals"
-          columns={["Name", "Value"]}
-          data={fundamentals}
         />
       </Modal>
     </div>

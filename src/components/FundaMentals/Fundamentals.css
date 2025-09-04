@@ -1,0 +1,49 @@
+.fundamentals-card {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  background: #fff;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.fundamentals-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.fundamentals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.fundamentals-item {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fafafa;
+  transition: background 0.2s ease;
+}
+
+.fundamentals-item:hover {
+  background: #f0f8ff;
+}
+
+.fundamentals-name {
+  font-size: 13px;
+  color: #666;
+}
+
+.fundamentals-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0073e6;
+  margin-top: 4px;
+}

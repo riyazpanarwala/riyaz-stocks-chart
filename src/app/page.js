@@ -21,6 +21,7 @@ import {
   updateStorageData,
   isCompanyExistInStorage,
 } from "../components/utils/storage";
+import Fundamentals from "../components/FundaMentals/index.js";
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -254,6 +255,9 @@ const CandleStickChart = () => {
                 </div>
               </div>
             </div>
+
+            <Fundamentals companyObj={companyObj} indexObj={indexObj} />
+
             {candleData.length ? (
               <FullScreen handle={handle}>
                 <div className="finance-charts">
