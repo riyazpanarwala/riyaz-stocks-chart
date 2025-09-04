@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 // import axios from "axios";
 // import moment from "moment";
 import yahooFinance from "yahoo-finance2";
+import {
+  getCachedData,
+  setCachedData,
+} from "../Fundamentals/CachedFinancialData";
 
 const round2Decimal = (value) => {
   return parseFloat((Math.round(value * 100) / 100).toFixed(2), 10);
@@ -68,13 +72,29 @@ export async function GET(req) {
 
     let data;
     if (isQuote) {
+      const cached = getCachedData(symbol);
+      if (cached) {
+        return NextResponse.json(
+          { ...cached, fromCache: true },
+          { status: 200 }
+        );
+      }
+
       const queryOptions = {
-        modules: ["defaultKeyStatistics", "price", "financialData"],
+        modules: [
+          "defaultKeyStatistics",
+          "price",
+          "financialData",
+          "summaryDetail",
+        ],
       };
       const data1 = await yahooFinance.quoteSummary(symbol, queryOptions);
 
       data = extractFinancials(data1);
 
+      if (data) {
+        setCachedData(symbol, data);
+      }
       // const queryOptions = { lang: "en-US", reportsCount: 5 };
       // data = await yahooFinance.insights(symbol, queryOptions);
     } else {
