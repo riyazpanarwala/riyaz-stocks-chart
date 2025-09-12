@@ -22,6 +22,8 @@ import {
   isCompanyExistInStorage,
 } from "../components/utils/storage";
 import Fundamentals from "../components/FundaMentals/index.js";
+import ActionButton from "../components/ActionButton.js";
+import { getOptionChainData } from "../components/getIntervalData";
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -48,6 +50,7 @@ const CandleStickChart = () => {
     newIndexArr,
     candleData,
     period,
+    isFO,
   } = useCommonHeader();
   const [isCompanyExist, setCompanyExist] = useState(
     isCompanyExistInStorage(companyObj)
@@ -108,6 +111,10 @@ const CandleStickChart = () => {
     setShapeName("");
     setBreakoutName("");
     setPatternName("");
+  };
+
+  const onFOClick = async () => {
+    const data = await getOptionChainData(companyObj.symbol);
   };
 
   const getCompanyName = () => {
@@ -229,29 +236,31 @@ const CandleStickChart = () => {
                 <h2>{getCompanyName()}</h2>
               </div>
               <div className="inlineDiv">
+                {isFO && (
+                  <div className="inlineBlkDiv">
+                    <ActionButton onClick={onFOClick}>F&O</ActionButton>
+                  </div>
+                )}
                 <div className="inlineBlkDiv">
-                  <button onClick={analysisClick} className="custom-button">
+                  <ActionButton onClick={analysisClick}>
                     Technical Analysis
-                  </button>
+                  </ActionButton>
                 </div>
                 <div className="inlineBlkDiv">
                   {isCompanyExist ? (
-                    <button
-                      onClick={removeFrmWatchList}
-                      className="custom-button"
-                    >
+                    <ActionButton onClick={removeFrmWatchList}>
                       Remove from WatchList
-                    </button>
+                    </ActionButton>
                   ) : (
-                    <button onClick={addToWatchList} className="custom-button">
+                    <ActionButton onClick={addToWatchList}>
                       Add to WatchList
-                    </button>
+                    </ActionButton>
                   )}
                 </div>
                 <div className="inlineBlkDiv mobile-view">
-                  <button onClick={enterFullScreen} className="custom-button">
+                  <ActionButton onClick={enterFullScreen}>
                     Full Screen
-                  </button>
+                  </ActionButton>
                 </div>
               </div>
             </div>

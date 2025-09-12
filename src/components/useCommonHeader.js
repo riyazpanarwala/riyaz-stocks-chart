@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import useParseCsv from "./utils/parseCsv";
-import { useFOSymbols } from "./utils/parseFO";
 import {
   intraArr,
   intervalArr,
@@ -27,8 +26,7 @@ const useCommonHeader = (isEchart) => {
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
   const [timeData, setTimeData] = useState([]);
-  const { companyArr, companyObj, setCompany } = useParseCsv();
-  const { isFOSymbol } = useFOSymbols();
+  const { companyArr, companyObj, setCompany, isFO } = useParseCsv();
   let countdownInterval;
 
   const startTimer = () => {
@@ -55,9 +53,6 @@ const useCommonHeader = (isEchart) => {
       intervalObj.apiInterval
     );
 
-    const aa = isFOSymbol(companyObj.symbol);
-    console.log(aa);
-
     setTimeData(timeArr);
     setCandleData(candles);
   };
@@ -71,9 +66,6 @@ const useCommonHeader = (isEchart) => {
       indexObj.value,
       intervalObj.apiInterval
     );
-
-    const aa = isFOSymbol(companyObj.symbol);
-    console.log(aa);
 
     const { dataArr, timeArr } = getCandleArr(arr, isEchart);
     setTimeData(timeArr);
@@ -202,6 +194,7 @@ const useCommonHeader = (isEchart) => {
     candleData,
     timeData,
     period,
+    isFO,
   };
 };
 

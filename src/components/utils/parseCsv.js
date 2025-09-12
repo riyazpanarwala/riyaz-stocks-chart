@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { usePapaParse } from "react-papaparse";
+import { useFOSymbols } from "./parseFO";
 
 const indicesArr = [
   {
@@ -42,7 +43,9 @@ const useParseCsv = () => {
   const [bseData, setBseData] = useState([]);
   const [companyObj, setCompany] = useState({});
   const [companyArr, setCompanyArr] = useState([]);
+  const [isFO, setFO] = useState(false);
   const { readRemoteFile } = usePapaParse();
+  const { isFOSymbol } = useFOSymbols();
 
   const mergeArrays = (arr1, arr2) => {
     const merged = [];
@@ -127,7 +130,12 @@ const useParseCsv = () => {
     });
   }, []);
 
+  useEffect(() => {
+    setFO(isFOSymbol(companyObj.symbol));
+  }, [companyObj.symbol]);
+
   return {
+    isFO,
     companyArr,
     companyObj,
     setCompany,
