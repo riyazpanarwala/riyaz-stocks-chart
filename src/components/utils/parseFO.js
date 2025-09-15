@@ -6,7 +6,7 @@ import { usePapaParse } from "react-papaparse";
 // Global cache (persists across hook calls)
 const csvCache = {};
 
-export function useFOSymbols(csvUrl = "/nse_equity.csv") {
+export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
   const { readRemoteFile } = usePapaParse();
   const [symbols, setSymbols] = useState([]);
   const [symbolList, setSymbolList] = useState([]);
@@ -29,7 +29,7 @@ export function useFOSymbols(csvUrl = "/nse_equity.csv") {
         setIsLoading(true);
         setError(null);
 
-        readRemoteFile("/fo_mktlots.csv", {
+        readRemoteFile(csvUrl, {
           download: true,
           header: true,
           skipEmptyLines: true,
