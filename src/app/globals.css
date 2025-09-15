@@ -53,7 +53,7 @@ a {
 
 .mainChart {
   margin-left: 200px;
-  padding: 20px;
+  padding: 10px;
   flex: 1;
 }
 
@@ -178,9 +178,5 @@ a {
     width: 100%;
     justify-content: flex-start;
     overflow-x: auto;
-  }
-
-  .mainChart {
-    padding: 10px;
   }
 }
