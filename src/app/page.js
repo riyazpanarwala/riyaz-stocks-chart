@@ -229,55 +229,43 @@ const CandleStickChart = () => {
         />
         <main className="mainChart">
           <div>
-            <div className="tileDiv">
-              {intradayObj.value === "historical" && (
+            <div className="headerContent">
+              <h2 className="company-name">{getCompanyName()}</h2>
+              <div className="action-buttons">
+                {isFO && <ActionButton onClick={onFOClick}>F&O</ActionButton>}
+                {(indexObj.value === "NSE_EQ" ||
+                  indexObj.value === "BSE_EQ") && (
+                  <ActionButton onClick={fundaMentalsClick}>
+                    Fundamentals
+                  </ActionButton>
+                )}
+                <ActionButton onClick={analysisClick}>
+                  Technical Analysis
+                </ActionButton>
+                {isCompanyExist ? (
+                  <ActionButton onClick={removeFrmWatchList}>
+                    ★ Remove
+                  </ActionButton>
+                ) : (
+                  <ActionButton onClick={addToWatchList}>☆ Add</ActionButton>
+                )}
+                <div className="mobile-view">
+                  <ActionButton onClick={enterFullScreen}>
+                    ⛶ Full Screen
+                  </ActionButton>
+                </div>
+              </div>
+            </div>
+
+            {intradayObj.value === "historical" && (
+              <div className="tiles-container">
                 <Tiles
                   periods={periodArr}
                   selectedPeriod={period}
                   setSelectedPeriod={handlePeriodChange}
                 />
-              )}
-              <div className="inlineDiv">
-                <h2>{getCompanyName()}</h2>
               </div>
-              <div className="inlineDiv">
-                {isFO && (
-                  <div className="inlineBlkDiv">
-                    <ActionButton onClick={onFOClick}>F&O</ActionButton>
-                  </div>
-                )}
-                {indexObj.value === "NSE_EQ" || indexObj.value === "BSE_EQ" ? (
-                  <div className="inlineBlkDiv">
-                    <ActionButton onClick={fundaMentalsClick}>
-                      FundaMentals
-                    </ActionButton>
-                  </div>
-                ) : (
-                  ""
-                )}
-                <div className="inlineBlkDiv">
-                  <ActionButton onClick={analysisClick}>
-                    Technical Analysis
-                  </ActionButton>
-                </div>
-                <div className="inlineBlkDiv">
-                  {isCompanyExist ? (
-                    <ActionButton onClick={removeFrmWatchList}>
-                      Remove from WatchList
-                    </ActionButton>
-                  ) : (
-                    <ActionButton onClick={addToWatchList}>
-                      Add to WatchList
-                    </ActionButton>
-                  )}
-                </div>
-                <div className="inlineBlkDiv mobile-view">
-                  <ActionButton onClick={enterFullScreen}>
-                    Full Screen
-                  </ActionButton>
-                </div>
-              </div>
-            </div>
+            )}
 
             {candleData.length ? (
               <FullScreen handle={handle}>

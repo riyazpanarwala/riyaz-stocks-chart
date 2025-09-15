@@ -79,6 +79,36 @@ a {
   display: flex;
 }
 
+.headerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #ddd;
+  background: #fff;
+  flex-wrap: wrap;
+}
+
+.company-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tiles-container {
+  padding: 8px 0;
+  background: #f1f3f5;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 10px;
+  overflow-x: auto;
+}
+
 /* Button Styles */
 .custom-button {
   background-color: #0070f3;
@@ -132,5 +162,25 @@ a {
 
   header {
     padding-top: 65px !important;
+  }
+
+  /* Header stacks */
+  .headerContent {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .company-name {
+    font-size: 14px;
+  }
+
+  .action-buttons {
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .mainChart {
+    padding: 10px;
   }
 }

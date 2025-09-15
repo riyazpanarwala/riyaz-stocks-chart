@@ -26,12 +26,11 @@ const Tiles = ({ periods, selectedPeriod, setSelectedPeriod }) => {
 const styles = {
   header: {
     textAlign: "center",
-    marginBottom: "20px",
   },
   tilesContainer: {
     display: "flex",
     justifyContent: "left",
-    gap: "10px",
+    gap: "5px",
   },
   tile: {
     padding: "10px 20px",
