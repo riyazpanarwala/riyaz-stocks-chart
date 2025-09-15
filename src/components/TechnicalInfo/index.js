@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import SummaryCard from "./SummaryCard";
 import Table from "./Table";
 import Modal from "./Modal";

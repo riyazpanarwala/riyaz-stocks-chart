@@ -36,6 +36,7 @@ const CandleStickChart = () => {
   const [breakoutName, setBreakoutName] = useState("");
   const [patternName, setPatternName] = useState("");
   const [modal, setModalOpen] = useState(false);
+  const [modal1, setModalOpen1] = useState(false);
   const {
     intervalObj,
     intradayObj,
@@ -123,6 +124,10 @@ const CandleStickChart = () => {
 
   const analysisClick = () => {
     setModalOpen(true);
+  };
+
+  const fundaMentalsClick = () => {
+    setModalOpen1(true);
   };
 
   const addToWatchList = () => {
@@ -241,6 +246,15 @@ const CandleStickChart = () => {
                     <ActionButton onClick={onFOClick}>F&O</ActionButton>
                   </div>
                 )}
+                {indexObj.value === "NSE_EQ" || indexObj.value === "BSE_EQ" ? (
+                  <div className="inlineBlkDiv">
+                    <ActionButton onClick={fundaMentalsClick}>
+                      FundaMentals
+                    </ActionButton>
+                  </div>
+                ) : (
+                  ""
+                )}
                 <div className="inlineBlkDiv">
                   <ActionButton onClick={analysisClick}>
                     Technical Analysis
@@ -264,8 +278,6 @@ const CandleStickChart = () => {
                 </div>
               </div>
             </div>
-
-            <Fundamentals companyObj={companyObj} indexObj={indexObj} />
 
             {candleData.length ? (
               <FullScreen handle={handle}>
@@ -301,6 +313,16 @@ const CandleStickChart = () => {
             indexName={indexObj.value}
             onClose={() => {
               setModalOpen(false);
+            }}
+          />
+        )}
+
+        {modal1 && (
+          <Fundamentals
+            companyObj={companyObj}
+            indexObj={indexObj}
+            onClose={() => {
+              setModalOpen1(false);
             }}
           />
         )}
