@@ -22,6 +22,8 @@ import {
   isCompanyExistInStorage,
 } from "../components/utils/storage";
 import Fundamentals from "../components/FundaMentals/index.js";
+import ActionButton from "../components/ActionButton.js";
+import { getOptionChainData } from "../components/getIntervalData";
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -34,6 +36,8 @@ const CandleStickChart = () => {
   const [breakoutName, setBreakoutName] = useState("");
   const [patternName, setPatternName] = useState("");
   const [modal, setModalOpen] = useState(false);
+  const [modal1, setModalOpen1] = useState(false);
+  const [isFOFetching, setIsFOFetching] = useState(false);
   const {
     intervalObj,
     intradayObj,
@@ -48,6 +52,7 @@ const CandleStickChart = () => {
     newIndexArr,
     candleData,
     period,
+    isFO,
   } = useCommonHeader();
   const [isCompanyExist, setCompanyExist] = useState(
     isCompanyExistInStorage(companyObj)
@@ -110,12 +115,28 @@ const CandleStickChart = () => {
     setPatternName("");
   };
 
+  const onFOClick = async () => {
+    try {
+      setIsFOFetching(true);
+      const data = await getOptionChainData(companyObj.symbol);
+      // TODO: open a modal/table to display option chain
+    } catch (e) {
+      console.error("Failed to fetch option chain", e);
+    } finally {
+      setIsFOFetching(false);
+    }
+  };
+
   const getCompanyName = () => {
     return companyObj?.label;
   };
 
   const analysisClick = () => {
     setModalOpen(true);
+  };
+
+  const fundaMentalsClick = () => {
+    setModalOpen1(true);
   };
 
   const addToWatchList = () => {
@@ -217,46 +238,47 @@ const CandleStickChart = () => {
         />
         <main className="mainChart">
           <div>
-            <div className="tileDiv">
-              {intradayObj.value === "historical" && (
+            <div className="headerContent">
+              <h2 className="company-name">{getCompanyName()}</h2>
+              <div className="action-buttons">
+                {isFO && (
+                  <ActionButton disabled={isFOFetching} onClick={onFOClick}>
+                    F&O{isFOFetching ? "…" : ""}
+                  </ActionButton>
+                )}
+                {(indexObj.value === "NSE_EQ" ||
+                  indexObj.value === "BSE_EQ") && (
+                  <ActionButton onClick={fundaMentalsClick}>
+                    Fundamentals
+                  </ActionButton>
+                )}
+                <ActionButton onClick={analysisClick}>
+                  Technical Analysis
+                </ActionButton>
+                {isCompanyExist ? (
+                  <ActionButton onClick={removeFrmWatchList}>
+                    ★ Remove
+                  </ActionButton>
+                ) : (
+                  <ActionButton onClick={addToWatchList}>☆ Add</ActionButton>
+                )}
+                <div className="mobile-view">
+                  <ActionButton onClick={enterFullScreen}>
+                    ⛶ Full Screen
+                  </ActionButton>
+                </div>
+              </div>
+            </div>
+
+            {intradayObj.value === "historical" && (
+              <div className="tiles-container">
                 <Tiles
                   periods={periodArr}
                   selectedPeriod={period}
                   setSelectedPeriod={handlePeriodChange}
                 />
-              )}
-              <div className="inlineDiv">
-                <h2>{getCompanyName()}</h2>
               </div>
-              <div className="inlineDiv">
-                <div className="inlineBlkDiv">
-                  <button onClick={analysisClick} className="custom-button">
-                    Technical Analysis
-                  </button>
-                </div>
-                <div className="inlineBlkDiv">
-                  {isCompanyExist ? (
-                    <button
-                      onClick={removeFrmWatchList}
-                      className="custom-button"
-                    >
-                      Remove from WatchList
-                    </button>
-                  ) : (
-                    <button onClick={addToWatchList} className="custom-button">
-                      Add to WatchList
-                    </button>
-                  )}
-                </div>
-                <div className="inlineBlkDiv mobile-view">
-                  <button onClick={enterFullScreen} className="custom-button">
-                    Full Screen
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <Fundamentals companyObj={companyObj} indexObj={indexObj} />
+            )}
 
             {candleData.length ? (
               <FullScreen handle={handle}>
@@ -292,6 +314,16 @@ const CandleStickChart = () => {
             indexName={indexObj.value}
             onClose={() => {
               setModalOpen(false);
+            }}
+          />
+        )}
+
+        {modal1 && (
+          <Fundamentals
+            companyObj={companyObj}
+            indexObj={indexObj}
+            onClose={() => {
+              setModalOpen1(false);
             }}
           />
         )}

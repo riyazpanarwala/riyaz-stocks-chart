@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import Modal from "../TechnicalInfo/Modal";
 import "./Fundamentals.css";
 
-const Fundamentals = ({ companyObj, indexObj }) => {
+const Fundamentals = ({ companyObj, indexObj, onClose }) => {
   const [fundamentals, setFundamentals] = useState([]);
 
   const extractFinancials = async () => {
@@ -44,15 +45,19 @@ const Fundamentals = ({ companyObj, indexObj }) => {
   }
 
   return (
-    <div className="fundamentals-card">
-      <div className="fundamentals-grid">
-        {fundamentals.map((item, idx) => (
-          <div key={idx} className="fundamentals-item">
-            <span className="fundamentals-name">{item.name}</span>
-            <span className="fundamentals-value">{item.value}</span>
+    <div className="container">
+      <Modal isOpen={true} onClose={onClose}>
+        <div className="fundamentals-card">
+          <div className="fundamentals-grid">
+            {fundamentals.map((item, idx) => (
+              <div key={idx} className="fundamentals-item">
+                <span className="fundamentals-name">{item.name}</span>
+                <span className="fundamentals-value">{item.value}</span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      </Modal>
     </div>
   );
 };

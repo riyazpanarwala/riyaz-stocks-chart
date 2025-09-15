@@ -49,6 +49,27 @@ export const getUniqueListBy = (arr, key) => {
   return [...new Map(arr.map((item) => [item[key], item])).values()];
 };
 
+export const getOptionChainData = async (symbol) => {
+  const headers = {
+    Accept: "application/json",
+  };
+
+  const payload = {
+    symbol,
+    apiName: "optionChain",
+  };
+
+  try {
+    const response = await axios.post(nseBaseUrl, payload, { headers });
+
+    return response.data;
+  } catch (error) {
+    // Print an error message if the request was not successful
+    console.error(`Error: ${error.response.status} - ${error.response.data}`);
+    return { error: true, data: { candles: [] } };
+  }
+};
+
 export const getHistoricDataNSE = async (
   symbol,
   isFrom,

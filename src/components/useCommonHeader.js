@@ -26,7 +26,7 @@ const useCommonHeader = (isEchart) => {
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
   const [timeData, setTimeData] = useState([]);
-  const { companyArr, companyObj, setCompany } = useParseCsv();
+  const { companyArr, companyObj, setCompany, isFO } = useParseCsv();
   let countdownInterval;
 
   const startTimer = () => {
@@ -194,6 +194,7 @@ const useCommonHeader = (isEchart) => {
     candleData,
     timeData,
     period,
+    isFO,
   };
 };
 
