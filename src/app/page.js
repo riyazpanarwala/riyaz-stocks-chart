@@ -23,6 +23,7 @@ import {
 } from "../components/utils/storage";
 import Fundamentals from "../components/FundaMentals/index.js";
 import ActionButton from "../components/ActionButton.js";
+import OptionChain from "../components/OptionChain/index.js";
 import { getOptionChainData } from "../components/getIntervalData";
 
 const CandleStickChart = () => {
@@ -37,7 +38,7 @@ const CandleStickChart = () => {
   const [patternName, setPatternName] = useState("");
   const [modal, setModalOpen] = useState(false);
   const [modal1, setModalOpen1] = useState(false);
-  const [isFOFetching, setIsFOFetching] = useState(false);
+  const [modal2, setModalOpen2] = useState(false);
   const {
     intervalObj,
     intradayObj,
@@ -116,15 +117,7 @@ const CandleStickChart = () => {
   };
 
   const onFOClick = async () => {
-    try {
-      setIsFOFetching(true);
-      const data = await getOptionChainData(companyObj.symbol);
-      // TODO: open a modal/table to display option chain
-    } catch (e) {
-      console.error("Failed to fetch option chain", e);
-    } finally {
-      setIsFOFetching(false);
-    }
+    setModalOpen2(true);
   };
 
   const getCompanyName = () => {
@@ -241,11 +234,7 @@ const CandleStickChart = () => {
             <div className="headerContent">
               <h2 className="company-name">{getCompanyName()}</h2>
               <div className="action-buttons">
-                {isFO && (
-                  <ActionButton disabled={isFOFetching} onClick={onFOClick}>
-                    F&O{isFOFetching ? "…" : ""}
-                  </ActionButton>
-                )}
+                {isFO && <ActionButton onClick={onFOClick}>F&O</ActionButton>}
                 {(indexObj.value === "NSE_EQ" ||
                   indexObj.value === "BSE_EQ") && (
                   <ActionButton onClick={fundaMentalsClick}>
@@ -324,6 +313,16 @@ const CandleStickChart = () => {
             indexObj={indexObj}
             onClose={() => {
               setModalOpen1(false);
+            }}
+          />
+        )}
+
+        {modal2 && (
+          <OptionChain
+            companyObj={companyObj}
+            indexObj={indexObj}
+            onClose={() => {
+              setModalOpen2(false);
             }}
           />
         )}
