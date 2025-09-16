@@ -42,7 +42,7 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
               return;
             }
 
-            const foSymbols = results.data
+            let foSymbols = results.data
               .filter((row) => {
                 const symbol = row.SYMBOL || row.Symbol;
                 return (
@@ -62,6 +62,21 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
               }))
               .filter((item) => item.symbol && item.symbol !== "");
 
+            foSymbols = [
+              ...foSymbols,
+              { symbol: "NIFTY 50", underlying: "NIFTY", lotSize: 75 },
+              { symbol: "NIFTY BANK", underlying: "BANKNIFTY", lotSize: 35 },
+              {
+                symbol: "NIFTY NEXT 50",
+                underlying: "NIFTYNXT50",
+                lotSize: 25,
+              },
+              {
+                symbol: "NIFTY FINANCIAL SERVICES ",
+                underlying: "FINNIFTY",
+                lotSize: 65,
+              },
+            ];
             // Save to cache
             csvCache[csvUrl] = foSymbols;
 

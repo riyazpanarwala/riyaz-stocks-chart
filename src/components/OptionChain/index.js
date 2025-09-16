@@ -5,14 +5,25 @@ import { getOptionChainData } from "../getIntervalData";
 import Modal from "../TechnicalInfo/Modal";
 import "./index.css";
 
-const App = ({ companyObj, onClose }) => {
+const App = ({ companyObj, indexObj, onClose }) => {
   const [optionChainData, setOptionChainData] = useState({});
   const [selectedExpiry, setSelectedExpiry] = useState([]);
+  const [isFOFetching, setIsFOFetching] = useState(false);
 
   const onFOClick = async () => {
     try {
-      // setIsFOFetching(true);
-      const data = await getOptionChainData(companyObj.symbol);
+      setIsFOFetching(true);
+      let apiName = "optionChain";
+      let symbol = companyObj.symbol;
+      if (companyObj.nseIndex) {
+        apiName = "F&O";
+        if (companyObj.symbol === "NIFTY 50") {
+          symbol = "NIFTY";
+        } else if (companyObj.symbol === "NIFTY BANK") {
+          symbol = "BANKNIFTY";
+        }
+      }
+      const data = await getOptionChainData(symbol, apiName);
       setOptionChainData(data);
       if (data.records) {
         setSelectedExpiry(data.records.expiryDates[0]);
@@ -20,7 +31,7 @@ const App = ({ companyObj, onClose }) => {
     } catch (e) {
       console.error("Failed to fetch option chain", e);
     } finally {
-      // setIsFOFetching(false);
+      setIsFOFetching(false);
     }
   };
 
@@ -35,7 +46,7 @@ const App = ({ companyObj, onClose }) => {
       <Modal isOpen={true} onClose={onClose}>
         {optionChainData.records ? (
           <>
-            <h1 className="title">Option Chain - MAZDOCK</h1>
+            <h1 className="title">Option Chain - {companyObj.value}</h1>
             <h5 className="subtitle">
               Underlying Value: {optionChainData.records.underlyingValue} |
               Timestamp: {optionChainData.records.timestamp}
@@ -66,8 +77,10 @@ const App = ({ companyObj, onClose }) => {
               expiryDate={selectedExpiry}
             />
           </>
-        ) : (
+        ) : isFOFetching ? (
           "Please wait..."
+        ) : (
+          "No Data"
         )}
       </Modal>
     </div>

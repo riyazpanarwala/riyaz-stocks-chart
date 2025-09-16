@@ -24,7 +24,6 @@ import {
 import Fundamentals from "../components/FundaMentals/index.js";
 import ActionButton from "../components/ActionButton.js";
 import OptionChain from "../components/OptionChain/index.js";
-import { getOptionChainData } from "../components/getIntervalData";
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
