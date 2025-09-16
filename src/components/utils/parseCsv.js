@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { usePapaParse } from "react-papaparse";
 import { useFOSymbols } from "./parseFO";
+import foMapData from "./FOmap.js";
 
 const indicesArr = [
   {
@@ -132,7 +133,8 @@ const useParseCsv = () => {
 
   useEffect(() => {
     if (!isFOLoading) {
-      setFO(isFOSymbol(companyObj.symbol));
+      let symbol = foMapData[companyObj.symbol] ?? companyObj.symbol;
+      setFO(isFOSymbol(symbol));
     }
   }, [companyObj.symbol, isFOLoading]);
 

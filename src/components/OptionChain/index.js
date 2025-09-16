@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import OptionChainTable from "./OptionChainTable";
 import SummaryCard from "./SummaryCard";
 import { getOptionChainData } from "../getIntervalData";
+import foMapData from "../utils/FOmap.js";
 import Modal from "../TechnicalInfo/Modal";
+
 import "./index.css";
 
 const App = ({ companyObj, indexObj, onClose }) => {
@@ -15,10 +17,9 @@ const App = ({ companyObj, indexObj, onClose }) => {
       return { apiName: "optionChain", symbol: companyObj.symbol };
     }
 
-    const mapData = { "NIFTY 50": "NIFTY", "NIFTY BANK": "BANKNIFTY" };
     return {
       apiName: "F&O",
-      symbol: mapData[companyObj.symbol] ?? companyObj.symbol,
+      symbol: foMapData[companyObj.symbol] ?? companyObj.symbol,
     };
   };
 
