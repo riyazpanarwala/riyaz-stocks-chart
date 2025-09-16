@@ -6,6 +6,13 @@ import { usePapaParse } from "react-papaparse";
 // Global cache (persists across hook calls)
 const csvCache = {};
 
+export const FO_INDEX_SYMBOLS = [
+  { symbol: "NIFTY 50", underlying: "NIFTY", lotSize: 75 },
+  { symbol: "NIFTY BANK", underlying: "BANKNIFTY", lotSize: 35 },
+  { symbol: "NIFTY NEXT 50", underlying: "NIFTYNXT50", lotSize: 25 },
+  { symbol: "NIFTY FINANCIAL SERVICES", underlying: "FINNIFTY", lotSize: 65 },
+];
+
 export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
   const { readRemoteFile } = usePapaParse();
   const [symbols, setSymbols] = useState([]);
@@ -62,21 +69,7 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
               }))
               .filter((item) => item.symbol && item.symbol !== "");
 
-            foSymbols = [
-              ...foSymbols,
-              { symbol: "NIFTY 50", underlying: "NIFTY", lotSize: 75 },
-              { symbol: "NIFTY BANK", underlying: "BANKNIFTY", lotSize: 35 },
-              {
-                symbol: "NIFTY NEXT 50",
-                underlying: "NIFTYNXT50",
-                lotSize: 25,
-              },
-              {
-                symbol: "NIFTY FINANCIAL SERVICES ",
-                underlying: "FINNIFTY",
-                lotSize: 65,
-              },
-            ];
+            foSymbols = [...foSymbols, ...FO_INDEX_SYMBOLS];
             // Save to cache
             csvCache[csvUrl] = foSymbols;
 

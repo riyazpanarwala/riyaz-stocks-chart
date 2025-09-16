@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 const OptionChainTable = ({ data, expiryDate }) => {
-  const filteredData = data.records.data.filter(
-    (item) => item.expiryDate === expiryDate
+  const filteredData = useMemo(
+    () => data.records.data.filter((item) => item.expiryDate === expiryDate),
+    [data, expiryDate]
   );
 
   return (
