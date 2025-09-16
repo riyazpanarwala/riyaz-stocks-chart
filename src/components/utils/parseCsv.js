@@ -45,7 +45,7 @@ const useParseCsv = () => {
   const [companyArr, setCompanyArr] = useState([]);
   const [isFO, setFO] = useState(false);
   const { readRemoteFile } = usePapaParse();
-  const { isFOSymbol } = useFOSymbols();
+  const { isFOSymbol, isFOLoading } = useFOSymbols();
 
   const mergeArrays = (arr1, arr2) => {
     const merged = [];
@@ -131,8 +131,10 @@ const useParseCsv = () => {
   }, []);
 
   useEffect(() => {
-    setFO(isFOSymbol(companyObj.symbol));
-  }, [companyObj.symbol]);
+    if (!isFOLoading) {
+      setFO(isFOSymbol(companyObj.symbol));
+    }
+  }, [companyObj.symbol, isFOLoading]);
 
   return {
     isFO,
