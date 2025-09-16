@@ -88,6 +88,10 @@ const useParseCsv = () => {
         yahooSymbol: v.yahooSymbol,
       };
 
+      if (v.symbol === "NIFTY 50") {
+        setCompany(niftyObj);
+      }
+
       merged.push(niftyObj);
     });
 
@@ -99,10 +103,6 @@ const useParseCsv = () => {
         bseIndex: true,
         yahooSymbol: v.yahooSymbol,
       };
-
-      if (v.value === "SENSEX") {
-        setCompany(obj);
-      }
 
       merged.push(obj);
     });
