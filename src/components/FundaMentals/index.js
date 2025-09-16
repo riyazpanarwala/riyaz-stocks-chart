@@ -40,10 +40,6 @@ const Fundamentals = ({ companyObj, indexObj, onClose }) => {
     }
   }, [companyObj, indexObj]);
 
-  if (!fundamentals.length) {
-    return "";
-  }
-
   return (
     <div className="container">
       <Modal isOpen={true} onClose={onClose}>

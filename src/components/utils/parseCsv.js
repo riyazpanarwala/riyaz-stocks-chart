@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { usePapaParse } from "react-papaparse";
 import { useFOSymbols } from "./parseFO";
+import foMapData from "./FOmap.js";
 
 const indicesArr = [
   {
@@ -45,7 +46,7 @@ const useParseCsv = () => {
   const [companyArr, setCompanyArr] = useState([]);
   const [isFO, setFO] = useState(false);
   const { readRemoteFile } = usePapaParse();
-  const { isFOSymbol } = useFOSymbols();
+  const { isFOSymbol, isFOLoading } = useFOSymbols();
 
   const mergeArrays = (arr1, arr2) => {
     const merged = [];
@@ -88,6 +89,10 @@ const useParseCsv = () => {
         yahooSymbol: v.yahooSymbol,
       };
 
+      if (v.symbol === "NIFTY 50") {
+        setCompany(niftyObj);
+      }
+
       merged.push(niftyObj);
     });
 
@@ -99,10 +104,6 @@ const useParseCsv = () => {
         bseIndex: true,
         yahooSymbol: v.yahooSymbol,
       };
-
-      if (v.value === "SENSEX") {
-        setCompany(obj);
-      }
 
       merged.push(obj);
     });
@@ -131,8 +132,11 @@ const useParseCsv = () => {
   }, []);
 
   useEffect(() => {
-    setFO(isFOSymbol(companyObj.symbol));
-  }, [companyObj.symbol]);
+    if (!isFOLoading) {
+      let symbol = foMapData[companyObj.symbol] ?? companyObj.symbol;
+      setFO(isFOSymbol(symbol));
+    }
+  }, [companyObj.symbol, isFOLoading]);
 
   return {
     isFO,

@@ -10,7 +10,7 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
   const { readRemoteFile } = usePapaParse();
   const [symbols, setSymbols] = useState([]);
   const [symbolList, setSymbolList] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isFOLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -45,21 +45,27 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
             const foSymbols = results.data
               .filter((row) => {
                 const symbol = row.SYMBOL || row.Symbol;
-                return (
-                  symbol &&
-                  !symbol.includes("NIFTY") &&
-                  !symbol.includes("BANKNIFTY") &&
-                  !symbol.includes("FINNIFTY") &&
-                  !symbol.includes("MIDCPNIFTY") &&
-                  symbol !== "Symbol" &&
-                  symbol !== "UNDERLYING"
-                );
+                return symbol && symbol !== "Symbol" && symbol !== "UNDERLYING";
               })
-              .map((row) => ({
-                symbol: (row.SYMBOL || row.Symbol)?.trim(),
-                underlying: (row.UNDERLYING || row.underlying)?.trim(),
-                lotSize: row["SEP-25"] || row["OCT-25"] || row["NOV-25"],
-              }))
+              .map((row) => {
+                const symbol = (row.SYMBOL || row.Symbol)?.trim();
+                const underlying = (row.UNDERLYING || row.underlying)?.trim();
+                const monthKeys = Object.keys(row).filter((k) =>
+                  /^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-\d{2}$/i.test(
+                    k
+                  )
+                );
+                const lastMonth = monthKeys
+                  .sort((a, b) => a.localeCompare(b))
+                  .pop();
+                const lotSize =
+                  Number(
+                    row["LOT_SIZE"] ??
+                      row["LOT SIZE"] ??
+                      (lastMonth ? row[lastMonth] : undefined)
+                  ) || undefined;
+                return { symbol, underlying, lotSize };
+              })
               .filter((item) => item.symbol && item.symbol !== "");
 
             // Save to cache
@@ -84,5 +90,5 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
 
   const isFOSymbol = (symbol) => symbolList.includes(symbol);
 
-  return { symbols, symbolList, isFOSymbol, isLoading, error };
+  return { symbols, symbolList, isFOSymbol, isFOLoading, error };
 }

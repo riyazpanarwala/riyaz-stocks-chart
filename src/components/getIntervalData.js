@@ -49,14 +49,14 @@ export const getUniqueListBy = (arr, key) => {
   return [...new Map(arr.map((item) => [item[key], item])).values()];
 };
 
-export const getOptionChainData = async (symbol) => {
+export const getOptionChainData = async (symbol, apiName = "optionChain") => {
   const headers = {
     Accept: "application/json",
   };
 
   const payload = {
     symbol,
-    apiName: "optionChain",
+    apiName,
   };
 
   try {
