@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import OptionChainTable from "./OptionChainTable";
 import SummaryCard from "./SummaryCard";
-import { getOptionChainData } from "../getIntervalData";
-import foMapData from "../utils/FOmap.js";
 import Modal from "../TechnicalInfo/Modal";
+import { getNSEData } from "../getIntervalData";
+import foMapData from "../utils/FOmap.js";
 
 import "./index.css";
 
@@ -27,7 +27,7 @@ const App = ({ companyObj, indexObj, onClose }) => {
     try {
       setIsFOFetching(true);
       const { apiName, symbol } = mapApiParams();
-      const data = await getOptionChainData(symbol, apiName);
+      const data = await getNSEData(apiName, symbol);
       setOptionChainData(data);
       if (data.records) {
         setSelectedExpiry(data.records.expiryDates[0]);
