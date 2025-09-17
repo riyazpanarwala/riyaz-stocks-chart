@@ -69,39 +69,44 @@ export const getIntradayDataForCurrentDay = async (
   const lastCandleDate = candles[candles.length - 1]?.date.split(" ")[0];
   const currentDate = new Date().toISOString().split("T")[0];
 
-  if (lastCandleDate !== currentDate) {
-    let currentObj;
-    let currentHour = new Date().getHours();
-    if (
-      currentHour >= 18 &&
-      (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
-    ) {
-      let apiName = "historic";
-      if (cmpnyObj.nseIndex) {
-        apiName = "indexHistoric";
+  try {
+    if (lastCandleDate !== currentDate) {
+      let currentObj;
+      let currentHour = new Date().getHours();
+      if (
+        currentHour >= 18 &&
+        (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
+      ) {
+        let apiName = "historic";
+        if (cmpnyObj.nseIndex) {
+          apiName = "indexHistoric";
+        }
+        const arr1 = await getHistoricDataNSE(cmpnyObj.symbol, "1d", apiName);
+        currentObj = arr1.candles[arr1.candles.length - 1];
+      } else {
+        const arr1 = await getIntradayData(
+          "minutes",
+          cmpnyObj.value,
+          indexName,
+          1
+        );
+        let candleData = arr1.data.candles?.reverse();
+        if (candleData.length) {
+          currentObj = getDataFromIntraday(candleData);
+        }
       }
-      const arr1 = await getHistoricDataNSE(cmpnyObj.symbol, "1d", apiName);
-      currentObj = arr1.candles[arr1.candles.length - 1];
-    } else {
-      const arr1 = await getIntradayData(
-        "minutes",
-        cmpnyObj.value,
-        indexName,
-        1
-      );
-      let candleData = arr1.data.candles?.reverse();
-      if (candleData.length) {
-        currentObj = getDataFromIntraday(candleData);
-      }
-    }
 
-    if (currentObj) {
-      let currentObjDate = currentObj.date.split("T")[0];
-      if (currentObjDate === currentDate && currentObjDate !== lastCandleDate) {
-        candles = [...candles, currentObj];
+      if (currentObj) {
+        let currentObjDate = currentObj.date.split("T")[0];
+        if (
+          currentObjDate === currentDate &&
+          currentObjDate !== lastCandleDate
+        ) {
+          candles = [...candles, currentObj];
+        }
       }
     }
-  }
+  } catch (e) {}
 
   return candles;
 };
