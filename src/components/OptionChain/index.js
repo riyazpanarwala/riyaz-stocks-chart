@@ -50,7 +50,7 @@ const App = ({ companyObj, indexObj, onClose }) => {
       <Modal isOpen={true} onClose={onClose}>
         {optionChainData.records ? (
           <>
-            <h1 className="title">Option Chain - {companyObj.value}</h1>
+            <h1 className="title">Option Chain - {companyObj.label}</h1>
             <h5 className="subtitle">
               Underlying Value: {optionChainData.records.underlyingValue} |
               Timestamp: {optionChainData.records.timestamp}
