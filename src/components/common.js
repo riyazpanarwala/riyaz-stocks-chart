@@ -72,7 +72,10 @@ export const getIntradayDataForCurrentDay = async (
   try {
     if (lastCandleDate !== currentDate) {
       let currentObj;
-      let currentHour = new Date().getHours();
+      const nowIst = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+      );
+      const currentHour = nowIst.getHours();
       if (
         currentHour >= 18 &&
         (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
@@ -82,7 +85,10 @@ export const getIntradayDataForCurrentDay = async (
           apiName = "indexHistoric";
         }
         const arr1 = await getHistoricDataNSE(cmpnyObj.symbol, "1d", apiName);
-        currentObj = arr1.candles[arr1.candles.length - 1];
+        const candlesNSE = arr1?.candles ?? [];
+        if (candlesNSE.length) {
+          currentObj = candlesNSE[candlesNSE.length - 1];
+        }
       } else {
         const arr1 = await getIntradayData(
           "minutes",
@@ -90,7 +96,7 @@ export const getIntradayDataForCurrentDay = async (
           indexName,
           1
         );
-        let candleData = arr1.data.candles?.reverse();
+        let candleData = (arr1?.data?.candles ?? []).reverse();
         if (candleData.length) {
           currentObj = getDataFromIntraday(candleData);
         }
@@ -106,7 +112,9 @@ export const getIntradayDataForCurrentDay = async (
         }
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error("getIntradayDataForCurrentDay failed:", e);
+  }
 
   return candles;
 };
