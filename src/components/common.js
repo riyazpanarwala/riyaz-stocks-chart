@@ -67,10 +67,12 @@ export const getIntradayDataForCurrentDay = async (
   cmpnyObj
 ) => {
   const lastCandleDate = candles[candles.length - 1]?.date.split(" ")[0];
-  const currentDate = new Date().toISOString().split("T")[0];
+  const currentDateIst = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
 
   try {
-    if (lastCandleDate !== currentDate) {
+    if (lastCandleDate !== currentDateIst) {
       let currentObj;
       const nowIst = new Date(
         new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
@@ -103,9 +105,9 @@ export const getIntradayDataForCurrentDay = async (
       }
 
       if (currentObj) {
-        let currentObjDate = currentObj.date.split("T")[0];
+        const currentObjDate = String(currentObj.date).slice(0, 10);
         if (
-          currentObjDate === currentDate &&
+          currentObjDate === currentDateIst &&
           currentObjDate !== lastCandleDate
         ) {
           candles = [...candles, currentObj];
