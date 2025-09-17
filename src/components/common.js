@@ -67,40 +67,55 @@ export const getIntradayDataForCurrentDay = async (
   cmpnyObj
 ) => {
   const lastCandleDate = candles[candles.length - 1]?.date.split(" ")[0];
-  const currentDate = new Date().toISOString().split("T")[0];
+  const currentDateIst = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+  }).format(new Date());
 
-  if (lastCandleDate !== currentDate) {
-    let currentObj;
-    let currentHour = new Date().getHours();
-    if (
-      currentHour >= 18 &&
-      (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
-    ) {
-      let apiName = "historic";
-      if (cmpnyObj.nseIndex) {
-        apiName = "indexHistoric";
-      }
-      const arr1 = await getHistoricDataNSE(cmpnyObj.symbol, "1d", apiName);
-      currentObj = arr1.candles[arr1.candles.length - 1];
-    } else {
-      const arr1 = await getIntradayData(
-        "minutes",
-        cmpnyObj.value,
-        indexName,
-        1
+  try {
+    if (lastCandleDate !== currentDateIst) {
+      let currentObj;
+      const nowIst = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
       );
-      let candleData = arr1.data.candles?.reverse();
-      if (candleData.length) {
-        currentObj = getDataFromIntraday(candleData);
+      const currentHour = nowIst.getHours();
+      if (
+        currentHour >= 18 &&
+        (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
+      ) {
+        let apiName = "historic";
+        if (cmpnyObj.nseIndex) {
+          apiName = "indexHistoric";
+        }
+        const arr1 = await getHistoricDataNSE(cmpnyObj.symbol, "1d", apiName);
+        const candlesNSE = arr1?.candles ?? [];
+        if (candlesNSE.length) {
+          currentObj = candlesNSE[candlesNSE.length - 1];
+        }
+      } else {
+        const arr1 = await getIntradayData(
+          "minutes",
+          cmpnyObj.value,
+          indexName,
+          1
+        );
+        let candleData = (arr1?.data?.candles ?? []).reverse();
+        if (candleData.length) {
+          currentObj = getDataFromIntraday(candleData);
+        }
       }
-    }
 
-    if (currentObj) {
-      let currentObjDate = currentObj.date.split("T")[0];
-      if (currentObjDate === currentDate && currentObjDate !== lastCandleDate) {
-        candles = [...candles, currentObj];
+      if (currentObj) {
+        const currentObjDate = String(currentObj.date).slice(0, 10);
+        if (
+          currentObjDate === currentDateIst &&
+          currentObjDate !== lastCandleDate
+        ) {
+          candles = [...candles, currentObj];
+        }
       }
     }
+  } catch (e) {
+    console.error("getIntradayDataForCurrentDay failed:", e);
   }
 
   return candles;
