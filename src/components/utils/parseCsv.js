@@ -66,8 +66,11 @@ const useParseCsv = () => {
       }
     });
 
-    arr2.forEach((item2) => {
-      if (!arr1.find((item) => item[6] === item2[7])) {
+    arr2.forEach((item2, j) => {
+      if (j === 0) return; // skip header
+      if (!item2 || item2.length < 8) return; // guard malformed rows
+      const index = arr1.findIndex((v, i) => i > 0 && v[6] === item2[7]);
+      if (index === -1) {
         merged.push({
           label: item2[1],
           value: item2[7],
