@@ -86,7 +86,7 @@ export const getIntradayDataForCurrentDay = async (
         if (cmpnyObj.nseIndex) {
           apiName = "indexHistoric";
         }
-        const arr1 = await getHistoricDataNSE(cmpnyObj.symbol, "1d", apiName);
+        const arr1 = await getHistoricDataNSE(cmpnyObj.symbol, "0d", apiName);
         const candlesNSE = arr1?.candles ?? [];
         if (candlesNSE.length) {
           currentObj = candlesNSE[candlesNSE.length - 1];
