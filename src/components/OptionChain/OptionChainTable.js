@@ -7,7 +7,7 @@ const OptionChainTable = ({ data, expiryDate }) => {
   );
 
   return (
-    <div className="table-container">
+    <div className="table-container-optionchain">
       <table className="option-table">
         <thead>
           <tr>
