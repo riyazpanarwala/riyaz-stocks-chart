@@ -97,6 +97,7 @@ export const periodHours = ["5d", "1m", "2m"];
 export const periodMax = ["6m", "1y", "2y", "5y", "10y", "Max"];
 
 export const dateObj = {
+  "0d": () => new Date(),
   "1d": () => new Date(new Date().setDate(new Date().getDate() - 1)),
   "5d": () => new Date(new Date().setDate(new Date().getDate() - 5)),
   "1m": () => new Date(new Date().setDate(new Date().getDate() - 30)),
