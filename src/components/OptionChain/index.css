@@ -138,6 +138,10 @@
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
+  .table-container-optionchain {
+    max-height: 50vh;
+  }
+
   .tabs {
     flex-direction: column;
   }
