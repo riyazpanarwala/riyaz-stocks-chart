@@ -42,33 +42,52 @@
   font-weight: 600;
 }
 
+/* --- Table Wrapper --- */
 .table-container-optionchain {
+  max-height: 70vh; /* Scrollable height */
+  overflow-y: auto;
   overflow-x: auto;
+  border: 1px solid #ddd;
 }
 
+/* --- Table --- */
 .option-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
 }
 
-.option-table th,
-.option-table td {
-  padding: 10px;
+/* --- Header --- */
+.option-table thead th {
+  position: sticky;
+  top: 0;
+  background: #333;
+  color: white;
+  z-index: 2;
   text-align: center;
+  padding: 10px;
   border: 1px solid #ddd;
 }
 
-.option-table th {
-  background: #333;
-  color: white;
-  position: sticky;
-  top: 0;
+/* Second header row (for column titles) */
+.option-table thead tr:nth-child(2) th {
+  top: 36px; /* Adjust if row height changes */
+  background: #444;
 }
 
+/* --- Table Body --- */
+.option-table tbody td {
+  text-align: center;
+  padding: 8px;
+  border: 1px solid #eee;
+}
+
+/* --- Highlighted Cells --- */
 .section-header {
   background: #444;
+  font-weight: bold;
 }
 
 .strike-price {
@@ -78,12 +97,15 @@
 
 .positive {
   color: #28a745;
+  font-weight: 500;
 }
 
 .negative {
   color: #dc3545;
+  font-weight: 500;
 }
 
+/* --- Summary --- */
 .summary-card {
   background: white;
   border: 1px solid #ddd;
@@ -114,6 +136,7 @@
   color: #333;
 }
 
+/* --- Responsive --- */
 @media (max-width: 768px) {
   .tabs {
     flex-direction: column;
