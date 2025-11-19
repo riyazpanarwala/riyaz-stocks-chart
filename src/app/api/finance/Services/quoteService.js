@@ -1,9 +1,10 @@
-import yahooFinance from "yahoo-finance2";
+import YahooFinance from "yahoo-finance2";
 import { extractFinancials } from "../utils/extractFinancials";
 import {
   getCachedData,
   setCachedData,
 } from "../../Fundamentals/CachedFinancialData";
+const yahooFinance = new YahooFinance()
 
 export async function getQuoteSummary(symbol) {
   const cached = getCachedData(symbol);

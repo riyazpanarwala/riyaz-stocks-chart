@@ -1,4 +1,5 @@
-import yahooFinance from "yahoo-finance2";
+import YahooFinance from "yahoo-finance2";
+const yahooFinance = new YahooFinance()
 
 export async function getChartData(symbol, { interval, fromDate, toDate }) {
   const queryObj = { interval, period1: fromDate };
