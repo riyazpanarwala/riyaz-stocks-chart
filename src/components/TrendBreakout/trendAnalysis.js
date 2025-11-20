@@ -103,6 +103,8 @@ export function getTrendlinePoints(swings, type, lookback = 2) {
     const p1 = points[0];
     const p2 = points[points.length - 1];
 
+    if (p2.index === p1.index) return null;
+
     return {
         p1,
         p2,
@@ -112,7 +114,7 @@ export function getTrendlinePoints(swings, type, lookback = 2) {
 }
 
 export function detectTrendlineBreakout(latest, trendline, confirmation = 0) {
-    if (!trendline || !latest) return null;
+    if (!trendline || !latest || latest.close === undefined) return null;
 
     const { p1, p2, type, slope } = trendline;
 
@@ -150,7 +152,7 @@ export function detectTrendlineBreakout(latest, trendline, confirmation = 0) {
 }
 
 export function detectStructureBreakout(swingHighs, swingLows, latest, confirmation = 0) {
-    if (!swingHighs.length || !swingLows.length || !latest) return null;
+    if (!swingHighs.length || !swingLows.length || !latest || latest.close === undefined) return null;
 
     const lastHigh = swingHighs[swingHighs.length - 1];
     const lastLow = swingLows[swingLows.length - 1];
@@ -223,6 +225,11 @@ export function analyzeMarketStructure(data, windowSize = 2, confirmation = 0.1)
 function getMarketState(patterns) {
     const recentHighs = patterns.swingHighs.slice(-3);
     const recentLows = patterns.swingLows.slice(-3);
+
+    // Need at least 2 swings of each type to determine a trend
+    if (recentHighs.length < 2 || recentLows.length < 2) {
+        return "InsufficientData";
+    }
 
     const higherHighs = recentHighs.every((high, i) =>
         i === 0 || high.pattern === "HH"
