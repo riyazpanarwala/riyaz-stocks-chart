@@ -138,8 +138,18 @@ export function detectStructureBreakout(swingHighs, swingLows, latest, confirmat
 
 // New function for comprehensive analysis
 export function analyzeMarketStructure(data, windowSize = 2, confirmation = 0.1) {
-    const patterns = detectPatterns(data, windowSize);
-    const latest = data[data.length - 1];
+    if (!Array.isArray(data) || data.length === 0) {
+        return {
+            patterns: { swingHighs: [], swingLows: [] },
+            trendlines: { supportLine: null, resistanceLine: null },
+            breakouts: { trendline: null, structure: null },
+            marketState: "InsufficientData",
+        };
+    }
+
+    const dataWithIndex = data.map((bar, index) => ({ ...bar, index }));
+    const patterns = detectPatterns(dataWithIndex, windowSize);
+    const latest = dataWithIndex[dataWithIndex.length - 1];
 
     const supportLine = getTrendlinePoints(patterns.swingLows, "HL");
     const resistanceLine = getTrendlinePoints(patterns.swingHighs, "LH");

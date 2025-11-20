@@ -376,7 +376,7 @@ const FinanceChart = ({
   }, []);
 
   useEffect(() => {
-    if (breakoutName) {
+    if (breakoutName && Array.isArray(initialData) && initialData.length > 0) {
       console.log(analyzeMarketStructure(initialData))
     }
   }, [initialData, breakoutName]);
