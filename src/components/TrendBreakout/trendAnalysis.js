@@ -2,7 +2,6 @@ export function detectPatterns(data, windowSize = 1) {
     const swingHighs = [];
     const swingLows = [];
 
-    // Input validation
     if (!data || data.length < windowSize * 2 + 1) {
         return { swingHighs, swingLows };
     }
@@ -12,44 +11,85 @@ export function detectPatterns(data, windowSize = 1) {
         let isSwingHigh = true;
         let isSwingLow = true;
 
-        // Check surrounding window for swing points
+        // Check ALL periods in the window
         for (let j = 1; j <= windowSize; j++) {
             const prev = data[i - j];
             const next = data[i + j];
 
-            if (curr.high <= prev.high || curr.high <= next.high) {
-                isSwingHigh = false;
-            }
-            if (curr.low >= prev.low || curr.low >= next.low) {
-                isSwingLow = false;
-            }
+            // For swing high, current must be higher than ALL in window
+            if (curr.high <= prev.high) isSwingHigh = false;
+            if (curr.high <= next.high) isSwingHigh = false;
 
-            // Early exit if both conditions fail
-            if (!isSwingHigh && !isSwingLow) break;
+            // For swing low, current must be lower than ALL in window
+            if (curr.low >= prev.low) isSwingLow = false;
+            if (curr.low >= next.low) isSwingLow = false;
         }
 
         if (isSwingHigh) {
+            const pattern = swingHighs.length > 0 ?
+                (curr.high > swingHighs[swingHighs.length - 1].price ? "HH" : "LH") : "First";
+
             swingHighs.push({
                 index: i,
                 date: curr.date,
                 price: curr.high,
-                pattern: swingHighs.length > 0 ?
-                    (curr.high > swingHighs[swingHighs.length - 1].price ? "HH" : "LH") : "First"
+                pattern
             });
         }
 
         if (isSwingLow) {
+            const pattern = swingLows.length > 0 ?
+                (curr.low > swingLows[swingLows.length - 1].price ? "HL" : "LL") : "First";
+
             swingLows.push({
                 index: i,
                 date: curr.date,
                 price: curr.low,
-                pattern: swingLows.length > 0 ?
-                    (curr.low > swingLows[swingLows.length - 1].price ? "HL" : "LL") : "First"
+                pattern
             });
         }
     }
 
     return { swingHighs, swingLows };
+}
+
+// Add these helper functions for better debugging
+export function validateTrendlines(analysis) {
+    const warnings = [];
+
+    if (analysis.trendlines.supportLine) {
+        const sl = analysis.trendlines.supportLine;
+        if (sl.type === 'HL' && sl.slope < 0) {
+            warnings.push('INVALID: Support line (HL) has negative slope');
+        }
+    }
+
+    if (analysis.trendlines.resistanceLine) {
+        const rl = analysis.trendlines.resistanceLine;
+        if (rl.type === 'LH' && rl.slope > 0) {
+            warnings.push('INVALID: Resistance line (LH) has positive slope');
+        }
+    }
+
+    return warnings;
+}
+
+// Function to get recent market structure summary
+export function getMarketSummary(analysis) {
+    const summary = {
+        marketState: analysis.marketState,
+        swingCount: {
+            highs: analysis.patterns.swingHighs.length,
+            lows: analysis.patterns.swingLows.length
+        },
+        recentPattern: {
+            lastHigh: analysis.patterns.swingHighs.slice(-1)[0]?.pattern,
+            lastLow: analysis.patterns.swingLows.slice(-1)[0]?.pattern
+        },
+        breakouts: analysis.breakouts
+    };
+
+    return summary;
 }
 
 export function getTrendlinePoints(swings, type, lookback = 2) {
