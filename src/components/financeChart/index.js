@@ -52,6 +52,7 @@ import IndicatorChart from "./IndicatorChart";
 import STOChart from "./STOChart";
 import BolingerChart from "./BolingerChart";
 import MACrossOverChart from "./MACrossOverChart";
+import { analyzeMarketStructure } from "../TrendBreakout/trendAnalysis";
 
 const indicatorYExtentsObj = {
   sma: (d) => [d.high, d.low],
@@ -373,6 +374,12 @@ const FinanceChart = ({
       document.removeEventListener("keyup", onKeyPress);
     };
   }, []);
+
+  useEffect(() => {
+    if (breakoutName) {
+      console.log(analyzeMarketStructure(initialData))
+    }
+  }, [initialData, breakoutName]);
 
   return (
     <ChartCanvas
