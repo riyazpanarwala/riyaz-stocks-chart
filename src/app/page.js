@@ -24,6 +24,7 @@ import {
 import Fundamentals from "../components/FundaMentals/index.js";
 import ActionButton from "../components/ActionButton.js";
 import OptionChain from "../components/OptionChain/index.js";
+import TrendlyneChecklist from "../components/Trendlyne/TrendlyneChecklist.jsx"
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -293,6 +294,8 @@ const CandleStickChart = () => {
             ) : (
               ""
             )}
+
+            {!companyObj.nseIndex && <TrendlyneChecklist key={companyObj.symbol} symbol={companyObj.symbol} />}
           </div>
         </main>
 
