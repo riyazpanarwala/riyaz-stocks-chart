@@ -65,7 +65,11 @@ function getMarketState(patterns) {
 
     if (higherHighs && higherLows) return "Uptrend";
     if (lowerHighs && lowerLows) return "Downtrend";
-    if (!higherHighs && !lowerLows) return "Consolidation";
+    // Consolidation: no clear directional bias
+    const hasUpwardBias = higherHighs || higherLows;
+    const hasDownwardBias = lowerHighs || lowerLows;
+    
+    if (!hasUpwardBias && !hasDownwardBias) return "Consolidation";
 
     return "Transitioning";
 }
