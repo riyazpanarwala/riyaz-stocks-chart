@@ -48,20 +48,28 @@ export default function TrendlyneChecklist({
   }, []);
 
   return (
-    <div className="w-full">
-      {/* Checklist Widget */}
-      <blockquote
-        className="trendlyne-widgets w-full"
-        data-get-url={`https://trendlyne.com/web-widget/checklist-widget/Poppins/${symbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
-        data-theme={theme}
-      />
+    <div>
+      <div style={{ width: "100%", display: "flex", justifyContent: "space-between" }}>
+        <div style={{ width: "49%" }}>
+          {/* Checklist Widget */}
+          <blockquote
+            className="trendlyne-widgets"
+            style={{ width: "100%" }}
+            data-get-url={`https://trendlyne.com/web-widget/checklist-widget/Poppins/${symbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
+            data-theme={theme}
+          />
+        </div>
 
-      {/* SWOT Widget */}
-      <blockquote
-        className="trendlyne-widgets w-full"
-        data-get-url={`https://trendlyne.com/web-widget/swot-widget/Poppins/${symbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
-        data-theme={theme}
-      />
+        <div style={{ width: "49%" }}>
+          {/* SWOT Widget */}
+          <blockquote
+            className="trendlyne-widgets"
+            style={{ width: "100%" }}
+            data-get-url={`https://trendlyne.com/web-widget/swot-widget/Poppins/${symbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
+            data-theme={theme}
+          />
+        </div>
+      </div>
 
       {/* IPO Widget */}
       {/*
