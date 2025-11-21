@@ -52,7 +52,8 @@ import IndicatorChart from "./IndicatorChart";
 import STOChart from "./STOChart";
 import BolingerChart from "./BolingerChart";
 import MACrossOverChart from "./MACrossOverChart";
-import { analyzeMarketStructure, validateTrendlines, getMarketSummary } from "../TrendBreakout/trendAnalysis";
+import technicalAnalysis from '../technical-analysis/index.js';
+const { analyzeMarketStructure } = technicalAnalysis
 
 const indicatorYExtentsObj = {
   sma: (d) => [d.high, d.low],
@@ -377,18 +378,9 @@ const FinanceChart = ({
 
   useEffect(() => {
     if (breakoutName && Array.isArray(initialData) && initialData.length > 0) {
-      const analysis = analyzeMarketStructure(initialData, 2, 0.5);
-      console.log(analysis);
-
-      // Check for calculation issues
-      const warnings = validateTrendlines(analysis);
-      if (warnings.length > 0) {
-          console.warn('Trendline Warnings:', warnings);
-      }
-
-      // Get clean summary
-      const summary = getMarketSummary(analysis);
-      console.log('Market Summary:', summary);
+      // Or for detailed analysis
+      const detailedAnalysis = analyzeMarketStructure(initialData);
+      console.log(detailedAnalysis);
     }
   }, [initialData, breakoutName]);
 
