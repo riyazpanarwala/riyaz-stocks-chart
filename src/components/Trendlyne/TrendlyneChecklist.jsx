@@ -11,6 +11,7 @@ export default function TrendlyneChecklist({
   neuCol = 'F7941E'
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     // Check if script is already loaded
@@ -28,10 +29,12 @@ export default function TrendlyneChecklist({
     script.onload = () => {
       console.log('Trendlyne widgets script loaded');
       setIsLoaded(true);
+      setLoadError(false);
     };
 
     script.onerror = () => {
       console.error('Failed to load Trendlyne widgets script');
+      setLoadError(true);
     };
 
     document.head.appendChild(script);
@@ -68,13 +71,21 @@ export default function TrendlyneChecklist({
         data-theme={theme}
       />*/}
 
-      {/* Loading State */}
-      {!isLoaded && (
+       {/* Loading / Error State */}
+      {!isLoaded && !loadError && (
         <div className="flex justify-center items-center py-12 bg-gray-50 rounded-lg border">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
             <p className="text-gray-600 text-sm">Loading Trendlyne Checklist...</p>
           </div>
+        </div>
+      )}
+
+      {loadError && (
+        <div className="flex justify-center items-center py-12 bg-gray-50 rounded-lg border">
+          <p className="text-gray-600 text-sm">
+            Unable to load Trendlyne widgets right now. Please try again later.
+          </p>
         </div>
       )}
     </div>
