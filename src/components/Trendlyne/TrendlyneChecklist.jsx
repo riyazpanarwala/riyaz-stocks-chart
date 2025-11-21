@@ -47,6 +47,8 @@ export default function TrendlyneChecklist({
     };
   }, []);
 
+  const encodedSymbol = encodeURIComponent(symbol);
+
   return (
     <div>
       <div style={{ width: "100%", display: "flex", justifyContent: "space-between" }}>
@@ -55,7 +57,7 @@ export default function TrendlyneChecklist({
           <blockquote
             className="trendlyne-widgets"
             style={{ width: "100%" }}
-            data-get-url={`https://trendlyne.com/web-widget/checklist-widget/Poppins/${symbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
+            data-get-url={`https://trendlyne.com/web-widget/checklist-widget/Poppins/${encodedSymbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
             data-theme={theme}
           />
         </div>
@@ -65,7 +67,7 @@ export default function TrendlyneChecklist({
           <blockquote
             className="trendlyne-widgets"
             style={{ width: "100%" }}
-            data-get-url={`https://trendlyne.com/web-widget/swot-widget/Poppins/${symbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
+            data-get-url={`https://trendlyne.com/web-widget/swot-widget/Poppins/${encodedSymbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
             data-theme={theme}
           />
         </div>
