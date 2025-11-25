@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import styles from './TrendlyneTabs.module.css'; // <-- your custom CSS file
 
 export default function TrendlyneChecklist({
   symbol = 'JPPOWER',
@@ -50,9 +51,9 @@ export default function TrendlyneChecklist({
   const encodedSymbol = encodeURIComponent(symbol);
 
   return (
-    <div>
-      <div style={{ width: "100%", display: "flex", justifyContent: "space-between" }}>
-        <div style={{ width: "49%" }}>
+    <div className={styles.container}>
+      <div className={styles.mainDiv}>
+        <div className={styles.quoteWidget}>
           {/* Checklist Widget */}
           <blockquote
             className="trendlyne-widgets"
@@ -62,7 +63,7 @@ export default function TrendlyneChecklist({
           />
         </div>
 
-        <div style={{ width: "49%" }}>
+        <div className={styles.quoteWidget}>
           {/* SWOT Widget */}
           <blockquote
             className="trendlyne-widgets"
@@ -81,21 +82,18 @@ export default function TrendlyneChecklist({
         data-theme={theme}
       />*/}
 
-       {/* Loading / Error State */}
+       {/* Loading */}
       {!isLoaded && !loadError && (
-        <div className="flex justify-center items-center py-12 bg-gray-50 rounded-lg border">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
-            <p className="text-gray-600 text-sm">Loading Trendlyne Checklist...</p>
-          </div>
+        <div className={styles.loadingBox}>
+          <div className={styles.spinner}></div>
+          <p>Loading Trendlyne Widgets...</p>
         </div>
       )}
 
+      {/* Error */}
       {loadError && (
-        <div className="flex justify-center items-center py-12 bg-gray-50 rounded-lg border">
-          <p className="text-gray-600 text-sm">
-            Unable to load Trendlyne widgets right now. Please try again later.
-          </p>
+        <div className={styles.errorBox}>
+          <p>Unable to load Trendlyne widgets. Please try again later.</p>
         </div>
       )}
     </div>
