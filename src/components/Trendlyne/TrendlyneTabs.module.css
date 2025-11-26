@@ -1,15 +1,13 @@
-.container {
-  width: 100%;
-}
-
 .mainDiv {
     width: 100%;
     display: flex;
     justify-content: space-between;
+    gap: 10px;
 }
 
-.quoteWidget {
-    width: 49%;
+.mainDiv > div {
+    margin-top: 10px;
+    min-width: 340px;
 }
 
 /* LOADING BOX */
@@ -35,7 +33,23 @@
 }
 
 @keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .mainDiv {
+    display: block;
+    gap : 0;
+  }
+
+  .mainDiv > div {
+    margin-bottom: 20px;
+    min-width: auto;
+    width: 100%;
   }
 }
