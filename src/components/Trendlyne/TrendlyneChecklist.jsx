@@ -51,24 +51,31 @@ export default function TrendlyneChecklist({
   const encodedSymbol = encodeURIComponent(symbol);
 
   return (
-    <div className={styles.container}>
+    <div>
       <div className={styles.mainDiv}>
-        <div className={styles.quoteWidget}>
+        <div>
           {/* Checklist Widget */}
           <blockquote
             className="trendlyne-widgets"
-            style={{ width: "100%" }}
             data-get-url={`https://trendlyne.com/web-widget/checklist-widget/Poppins/${encodedSymbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
             data-theme={theme}
           />
         </div>
 
-        <div className={styles.quoteWidget}>
+        <div>
           {/* SWOT Widget */}
           <blockquote
             className="trendlyne-widgets"
-            style={{ width: "100%" }}
             data-get-url={`https://trendlyne.com/web-widget/swot-widget/Poppins/${encodedSymbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
+            data-theme={theme}
+          />
+        </div>
+
+        <div>
+          {/* technical Widget */}
+          <blockquote
+            className="trendlyne-widgets"
+            data-get-url={`https://trendlyne.com/web-widget/technical-widget/Poppins/${encodedSymbol}/?posCol=${posCol}&primaryCol=${primaryCol}&negCol=${negCol}&neuCol=${neuCol}`}
             data-theme={theme}
           />
         </div>
