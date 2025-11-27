@@ -16,9 +16,13 @@ export default function PositionSizeCalculatorPage() {
   const [entry2, setEntry2] = useState(1150);
   const [percent2, setPercent2] = useState(5);
 
-  const parse = (v) => (v === "" ? "" : Number(v));
+  const parse = (v) => {
+    if (v === "") return "";
+    const num = parseFloat(v);
+    return isNaN(num) ? "" : num;
+  };
 
-  const diff1 = entry1 && stop1 ? Math.max(entry1 - stop1, 0.01) : 0;
+  const diff1 = entry1 && stop1 && entry1 > stop1 ? entry1 - stop1 : 0;
   const shares1 = diff1 ? Math.floor(riskAmount1 / diff1) : 0;
   const position1 = shares1 * (entry1 || 0);
 

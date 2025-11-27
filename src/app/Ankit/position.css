@@ -24,7 +24,7 @@
 .wrapper.dark .card { background: #1a2c47; border: 1px solid #2f4a6e; }
 .wrapper.light .card { background: #ffffff; border: 1px solid #cfd6e4; }
 
-h2 { text-align: center; margin-bottom: 15px; font-size: 18px; font-weight: bold; }
+.card h2 { text-align: center; margin-bottom: 15px; font-size: 18px; font-weight: bold; }
 
 .input-row {
   display: flex;
