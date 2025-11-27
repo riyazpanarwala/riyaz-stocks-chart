@@ -41,14 +41,14 @@ export default function PositionSizeCalculatorPage() {
       <div className="card">
         <h2>Position Size Calculator (Stop Price)</h2>
 
-        <div className="input-row"><label>Risk Amount:</label>
-          <input type="number" value={riskAmount1} onChange={e=>setRiskAmount1(parse(e.target.value))} /></div>
+        <div className="input-row"><label htmlFor="risk1">Risk Amount:</label>
+          <input id="risk1" type="number" min="0" step="0.01" value={riskAmount1} onChange={e=>setRiskAmount1(parse(e.target.value))} /></div>
 
-        <div className="input-row"><label>Entry Price:</label>
-          <input type="number" value={entry1} onChange={e=>setEntry1(parse(e.target.value))} /></div>
+        <div className="input-row"><label htmlFor="entry1">Entry Price:</label>
+          <input id="entry1" type="number" min="0" step="0.01" value={entry1} onChange={e=>setEntry1(parse(e.target.value))} /></div>
 
-        <div className="input-row"><label>Stop Price:</label>
-          <input type="number" value={stop1} onChange={e=>setStop1(parse(e.target.value))} /></div>
+        <div className="input-row"><label htmlFor="stop1">Stop Price:</label>
+          <input id="stop1" type="number" min="0" step="0.01" value={stop1} onChange={e=>setStop1(parse(e.target.value))} /></div>
 
         <div className="result-box">
           <div className="row"><span>Amount of Position:</span><span>{position1 || ""}</span></div>
@@ -60,11 +60,11 @@ export default function PositionSizeCalculatorPage() {
       <div className="card">
         <h2>Quantity Calculator</h2>
 
-        <div className="input-row"><label>Fund:</label>
-          <input type="number" value={fund} onChange={e=>setFund(parse(e.target.value))} /></div>
+        <div className="input-row"><label htmlFor="fund">Fund:</label>
+          <input id="fund" type="number" min="0" step="0.01" value={fund} onChange={e=>setFund(parse(e.target.value))} /></div>
 
-        <div className="input-row"><label>Price:</label>
-          <input type="number" value={price} onChange={e=>setPrice(parse(e.target.value))} /></div>
+        <div className="input-row"><label htmlFor="price">Price:</label>
+          <input id="price" type="number" min="0" step="0.01" value={price} onChange={e=>setPrice(parse(e.target.value))} /></div>
 
         <div className="qty-box">Qty: <span>{qty ? qty.toFixed(4) : ""}</span></div>
       </div>
@@ -73,14 +73,14 @@ export default function PositionSizeCalculatorPage() {
       <div className="card">
         <h2>Position Size Calculator (Stop %)</h2>
 
-        <div className="input-row"><label>Risk Amount:</label>
-          <input type="number" value={riskAmount2} onChange={e=>setRiskAmount2(parse(e.target.value))} /></div>
+        <div className="input-row"><label htmlFor="risk2">Risk Amount:</label>
+          <input id="risk2" type="number" min="0" step="0.01" value={riskAmount2} onChange={e=>setRiskAmount2(parse(e.target.value))} /></div>
 
-        <div className="input-row"><label>Entry Price:</label>
-          <input type="number" value={entry2} onChange={e=>setEntry2(parse(e.target.value))} /></div>
+        <div className="input-row"><label htmlFor="entry2">Entry Price:</label>
+          <input id="entry2" type="number" min="0" step="0.01" value={entry2} onChange={e=>setEntry2(parse(e.target.value))} /></div>
 
-        <div className="input-row"><label>Stop %:</label>
-          <input type="number" value={percent2} onChange={e=>setPercent2(parse(e.target.value))} /></div>
+        <div className="input-row"><label htmlFor="stopPercent">Stop %:</label>
+          <input id="stopPercent" type="number" min="0" max="100" step="0.1" value={percent2} onChange={e=>setPercent2(parse(e.target.value))} /></div>
 
         <div className="row"><span>Stoploss Price:</span><span>{stopLoss2 ? stopLoss2.toFixed(2) : ""}</span></div>
 
