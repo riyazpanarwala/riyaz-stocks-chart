@@ -64,7 +64,7 @@ export default function CalcPage() {
         }
       } else if (lastEdited === "slPercent" && v.entryPrice != null && v.slPercent != null) {
         const slPrice = v.entryPrice * (1 - v.slPercent / 100);
-        console.log(slPrice);
+
         if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
           v.slPrice = slPrice;
           changed = true;
@@ -115,11 +115,14 @@ export default function CalcPage() {
 
       // Risk : Reward
       if (v.entryPrice != null && v.slPrice != null && v.targetPrice != null) {
-        const rr = (v.targetPrice - v.entryPrice) / Math.abs(v.entryPrice - v.slPrice);
-        if (Math.abs(rr - (v.riskReward || 0)) > EPS) {
-          v.riskReward = rr;
-          changed = true;
-        }
+         const denom = Math.abs(v.entryPrice - v.slPrice);
+            if (denom > EPS) {
+            const rr = (v.targetPrice - v.entryPrice) / denom;
+            if (Math.abs(rr - (v.riskReward || 0)) > EPS) {
+                v.riskReward = rr;
+                changed = true;
+            }
+            }
       }
 
       // Profit Amount
