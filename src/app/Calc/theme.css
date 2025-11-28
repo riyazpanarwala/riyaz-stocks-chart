@@ -1,0 +1,36 @@
+.light {
+  --bg: #f6f7fb;
+  --card: #ffffff;
+  --text: #0f1724;
+  --muted: #6b7280;
+  --border: #e2e8f0;
+  --input-bg: #fff;
+  --btn: #0b74ff;
+  --chip-bg: #f4f6fb;
+  --result-bg: #fbfdff;
+
+  background: var(--bg);
+  color: var(--text);
+}
+
+.dark {
+  --bg: #0b0f14;
+  --card: #0f1720;
+  --text: #e6eef6;
+  --muted: #9aa3b2;
+  --border: #23303a;
+  --input-bg: #0f1720;
+  --btn: #1f9bff;
+  --chip-bg: #111827;
+  --result-bg: #0b1116;
+
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Ensure the module root container picks up full background */
+.light,
+.dark {
+  padding: 14px;
+  border-radius: 12px;
+}

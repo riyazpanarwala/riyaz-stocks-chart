@@ -1,0 +1,249 @@
+.container {
+  max-width: 940px;
+  margin: 20px auto;
+  padding: 20px;
+  border-radius: 14px;
+  transition: background 0.25s ease, color 0.25s ease;
+  font-family: Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Header */
+.header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.titleWrap {
+  display: flex;
+  flex-direction: column;
+}
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+.subtitle {
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.themeToggle {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--chip-bg);
+  cursor: pointer;
+}
+
+.calcBtn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--btn);
+  color: white;
+  cursor: pointer;
+}
+
+/* warning */
+.warningBox {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #fff3cd;
+  border-left: 4px solid #ff9900;
+  color: #5a3b00;
+}
+
+/* Grid of inputs */
+.grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+}
+.rowLabel {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.inputWrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+
+.input:focus {
+  box-shadow: 0 0 0 3px rgba(0, 120, 255, 0.06);
+}
+
+.suggestionRow {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.suggestion {
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  background: var(--chip-bg);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+/* highlights and locked */
+.missing {
+  border-color: #ff4d4d !important;
+  background: #fff3f3 !important;
+}
+
+.locked {
+  background: #efefef !important;
+  color: #444;
+  pointer-events: none;
+}
+
+/* note below locked input */
+.lockNote {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Extra input area that activates when more input is needed */
+.extraPanel {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: var(--card);
+}
+
+.extraRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.select {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+}
+
+.extraInput {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  flex: 1;
+  background: var(--input-bg);
+}
+
+.extraBtn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--btn);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+/* missing tags */
+.missTag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: #fff0f0;
+  color: #900;
+  font-size: 12px;
+}
+
+/* summary + small info */
+.summary {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-start;
+}
+.summaryRow {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* results */
+.results {
+  margin-top: 18px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.results h3 {
+  margin: 0 0 8px 0;
+}
+.resultsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.resultItem {
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--result-bg);
+  border: 1px solid var(--border);
+}
+.rLabel {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.rValue {
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* small util */
+.titleSmall {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 880px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .resultsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .resultsGrid {
+    grid-template-columns: 1fr;
+  }
+}
