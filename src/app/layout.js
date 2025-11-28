@@ -1,8 +1,6 @@
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
-import { Suspense } from "react";
 import Script from "next/script";
-import PageTracker from "./pageTracker";
 import { GOOGLE_ANALYTICS_GA_ID } from "../components/config";
 
 import "./globals.css";
@@ -47,9 +45,6 @@ export default function RootLayout({ children }) {
             </Script>
           </>
         )}
-        <Suspense>
-          <PageTracker />
-        </Suspense>
         {children}
         <Analytics />
       </body>
