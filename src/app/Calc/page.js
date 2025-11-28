@@ -112,16 +112,6 @@ export default function CalcPage() {
           changed = true;
         }
       }
-      if (v.riskAmount != null && v.entryPrice != null && v.slPrice != null) {
-        const denom = Math.abs(v.entryPrice - v.slPrice);
-        if (denom > EPS) {
-          const qty = v.riskAmount / denom;
-          if (Math.abs(qty - (v.quantity || 0)) > EPS) {
-            v.quantity = qty;
-            changed = true;
-          }
-        }
-      }
 
       // Risk : Reward
       if (v.entryPrice != null && v.slPrice != null && v.targetPrice != null) {
