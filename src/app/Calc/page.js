@@ -225,11 +225,14 @@ export default function CalcPage() {
       )}
 
       <div className={styles.grid}>
-        {Object.keys(FIELD_LABELS).map((key) => (
+        {Object.keys(FIELD_LABELS).map((key) => {
+          const id = `calc-${key}`;
+          return (
           <div key={key} className={styles.row}>
-            <label className={styles.rowLabel}>{FIELD_LABELS[key]}</label>
+            <label htmlFor={id} className={styles.rowLabel}>{FIELD_LABELS[key]}</label>
 
             <input
+              id={id}
               className={inputClass(key)}
               value={vals[key]}
               onChange={(e) => setInput(key, e.target.value)}
@@ -251,7 +254,8 @@ export default function CalcPage() {
               </div>
             )}
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {missingFields.length > 0 && (
