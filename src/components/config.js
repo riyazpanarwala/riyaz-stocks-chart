@@ -1,0 +1,1 @@
+export const GOOGLE_ANALYTICS_GA_ID = "G-CFE9G4W2F5";
