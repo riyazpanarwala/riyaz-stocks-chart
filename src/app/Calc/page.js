@@ -41,6 +41,32 @@ export default function CalcPage() {
   function setInput(field, rawValue) {
     setLastEdited(field);
 
+    const numVal = toNum(rawValue);
+
+    // Validate constraints
+    if (numVal != null) {
+      if (
+        [
+          "entryPrice",
+          "slPrice",
+          "targetPrice",
+          "positionAmount",
+          "quantity",
+          "riskAmount",
+          "profitAmount",
+        ].includes(field) &&
+        numVal < 0
+      ) {
+        return; // Reject negative values for prices/amounts
+      }
+      if (
+        ["slPercent", "targetPercent"].includes(field) &&
+        (numVal < 0 || numVal > 100)
+      ) {
+        return; // Reject unrealistic percentages
+      }
+    }
+
     // Convert all values to numbers
     const numericVals = { ...vals, [field]: toNum(rawValue) };
     for (const k in numericVals) {
