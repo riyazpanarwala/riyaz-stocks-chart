@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import styles from "./calculator.module.css";
 import "./theme.css";
 
@@ -17,38 +17,20 @@ const FIELD_LABELS = {
   profitAmount: "Profit Amount",
 };
 
+const SUGGESTIONS = {
+  entryPrice: [100, 250, 500, 1000],
+  slPercent: [0.5, 1, 2, 5],
+  targetPercent: [0.5, 1, 2, 5],
+};
+
 const EPS = 1e-9;
 
 export default function CalcPage() {
   const [theme, setTheme] = useState("light");
-
-  const [vals, setVals] = useState({
-    entryPrice: "",
-    slPrice: "",
-    slPercent: "",
-    riskAmount: "",
-    positionAmount: "",
-    quantity: "",
-    targetPercent: "",
-    targetPrice: "",
-    riskReward: "",
-    profitAmount: "",
-  });
-
-  const [userProvided, setUserProvided] = useState({});
-  const [computed, setComputed] = useState({});
-  const [warnings, setWarnings] = useState([]);
-  const [missingFields, setMissingFields] = useState([]);
-  const [locked, setLocked] = useState({});
-
-  const [extraPick, setExtraPick] = useState("");
-  const [extraTyped, setExtraTyped] = useState("");
-
-  const SUGGESTIONS = {
-    entryPrice: [100, 250, 500, 1000],
-    slPercent: [0.5, 1, 2, 5],
-    targetPercent: [0.5, 1, 2, 5],
-  };
+  const [vals, setVals] = useState(
+    Object.keys(FIELD_LABELS).reduce((acc, k) => ({ ...acc, [k]: "" }), {})
+  );
+  const [lastEdited, setLastEdited] = useState(null);
 
   const toNum = (s) => {
     if (!s) return null;
@@ -56,13 +38,13 @@ export default function CalcPage() {
     return Number.isFinite(n) ? n : null;
   };
 
-  /** Set input & mark user edits */
+  /** Track user input and last edited field */
   function setInput(field, rawValue) {
-    setVals((p) => ({ ...p, [field]: rawValue }));
-    setUserProvided((p) => ({ ...p, [field]: true }));
+    setVals((prev) => ({ ...prev, [field]: rawValue }));
+    setLastEdited(field);
   }
 
-  /** Main solver */
+  /** Iterative calculation */
   function deriveIterative(initial) {
     const v = { ...initial };
     let changed = true;
@@ -71,61 +53,83 @@ export default function CalcPage() {
     while (changed && iter++ < 40) {
       changed = false;
 
-      if (v.entryPrice != null && v.slPrice != null && v.slPercent == null) {
-        v.slPercent = ((v.entryPrice - v.slPrice) / v.entryPrice) * 100;
-        changed = true;
-      }
-      if (v.entryPrice != null && v.slPercent != null && v.slPrice == null) {
-        v.slPrice = v.entryPrice * (1 - v.slPercent / 100);
-        changed = true;
+      // SL Price ↔ SL %
+      if (lastEdited === "slPrice" && v.entryPrice != null && v.slPrice != null) {
+        const slPercent = ((v.entryPrice - v.slPrice) / v.entryPrice) * 100;
+        if (Math.abs(slPercent - (v.slPercent || 0)) > EPS) {
+          v.slPercent = slPercent;
+          changed = true;
+        }
+      } else if (lastEdited === "slPercent" && v.entryPrice != null && v.slPercent != null) {
+        const slPrice = v.entryPrice * (1 - v.slPercent / 100);
+
+        if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
+          v.slPrice = slPrice;
+          changed = true;
+        }
       }
 
-      if (v.positionAmount != null && v.entryPrice != null && v.quantity == null) {
+      // Target Price ↔ Target %
+      if (lastEdited === "targetPrice" && v.entryPrice != null && v.targetPrice != null) {
+        const targetPercent = ((v.targetPrice - v.entryPrice) / v.entryPrice) * 100;
+        if (Math.abs(targetPercent - (v.targetPercent || 0)) > EPS) {
+          v.targetPercent = targetPercent;
+          changed = true;
+        }
+      } else if (lastEdited === "targetPercent" && v.entryPrice != null && v.targetPercent != null) {
+        const targetPrice = v.entryPrice * (1 + v.targetPercent / 100);
+        if (Math.abs(targetPrice - (v.targetPrice || 0)) > EPS) {
+          v.targetPrice = targetPrice;
+          changed = true;
+        }
+      }
+
+      // Quantity / Position Amount
+      if (v.positionAmount != null && v.entryPrice != null && lastEdited !== "quantity") {
         if (Math.abs(v.entryPrice) > EPS) {
-          v.quantity = v.positionAmount / v.entryPrice;
+          const quantity = v.positionAmount / v.entryPrice;
+          if (Math.abs(quantity - (v.quantity || 0)) > EPS) {
+            v.quantity = quantity;
+            changed = true;
+          }
+        }
+      }
+      if (v.quantity != null && v.entryPrice != null && lastEdited !== "positionAmount") {
+        const posAmt = v.quantity * v.entryPrice;
+        if (Math.abs(posAmt - (v.positionAmount || 0)) > EPS) {
+          v.positionAmount = posAmt;
           changed = true;
         }
       }
 
-      if (v.quantity != null && v.entryPrice != null && v.positionAmount == null) {
-        v.positionAmount = v.quantity * v.entryPrice;
-        changed = true;
-      }
-
-      if (v.entryPrice != null && v.targetPercent != null && v.targetPrice == null) {
-        v.targetPrice = v.entryPrice * (1 + v.targetPercent / 100);
-        changed = true;
-      }
-
-      if (v.entryPrice != null && v.targetPrice != null && v.targetPercent == null) {
-        v.targetPercent = ((v.targetPrice - v.entryPrice) / v.entryPrice) * 100;
-        changed = true;
-      }
-
-      if (v.quantity != null && v.entryPrice != null && v.slPrice != null && v.riskAmount == null) {
-        v.riskAmount = Math.abs(v.entryPrice - v.slPrice) * v.quantity;
-        changed = true;
-      }
-
-      if (v.riskAmount != null && v.entryPrice != null && v.slPrice != null && v.quantity == null) {
-        const denom = Math.abs(v.entryPrice - v.slPrice);
-        if (denom > EPS) {
-          v.quantity = v.riskAmount / denom;
+      // Risk Amount / Quantity
+      if (v.quantity != null && v.entryPrice != null && v.slPrice != null && lastEdited !== "riskAmount") {
+        const riskAmt = Math.abs(v.entryPrice - v.slPrice) * v.quantity;
+        if (Math.abs(riskAmt - (v.riskAmount || 0)) > EPS) {
+          v.riskAmount = riskAmt;
           changed = true;
         }
       }
 
-      if (v.entryPrice != null && v.slPrice != null && v.targetPrice != null && v.riskReward == null) {
-        const denom = Math.abs(v.entryPrice - v.slPrice);
-        if (denom > EPS) {
-          v.riskReward = (v.targetPrice - v.entryPrice) / denom;
-          changed = true;
-        }
+      // Risk : Reward
+      if (v.entryPrice != null && v.slPrice != null && v.targetPrice != null && lastEdited !== "riskReward") {
+         const denom = Math.abs(v.entryPrice - v.slPrice);
+            if (denom > EPS) {
+            const rr = (v.targetPrice - v.entryPrice) / denom;
+            if (Math.abs(rr - (v.riskReward || 0)) > EPS) {
+                v.riskReward = rr;
+                changed = true;
+            }
+            }
       }
 
-      if (v.quantity != null && v.entryPrice != null && v.targetPrice != null && v.profitAmount == null) {
-        v.profitAmount = (v.targetPrice - v.entryPrice) * v.quantity;
-        changed = true;
+      // Profit Amount
+      if (v.quantity != null && v.entryPrice != null && v.targetPrice != null && lastEdited !== "profitAmount") {
+        const profit = (v.targetPrice - v.entryPrice) * v.quantity;
+        if (Math.abs(profit - (v.profitAmount || 0)) > EPS) {
+          v.profitAmount = profit;
+          changed = true;
+        }
       }
     }
 
@@ -136,78 +140,49 @@ export default function CalcPage() {
     return v;
   }
 
-  function solve(allInputs) {
-    const v = {};
-    for (const k in allInputs) v[k] = toNum(allInputs[k]);
-
-    const derived = deriveIterative(v);
-    const missing = Object.keys(derived).filter((k) => derived[k] == null);
-
-    return { values: derived, missing };
-  }
-
-  /** Main effect → compute values */
   useEffect(() => {
-    const { values, missing } = solve(vals);
-    setComputed(values);
+  const numericVals = {};
+  for (const k in vals) numericVals[k] = toNum(vals[k]);
 
-    setMissingFields(missing);
-    setWarnings(missing.length > 0 ? ["Please provide one more field from missing list."] : []);
-  }, [vals]);
+  const derived = deriveIterative(numericVals);
 
-  /** Write computed values BACK to inputs — only if changed */
-  useEffect(() => {
-    if (!computed) return;
+  setVals((prev) => {
+    const next = { ...prev };
+    let changed = false;
 
-    setVals((prev) => {
-      let changed = false;
-      const next = { ...prev };
+    Object.keys(derived).forEach((k) => {
+      // skip only the field the user just typed
+      if (k === lastEdited) return;
 
-      for (const k of Object.keys(computed)) {
-        if (userProvided[k]) continue;
+      const newVal = derived[k];
+      const formatted =
+        newVal == null
+          ? ""
+          : Math.abs(newVal - Math.round(newVal)) < 1e-6
+          ? String(Math.round(newVal))
+          : String(Number(newVal.toFixed(6)));
 
-        const newVal = computed[k];
-        const formatted =
-          newVal == null
-            ? ""
-            : Math.abs(newVal - Math.round(newVal)) < 1e-6
-            ? String(Math.round(newVal))
-            : String(Number(newVal.toFixed(6)));
-
-        if (next[k] !== formatted) {
-          next[k] = formatted;
-          changed = true;
-        }
+      if (next[k] !== formatted) {
+        next[k] = formatted;
+        changed = true;
       }
-
-      return changed ? next : prev;
     });
-  }, [computed, userProvided]);
 
-  /** missing field manual submit */
-  function handleExtraSubmit() {
-    if (!extraPick) return;
-    setInput(extraPick, extraTyped || "");
-    setExtraTyped("");
-    setExtraPick("");
-  }
+    return changed ? next : prev;
+  });
+}, [vals, lastEdited]);
 
   const userFilledCount = useMemo(
     () => Object.keys(vals).filter((k) => vals[k] !== "").length,
     [vals]
   );
 
-  const inputClass = (key) => {
-    const arr = [styles.input];
-    if (missingFields.includes(key)) arr.push(styles.missing);
-    return arr.join(" ");
-  };
+  const inputClass = (key) => [styles.input].join(" ");
 
   return (
     <div className={`${styles.container} ${theme}`}>
       <div className={styles.header}>
         <h1 className={styles.title}>Universal Trading Calculator</h1>
-
         <button
           className={styles.themeToggle}
           onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
@@ -216,84 +191,39 @@ export default function CalcPage() {
         </button>
       </div>
 
-      {warnings.length > 0 && (
-        <div className={styles.warningBox}>
-          {warnings.map((w, i) => (
-            <div key={i}>{w}</div>
-          ))}
-        </div>
-      )}
-
       <div className={styles.grid}>
         {Object.keys(FIELD_LABELS).map((key) => {
           const id = `calc-${key}`;
           return (
-          <div key={key} className={styles.row}>
-            <label htmlFor={id} className={styles.rowLabel}>{FIELD_LABELS[key]}</label>
-
-            <input
-              id={id}
-              className={inputClass(key)}
-              value={vals[key]}
-              onChange={(e) => setInput(key, e.target.value)}
-              placeholder={FIELD_LABELS[key]}
-              inputMode="decimal"
-            />
-
-            {SUGGESTIONS[key] && (
-              <div className={styles.suggestionRow}>
-                {SUGGESTIONS[key].map((s) => (
-                  <button
-                    key={s}
-                    className={styles.suggestion}
-                    onClick={() => setInput(key, String(s))}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          )
+            <div key={key} className={styles.row}>
+              <label htmlFor={id} className={styles.rowLabel}>
+                {FIELD_LABELS[key]}
+              </label>
+              <input
+                id={id}
+                className={inputClass(key)}
+                value={vals[key]}
+                onChange={(e) => setInput(key, e.target.value)}
+                placeholder={FIELD_LABELS[key]}
+                inputMode="decimal"
+              />
+              {SUGGESTIONS[key] && (
+                <div className={styles.suggestionRow}>
+                  {SUGGESTIONS[key].map((s) => (
+                    <button
+                      key={s}
+                      className={styles.suggestion}
+                      onClick={() => setInput(key, String(s))}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
         })}
       </div>
-
-      {missingFields.length > 0 && (
-        <div className={styles.extraPanel}>
-          <strong>Missing fields:</strong>{" "}
-          {missingFields.map((m) => (
-            <span key={m} className={styles.missTag}>
-              {FIELD_LABELS[m]}
-            </span>
-          ))}
-
-          <div className={styles.extraRow}>
-            <select
-              className={styles.select}
-              value={extraPick}
-              onChange={(e) => setExtraPick(e.target.value)}
-            >
-              <option value="">Pick field</option>
-              {missingFields.map((m) => (
-                <option key={m} value={m}>
-                  {FIELD_LABELS[m]}
-                </option>
-              ))}
-            </select>
-
-            <input
-              className={styles.extraInput}
-              value={extraTyped}
-              onChange={(e) => setExtraTyped(e.target.value)}
-              placeholder="Enter value"
-            />
-
-            <button className={styles.extraBtn} onClick={handleExtraSubmit}>
-              Submit
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className={styles.summary}>
         <div className={styles.summaryRow}>
@@ -304,16 +234,11 @@ export default function CalcPage() {
 
       <div className={styles.results}>
         <h3>Computed Values</h3>
-
         <div className={styles.resultsGrid}>
           {Object.keys(FIELD_LABELS).map((k) => (
             <div key={k} className={styles.resultItem}>
               <div className={styles.rLabel}>{FIELD_LABELS[k]}</div>
-              <div className={styles.rValue}>
-                {computed[k] != null
-                  ? Number(computed[k]).toFixed(6).replace(/\.?0+$/, "")
-                  : "-"}
-              </div>
+              <div className={styles.rValue}>{vals[k] !== "" ? vals[k] : "-"}</div>
             </div>
           ))}
         </div>
