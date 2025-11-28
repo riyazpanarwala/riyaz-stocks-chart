@@ -87,7 +87,7 @@ export default function CalcPage() {
       }
 
       // Quantity / Position Amount
-      if (v.positionAmount != null && v.entryPrice != null) {
+      if (v.positionAmount != null && v.entryPrice != null && lastEdited !== "quantity") {
         if (Math.abs(v.entryPrice) > EPS) {
           const quantity = v.positionAmount / v.entryPrice;
           if (Math.abs(quantity - (v.quantity || 0)) > EPS) {
@@ -96,7 +96,7 @@ export default function CalcPage() {
           }
         }
       }
-      if (v.quantity != null && v.entryPrice != null) {
+      if (v.quantity != null && v.entryPrice != null && lastEdited !== "positionAmount") {
         const posAmt = v.quantity * v.entryPrice;
         if (Math.abs(posAmt - (v.positionAmount || 0)) > EPS) {
           v.positionAmount = posAmt;
@@ -105,7 +105,7 @@ export default function CalcPage() {
       }
 
       // Risk Amount / Quantity
-      if (v.quantity != null && v.entryPrice != null && v.slPrice != null) {
+      if (v.quantity != null && v.entryPrice != null && v.slPrice != null && lastEdited !== "riskAmount") {
         const riskAmt = Math.abs(v.entryPrice - v.slPrice) * v.quantity;
         if (Math.abs(riskAmt - (v.riskAmount || 0)) > EPS) {
           v.riskAmount = riskAmt;
@@ -114,7 +114,7 @@ export default function CalcPage() {
       }
 
       // Risk : Reward
-      if (v.entryPrice != null && v.slPrice != null && v.targetPrice != null) {
+      if (v.entryPrice != null && v.slPrice != null && v.targetPrice != null && lastEdited !== "riskReward") {
          const denom = Math.abs(v.entryPrice - v.slPrice);
             if (denom > EPS) {
             const rr = (v.targetPrice - v.entryPrice) / denom;
@@ -126,7 +126,7 @@ export default function CalcPage() {
       }
 
       // Profit Amount
-      if (v.quantity != null && v.entryPrice != null && v.targetPrice != null) {
+      if (v.quantity != null && v.entryPrice != null && v.targetPrice != null && lastEdited !== "profitAmount") {
         const profit = (v.targetPrice - v.entryPrice) * v.quantity;
         if (Math.abs(profit - (v.profitAmount || 0)) > EPS) {
           v.profitAmount = profit;
