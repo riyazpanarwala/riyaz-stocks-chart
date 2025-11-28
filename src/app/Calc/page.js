@@ -115,7 +115,17 @@ export default function CalcPage() {
                         changed = true;
                     }
                 }
+            } else if (v.riskAmount != null && v.slPrice != null && v.entryPrice != null && lastEdited !== "quantity") {
+                const denom = Math.abs(v.entryPrice - v.slPrice);
+                if (denom > EPS) {
+                    const quantity = v.riskAmount / denom;
+                    if (Math.abs(quantity - (v.quantity || 0)) > EPS) {
+                        v.quantity = quantity;
+                        changed = true;
+                    }
+                }
             }
+
             if (v.quantity != null && v.entryPrice != null && lastEdited !== "positionAmount") {
                 const posAmt = v.quantity * v.entryPrice;
                 if (Math.abs(posAmt - (v.positionAmount || 0)) > EPS) {
