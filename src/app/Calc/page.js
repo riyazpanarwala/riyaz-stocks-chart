@@ -30,7 +30,6 @@ export default function CalcPage() {
   const [vals, setVals] = useState(
     Object.keys(FIELD_LABELS).reduce((acc, k) => ({ ...acc, [k]: "" }), {})
   );
-  const [userProvided, setUserProvided] = useState({});
   const [lastEdited, setLastEdited] = useState(null);
 
   const toNum = (s) => {
@@ -42,7 +41,6 @@ export default function CalcPage() {
   /** Track user input and last edited field */
   function setInput(field, rawValue) {
     setVals((prev) => ({ ...prev, [field]: rawValue }));
-    setUserProvided((prev) => ({ ...prev, [field]: true }));
     setLastEdited(field);
   }
 
@@ -172,7 +170,7 @@ export default function CalcPage() {
 
     return changed ? next : prev;
   });
-}, [vals, userProvided, lastEdited]);
+}, [vals, lastEdited]);
 
   const userFilledCount = useMemo(
     () => Object.keys(vals).filter((k) => vals[k] !== "").length,
