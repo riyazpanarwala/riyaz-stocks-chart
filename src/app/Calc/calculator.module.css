@@ -235,6 +235,25 @@
   opacity: 0.8;
 }
 
+.missingField {
+    border: 2px solid #ff4d4d !important;
+    background: rgba(255, 0, 0, 0.08);
+}
+
+.missingBox {
+    margin: 20px 0;
+    padding: 14px;
+    border-left: 4px solid #ff4d4d;
+    background: rgba(255, 0, 0, 0.1);
+    border-radius: 6px;
+}
+
+.missingBox ul {
+    margin: 6px 0 0 20px;
+    padding: 0;
+}
+
+
 /* Responsive */
 @media (max-width: 880px) {
   .grid {
