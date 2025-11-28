@@ -1,1 +1,1 @@
-export const GOOGLE_ANALYTICS_GA_ID = "G-CFE9G4W2F5";
+export const GOOGLE_ANALYTICS_GA_ID = process.env.NEXT_PUBLIC_GA_ID || "";
