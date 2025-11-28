@@ -39,8 +39,28 @@ export default function CalcPage() {
     };
 
     function setInput(field, rawValue) {
-        setVals((prev) => ({ ...prev, [field]: rawValue }));
         setLastEdited(field);
+
+        // Convert all values to numbers
+        const numericVals = { ...vals, [field]: toNum(rawValue) };
+        for (const k in numericVals) {
+            if (k !== field) numericVals[k] = toNum(vals[k]);
+        }
+
+        // Derive and format
+        const derived = deriveIterative(numericVals);
+        const formatted = {};
+        Object.keys(derived).forEach(k => {
+            const newVal = derived[k];
+            formatted[k] = newVal == null ? ""
+                : Math.abs(newVal - Math.round(newVal)) < 1e-6
+                    ? String(Math.round(newVal))
+                    : String(Number(newVal.toFixed(6)));
+        });
+
+        // Keep user's raw input for the edited field
+        formatted[field] = rawValue;
+        setVals(formatted);
     }
 
     function deriveIterative(initial) {
@@ -52,7 +72,7 @@ export default function CalcPage() {
             changed = false;
 
             // SL Price ↔ SL %
-            if (lastEdited !== "slPercent" && v.entryPrice != null && v.slPrice != null) {
+            if (lastEdited !== "slPercent" && v.entryPrice != null && v.slPrice != null && v.entryPrice > EPS) {
                 const slPercent = ((v.entryPrice - v.slPrice) / v.entryPrice) * 100;
                 if (Math.abs(slPercent - (v.slPercent || 0)) > EPS) {
                     v.slPercent = slPercent;
@@ -70,7 +90,7 @@ export default function CalcPage() {
             }
 
             // Target Price ↔ Target %
-            if (lastEdited !== "targetPercent" && v.entryPrice != null && v.targetPrice != null) {
+            if (lastEdited !== "targetPercent" && v.entryPrice != null && v.targetPrice != null && v.entryPrice > EPS) {
                 const targetPercent = ((v.targetPrice - v.entryPrice) / v.entryPrice) * 100;
                 if (Math.abs(targetPercent - (v.targetPercent || 0)) > EPS) {
                     v.targetPercent = targetPercent;
@@ -156,37 +176,6 @@ export default function CalcPage() {
 
         return v;
     }
-
-    useEffect(() => {
-        const numericVals = {};
-        for (const k in vals) numericVals[k] = toNum(vals[k]);
-
-        const derived = deriveIterative(numericVals);
-
-        setVals((prev) => {
-            const next = { ...prev };
-            let changed = false;
-
-            Object.keys(derived).forEach((k) => {
-                if (k === lastEdited) return;
-
-                const newVal = derived[k];
-                const formatted =
-                    newVal == null
-                        ? ""
-                        : Math.abs(newVal - Math.round(newVal)) < 1e-6
-                            ? String(Math.round(newVal))
-                            : String(Number(newVal.toFixed(6)));
-
-                if (next[k] !== formatted) {
-                    next[k] = formatted;
-                    changed = true;
-                }
-            });
-
-            return changed ? next : prev;
-        });
-    }, [vals, lastEdited]);
 
     const userFilledCount = useMemo(
         () => Object.keys(vals).filter((k) => vals[k] !== "").length,
