@@ -144,6 +144,7 @@
 
 .extraRow {
   display: flex;
+  flex-flow: wrap;
   gap: 8px;
   margin-top: 8px;
   align-items: center;
@@ -187,6 +188,7 @@
 /* summary + small info */
 .summary {
   margin-top: 16px;
+  padding: 0 12px;
   display: flex;
   gap: 12px;
   justify-content: flex-start;
