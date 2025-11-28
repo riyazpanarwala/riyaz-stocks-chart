@@ -38,13 +38,11 @@ export default function CalcPage() {
         return Number.isFinite(n) ? n : null;
     };
 
-    /** Track user input and last edited field */
     function setInput(field, rawValue) {
         setVals((prev) => ({ ...prev, [field]: rawValue }));
         setLastEdited(field);
     }
 
-    /** Iterative calculation */
     function deriveIterative(initial) {
         const v = { ...initial };
         let changed = true;
@@ -54,13 +52,15 @@ export default function CalcPage() {
             changed = false;
 
             // SL Price ↔ SL %
-            if (lastEdited === "slPrice" && v.entryPrice != null && v.slPrice != null) {
+            if (lastEdited !== "slPercent" && v.entryPrice != null && v.slPrice != null) {
                 const slPercent = ((v.entryPrice - v.slPrice) / v.entryPrice) * 100;
                 if (Math.abs(slPercent - (v.slPercent || 0)) > EPS) {
                     v.slPercent = slPercent;
                     changed = true;
                 }
-            } else if (lastEdited === "slPercent" && v.entryPrice != null && v.slPercent != null) {
+            }
+
+            if (lastEdited !== "slPrice" && v.entryPrice != null && v.slPercent != null) {
                 const slPrice = v.entryPrice * (1 - v.slPercent / 100);
 
                 if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
@@ -70,13 +70,15 @@ export default function CalcPage() {
             }
 
             // Target Price ↔ Target %
-            if (lastEdited === "targetPrice" && v.entryPrice != null && v.targetPrice != null) {
+            if (lastEdited !== "targetPercent" && v.entryPrice != null && v.targetPrice != null) {
                 const targetPercent = ((v.targetPrice - v.entryPrice) / v.entryPrice) * 100;
                 if (Math.abs(targetPercent - (v.targetPercent || 0)) > EPS) {
                     v.targetPercent = targetPercent;
                     changed = true;
                 }
-            } else if (lastEdited === "targetPercent" && v.entryPrice != null && v.targetPercent != null) {
+            }
+
+            if (lastEdited !== "targetPrice" && v.entryPrice != null && v.targetPercent != null) {
                 const targetPrice = v.entryPrice * (1 + v.targetPercent / 100);
                 if (Math.abs(targetPrice - (v.targetPrice || 0)) > EPS) {
                     v.targetPrice = targetPrice;
@@ -102,8 +104,13 @@ export default function CalcPage() {
                 }
             }
 
-            // Risk Amount / Quantity
-            if (v.quantity != null && v.entryPrice != null && v.slPrice != null && lastEdited !== "riskAmount") {
+            // Risk Amount
+            if (
+                v.quantity != null &&
+                v.entryPrice != null &&
+                v.slPrice != null &&
+                lastEdited !== "riskAmount"
+            ) {
                 const riskAmt = Math.abs(v.entryPrice - v.slPrice) * v.quantity;
                 if (Math.abs(riskAmt - (v.riskAmount || 0)) > EPS) {
                     v.riskAmount = riskAmt;
@@ -112,7 +119,12 @@ export default function CalcPage() {
             }
 
             // Risk : Reward
-            if (v.entryPrice != null && v.slPrice != null && v.targetPrice != null && lastEdited !== "riskReward") {
+            if (
+                v.entryPrice != null &&
+                v.slPrice != null &&
+                v.targetPrice != null &&
+                lastEdited !== "riskReward"
+            ) {
                 const denom = Math.abs(v.entryPrice - v.slPrice);
                 if (denom > EPS) {
                     const rr = (v.targetPrice - v.entryPrice) / denom;
@@ -124,7 +136,12 @@ export default function CalcPage() {
             }
 
             // Profit Amount
-            if (v.quantity != null && v.entryPrice != null && v.targetPrice != null && lastEdited !== "profitAmount") {
+            if (
+                v.quantity != null &&
+                v.entryPrice != null &&
+                v.targetPrice != null &&
+                lastEdited !== "profitAmount"
+            ) {
                 const profit = (v.targetPrice - v.entryPrice) * v.quantity;
                 if (Math.abs(profit - (v.profitAmount || 0)) > EPS) {
                     v.profitAmount = profit;
@@ -151,7 +168,6 @@ export default function CalcPage() {
             let changed = false;
 
             Object.keys(derived).forEach((k) => {
-                // skip only the field the user just typed
                 if (k === lastEdited) return;
 
                 const newVal = derived[k];
@@ -177,7 +193,13 @@ export default function CalcPage() {
         [vals]
     );
 
-    const inputClass = (key) => [styles.input].join(" ");
+    const missingFields = useMemo(() => {
+        if (userFilledCount <= 3) return [];
+        return Object.keys(FIELD_LABELS).filter((k) => vals[k] === "");
+    }, [vals, userFilledCount]);
+
+    const inputClass = (key) =>
+        `${styles.input} ${missingFields.includes(key) ? styles.missingField : ""}`;
 
     return (
         <div className={`${styles.container} ${theme}`}>
@@ -224,6 +246,17 @@ export default function CalcPage() {
                     );
                 })}
             </div>
+
+            {userFilledCount >= 3 && missingFields.length > 0 && (
+                <div className={styles.missingBox}>
+                    <strong>Missing Required Fields:</strong>
+                    <ul>
+                        {missingFields.map((f) => (
+                            <li key={f}>{FIELD_LABELS[f]}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             <div className={styles.summary}>
                 <div className={styles.summaryRow}>
