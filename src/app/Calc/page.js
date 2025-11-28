@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import styles from "./calculator.module.css";
 import "./theme.css";
 
@@ -31,6 +31,7 @@ export default function CalcPage() {
     Object.keys(FIELD_LABELS).reduce((acc, k) => ({ ...acc, [k]: "" }), {})
   );
   const [lastEdited, setLastEdited] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const toNum = (s) => {
     if (!s) return null;
@@ -57,15 +58,22 @@ export default function CalcPage() {
         ].includes(field) &&
         numVal < 0
       ) {
-        return; // Reject negative values for prices/amounts
+        setErrors({ ...errors, [field]: "Value cannot be negative" });
+        return;
       }
       if (
         ["slPercent", "targetPercent"].includes(field) &&
         (numVal < 0 || numVal > 100)
       ) {
-        return; // Reject unrealistic percentages
+        setErrors({
+          ...errors,
+          [field]: "Percentage must be between 0 and 100",
+        });
+        return;
       }
     }
+
+    setErrors({ ...errors, [field]: null });
 
     // Convert all values to numbers
     const numericVals = { ...vals, [field]: toNum(rawValue) };
@@ -321,7 +329,9 @@ export default function CalcPage() {
       <div className={styles.summary}>
         <div className={styles.summaryRow}>
           <div>Provided</div>
-          <div>{userFilledCount} / 10</div>
+          <div>
+            {userFilledCount} / {Object.keys(FIELD_LABELS).length}
+          </div>
         </div>
       </div>
 
