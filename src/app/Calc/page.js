@@ -119,7 +119,7 @@ export default function CalcPage() {
             }
 
             if (editedField !== "slPrice" && v.entryPrice != null) {
-                if (v.riskAmount != null && v.quantity != null && lastEdited !== "slPercent") {
+                if (v.riskAmount != null && v.quantity != null && editedField !== "slPercent") {
                     const slPrice = v.entryPrice - v.riskAmount / v.quantity;
                     if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
                         v.slPrice = slPrice;
