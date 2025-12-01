@@ -119,15 +119,13 @@ export default function CalcPage() {
             }
 
             if (editedField !== "slPrice" && v.entryPrice != null) {
+                let slPrice = null;
                 if (v.riskAmount != null && v.quantity != null && editedField !== "slPercent") {
-                    const slPrice = v.entryPrice - v.riskAmount / v.quantity;
-                    if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
-                        v.slPrice = slPrice;
-                        changed = true;
-                    }
+                    slPrice = v.entryPrice - v.riskAmount / v.quantity;
                 } else if (v.slPercent != null) {
-                    const slPrice = v.entryPrice * (1 - v.slPercent / 100);
-
+                    slPrice = v.entryPrice * (1 - v.slPercent / 100);
+                }
+                if (slPrice != null) {
                     if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
                         v.slPrice = slPrice;
                         changed = true;
