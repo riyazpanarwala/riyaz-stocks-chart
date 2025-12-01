@@ -55,22 +55,22 @@ export default function CalcPage() {
                 ].includes(field) &&
                 numVal < 0
             ) {
-                setErrors({ ...errors, [field]: "Value cannot be negative" });
+                setErrors(prev => ({ ...prev, [field]: "Value cannot be negative" }));
                 return;
             }
             if (
                 ["slPercent", "targetPercent"].includes(field) &&
                 (numVal < 0 || numVal > 100)
             ) {
-                setErrors({
-                    ...errors,
+                setErrors(prev => ({
+                    ...prev,
                     [field]: "Percentage must be between 0 and 100",
-                });
+                }));
                 return;
             }
         }
 
-        setErrors({ ...errors, [field]: null });
+        setErrors(prev => ({ ...prev, [field]: null }));
 
         // Convert all values to numbers
         const numericVals = { ...vals, [field]: toNum(rawValue) };
@@ -120,7 +120,7 @@ export default function CalcPage() {
 
             if (editedField !== "slPrice" && v.entryPrice != null) {
                 let slPrice = null;
-                if (v.riskAmount != null && v.quantity != null && editedField !== "slPercent") {
+                if (v.riskAmount != null && v.quantity != null && v.quantity > 0 && editedField !== "slPercent") {
                     slPrice = v.entryPrice - v.riskAmount / v.quantity;
                 } else if (v.slPercent != null) {
                     slPrice = v.entryPrice * (1 - v.slPercent / 100);
