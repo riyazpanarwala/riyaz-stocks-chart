@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import styles from "./calculator.module.css";
 import "./theme.css";
 
@@ -30,7 +30,7 @@ export default function CalcPage() {
     const [vals, setVals] = useState(
         Object.keys(FIELD_LABELS).reduce((acc, k) => ({ ...acc, [k]: "" }), {})
     );
-    const [lastEdited, setLastEdited] = useState(null);
+    const [errors, setErrors] = useState({});
 
     const toNum = (s) => {
         if (!s) return null;
@@ -39,7 +39,38 @@ export default function CalcPage() {
     };
 
     function setInput(field, rawValue) {
-        setLastEdited(field);
+        const numVal = toNum(rawValue);
+
+        // Validate constraints
+        if (numVal != null) {
+            if (
+                [
+                    "entryPrice",
+                    "slPrice",
+                    "targetPrice",
+                    "positionAmount",
+                    "quantity",
+                    "riskAmount",
+                    "profitAmount",
+                ].includes(field) &&
+                numVal < 0
+            ) {
+                setErrors({ ...errors, [field]: "Value cannot be negative" });
+                return;
+            }
+            if (
+                ["slPercent", "targetPercent"].includes(field) &&
+                (numVal < 0 || numVal > 100)
+            ) {
+                setErrors({
+                    ...errors,
+                    [field]: "Percentage must be between 0 and 100",
+                });
+                return;
+            }
+        }
+
+        setErrors({ ...errors, [field]: null });
 
         // Convert all values to numbers
         const numericVals = { ...vals, [field]: toNum(rawValue) };
@@ -48,14 +79,16 @@ export default function CalcPage() {
         }
 
         // Derive and format
-        const derived = deriveIterative(numericVals);
+        const derived = deriveIterative(numericVals, field);
         const formatted = {};
-        Object.keys(derived).forEach(k => {
+        Object.keys(derived).forEach((k) => {
             const newVal = derived[k];
-            formatted[k] = newVal == null ? ""
-                : Math.abs(newVal - Math.round(newVal)) < 1e-6
-                    ? String(Math.round(newVal))
-                    : String(Number(newVal.toFixed(6)));
+            formatted[k] =
+                newVal == null
+                    ? ""
+                    : Math.abs(newVal - Math.round(newVal)) < 1e-6
+                        ? String(Math.round(newVal))
+                        : String(Number(newVal.toFixed(6)));
         });
 
         // Keep user's raw input for the edited field
@@ -63,7 +96,7 @@ export default function CalcPage() {
         setVals(formatted);
     }
 
-    function deriveIterative(initial) {
+    function deriveIterative(initial, editedField) {
         const v = { ...initial };
         let changed = true;
         let iter = 0;
@@ -72,7 +105,12 @@ export default function CalcPage() {
             changed = false;
 
             // SL Price ↔ SL %
-            if (lastEdited !== "slPercent" && v.entryPrice != null && v.slPrice != null && v.entryPrice > EPS) {
+            if (
+                editedField !== "slPercent" &&
+                v.entryPrice != null &&
+                v.slPrice != null &&
+                v.entryPrice > EPS
+            ) {
                 const slPercent = ((v.entryPrice - v.slPrice) / v.entryPrice) * 100;
                 if (Math.abs(slPercent - (v.slPercent || 0)) > EPS) {
                     v.slPercent = slPercent;
@@ -80,7 +118,7 @@ export default function CalcPage() {
                 }
             }
 
-            if (lastEdited !== "slPrice" && v.entryPrice != null) {
+            if (editedField !== "slPrice" && v.entryPrice != null) {
                 if (v.riskAmount != null && v.quantity != null && lastEdited !== "slPercent") {
                     const slPrice = v.entryPrice - v.riskAmount / v.quantity;
                     if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
@@ -98,15 +136,25 @@ export default function CalcPage() {
             }
 
             // Target Price ↔ Target %
-            if (lastEdited !== "targetPercent" && v.entryPrice != null && v.targetPrice != null && v.entryPrice > EPS) {
-                const targetPercent = ((v.targetPrice - v.entryPrice) / v.entryPrice) * 100;
+            if (
+                editedField !== "targetPercent" &&
+                v.entryPrice != null &&
+                v.targetPrice != null &&
+                v.entryPrice > EPS
+            ) {
+                const targetPercent =
+                    ((v.targetPrice - v.entryPrice) / v.entryPrice) * 100;
                 if (Math.abs(targetPercent - (v.targetPercent || 0)) > EPS) {
                     v.targetPercent = targetPercent;
                     changed = true;
                 }
             }
 
-            if (lastEdited !== "targetPrice" && v.entryPrice != null && v.targetPercent != null) {
+            if (
+                editedField !== "targetPrice" &&
+                v.entryPrice != null &&
+                v.targetPercent != null
+            ) {
                 const targetPrice = v.entryPrice * (1 + v.targetPercent / 100);
                 if (Math.abs(targetPrice - (v.targetPrice || 0)) > EPS) {
                     v.targetPrice = targetPrice;
@@ -115,7 +163,12 @@ export default function CalcPage() {
             }
 
             // Quantity / Position Amount
-            if (v.positionAmount != null && v.entryPrice != null && lastEdited !== "quantity") {
+            if (
+                v.positionAmount != null &&
+                v.entryPrice != null &&
+                editedField !== "quantity" &&
+                editedField !== "riskAmount"
+            ) {
                 if (Math.abs(v.entryPrice) > EPS) {
                     const quantity = v.positionAmount / v.entryPrice;
                     if (Math.abs(quantity - (v.quantity || 0)) > EPS) {
@@ -123,7 +176,12 @@ export default function CalcPage() {
                         changed = true;
                     }
                 }
-            } else if (v.riskAmount != null && v.slPrice != null && v.entryPrice != null && lastEdited !== "quantity") {
+            } else if (
+                v.riskAmount != null &&
+                v.slPrice != null &&
+                v.entryPrice != null &&
+                editedField !== "quantity"
+            ) {
                 const denom = Math.abs(v.entryPrice - v.slPrice);
                 if (denom > EPS) {
                     const quantity = v.riskAmount / denom;
@@ -134,7 +192,11 @@ export default function CalcPage() {
                 }
             }
 
-            if (v.quantity != null && v.entryPrice != null && lastEdited !== "positionAmount") {
+            if (
+                v.quantity != null &&
+                v.entryPrice != null &&
+                editedField !== "positionAmount"
+            ) {
                 const posAmt = v.quantity * v.entryPrice;
                 if (Math.abs(posAmt - (v.positionAmount || 0)) > EPS) {
                     v.positionAmount = posAmt;
@@ -147,7 +209,7 @@ export default function CalcPage() {
                 v.quantity != null &&
                 v.entryPrice != null &&
                 v.slPrice != null &&
-                lastEdited !== "riskAmount"
+                editedField !== "riskAmount"
             ) {
                 const riskAmt = Math.abs(v.entryPrice - v.slPrice) * v.quantity;
                 if (Math.abs(riskAmt - (v.riskAmount || 0)) > EPS) {
@@ -161,7 +223,7 @@ export default function CalcPage() {
                 v.entryPrice != null &&
                 v.slPrice != null &&
                 v.targetPrice != null &&
-                lastEdited !== "riskReward"
+                editedField !== "riskReward"
             ) {
                 const denom = Math.abs(v.entryPrice - v.slPrice);
                 if (denom > EPS) {
@@ -178,7 +240,7 @@ export default function CalcPage() {
                 v.quantity != null &&
                 v.entryPrice != null &&
                 v.targetPrice != null &&
-                lastEdited !== "profitAmount"
+                editedField !== "profitAmount"
             ) {
                 const profit = (v.targetPrice - v.entryPrice) * v.quantity;
                 if (Math.abs(profit - (v.profitAmount || 0)) > EPS) {
@@ -236,6 +298,9 @@ export default function CalcPage() {
                                 placeholder={FIELD_LABELS[key]}
                                 inputMode="decimal"
                             />
+                            {errors[key] && (
+                                <span className={styles.errorText}>{errors[key]}</span>
+                            )}
                             {SUGGESTIONS[key] && (
                                 <div className={styles.suggestionRow}>
                                     {SUGGESTIONS[key].map((s) => (
@@ -268,7 +333,9 @@ export default function CalcPage() {
             <div className={styles.summary}>
                 <div className={styles.summaryRow}>
                     <div>Provided</div>
-                    <div>{userFilledCount} / 10</div>
+                    <div>
+                        {userFilledCount} / {Object.keys(FIELD_LABELS).length}
+                    </div>
                 </div>
             </div>
 
@@ -278,7 +345,9 @@ export default function CalcPage() {
                     {Object.keys(FIELD_LABELS).map((k) => (
                         <div key={k} className={styles.resultItem}>
                             <div className={styles.rLabel}>{FIELD_LABELS[k]}</div>
-                            <div className={styles.rValue}>{vals[k] !== "" ? vals[k] : "-"}</div>
+                            <div className={styles.rValue}>
+                                {vals[k] !== "" ? vals[k] : "-"}
+                            </div>
                         </div>
                     ))}
                 </div>
