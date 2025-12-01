@@ -120,9 +120,7 @@ export default function CalcPage() {
 
             if (editedField !== "slPrice" && v.entryPrice != null) {
                 let slPrice = null;
-                if (v.riskAmount != null && v.quantity != null && v.quantity > 0 && editedField !== "slPercent") {
-                    slPrice = v.entryPrice - v.riskAmount / v.quantity;
-                } else if (v.slPercent != null) {
+                if (v.slPercent != null) {
                     slPrice = v.entryPrice * (1 - v.slPercent / 100);
                 }
                 if (slPrice != null) {
