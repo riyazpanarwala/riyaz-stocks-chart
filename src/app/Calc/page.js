@@ -80,12 +80,20 @@ export default function CalcPage() {
                 }
             }
 
-            if (lastEdited !== "slPrice" && v.entryPrice != null && v.slPercent != null) {
-                const slPrice = v.entryPrice * (1 - v.slPercent / 100);
+            if (lastEdited !== "slPrice" && v.entryPrice != null) {
+                if (v.riskAmount != null && v.quantity != null && lastEdited !== "slPercent") {
+                    const slPrice = v.entryPrice - v.riskAmount / v.quantity;
+                    if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
+                        v.slPrice = slPrice;
+                        changed = true;
+                    }
+                } else if (v.slPercent != null) {
+                    const slPrice = v.entryPrice * (1 - v.slPercent / 100);
 
-                if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
-                    v.slPrice = slPrice;
-                    changed = true;
+                    if (Math.abs(slPrice - (v.slPrice || 0)) > EPS) {
+                        v.slPrice = slPrice;
+                        changed = true;
+                    }
                 }
             }
 
