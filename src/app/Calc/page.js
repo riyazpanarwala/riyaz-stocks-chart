@@ -335,6 +335,7 @@ export default function CalcPage() {
                 </div>
             </div>
 
+            {/*
             <div className={styles.results}>
                 <h3>Computed Values</h3>
                 <div className={styles.resultsGrid}>
@@ -348,6 +349,7 @@ export default function CalcPage() {
                     ))}
                 </div>
             </div>
+            */}
 
             <div style={{ height: 40 }} />
         </div>
