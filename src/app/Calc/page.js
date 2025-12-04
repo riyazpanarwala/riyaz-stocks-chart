@@ -17,12 +17,6 @@ const FIELD_LABELS = {
     profitAmount: "Profit Amount",
 };
 
-const SUGGESTIONS = {
-    entryPrice: [100, 250, 500],
-    slPercent: [0.5, 1, 2, 5],
-    targetPercent: [0.5, 1, 2, 5],
-};
-
 const EPS = 1e-9;
 
 export default function CalcPage() {
@@ -52,6 +46,7 @@ export default function CalcPage() {
                     "quantity",
                     "riskAmount",
                     "profitAmount",
+                    "targetPercent",
                 ].includes(field) &&
                 numVal < 0
             ) {
@@ -59,7 +54,7 @@ export default function CalcPage() {
                 return;
             }
             if (
-                ["slPercent", "targetPercent"].includes(field) &&
+                ["slPercent"].includes(field) &&
                 (numVal < 0 || numVal > 100)
             ) {
                 setErrors(prev => ({
@@ -296,19 +291,6 @@ export default function CalcPage() {
                             />
                             {errors[key] && (
                                 <span className={styles.errorText}>{errors[key]}</span>
-                            )}
-                            {SUGGESTIONS[key] && (
-                                <div className={styles.suggestionRow}>
-                                    {SUGGESTIONS[key].map((s) => (
-                                        <button
-                                            key={s}
-                                            className={styles.suggestion}
-                                            onClick={() => setInput(key, String(s))}
-                                        >
-                                            {s}
-                                        </button>
-                                    ))}
-                                </div>
                             )}
                         </div>
                     );
