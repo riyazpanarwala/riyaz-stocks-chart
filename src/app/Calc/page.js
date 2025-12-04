@@ -18,7 +18,7 @@ const FIELD_LABELS = {
 };
 
 const SUGGESTIONS = {
-    entryPrice: [100, 250, 500, 1000],
+    entryPrice: [100, 250, 500],
     slPercent: [0.5, 1, 2, 5],
     targetPercent: [0.5, 1, 2, 5],
 };
@@ -334,23 +334,6 @@ export default function CalcPage() {
                     </div>
                 </div>
             </div>
-
-            {/*
-            <div className={styles.results}>
-                <h3>Computed Values</h3>
-                <div className={styles.resultsGrid}>
-                    {Object.keys(FIELD_LABELS).map((k) => (
-                        <div key={k} className={styles.resultItem}>
-                            <div className={styles.rLabel}>{FIELD_LABELS[k]}</div>
-                            <div className={styles.rValue}>
-                                {vals[k] !== "" ? vals[k] : "-"}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-            */}
-
             <div style={{ height: 40 }} />
         </div>
     );
