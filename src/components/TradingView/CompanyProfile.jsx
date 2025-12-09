@@ -2,10 +2,10 @@
 import React, { useEffect } from "react";
 
 export default function CompanyProfile({ symbol = "BSE:TCS" }) {
-  const container = document.getElementById("tradingview-company-profile");
-  if (!container) return;
-
   useEffect(() => {
+    const container = document.getElementById("tradingview-company-profile");
+    if (!container) return;
+
     const script = document.createElement("script");
     script.src =
       "https://s3.tradingview.com/external-embedding/embed-widget-symbol-profile.js";
@@ -18,7 +18,7 @@ export default function CompanyProfile({ symbol = "BSE:TCS" }) {
       isTransparent: true,
       locale: "en",
     });
-    
+
     container.appendChild(script);
     return () => {
       container.innerHTML = "";
