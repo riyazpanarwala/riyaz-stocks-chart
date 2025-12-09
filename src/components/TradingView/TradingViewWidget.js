@@ -4,18 +4,44 @@ import React, { useEffect } from "react";
 
 const TradingViewWidget = () => {
   useEffect(() => {
-    // Check if the TradingView script is already added to avoid duplicates
-    if (!document.getElementById("tradingview-widget-script")) {
+    const containerId = "tradingview-widget-container";
+    const scriptId = "tradingview-widget-script";
+
+    // Avoid duplicates
+    if (!document.getElementById(scriptId)) {
       const script = document.createElement("script");
-      script.id = "tradingview-widget-script";
+      script.id = scriptId;
       script.src = "https://s3.tradingview.com/tv.js";
       script.async = true;
-      document.body.appendChild(script);
 
       script.onload = () => {
-        // Initialize the widget after the script is loaded
+        if (window.TradingView) {
+          new window.TradingView.widget({
+            container_id: containerId,
+            width: "100%",
+            height: "500",
+            symbol: "NSE:TCS", // default symbol
+            interval: "D", // Time interval (e.g., 'D', '1W', '1M')
+            timezone: "Asia/Kolkata",
+            theme: "light", // Options: 'light' or 'dark'
+            style: "1", // Chart style
+            locale: "en",
+            toolbar_bg: "#f1f3f6",
+            enable_publishing: false,
+            allow_symbol_change: true,
+            details: true,
+            hotlist: true,
+            calendar: true,
+          });
+        }
+      };
+
+      document.body.appendChild(script);
+    } else {
+      // If script is already loaded, just reinitialize widget
+      if (window.TradingView) {
         new window.TradingView.widget({
-          container_id: "tradingview-widget-container",
+          container_id: containerId,
           width: "100%",
           height: "500",
           symbol: "NSE:TCS", // Default symbol
@@ -31,8 +57,14 @@ const TradingViewWidget = () => {
           hotlist: true,
           calendar: true,
         });
-      };
+      }
     }
+
+    // Optional cleanup: remove the widget on unmount
+    return () => {
+      const container = document.getElementById(containerId);
+      if (container) container.innerHTML = "";
+    };
   }, []);
 
   return (

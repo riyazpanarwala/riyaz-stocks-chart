@@ -66,7 +66,7 @@ export const getIntradayDataForCurrentDay = async (
   indexName,
   cmpnyObj
 ) => {
-  const lastCandleDate = candles[candles.length - 1]?.date.split(" ")[0];
+  const lastCandleDate = candles[candles.length - 1]?.date?.split(" ")[0];
   const currentDateIst = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
   }).format(new Date());
@@ -174,7 +174,7 @@ export const fetchHistoricData = async (
         apiInterval
       );
       let { dataArr, timeArr } = getCandleArr(arr, isEchart);
-      if (intervalVal === "days" && hasOpened()) {
+      if (intervalVal === "days" && hasOpened() && !isEchart) {
         dataArr = await getIntradayDataForCurrentDay(
           dataArr,
           indexName,
