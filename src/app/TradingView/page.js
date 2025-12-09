@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import TickerTape from "../../components/TradingView/TickerTape";
 import SymbolInfo from "../../components/TradingView/SymbolInfo";
 import AdvancedChart from "../../components/TradingView/AdvancedChart";
@@ -11,6 +11,14 @@ import TopStories from "../../components/TradingView/TopStories";
 
 export default function StocksPage() {
   const [symbol, setSymbol] = useState("BSE:TCS");
+  const [inputValue, setInputValue] = useState("BSE:TCS");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSymbol(inputValue);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", color: "#000" }}>
@@ -35,8 +43,8 @@ export default function StocksPage() {
         <input
           type="search"
           placeholder="Enter symbol (e.g. BSE:RELIANCE)"
-          value={symbol}
-          onChange={(e) => setSymbol(e.target.value)}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           style={{
             padding: "8px 16px",
             width: 300,

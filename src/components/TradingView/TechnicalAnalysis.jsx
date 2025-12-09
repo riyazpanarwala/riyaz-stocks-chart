@@ -3,6 +3,9 @@ import React, { useEffect } from "react";
 
 export default function TechnicalAnalysis({ symbol = "BSE:TCS" }) {
   useEffect(() => {
+    const container = document.getElementById("tradingview-technical");
+    if (!container) return;
+
     const script = document.createElement("script");
     script.src =
       "https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js";
@@ -18,7 +21,11 @@ export default function TechnicalAnalysis({ symbol = "BSE:TCS" }) {
       locale: "en",
       colorTheme: "light",
     });
-    document.getElementById("tradingview-technical").appendChild(script);
+   
+    container.appendChild(script);
+    return () => {
+      container.innerHTML = "";
+    };
   }, [symbol]);
 
   return <div id="tradingview-technical" style={{ height: 425, width: "100%" }} />;

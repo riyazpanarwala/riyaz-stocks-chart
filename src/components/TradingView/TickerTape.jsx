@@ -3,6 +3,9 @@ import React, { useEffect } from "react";
 
 export default function TickerTape() {
   useEffect(() => {
+    const container = document.getElementById("tradingview-ticker-tape");
+    if (!container) return;
+
     const script = document.createElement("script");
     script.src =
       "https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js";
@@ -21,7 +24,11 @@ export default function TickerTape() {
       displayMode: "adaptive",
       locale: "en",
     });
-    document.getElementById("tradingview-ticker-tape").appendChild(script);
+   
+    container.appendChild(script);
+    return () => {
+      container.innerHTML = "";
+    };
   }, []);
 
   return (

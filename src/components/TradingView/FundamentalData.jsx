@@ -3,6 +3,9 @@ import React, { useEffect } from "react";
 
 export default function FundamentalData({ symbol = "BSE:TCS" }) {
   useEffect(() => {
+    const container = document.getElementById("tradingview-fundamentals");
+    if (!container) return;
+
     const script = document.createElement("script");
     script.src =
       "https://s3.tradingview.com/external-embedding/embed-widget-financials.js";
@@ -16,7 +19,11 @@ export default function FundamentalData({ symbol = "BSE:TCS" }) {
       height: "100%",
       locale: "en",
     });
-    document.getElementById("tradingview-fundamentals").appendChild(script);
+    
+    container.appendChild(script);
+    return () => {
+      container.innerHTML = "";
+    };
   }, [symbol]);
 
   return <div id="tradingview-fundamentals" style={{ height: 490, width: "100%" }} />;

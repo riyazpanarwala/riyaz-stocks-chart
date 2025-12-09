@@ -3,6 +3,9 @@ import React, { useEffect } from "react";
 
 export default function TopStories({ symbol = "BSE:TCS" }) {
   useEffect(() => {
+    const container = document.getElementById("tradingview-top-stories");
+    if (!container) return;
+
     const script = document.createElement("script");
     script.src =
       "https://s3.tradingview.com/external-embedding/embed-widget-timeline.js";
@@ -17,7 +20,11 @@ export default function TopStories({ symbol = "BSE:TCS" }) {
       height: "100%",
       locale: "en",
     });
-    document.getElementById("tradingview-top-stories").appendChild(script);
+    
+    container.appendChild(script);
+    return () => {
+      container.innerHTML = "";
+    };
   }, [symbol]);
 
   return <div id="tradingview-top-stories" style={{ height: 425, width: "100%" }} />;
