@@ -62,7 +62,8 @@ const TradingViewWidget = () => {
         const container = document.getElementById(containerId);
         if (container) container.innerHTML = "";
       };
-    }, []);
+    }
+  }, []);
 
   return (
     <div
