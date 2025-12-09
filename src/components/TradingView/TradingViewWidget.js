@@ -7,6 +7,24 @@ const TradingViewWidget = () => {
     const containerId = "tradingview-widget-container";
     const scriptId = "tradingview-widget-script";
 
+    const widgetConfig = {
+      container_id: containerId,
+      width: "100%",
+      height: "500",
+      symbol: "NSE:TCS", // default symbol
+      interval: "D", // Time interval (e.g., 'D', '1W', '1M')
+      timezone: "Asia/Kolkata",
+      theme: "light", // Options: 'light' or 'dark'
+      style: "1", // Chart style
+      locale: "en",
+      toolbar_bg: "#f1f3f6",
+      enable_publishing: false,
+      allow_symbol_change: true,
+      details: true,
+      hotlist: true,
+      calendar: true,
+    };
+
     // Avoid duplicates
     if (!document.getElementById(scriptId)) {
       const script = document.createElement("script");
@@ -15,24 +33,9 @@ const TradingViewWidget = () => {
       script.async = true;
 
       script.onload = () => {
-        if (window.TradingView) {
-          new window.TradingView.widget({
-            container_id: containerId,
-            width: "100%",
-            height: "500",
-            symbol: "NSE:TCS", // default symbol
-            interval: "D", // Time interval (e.g., 'D', '1W', '1M')
-            timezone: "Asia/Kolkata",
-            theme: "light", // Options: 'light' or 'dark'
-            style: "1", // Chart style
-            locale: "en",
-            toolbar_bg: "#f1f3f6",
-            enable_publishing: false,
-            allow_symbol_change: true,
-            details: true,
-            hotlist: true,
-            calendar: true,
-          });
+        const container = document.getElementById(containerId);
+        if (window.TradingView && container) {
+          new window.TradingView.widget(widgetConfig);
         }
       };
 
@@ -40,23 +43,7 @@ const TradingViewWidget = () => {
     } else {
       // If script is already loaded, just reinitialize widget
       if (window.TradingView) {
-        new window.TradingView.widget({
-          container_id: containerId,
-          width: "100%",
-          height: "500",
-          symbol: "NSE:TCS", // Default symbol
-          interval: "D", // Time interval (e.g., 'D', '1W', '1M')
-          timezone: "Asia/Kolkata",
-          theme: "light", // Options: 'light' or 'dark'
-          style: "1", // Chart style
-          locale: "en",
-          toolbar_bg: "#f1f3f6",
-          enable_publishing: false,
-          allow_symbol_change: true,
-          details: true,
-          hotlist: true,
-          calendar: true,
-        });
+        new window.TradingView.widget(widgetConfig);
       }
     }
 
