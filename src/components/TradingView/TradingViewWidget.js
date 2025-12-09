@@ -42,17 +42,27 @@ const TradingViewWidget = () => {
       document.body.appendChild(script);
     } else {
       // If script is already loaded, just reinitialize widget
-      if (window.TradingView) {
-        new window.TradingView.widget(widgetConfig);
-      }
-    }
-
-    // Optional cleanup: remove the widget on unmount
-    return () => {
       const container = document.getElementById(containerId);
-      if (container) container.innerHTML = "";
-    };
-  }, []);
+      if (window.TradingView && container) {
+        new window.TradingView.widget(widgetConfig);
+      } else if (!window.TradingView) {
+        // Script element exists but hasn't loaded yet; wait for load event
+        const existingScript = document.getElementById(scriptId);
+        if (existingScript && container) {
+          existingScript.addEventListener('load', () => {
+            if (window.TradingView) {
+              new window.TradingView.widget(widgetConfig);
+            }
+          }, { once: true });
+        }
+      }
+
+      // Optional cleanup: remove the widget on unmount
+      return () => {
+        const container = document.getElementById(containerId);
+        if (container) container.innerHTML = "";
+      };
+    }, []);
 
   return (
     <div
