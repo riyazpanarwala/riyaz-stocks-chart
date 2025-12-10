@@ -20,6 +20,16 @@ export default function AdvancedChart({ symbol = "BSE:TCS" }) {
       locale: "en",
       allow_symbol_change: true,
       support_host: "https://www.tradingview.com",
+      studies: [
+        "MASimple@tv-basicstudies",       // simple MA
+        "RSI@tv-basicstudies",            // RSI
+        "MACD@tv-basicstudies",           // MACD
+        "BB@tv-basicstudies",
+        "STD;MA%1Cross",
+        // "STD;Divergence%1Indicator",
+        "Volume@tv-basicstudies",
+        // "STD;Price%1Target"
+      ],
     });
     
     container.appendChild(script);
@@ -28,5 +38,5 @@ export default function AdvancedChart({ symbol = "BSE:TCS" }) {
     };
   }, [symbol]);
 
-  return <div id="tradingview-advanced-chart" style={{ height: 500, width: "100%" }} />;
+  return <div id="tradingview-advanced-chart" style={{ height: 700, width: "100%" }} />;
 }

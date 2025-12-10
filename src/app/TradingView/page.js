@@ -10,8 +10,8 @@ import TechnicalAnalysis from "../../components/TradingView/TechnicalAnalysis";
 import TopStories from "../../components/TradingView/TopStories";
 
 export default function StocksPage() {
-  const [symbol, setSymbol] = useState("BSE:TCS");
-  const [inputValue, setInputValue] = useState("BSE:TCS");
+  const [symbol, setSymbol] = useState("BSE:JPPOWER");
+  const [inputValue, setInputValue] = useState("BSE:JPPOWER");
 
   useEffect(() => {
     const timer = setTimeout(() => {
