@@ -50,7 +50,9 @@ export default function CalcPage() {
                 ].includes(field) &&
                 numVal < 0
             ) {
-                setErrors(prev => ({ ...prev, [field]: "Value cannot be negative" }));
+                const newVals = { ...vals, [field]: "" };
+                setVals(newVals);
+                setErrors(prev => ({ ...prev, [field]: null }));
                 return;
             }
             if (
