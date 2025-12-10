@@ -37,7 +37,15 @@ export default function ForexHeatMap({ theme = "light" }) {
             backgroundColor: theme === "dark" ? "#0F0F0F" : "#FFFFFF",
         });
 
-        container.current.appendChild(script);
+        if (container.current) {
+            container.current.appendChild(script);
+        }
+
+        return () => {
+            if (container.current) {
+                container.current.innerHTML = "";
+            }
+        };
     }, [theme]);
 
     return (
