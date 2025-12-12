@@ -19,17 +19,17 @@
     "d3-time-format": "^4.1.0",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.5",
-    "fast-xml-parser": "^5.3.2",
+    "fast-xml-parser": "^5.3.3",
     "file-saver": "^2.0.5",
-    "next": "^16.0.7",
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1",
+    "next": "^16.0.10",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "react-full-screen": "^1.1.1",
     "react-icons": "^5.5.0",
     "react-papaparse": "^4.4.0",
     "react-select": "^5.10.2",
     "react-window": "^1.8.11",
-    "sass": "^1.94.2",
+    "sass": "^1.96.0",
     "stock-nse-india": "^1.2.2",
     "technicalindicators": "^3.1.0",
     "yahoo-finance2": "^3.10.2"
@@ -37,10 +37,10 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "eslint": "^9.39.1",
-    "eslint-config-next": "^16.0.7"
+    "eslint-config-next": "^16.0.10"
   },
   "engines": {
-    "node": "22.20.0",
-    "npm": "10.9.3"
+    "node": "24.11.1",
+    "npm": "11.6.2"
   }
 }
