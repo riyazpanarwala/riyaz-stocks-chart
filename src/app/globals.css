@@ -133,6 +133,10 @@ a {
   display: none;
 }
 
+.seo-content {
+  display: none;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .mainChart {

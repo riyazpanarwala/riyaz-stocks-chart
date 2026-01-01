@@ -20,6 +20,15 @@ export const metadata = {
   title: "Riyaz - Indian Stock Market Chart",
   description:
     "Indian Stock market chart view and analysis with tools, indicators, patterns",
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  }
 };
 
 export default function RootLayout({ children }) {
