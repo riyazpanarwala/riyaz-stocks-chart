@@ -32,9 +32,9 @@ const Sidebar = ({
   isAngleEnabled,
   handleEMAangleClick,
   breakoutName,
-  hangleBreakoutClick,
+  handleBreakoutClick,
   patternName,
-  hanglePatternClick,
+  handlePatternClick,
   handleWatchListClick,
   companyObj,
 }) => {
@@ -167,9 +167,8 @@ const Sidebar = ({
           <span>Text</span>
         </div>
         <div
-          className={`${styles.button} ${
-            measurementEnable ? styles.active : ""
-          }`}
+          className={`${styles.button} ${measurementEnable ? styles.active : ""
+            }`}
           onClick={(e) => {
             closeSidebar();
             handleMeasurementClick(e);
@@ -216,9 +215,8 @@ const Sidebar = ({
         />
         {indicatorName === "ema" ? (
           <div
-            className={`${styles.button} ${
-              isAngleEnabled ? styles.active : ""
-            }`}
+            className={`${styles.button} ${isAngleEnabled ? styles.active : ""
+              }`}
             onClick={(e) => {
               closeSidebar();
               handleEMAangleClick(e);
@@ -263,7 +261,7 @@ const Sidebar = ({
           }}
           onClick={(e, id) => {
             closeSidebar();
-            hangleBreakoutClick(id);
+            handleBreakoutClick(id);
           }}
         />
         <TooltipSubMenu
@@ -275,7 +273,7 @@ const Sidebar = ({
           }}
           onClick={(e, id) => {
             closeSidebar();
-            hanglePatternClick(id);
+            handlePatternClick(id);
           }}
         />
       </div>
