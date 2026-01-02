@@ -17,9 +17,10 @@ const geistMono = localFont({
 });
 
 export const metadata = {
-  title: "Riyaz - Indian Stock Market Chart",
+  title: "Riyaz | Live NSE & BSE Stock Charts",
   description:
-    "Indian Stock market chart view and analysis with tools, indicators, patterns",
+    "Analyze Indian stocks with live NSE & BSE candlestick charts and technical indicators.",
+  type: "website",
 
   robots: {
     index: true,

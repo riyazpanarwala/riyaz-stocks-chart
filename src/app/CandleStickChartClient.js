@@ -171,7 +171,14 @@ const CandleStickChart = () => {
   }, [companyObj]);
 
   if (!companyArr.length) {
-    return "please wait";
+    return <section className="page-intro">
+      <h1>Live NSE & BSE Candlestick Charts</h1>
+      <p>
+        Analyze Indian stocks using candlestick charts with RSI, MACD,
+        moving averages, breakout patterns, and trendlines.
+        Supports both intraday and historical market data.
+      </p>
+    </section>;
   }
 
   let periodArr = [];
