@@ -20,7 +20,6 @@ export const metadata = {
   title: "Riyaz | Live NSE & BSE Stock Charts",
   description:
     "Analyze Indian stocks with live NSE & BSE candlestick charts and technical indicators.",
-  type: "website",
 
   robots: {
     index: true,

@@ -65,12 +65,12 @@ const CandleStickChart = () => {
     handleCompanyChange(obj);
   };
 
-  const hanglePatternClick = (id) => {
+  const handlePatternClick = (id) => {
     disableAllTools();
     setPatternName(id);
   };
 
-  const hangleBreakoutClick = (id) => {
+  const handleBreakoutClick = (id) => {
     disableAllTools();
     setBreakoutName(id);
   };
@@ -230,9 +230,9 @@ const CandleStickChart = () => {
           isAngleEnabled={isAngleEnabled}
           handleEMAangleClick={handleEMAangleClick}
           breakoutName={breakoutName}
-          hangleBreakoutClick={hangleBreakoutClick}
+          handleBreakoutClick={handleBreakoutClick}
           patternName={patternName}
-          hanglePatternClick={hanglePatternClick}
+          handlePatternClick={handlePatternClick}
           handleWatchListClick={handleWatchListClick}
           companyObj={companyObj}
         />
