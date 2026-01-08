@@ -39,6 +39,23 @@ const bseIndicesArr = [
   { name: "SENSEX", value: "SENSEX", symbol: "SENSEX", yahooSymbol: "^BSESN" },
 ];
 
+const etfArr = [
+  {
+    label: "Tata Silver ETF",
+    value: "INF277KA1984",
+    symbol: "TATSILV",
+    nse: true,
+    bse: false,
+  },
+  {
+    label: "Nippon India Silver ETF (SILVERBEES)",
+    value: "INF204KC1402",
+    symbol: "SILVERBEES",
+    nse: true,
+    bse: false,
+  },
+];
+
 const useParseCsv = () => {
   const [nseData, setNseData] = useState([]);
   const [bseData, setBseData] = useState([]);
@@ -109,6 +126,10 @@ const useParseCsv = () => {
       };
 
       merged.push(obj);
+    });
+
+    etfArr.forEach((etf) => {
+      merged.push(etf);
     });
 
     return merged;
