@@ -111,6 +111,22 @@ const useParseCsv = () => {
       merged.push(obj);
     });
 
+    merged.push({
+      label: "Tata Silver ETF",
+      value: "INF277KA1984",
+      symbol: "TATSILV",
+      nse: true,
+      bse: false,
+    });
+
+    merged.push({
+      label: "Nippon India Silver ETF (SILVERBEES)",
+      value: "INF204KC1402",
+      symbol: "SILVERBEES",
+      nse: true,
+      bse: false,
+    });
+
     return merged;
   };
 
