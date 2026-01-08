@@ -9,14 +9,27 @@ export const metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
   },
+};
+
+const headerStyle = {
+  padding: '5px',
+  textAlign: 'center',
+};
+
+const h1Style = {
+  fontSize: '20px',
 };
 
 export default function Page() {
   return (
     <main>
-      <section style={{ padding: '5px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '20px' }}>Indian Stock Market Live Charts</h1>
+      <section style={headerStyle}>
+        <h1 style={h1Style}>Indian Stock Market Live Charts</h1>
       </section>
       <CandleStickChartClient />
     </main>
