@@ -63,7 +63,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    padding: "20px",
+    padding: "10px",
     backgroundColor: "#f5f5f5",
     borderBottom: "2px solid #ddd",
   },
