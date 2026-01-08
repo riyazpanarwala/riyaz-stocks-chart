@@ -6,6 +6,10 @@ export const metadata = {
   title: "Live NSE & BSE Stock Candlestick Charts | Riyaz Stocks",
   description: "Free interactive candlestick charts for Indian stocks. Analyze NSE/BSE data with RSI, MACD, and technical indicators.",
   keywords: ["NSE", "BSE", "Stock Charts", "Candlestick", "Technical Analysis"],
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function Page() {
