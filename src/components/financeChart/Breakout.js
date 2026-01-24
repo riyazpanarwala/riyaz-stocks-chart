@@ -5,6 +5,7 @@ import {
   supportResistanceBreakout,
   calculateBuySellBreakouts,
 } from "./indicator";
+import { calculateChandelierExit } from "../Chandelier/CEanalysis";
 
 const Breakout = ({ patternName, data, isIntraday }) => {
   const [dataArr, setDataArr] = useState([]);
@@ -17,6 +18,13 @@ const Breakout = ({ patternName, data, isIntraday }) => {
     } else if (patternName === "buysell") {
       const { breakoutsArr } = calculateBuySellBreakouts(data);
       setDataArr(breakoutsArr);
+    } else if (patternName === "CE") {
+      const ceData = calculateChandelierExit(
+        data,
+        22, // lookback
+        3 // ATR multiplier
+      );
+      setDataArr(ceData);
     } else {
       setDataArr([]);
     }

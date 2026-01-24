@@ -97,6 +97,11 @@ const Sidebar = ({
 
   const breakoutsArr = [
     {
+      id: "CE",
+      name: "Chandelier Exit",
+      isActive: breakoutName === "CE",
+    },
+    {
       id: "buysell",
       name: "Buy and Sell(20) (Not ready)",
       isActive: breakoutName === "buysell",
@@ -167,8 +172,9 @@ const Sidebar = ({
           <span>Text</span>
         </div>
         <div
-          className={`${styles.button} ${measurementEnable ? styles.active : ""
-            }`}
+          className={`${styles.button} ${
+            measurementEnable ? styles.active : ""
+          }`}
           onClick={(e) => {
             closeSidebar();
             handleMeasurementClick(e);
@@ -215,8 +221,9 @@ const Sidebar = ({
         />
         {indicatorName === "ema" ? (
           <div
-            className={`${styles.button} ${isAngleEnabled ? styles.active : ""
-              }`}
+            className={`${styles.button} ${
+              isAngleEnabled ? styles.active : ""
+            }`}
             onClick={(e) => {
               closeSidebar();
               handleEMAangleClick(e);
