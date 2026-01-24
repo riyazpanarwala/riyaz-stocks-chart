@@ -24,7 +24,7 @@ const Breakout = ({ patternName, data, isIntraday }) => {
         22, // lookback
         3 // ATR multiplier
       );
-      setDataArr(ceData);
+      setDataArr(ceData.filter((d) => d.signal !== null)); // Only keep points with signals
     } else {
       setDataArr([]);
     }
