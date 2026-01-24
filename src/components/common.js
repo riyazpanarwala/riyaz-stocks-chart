@@ -7,7 +7,6 @@ import {
   // getNSEData,
 } from "./getIntervalData";
 import isYFinanceEnable from "./utils/isYFinanceEnable";
-import { calculateChandelierExit } from "./Chandelier/CEanalysis";
 
 export const getDataFromIntraday = (intradayData) => {
   const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
@@ -187,18 +186,6 @@ export const fetchHistoricData = async (
       times = timeArr;
     }
   }
-
-  const ceData = calculateChandelierExit(
-    candleArr,
-    22,   // lookback
-    3     // ATR multiplier
-  );
-  // Latest CE value
-  const last = ceData[ceData.length - 1];
-  console.log("CE:", last.ce, "Trend:", last.trend, "Signal:", last.signal, "at", last.date);
-  // When will be the last trade signal change?
-  const lastTradeSignalChange = ceData.findLast((item) => item.signal !== null);
-  console.log("Last trade signal change:", lastTradeSignalChange);
 
   return {
     candles: candleArr,

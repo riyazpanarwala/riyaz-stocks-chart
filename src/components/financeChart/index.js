@@ -52,8 +52,8 @@ import IndicatorChart from "./IndicatorChart";
 import STOChart from "./STOChart";
 import BolingerChart from "./BolingerChart";
 import MACrossOverChart from "./MACrossOverChart";
-import technicalAnalysis from '../technical-analysis/index.js';
-const { analyzeMarketStructure } = technicalAnalysis
+import technicalAnalysis from "../technical-analysis/index.js";
+const { analyzeMarketStructure } = technicalAnalysis;
 
 const indicatorYExtentsObj = {
   sma: (d) => [d.high, d.low],
@@ -117,16 +117,16 @@ const FinanceChart = ({
     ma1,
     ma2,
   } = useData(initialData, indicatorName, isIntraday);
-  const ScaleProvider = discontinuousTimeScaleProviderBuilder().inputDateAccessor(
-    (d) => new Date(d.date)
-  );
+  const ScaleProvider =
+    discontinuousTimeScaleProviderBuilder().inputDateAccessor(
+      (d) => new Date(d.date)
+    );
 
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
   let interactiveNodes = {};
 
-  const { data, xScale, xAccessor, displayXAccessor } = ScaleProvider(
-    calculatedData
-  );
+  const { data, xScale, xAccessor, displayXAccessor } =
+    ScaleProvider(calculatedData);
   const pricesDisplayFormat = format(".2f");
   const max = xAccessor(data[data.length - 1]);
   let min = 0;
