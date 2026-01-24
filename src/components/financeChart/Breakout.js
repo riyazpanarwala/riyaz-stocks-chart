@@ -24,19 +24,7 @@ const Breakout = ({ patternName, data, isIntraday }) => {
         22, // lookback
         3 // ATR multiplier
       );
-      // Latest CE value
-      const last = ceData[ceData.length - 1];
-      console.log(
-        "CE:",
-        last.ce,
-        "Trend:",
-        last.trend,
-        "Signal:",
-        last.signal,
-        "at",
-        last.date
-      );
-      setDataArr(ceData.filter((item) => item.signal !== null));
+      setDataArr(ceData);
     } else {
       setDataArr([]);
     }
