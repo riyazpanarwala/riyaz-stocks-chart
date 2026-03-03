@@ -6,7 +6,6 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
     "stockAnalysis": "node --experimental-specifier-resolution=node src/components/StockAnalysis/index.js"
   },
   "dependencies": {
@@ -36,7 +35,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.4",
-    "baseline-browser-mapping": "^2.10.0",
     "eslint": "^9.39.3",
     "eslint-config-next": "^16.1.6"
   },
