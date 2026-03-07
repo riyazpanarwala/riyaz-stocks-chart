@@ -11,10 +11,11 @@ import {
   Legend,
 } from "recharts";
 
-const OIChart = ({ data, meta, showChange }) => {
+const OIChart = ({ data = [], meta = {}, showChange }) => {
+  if (!data.length) return null;
+
   const chartData = data.map((d) => ({
     strike: d.strike,
-
     put: showChange ? d.putChange : d.putOI,
     call: showChange ? d.callChange : d.callOI,
   }));
@@ -23,12 +24,13 @@ const OIChart = ({ data, meta, showChange }) => {
     <div
       style={{
         height: 420,
+        width: "100%",
         background: "#111827",
         padding: 10,
         borderRadius: 12,
       }}
     >
-      <ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="400">
         <BarChart data={chartData}>
           <CartesianGrid stroke="#222" />
 
