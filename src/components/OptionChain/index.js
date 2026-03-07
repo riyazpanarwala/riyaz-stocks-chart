@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
-import OptionChainTable from "./OptionChainTable";
-import SummaryCard from "./SummaryCard";
 import Modal from "../TechnicalInfo/Modal";
 import { getNSEData } from "../getIntervalData";
 import foMapData from "../utils/FOmap.js";
-
-import "./index.css";
+import OptionDashboard from "./OptionDashboard";
 
 const App = ({ companyObj, indexObj, onClose }) => {
   const [optionChainData, setOptionChainData] = useState({});
@@ -48,37 +45,16 @@ const App = ({ companyObj, indexObj, onClose }) => {
   return (
     <div className="container">
       <Modal isOpen={true} onClose={onClose}>
+        <h1 className="title">Option Chain - {companyObj.label}</h1>
         {optionChainData.records ? (
           <>
-            <h1 className="title">Option Chain - {companyObj.label}</h1>
             <h5 className="subtitle">
               Underlying Value: {optionChainData.records.underlyingValue} |
               Timestamp: {optionChainData.records.timestamp}
             </h5>
-
-            <SummaryCard
-              ceData={optionChainData.filtered?.CE}
-              peData={optionChainData.filtered?.PE}
-            />
-
-            <ul className="tabs">
-              {optionChainData.records.expiryDates.map((date) => (
-                <li key={date}>
-                  <button
-                    className={`tab-button ${
-                      selectedExpiry === date ? "active" : ""
-                    }`}
-                    onClick={() => setSelectedExpiry(date)}
-                  >
-                    {date}
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            <OptionChainTable
-              data={optionChainData}
-              expiryDate={selectedExpiry}
+            <OptionDashboard
+              optionChainData={optionChainData}
+              selectedExpiry={selectedExpiry}
             />
           </>
         ) : isFOFetching ? (
