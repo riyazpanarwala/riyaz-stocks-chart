@@ -39,13 +39,23 @@ export const processOptionData = (json) => {
 
   const PCR = totalPut / totalCall;
 
-  const resistance = [...formatted]
-    .sort((a, b) => b.callOI - a.callOI)
+  // consider strikes near ATM
+  const range = 10; // number of strikes around ATM
+
+  const nearStrikes = formatted
+    .sort((a, b) => a.strike - b.strike)
+    .filter((d) => Math.abs(d.strike - spot) <= range * 50);
+  // 50 for NIFTY strike step
+
+  // Resistance (Call writers)
+  const resistance = [...nearStrikes]
+    .sort((a, b) => b.callOI + b.callChange - (a.callOI + a.callChange))
     .slice(0, 2)
     .map((d) => d.strike);
 
-  const support = [...formatted]
-    .sort((a, b) => b.putOI - a.putOI)
+  // Support (Put writers)
+  const support = [...nearStrikes]
+    .sort((a, b) => b.putOI + b.putChange - (a.putOI + a.putChange))
     .slice(0, 2)
     .map((d) => d.strike);
 
