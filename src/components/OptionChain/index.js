@@ -3,6 +3,7 @@ import Modal from "../TechnicalInfo/Modal";
 import { getNSEData } from "../getIntervalData";
 import foMapData from "../utils/FOmap.js";
 import OptionDashboard from "./OptionDashboard";
+import { transformData } from "./utils/transformData";
 
 const App = ({ companyObj, indexObj, onClose }) => {
   const [optionChainData, setOptionChainData] = useState({});
@@ -24,7 +25,10 @@ const App = ({ companyObj, indexObj, onClose }) => {
     try {
       setIsFOFetching(true);
       const { apiName, symbol } = mapApiParams();
-      const data = await getNSEData(apiName, symbol);
+      let data = await getNSEData(apiName, symbol);
+      if (apiName === "optionChain") {
+        data = transformData(data);
+      }
       setOptionChainData(data);
       if (data.records) {
         setSelectedExpiry(data.records.expiryDates[0]);
