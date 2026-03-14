@@ -4,8 +4,6 @@ import OIChart from "./components/OIChart";
 import ExpirySelector from "./components/ExpirySelector";
 import StrikeSlider from "./components/StrikeSlider";
 import MarketSummary from "./components/MarketSummary";
-import SignalPanel from "./components/SignalPanel";
-import ProbabilityPanel from "./components/ProbabilityPanel";
 
 import { processOptionData } from "./utils/optionAnalytics";
 import { calculateSignal } from "./utils/intradaySignal";
@@ -19,15 +17,28 @@ const OptionDashboard = ({ optionChainData }) => {
   const [selectedExpiry, setSelectedExpiry] = useState(null);
   const [strikeRange, setStrikeRange] = useState(5);
 
-  const meta = useMemo(
-    () => processOptionData(optionChainData),
-    [optionChainData],
-  );
+  const meta = useMemo(() => {
+    const rows = optionChainData?.records?.data;
+    return Array.isArray(rows) && rows.length
+      ? processOptionData(optionChainData)
+      : {
+          data: [],
+          expiries: [],
+          atmStrike: null,
+          spot: null,
+          PCR: 0,
+          resistance: [],
+          support: [],
+          buildUpData: [],
+          step: 50,
+        };
+  }, [optionChainData]);
   const data = meta.data || [];
   const strikeStep = meta.step || 50;
 
   useEffect(() => {
-    if (meta.expiries?.length) {
+    if (!meta.expiries?.length) return;
+    if (!selectedExpiry || !meta.expiries.includes(selectedExpiry)) {
       setSelectedExpiry(meta.expiries[0]);
     }
   }, [meta.expiries, selectedExpiry]);
@@ -66,15 +77,13 @@ const OptionDashboard = ({ optionChainData }) => {
         </div>
 
         <div className="card">
-          <MarketSummary meta={meta} />
-          <SignalPanel
+          <MarketSummary
+            meta={meta}
             signal={analytics?.sig}
-            targets={analytics?.tgt}
             smartMoney={analytics?.sm}
+            probability={analytics?.prob}
           />
-          <ProbabilityPanel probability={analytics?.prob} />
         </div>
-
         <div>
           <OIChart data={filtered} meta={meta} />
         </div>
