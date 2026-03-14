@@ -1,6 +1,6 @@
 const MarketSummary = ({ meta }) => {
   const sentiment =
-    meta.PCR > 1 ? "Bullish" : meta.PCR < 0.9 ? "Bearish" : "Neutral";
+    meta.PCR > 1 ? "Bullish" : meta.PCR < 0.8 ? "Bearish" : "Neutral";
 
   return (
     <div className="summary-grid">
