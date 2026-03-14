@@ -33,6 +33,8 @@ export async function POST(req) {
       data = await nseIndia.getIndexHistoricalData(symbol, range);
     } else if (apiName === "optionChain") {
       data = await nseIndia.getEquityOptionChain(symbol);
+    } else if (apiName === "indicators") {
+      data = await nseIndia.getTechnicalIndicators(symbol);
     }
 
     return NextResponse.json(data, { status: 200 });
@@ -41,7 +43,7 @@ export async function POST(req) {
     console.error("Error processing request:", error);
     return NextResponse.json(
       { error: "Failed to process request" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

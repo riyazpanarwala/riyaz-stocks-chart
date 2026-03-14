@@ -1,3 +1,5 @@
+import { detectStrikeStep } from "./strikeUtils";
+
 export const processOptionData = (json) => {
   const spot = json.records.underlyingValue;
   const rows = json.records.data;
@@ -36,26 +38,35 @@ export const processOptionData = (json) => {
 
   const totalCall = formatted.reduce((a, b) => a + b.callOI, 0);
   const totalPut = formatted.reduce((a, b) => a + b.putOI, 0);
-
-  const PCR = totalPut / totalCall;
+  const PCR = totalCall > 0 ? totalPut / totalCall : 0;
 
   // consider strikes near ATM
   const range = 10; // number of strikes around ATM
+  const step = detectStrikeStep(formatted);
 
   const nearStrikes = formatted
     .sort((a, b) => a.strike - b.strike)
-    .filter((d) => Math.abs(d.strike - spot) <= range * 50);
-  // 50 for NIFTY strike step
+    .filter((d) => Math.abs(d.strike - spot) <= range * step);
 
   // Resistance (Call writers)
   const resistance = [...nearStrikes]
-    .sort((a, b) => b.callOI + b.callChange - (a.callOI + a.callChange))
+    .sort((a, b) => {
+      const aScore = a.callOI + Math.max(a.callChange, 0);
+      const bScore = b.callOI + Math.max(b.callChange, 0);
+
+      return bScore - aScore;
+    })
     .slice(0, 2)
     .map((d) => d.strike);
 
   // Support (Put writers)
   const support = [...nearStrikes]
-    .sort((a, b) => b.putOI + b.putChange - (a.putOI + a.putChange))
+    .sort((a, b) => {
+      const aScore = a.putOI + Math.max(a.putChange, 0);
+      const bScore = b.putOI + Math.max(b.putChange, 0);
+
+      return bScore - aScore;
+    })
     .slice(0, 2)
     .map((d) => d.strike);
 
@@ -83,5 +94,6 @@ export const processOptionData = (json) => {
     resistance,
     support,
     buildUpData,
+    step,
   };
 };

@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from "react";
 
-// import dataJson from "./FO.json";
-
 import OIChart from "./components/OIChart";
 import ExpirySelector from "./components/ExpirySelector";
 import StrikeSlider from "./components/StrikeSlider";
 import MarketSummary from "./components/MarketSummary";
+import SignalPanel from "./components/SignalPanel";
+import ProbabilityPanel from "./components/ProbabilityPanel";
 
 import { processOptionData } from "./utils/optionAnalytics";
+import { calculateSignal } from "./utils/intradaySignal";
+import { findTargets } from "./utils/targetFinder";
+import { detectSmartMoney } from "./utils/smartMoney";
+import { calculateProbability } from "./utils/probabilityEngine";
 
 import "./OptionDashboard.css";
 
@@ -17,6 +21,11 @@ const OptionDashboard = ({ optionChainData }) => {
   const [selectedExpiry, setSelectedExpiry] = useState(null);
   const [showChange, setShowChange] = useState(false);
   const [strikeRange, setStrikeRange] = useState(5);
+  const [signal, setSignal] = useState(null);
+  const [targets, setTargets] = useState(null);
+  const [smartMoney, setSmartMoney] = useState(null);
+  const [probability, setProbability] = useState(null);
+  const [strikeStep, setStrikeStep] = useState(50);
 
   let filtered = [];
 
@@ -25,15 +34,35 @@ const OptionDashboard = ({ optionChainData }) => {
 
     setMeta(res);
     setData(res.data);
+    setStrikeStep(res.step);
 
     if (res.expiries?.length) {
       setSelectedExpiry(res.expiries[0]);
     }
-  }, []);
+  }, [optionChainData]);
+
+  useEffect(() => {
+    if (!data.length || !meta?.atmStrike || !selectedExpiry) return;
+
+    const analysisData = data.filter((d) => d.expiry === selectedExpiry);
+
+    const sig = calculateSignal(analysisData, meta);
+    const tgt = findTargets(analysisData, meta.atmStrike, strikeStep);
+    const sm = detectSmartMoney(analysisData);
+
+    setSignal(sig);
+    setTargets(tgt);
+    setSmartMoney(sm);
+
+    const prob = calculateProbability(analysisData, meta, tgt);
+    setProbability(prob);
+  }, [data, selectedExpiry, strikeRange, strikeStep, meta]);
 
   filtered = data
     .filter((d) => d.expiry === selectedExpiry)
-    .filter((d) => Math.abs(d.strike - meta.atmStrike) <= strikeRange * 50);
+    .filter(
+      (d) => Math.abs(d.strike - meta.atmStrike) <= strikeRange * strikeStep,
+    );
 
   return (
     <div className="dashboard">
@@ -54,6 +83,12 @@ const OptionDashboard = ({ optionChainData }) => {
 
         <div className="card">
           <MarketSummary meta={meta} />
+          <SignalPanel
+            signal={signal}
+            targets={targets}
+            smartMoney={smartMoney}
+          />
+          <ProbabilityPanel probability={probability} />
         </div>
 
         <div className="card chart-card">
