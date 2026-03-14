@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
 import OIChart from "./components/OIChart";
 import ExpirySelector from "./components/ExpirySelector";
 import StrikeSlider from "./components/StrikeSlider";
 import MarketSummary from "./components/MarketSummary";
-import SignalPanel from "./components/SignalPanel";
-import ProbabilityPanel from "./components/ProbabilityPanel";
 
 import { processOptionData } from "./utils/optionAnalytics";
 import { calculateSignal } from "./utils/intradaySignal";
@@ -16,83 +14,78 @@ import { calculateProbability } from "./utils/probabilityEngine";
 import "./OptionDashboard.css";
 
 const OptionDashboard = ({ optionChainData }) => {
-  const [meta, setMeta] = useState({});
-  const [data, setData] = useState([]);
   const [selectedExpiry, setSelectedExpiry] = useState(null);
-  const [showChange, setShowChange] = useState(false);
   const [strikeRange, setStrikeRange] = useState(5);
-  const [signal, setSignal] = useState(null);
-  const [targets, setTargets] = useState(null);
-  const [smartMoney, setSmartMoney] = useState(null);
-  const [probability, setProbability] = useState(null);
-  const [strikeStep, setStrikeStep] = useState(50);
 
-  let filtered = [];
-
-  useEffect(() => {
-    const res = processOptionData(optionChainData);
-
-    setMeta(res);
-    setData(res.data);
-    setStrikeStep(res.step);
-
-    if (res.expiries?.length) {
-      setSelectedExpiry(res.expiries[0]);
-    }
+  const meta = useMemo(() => {
+    const rows = optionChainData?.records?.data;
+    return Array.isArray(rows) && rows.length
+      ? processOptionData(optionChainData)
+      : {
+          data: [],
+          expiries: [],
+          atmStrike: null,
+          spot: null,
+          PCR: 0,
+          resistance: [],
+          support: [],
+          buildUpData: [],
+          step: 50,
+        };
   }, [optionChainData]);
+  const data = meta.data || [];
+  const strikeStep = meta.step || 50;
 
   useEffect(() => {
-    if (!data.length || !meta?.atmStrike || !selectedExpiry) return;
+    if (!meta.expiries?.length) return;
+    if (!selectedExpiry || !meta.expiries.includes(selectedExpiry)) {
+      setSelectedExpiry(meta.expiries[0]);
+    }
+  }, [meta.expiries, selectedExpiry]);
+
+  const analytics = useMemo(() => {
+    if (!data.length || !meta.atmStrike || !selectedExpiry) return null;
 
     const analysisData = data.filter((d) => d.expiry === selectedExpiry);
-
     const sig = calculateSignal(analysisData, meta);
     const tgt = findTargets(analysisData, meta.atmStrike, strikeStep);
     const sm = detectSmartMoney(analysisData);
-
-    setSignal(sig);
-    setTargets(tgt);
-    setSmartMoney(sm);
-
     const prob = calculateProbability(analysisData, meta, tgt);
-    setProbability(prob);
-  }, [data, selectedExpiry, strikeRange, strikeStep, meta]);
 
-  filtered = data
-    .filter((d) => d.expiry === selectedExpiry)
-    .filter(
-      (d) => Math.abs(d.strike - meta.atmStrike) <= strikeRange * strikeStep,
+    return { sig, tgt, sm, prob };
+  }, [data, selectedExpiry, meta, strikeStep]);
+
+  const filtered = useMemo(() => {
+    if (!data.length || !selectedExpiry) return [];
+    return data.filter(
+      (d) =>
+        d.expiry === selectedExpiry &&
+        Math.abs(d.strike - meta.atmStrike) <= strikeRange * strikeStep,
     );
+  }, [data, selectedExpiry, strikeRange, strikeStep, meta.atmStrike]);
 
   return (
     <div className="dashboard">
       <div className="container">
         <div className="controls">
-          <button className="btn" onClick={() => setShowChange(!showChange)}>
-            Toggle OI Change
-          </button>
-
           <ExpirySelector
             expiries={optionChainData.records?.expiryDates}
             value={selectedExpiry}
             onChange={setSelectedExpiry}
           />
-
           <StrikeSlider value={strikeRange} setValue={setStrikeRange} />
         </div>
 
         <div className="card">
-          <MarketSummary meta={meta} />
-          <SignalPanel
-            signal={signal}
-            targets={targets}
-            smartMoney={smartMoney}
+          <MarketSummary
+            meta={meta}
+            signal={analytics?.sig}
+            smartMoney={analytics?.sm}
+            probability={analytics?.prob}
           />
-          <ProbabilityPanel probability={probability} />
         </div>
-
-        <div className="card chart-card">
-          <OIChart data={filtered} meta={meta} showChange={showChange} />
+        <div>
+          <OIChart data={filtered} meta={meta} />
         </div>
       </div>
     </div>

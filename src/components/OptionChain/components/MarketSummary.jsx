@@ -1,6 +1,6 @@
-const MarketSummary = ({ meta }) => {
+const MarketSummary = ({ meta, signal, smartMoney, probability }) => {
   const sentiment =
-    meta.PCR > 1 ? "Bullish" : meta.PCR < 0.9 ? "Bearish" : "Neutral";
+    meta.PCR > 1 ? "Bullish" : meta.PCR < 0.8 ? "Bearish" : "Neutral";
 
   return (
     <div className="summary-grid">
@@ -9,6 +9,17 @@ const MarketSummary = ({ meta }) => {
 
       <div>Support : {meta.support?.join(", ")}</div>
       <div>Resistance : {meta.resistance?.join(", ")}</div>
+
+      <div>Trade Signal : {signal?.signal}</div>
+
+      <div>Smart Money : {smartMoney}</div>
+
+      <div>
+        Upside Probability : {probability?.upsideProbability.toFixed(0)}%
+      </div>
+      <div>
+        Downside Probability : {probability?.downsideProbability.toFixed(0)}%
+      </div>
     </div>
   );
 };
