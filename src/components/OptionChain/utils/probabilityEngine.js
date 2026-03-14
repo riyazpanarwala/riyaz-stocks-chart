@@ -35,6 +35,10 @@ export const calculateProbability = (data, meta, targets) => {
     return null;
   }
 
+  if (meta?.spot == null) {
+    return null;
+  }
+
   // Distance to support/resistance
   const spot = meta.spot;
   const upDistance = targets.resistance - spot;
