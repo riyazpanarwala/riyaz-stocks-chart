@@ -8,12 +8,15 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   CartesianGrid,
+  Line,
+  ComposedChart, // Switched to ComposedChart to allow Bars + Lines
 } from "recharts";
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
-    // Access the raw data from the payload
     const d = payload[0].payload;
+    const netOI = (d.putOI - d.callOI).toFixed(1);
+    const isBullish = netOI > 0;
 
     return (
       <div
@@ -42,7 +45,7 @@ const CustomTooltip = ({ active, payload, label }) => {
           Strike: {label}
         </div>
 
-        {/* Call Option Section */}
+        {/* Call Section */}
         <div
           style={{
             backgroundColor: "rgba(239, 68, 68, 0.08)",
@@ -55,10 +58,9 @@ const CustomTooltip = ({ active, payload, label }) => {
             style={{
               color: "#ef4444",
               fontWeight: "bold",
-              fontSize: "12px",
-              marginBottom: "6px",
+              fontSize: "11px",
+              marginBottom: "4px",
               textTransform: "uppercase",
-              letterSpacing: "0.5px",
             }}
           >
             Call Option
@@ -71,42 +73,29 @@ const CustomTooltip = ({ active, payload, label }) => {
               color: "#94a3b8",
             }}
           >
-            <span>Total OI:</span>
-            <span style={{ color: "#fff", fontWeight: "500" }}>
-              {d.callOI}L
-            </span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "12px",
-              marginTop: "4px",
-            }}
-          >
-            <span style={{ color: "#94a3b8" }}>Change OI:</span>
-            <span style={{ color: "#ef4444", fontWeight: "bold" }}>
-              {d.callChange > 0 ? `+${d.callChange}` : d.callChange}L
+            <span>Total: {d.callOI}L</span>
+            <span style={{ color: "#ef4444" }}>
+              Chg: {d.callChange > 0 ? `+${d.callChange}` : d.callChange}L
             </span>
           </div>
         </div>
 
-        {/* Put Option Section */}
+        {/* Put Section */}
         <div
           style={{
             backgroundColor: "rgba(34, 197, 94, 0.08)",
             padding: "10px",
             borderRadius: "6px",
+            marginBottom: "10px",
           }}
         >
           <div
             style={{
               color: "#22c55e",
               fontWeight: "bold",
-              fontSize: "12px",
-              marginBottom: "6px",
+              fontSize: "11px",
+              marginBottom: "4px",
               textTransform: "uppercase",
-              letterSpacing: "0.5px",
             }}
           >
             Put Option
@@ -119,22 +108,34 @@ const CustomTooltip = ({ active, payload, label }) => {
               color: "#94a3b8",
             }}
           >
-            <span>Total OI:</span>
-            <span style={{ color: "#fff", fontWeight: "500" }}>{d.putOI}L</span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "12px",
-              marginTop: "4px",
-            }}
-          >
-            <span style={{ color: "#94a3b8" }}>Change OI:</span>
-            <span style={{ color: "#22c55e", fontWeight: "bold" }}>
-              {d.putChange > 0 ? `+${d.putChange}` : d.putChange}L
+            <span>Total: {d.putOI}L</span>
+            <span style={{ color: "#22c55e" }}>
+              Chg: {d.putChange > 0 ? `+${d.putChange}` : d.putChange}L
             </span>
           </div>
+        </div>
+
+        {/* Net OI Info */}
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "12px",
+            padding: "5px",
+            borderRadius: "4px",
+            background: isBullish
+              ? "rgba(34, 197, 94, 0.2)"
+              : "rgba(239, 68, 68, 0.2)",
+          }}
+        >
+          <span style={{ color: "#fff" }}>Net OI: </span>
+          <span
+            style={{
+              color: isBullish ? "#22c55e" : "#ef4444",
+              fontWeight: "bold",
+            }}
+          >
+            {isBullish ? `+${netOI}` : netOI}L
+          </span>
         </div>
       </div>
     );
@@ -145,11 +146,11 @@ const CustomTooltip = ({ active, payload, label }) => {
 const OIChart = ({ data = [], meta = {} }) => {
   if (!data || data.length === 0) return null;
 
-  // Pre-calculate the base (Total - Change) so the stack height reflects the actual Total OI
   const chartData = data.map((d) => ({
     ...d,
     putBase: Math.max(0, d.putOI - d.putChange),
     callBase: Math.max(0, d.callOI - d.callChange),
+    netOI: d.putOI - d.callOI, // Sentiment indicator
   }));
 
   return (
@@ -163,8 +164,9 @@ const OIChart = ({ data = [], meta = {} }) => {
         fontFamily: "sans-serif",
       }}
     >
-      <ResponsiveContainer width="100%" height="420">
-        <BarChart
+      <ResponsiveContainer width="100%" height="450">
+        {/* Using ComposedChart so we can mix Bar and Line */}
+        <ComposedChart
           data={chartData}
           margin={{ top: 20, right: 10, left: 10, bottom: 20 }}
           barGap={4}
@@ -193,7 +195,6 @@ const OIChart = ({ data = [], meta = {} }) => {
             stroke="#1a1a1a"
             vertical={false}
           />
-
           <XAxis
             dataKey="strike"
             stroke="#555"
@@ -202,7 +203,6 @@ const OIChart = ({ data = [], meta = {} }) => {
             axisLine={false}
             dy={10}
           />
-
           <YAxis
             stroke="#555"
             fontSize={12}
@@ -214,7 +214,7 @@ const OIChart = ({ data = [], meta = {} }) => {
           <Tooltip
             content={<CustomTooltip />}
             cursor={{ fill: "rgba(255,255,255,0.03)" }}
-            allowEscapeViewBox={{ x: true, y: true }}
+            allowEscapeViewBox={{ x: false, y: false }}
           />
 
           <ReferenceLine
@@ -230,7 +230,7 @@ const OIChart = ({ data = [], meta = {} }) => {
             }}
           />
 
-          {/* Put Column (Stacked) */}
+          {/* Put Column */}
           <Bar dataKey="putBase" stackId="put" fill="#14532d" barSize={18} />
           <Bar
             dataKey="putChange"
@@ -239,7 +239,7 @@ const OIChart = ({ data = [], meta = {} }) => {
             barSize={18}
           />
 
-          {/* Call Column (Stacked) */}
+          {/* Call Column */}
           <Bar dataKey="callBase" stackId="call" fill="#7f1d1d" barSize={18} />
           <Bar
             dataKey="callChange"
@@ -247,7 +247,17 @@ const OIChart = ({ data = [], meta = {} }) => {
             fill="url(#stripesCall)"
             barSize={18}
           />
-        </BarChart>
+
+          {/* Net OI Sentiment Line */}
+          <Line
+            type="monotone"
+            dataKey="netOI"
+            stroke="#3b82f6"
+            strokeWidth={2}
+            dot={false}
+            strokeDasharray="5 5"
+          />
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
