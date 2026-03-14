@@ -8,45 +8,195 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   CartesianGrid,
-  Legend,
 } from "recharts";
 
-const OIChart = ({ data = [], meta = {}, showChange = false }) => {
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    // Access the raw data from the payload
+    const d = payload[0].payload;
+
+    return (
+      <div
+        style={{
+          backgroundColor: "rgba(10, 10, 10, 0.98)",
+          border: "1px solid #333",
+          borderRadius: "8px",
+          padding: "14px",
+          minWidth: "260px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.8)",
+          backdropFilter: "blur(6px)",
+          zIndex: 1000,
+        }}
+      >
+        <div
+          style={{
+            textAlign: "center",
+            color: "#fff",
+            fontSize: "15px",
+            fontWeight: "bold",
+            marginBottom: "12px",
+            borderBottom: "1px solid #222",
+            paddingBottom: "8px",
+          }}
+        >
+          Strike: {label}
+        </div>
+
+        {/* Call Option Section */}
+        <div
+          style={{
+            backgroundColor: "rgba(239, 68, 68, 0.08)",
+            padding: "10px",
+            borderRadius: "6px",
+            marginBottom: "10px",
+          }}
+        >
+          <div
+            style={{
+              color: "#ef4444",
+              fontWeight: "bold",
+              fontSize: "12px",
+              marginBottom: "6px",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Call Option
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "12px",
+              color: "#94a3b8",
+            }}
+          >
+            <span>Total OI:</span>
+            <span style={{ color: "#fff", fontWeight: "500" }}>
+              {d.callOI}L
+            </span>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "12px",
+              marginTop: "4px",
+            }}
+          >
+            <span style={{ color: "#94a3b8" }}>Change OI:</span>
+            <span style={{ color: "#ef4444", fontWeight: "bold" }}>
+              {d.callChange > 0 ? `+${d.callChange}` : d.callChange}L
+            </span>
+          </div>
+        </div>
+
+        {/* Put Option Section */}
+        <div
+          style={{
+            backgroundColor: "rgba(34, 197, 94, 0.08)",
+            padding: "10px",
+            borderRadius: "6px",
+          }}
+        >
+          <div
+            style={{
+              color: "#22c55e",
+              fontWeight: "bold",
+              fontSize: "12px",
+              marginBottom: "6px",
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Put Option
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "12px",
+              color: "#94a3b8",
+            }}
+          >
+            <span>Total OI:</span>
+            <span style={{ color: "#fff", fontWeight: "500" }}>{d.putOI}L</span>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "12px",
+              marginTop: "4px",
+            }}
+          >
+            <span style={{ color: "#94a3b8" }}>Change OI:</span>
+            <span style={{ color: "#22c55e", fontWeight: "bold" }}>
+              {d.putChange > 0 ? `+${d.putChange}` : d.putChange}L
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const OIChart = ({ data = [], meta = {} }) => {
   if (!data || data.length === 0) return null;
 
+  // Pre-calculate the base (Total - Change) so the stack height reflects the actual Total OI
   const chartData = data.map((d) => ({
-    strike: d.strike,
-    put: showChange ? d.putChange : d.putOI,
-    call: showChange ? d.callChange : d.callOI,
+    ...d,
+    putBase: Math.max(0, d.putOI - d.putChange),
+    callBase: Math.max(0, d.callOI - d.callChange),
   }));
-
-  const labelSuffix = showChange ? " Change" : " OI";
 
   return (
     <div
       style={{
-        height: 420,
+        height: 450,
         width: "100%",
-        background: "#0f172a", // Slightly deeper navy
-        padding: "20px 10px",
-        borderRadius: 12,
-        border: "1px solid #1e293b",
+        background: "#050505",
+        padding: "25px",
+        borderRadius: "12px",
+        fontFamily: "sans-serif",
       }}
     >
-      <ResponsiveContainer width="100%" height="400">
+      <ResponsiveContainer width="100%" height="420">
         <BarChart
           data={chartData}
-          margin={{ top: 10, right: 10, left: 20, bottom: 20 }}
+          margin={{ top: 20, right: 10, left: 10, bottom: 20 }}
+          barGap={4}
         >
+          <defs>
+            <pattern
+              id="stripesCall"
+              width="4"
+              height="3"
+              patternUnits="userSpaceOnUse"
+            >
+              <rect width="4" height="1.5" fill="#ef4444" fillOpacity="0.9" />
+            </pattern>
+            <pattern
+              id="stripesPut"
+              width="4"
+              height="3"
+              patternUnits="userSpaceOnUse"
+            >
+              <rect width="4" height="1.5" fill="#22c55e" fillOpacity="0.9" />
+            </pattern>
+          </defs>
+
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#334155"
+            stroke="#1a1a1a"
             vertical={false}
           />
 
           <XAxis
             dataKey="strike"
-            stroke="#94a3b8"
+            stroke="#555"
             fontSize={12}
             tickLine={false}
             axisLine={false}
@@ -54,58 +204,48 @@ const OIChart = ({ data = [], meta = {}, showChange = false }) => {
           />
 
           <YAxis
-            stroke="#94a3b8"
+            stroke="#555"
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) =>
-              value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value
-            }
+            tickFormatter={(val) => `${val}L`}
           />
 
           <Tooltip
-            contentStyle={{
-              backgroundColor: "#1e293b",
-              border: "none",
-              borderRadius: "8px",
-              color: "#f8fafc",
+            content={<CustomTooltip />}
+            cursor={{ fill: "rgba(255,255,255,0.03)" }}
+            allowEscapeViewBox={{ x: true, y: true }}
+          />
+
+          <ReferenceLine
+            x={meta.atmStrike}
+            stroke="#3b82f6"
+            strokeDasharray="4 4"
+            label={{
+              value: "ATM",
+              fill: "#3b82f6",
+              fontSize: 11,
+              position: "top",
+              fontWeight: "bold",
             }}
-            itemStyle={{ fontSize: "12px" }}
-            cursor={{ fill: "#334155", opacity: 0.4 }}
           />
 
-          <Legend
-            verticalAlign="top"
-            align="right"
-            wrapperStyle={{ paddingBottom: "20px" }}
-          />
-
-          {/* Highlight the At-The-Money (ATM) Strike */}
-          {meta.atmStrike && (
-            <ReferenceLine
-              x={meta.atmStrike}
-              stroke="#fbbf24"
-              strokeDasharray="5 5"
-              label={{
-                position: "top",
-                value: "ATM",
-                fill: "#fbbf24",
-                fontSize: 10,
-              }}
-            />
-          )}
-
+          {/* Put Column (Stacked) */}
+          <Bar dataKey="putBase" stackId="put" fill="#14532d" barSize={18} />
           <Bar
-            dataKey="put"
-            fill="#22c55e"
-            name={`Put${labelSuffix}`}
-            radius={[4, 4, 0, 0]}
+            dataKey="putChange"
+            stackId="put"
+            fill="url(#stripesPut)"
+            barSize={18}
           />
+
+          {/* Call Column (Stacked) */}
+          <Bar dataKey="callBase" stackId="call" fill="#7f1d1d" barSize={18} />
           <Bar
-            dataKey="call"
-            fill="#ef4444"
-            name={`Call${labelSuffix}`}
-            radius={[4, 4, 0, 0]}
+            dataKey="callChange"
+            stackId="call"
+            fill="url(#stripesCall)"
+            barSize={18}
           />
         </BarChart>
       </ResponsiveContainer>

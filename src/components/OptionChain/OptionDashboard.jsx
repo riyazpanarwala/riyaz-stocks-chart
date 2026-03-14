@@ -17,7 +17,6 @@ import "./OptionDashboard.css";
 
 const OptionDashboard = ({ optionChainData }) => {
   const [selectedExpiry, setSelectedExpiry] = useState(null);
-  const [showChange, setShowChange] = useState(false);
   const [strikeRange, setStrikeRange] = useState(5);
 
   const meta = useMemo(
@@ -58,16 +57,11 @@ const OptionDashboard = ({ optionChainData }) => {
     <div className="dashboard">
       <div className="container">
         <div className="controls">
-          <button className="btn" onClick={() => setShowChange(!showChange)}>
-            Toggle OI Change
-          </button>
-
           <ExpirySelector
             expiries={optionChainData.records?.expiryDates}
             value={selectedExpiry}
             onChange={setSelectedExpiry}
           />
-
           <StrikeSlider value={strikeRange} setValue={setStrikeRange} />
         </div>
 
@@ -81,8 +75,8 @@ const OptionDashboard = ({ optionChainData }) => {
           <ProbabilityPanel probability={analytics?.prob} />
         </div>
 
-        <div className="card chart-card">
-          <OIChart data={filtered} meta={meta} showChange={showChange} />
+        <div>
+          <OIChart data={filtered} meta={meta} />
         </div>
       </div>
     </div>
