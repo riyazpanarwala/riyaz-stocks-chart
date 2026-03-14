@@ -42,17 +42,19 @@ const OptionDashboard = ({ optionChainData }) => {
   }, [optionChainData]);
 
   useEffect(() => {
-    if (!data.length || !meta?.atmStrike) return;
+    if (!data.length || !meta?.atmStrike || !selectedExpiry) return;
 
-    const sig = calculateSignal(data, meta);
-    const tgt = findTargets(data, meta.atmStrike, strikeStep);
-    const sm = detectSmartMoney(data);
+    const analysisData = data.filter((d) => d.expiry === selectedExpiry);
+
+    const sig = calculateSignal(analysisData, meta);
+    const tgt = findTargets(analysisData, meta.atmStrike, strikeStep);
+    const sm = detectSmartMoney(analysisData);
 
     setSignal(sig);
     setTargets(tgt);
     setSmartMoney(sm);
 
-    const prob = calculateProbability(data, meta, tgt);
+    const prob = calculateProbability(analysisData, meta, tgt);
     setProbability(prob);
   }, [data, selectedExpiry, strikeRange, strikeStep, meta]);
 

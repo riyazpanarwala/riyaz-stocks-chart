@@ -5,12 +5,12 @@ export const detectSmartMoney = (data) => {
   let largePutChange = 0;
 
   data.forEach((d) => {
-    if (d.callChangeOI > largeCallChange) {
-      largeCallChange = d.callChangeOI;
+    if (d.callChange > largeCallChange) {
+      largeCallChange = d.callChange;
     }
 
-    if (d.putChangeOI > largePutChange) {
-      largePutChange = d.putChangeOI;
+    if (d.putChange > largePutChange) {
+      largePutChange = d.putChange;
     }
   });
 

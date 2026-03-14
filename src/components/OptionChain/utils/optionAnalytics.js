@@ -38,8 +38,7 @@ export const processOptionData = (json) => {
 
   const totalCall = formatted.reduce((a, b) => a + b.callOI, 0);
   const totalPut = formatted.reduce((a, b) => a + b.putOI, 0);
-
-  const PCR = totalPut / totalCall;
+  const PCR = totalCall > 0 ? totalPut / totalCall : 0;
 
   // consider strikes near ATM
   const range = 10; // number of strikes around ATM

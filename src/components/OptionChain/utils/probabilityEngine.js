@@ -11,11 +11,11 @@ export const calculateProbability = (data, meta, targets) => {
     callOI += d.callOI || 0;
     putOI += d.putOI || 0;
 
-    callChange += d.callChangeOI || 0;
-    putChange += d.putChangeOI || 0;
+    callChange += d.callChange || 0;
+    putChange += d.putChange || 0;
   });
 
-  const pcr = putOI / callOI;
+  const pcr = callOI > 0 ? putOI / callOI : 0;
 
   // PCR score
   let pcrScore = 0;
@@ -30,6 +30,10 @@ export const calculateProbability = (data, meta, targets) => {
 
   if (putChange > callChange) changeScore = 25;
   else changeScore = -25;
+
+  if (!targets?.resistance || !targets?.support) {
+    return null;
+  }
 
   // Distance to support/resistance
   const spot = meta.spot;

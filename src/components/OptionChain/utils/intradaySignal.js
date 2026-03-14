@@ -10,11 +10,11 @@ export const calculateSignal = (data, meta) => {
     callOI += d.callOI || 0;
     putOI += d.putOI || 0;
 
-    callChange += d.callChangeOI || 0;
-    putChange += d.putChangeOI || 0;
+    callChange += d.callChange || 0;
+    putChange += d.putChange || 0;
   });
 
-  const pcr = putOI / callOI;
+  const pcr = callOI > 0 ? putOI / callOI : 0;
 
   let bias = "NEUTRAL";
   let signal = "NO TRADE";
