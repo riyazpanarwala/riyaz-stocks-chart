@@ -12,7 +12,10 @@ import {
 } from "recharts";
 
 // --- Helper for Number Safety ---
-const safeNum = (val) => (isNaN(val) ? 0 : val);
+const safeNum = (val) => {
+  const num = Number(val);
+  return Number.isNaN(num) ? 0 : num;
+};
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
