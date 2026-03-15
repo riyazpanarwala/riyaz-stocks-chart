@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   XAxis,
   YAxis,
@@ -11,10 +11,13 @@ import {
   ComposedChart,
 } from "recharts";
 
+// --- Helper for Number Safety ---
+const safeNum = (val) => (isNaN(val) ? 0 : val);
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const d = payload[0].payload;
-    const netOI = (d.putOI - d.callOI).toFixed(1);
+    const netOI = (safeNum(d.putOI) - safeNum(d.callOI)).toFixed(1);
     const isBullish = netOI > 0;
 
     return (
@@ -24,7 +27,7 @@ const CustomTooltip = ({ active, payload, label }) => {
           border: "1px solid #333",
           borderRadius: "8px",
           padding: "14px",
-          minWidth: "260px",
+          minWidth: "240px",
           boxShadow: "0 10px 30px rgba(0,0,0,0.8)",
           backdropFilter: "blur(6px)",
           zIndex: 1000,
@@ -72,8 +75,8 @@ const CustomTooltip = ({ active, payload, label }) => {
               color: "#94a3b8",
             }}
           >
-            <span>Total: {d.callOI}L</span>
-            <span style={{ color: "#ef4444" }}>
+            <span>Total: {safeNum(d.callOI).toFixed(1)}L</span>
+            <span style={{ color: d.callChange >= 0 ? "#ef4444" : "#888" }}>
               Chg: {d.callChange > 0 ? `+${d.callChange}` : d.callChange}L
             </span>
           </div>
@@ -107,8 +110,8 @@ const CustomTooltip = ({ active, payload, label }) => {
               color: "#94a3b8",
             }}
           >
-            <span>Total: {d.putOI}L</span>
-            <span style={{ color: "#22c55e" }}>
+            <span>Total: {safeNum(d.putOI).toFixed(1)}L</span>
+            <span style={{ color: d.putChange >= 0 ? "#22c55e" : "#888" }}>
               Chg: {d.putChange > 0 ? `+${d.putChange}` : d.putChange}L
             </span>
           </div>
@@ -143,37 +146,59 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const OIChart = ({ data = [], meta = {}, timeStamp }) => {
-  if (!data || data.length === 0) return null;
+  // Memoize data transformation for performance
+  const chartData = useMemo(() => {
+    if (!data || data.length === 0) return [];
 
-  const chartData = data.map((d) => ({
-    ...d,
-    putBase: Math.max(0, d.putOI - d.putChange),
-    callBase: Math.max(0, d.callOI - d.callChange),
-    netOI: d.putOI - d.callOI, // Sentiment indicator
-  }));
+    return data.map((d) => {
+      const callOI = safeNum(d.callOI);
+      const putOI = safeNum(d.putOI);
+      const callChange = safeNum(d.callChange);
+      const putChange = safeNum(d.putChange);
+
+      // Logic Improvement: Handle Unwinding vs Buildup
+      // If change is positive, split the bar (Base + Change).
+      // If change is negative, show only the current OI to avoid visual glitches.
+      const isCallBuildup = callChange > 0;
+      const isPutBuildup = putChange > 0;
+
+      return {
+        ...d,
+        callOI,
+        putOI,
+        // Visual Logic
+        callBase: isCallBuildup ? Math.max(0, callOI - callChange) : callOI,
+        callChangeVisual: isCallBuildup ? callChange : 0,
+
+        putBase: isPutBuildup ? Math.max(0, putOI - putChange) : putOI,
+        putChangeVisual: isPutBuildup ? putChange : 0,
+
+        netOI: putOI - callOI,
+      };
+    });
+  }, [data]);
+
+  if (!data || data.length === 0) return null;
 
   const sentiment =
     meta.PCR > 1 ? "Bullish" : meta.PCR < 0.8 ? "Bearish" : "Neutral";
 
   return (
-    <div
-      style={{
-        height: 550,
-        width: "100%",
-        background: "transparent",
-      }}
-    >
-      {/* Legend / Stats Header */}
+    <div style={{ height: 550, width: "100%", background: "transparent" }}>
+      {/* Legend / Stats Header - Added flexWrap for responsiveness */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "10px",
           marginBottom: "20px",
           borderBottom: "1px solid #1a1a1a",
           paddingBottom: "10px",
         }}
       >
-        <div style={{ display: "flex", gap: "25px" }}>
+        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
           <div style={{ color: "#fff", fontSize: "13px" }}>
             SPOT:{" "}
             <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
@@ -183,12 +208,22 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
           <div style={{ color: "#fff", fontSize: "13px" }}>
             PCR:{" "}
             <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
-              {meta.PCR.toFixed(2)}
+              {meta.PCR?.toFixed(2)}
             </span>
           </div>
           <div style={{ color: "#fff", fontSize: "13px" }}>
-            sentiment:{" "}
-            <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
+            Sentiment:{" "}
+            <span
+              style={{
+                color:
+                  sentiment === "Bullish"
+                    ? "#22c55e"
+                    : sentiment === "Bearish"
+                      ? "#ef4444"
+                      : "#3b82f6",
+                fontWeight: "bold",
+              }}
+            >
               {sentiment}
             </span>
           </div>
@@ -208,13 +243,19 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             </span>
           </div>
           <div style={{ color: "#fff", fontSize: "13px" }}>
-            MAX PAIN:{" "}
+            Max Pain:{" "}
             <span style={{ color: "#facc15", fontWeight: "bold" }}>
               {meta.maxPainStrike}
             </span>
           </div>
         </div>
-        <div style={{ color: "#555", fontSize: "11px" }}>
+        <div
+          style={{
+            color: "#555",
+            fontSize: "11px",
+            textAlign: "right",
+          }}
+        >
           Last Updated: {timeStamp}
         </div>
       </div>
@@ -229,21 +270,22 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             <pattern
               id="stripesCall"
               width="4"
-              height="3"
+              height="4"
               patternUnits="userSpaceOnUse"
             >
-              <rect width="4" height="1.5" fill="#ef4444" fillOpacity="0.8" />
+              <rect width="4" height="2" fill="#ef4444" fillOpacity="0.9" />
             </pattern>
             <pattern
               id="stripesPut"
               width="4"
-              height="3"
+              height="4"
               patternUnits="userSpaceOnUse"
             >
-              <rect width="4" height="1.5" fill="#22c55e" fillOpacity="0.8" />
+              <rect width="4" height="2" fill="#22c55e" fillOpacity="0.9" />
             </pattern>
           </defs>
 
+          {/* Performance: Disable animation for grid/lines */}
           <CartesianGrid
             strokeDasharray="3 3"
             stroke="#1a1a1a"
@@ -258,7 +300,6 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             dy={10}
           />
 
-          {/* Symmetric Y-Axis for Net OI Line */}
           <YAxis
             stroke="#555"
             fontSize={11}
@@ -273,14 +314,14 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             allowEscapeViewBox={{ x: false, y: false }}
           />
 
-          {/* Zero Line to distinguish Bullish/Bearish Net OI */}
           <ReferenceLine y={0} stroke="#333" strokeWidth={1} />
 
-          {/* ATM Marker */}
+          {/* Reference Lines with isAnimationActive={false} */}
           <ReferenceLine
             x={meta.atmStrike}
             stroke="#3b82f6"
             strokeDasharray="4 4"
+            isAnimationActive={false}
             label={{
               value: "ATM",
               fill: "#3b82f6",
@@ -290,11 +331,11 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             }}
           />
 
-          {/* Max Pain Marker */}
           <ReferenceLine
             x={meta.maxPainStrike}
             stroke="#facc15"
             strokeWidth={2}
+            isAnimationActive={false}
             label={{
               value: "MAX PAIN",
               fill: "#facc15",
@@ -304,25 +345,39 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             }}
           />
 
-          {/* Put Bars (Left side of Strike) */}
-          <Bar dataKey="putBase" stackId="put" fill="#14532d" barSize={16} />
+          {/* Put Bars */}
           <Bar
-            dataKey="putChange"
+            dataKey="putBase"
+            stackId="put"
+            fill="#14532d"
+            barSize={14}
+            isAnimationActive={false}
+          />
+          <Bar
+            dataKey="putChangeVisual"
             stackId="put"
             fill="url(#stripesPut)"
-            barSize={16}
+            barSize={14}
+            isAnimationActive={false}
           />
 
-          {/* Call Bars (Right side of Strike) */}
-          <Bar dataKey="callBase" stackId="call" fill="#7f1d1d" barSize={16} />
+          {/* Call Bars */}
           <Bar
-            dataKey="callChange"
+            dataKey="callBase"
+            stackId="call"
+            fill="#7f1d1d"
+            barSize={14}
+            isAnimationActive={false}
+          />
+          <Bar
+            dataKey="callChangeVisual"
             stackId="call"
             fill="url(#stripesCall)"
-            barSize={16}
+            barSize={14}
+            isAnimationActive={false}
           />
 
-          {/* Net OI Sentiment Line */}
+          {/* Net OI Line */}
           <Line
             type="monotone"
             dataKey="netOI"
@@ -330,7 +385,7 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             strokeWidth={2}
             dot={false}
             strokeDasharray="5 5"
-            animationDuration={500}
+            isAnimationActive={false}
           />
         </ComposedChart>
       </ResponsiveContainer>
