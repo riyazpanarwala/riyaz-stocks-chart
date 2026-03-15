@@ -316,12 +316,10 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
 
           <ReferenceLine y={0} stroke="#333" strokeWidth={1} />
 
-          {/* Reference Lines with isAnimationActive={false} */}
           <ReferenceLine
             x={meta.atmStrike}
             stroke="#3b82f6"
             strokeDasharray="4 4"
-            isAnimationActive={false}
             label={{
               value: "ATM",
               fill: "#3b82f6",
@@ -335,7 +333,6 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             x={meta.maxPainStrike}
             stroke="#facc15"
             strokeWidth={2}
-            isAnimationActive={false}
             label={{
               value: "MAX PAIN",
               fill: "#facc15",
@@ -346,35 +343,21 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
           />
 
           {/* Put Bars */}
-          <Bar
-            dataKey="putBase"
-            stackId="put"
-            fill="#14532d"
-            barSize={14}
-            isAnimationActive={false}
-          />
+          <Bar dataKey="putBase" stackId="put" fill="#14532d" barSize={14} />
           <Bar
             dataKey="putChangeVisual"
             stackId="put"
             fill="url(#stripesPut)"
             barSize={14}
-            isAnimationActive={false}
           />
 
           {/* Call Bars */}
-          <Bar
-            dataKey="callBase"
-            stackId="call"
-            fill="#7f1d1d"
-            barSize={14}
-            isAnimationActive={false}
-          />
+          <Bar dataKey="callBase" stackId="call" fill="#7f1d1d" barSize={14} />
           <Bar
             dataKey="callChangeVisual"
             stackId="call"
             fill="url(#stripesCall)"
             barSize={14}
-            isAnimationActive={false}
           />
 
           {/* Net OI Line */}
@@ -385,7 +368,6 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             strokeWidth={2}
             dot={false}
             strokeDasharray="5 5"
-            isAnimationActive={false}
           />
         </ComposedChart>
       </ResponsiveContainer>
