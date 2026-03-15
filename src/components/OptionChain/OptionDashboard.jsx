@@ -85,7 +85,11 @@ const OptionDashboard = ({ optionChainData }) => {
           />
         </div>
         <div>
-          <OIChart data={filtered} meta={meta} />
+          <OIChart
+            data={filtered}
+            meta={meta}
+            timeStamp={optionChainData.records?.timestamp}
+          />
         </div>
       </div>
     </div>

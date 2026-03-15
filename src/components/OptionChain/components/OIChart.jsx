@@ -1,7 +1,5 @@
 import React from "react";
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -9,7 +7,8 @@ import {
   ReferenceLine,
   CartesianGrid,
   Line,
-  ComposedChart, // Switched to ComposedChart to allow Bars + Lines
+  Bar,
+  ComposedChart,
 } from "recharts";
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -143,7 +142,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-const OIChart = ({ data = [], meta = {} }) => {
+const OIChart = ({ data = [], meta = {}, timeStamp }) => {
   if (!data || data.length === 0) return null;
 
   const chartData = data.map((d) => ({
@@ -156,7 +155,7 @@ const OIChart = ({ data = [], meta = {} }) => {
   return (
     <div
       style={{
-        height: 450,
+        height: 500,
         width: "100%",
         background: "#050505",
         padding: "25px",
@@ -164,8 +163,32 @@ const OIChart = ({ data = [], meta = {} }) => {
         fontFamily: "sans-serif",
       }}
     >
-      <ResponsiveContainer width="100%" height="450">
-        {/* Using ComposedChart so we can mix Bar and Line */}
+      {/* Legend / Stats Header */}
+      <div
+        style={{
+          display: "flex",
+          gap: "25px",
+          marginBottom: "20px",
+          borderBottom: "1px solid #1a1a1a",
+          paddingBottom: "10px",
+        }}
+      >
+        <div style={{ color: "#fff", fontSize: "13px" }}>
+          Current Price:{" "}
+          <span style={{ color: "#3b82f6" }}>
+            {meta.spotPrice} at {timeStamp}
+          </span>
+        </div>
+        <div style={{ color: "#fff", fontSize: "13px" }}>
+          ATM: <span style={{ color: "#3b82f6" }}>{meta.atmStrike}</span>
+        </div>
+        <div style={{ color: "#fff", fontSize: "13px" }}>
+          MAX PAIN:{" "}
+          <span style={{ color: "#facc15" }}>{meta.maxPainStrike}</span>
+        </div>
+      </div>
+
+      <ResponsiveContainer width="100%" height={450}>
         <ComposedChart
           data={chartData}
           margin={{ top: 20, right: 10, left: 10, bottom: 20 }}
@@ -178,7 +201,7 @@ const OIChart = ({ data = [], meta = {} }) => {
               height="3"
               patternUnits="userSpaceOnUse"
             >
-              <rect width="4" height="1.5" fill="#ef4444" fillOpacity="0.9" />
+              <rect width="4" height="1.5" fill="#ef4444" fillOpacity="0.8" />
             </pattern>
             <pattern
               id="stripesPut"
@@ -186,7 +209,7 @@ const OIChart = ({ data = [], meta = {} }) => {
               height="3"
               patternUnits="userSpaceOnUse"
             >
-              <rect width="4" height="1.5" fill="#22c55e" fillOpacity="0.9" />
+              <rect width="4" height="1.5" fill="#22c55e" fillOpacity="0.8" />
             </pattern>
           </defs>
 
@@ -198,14 +221,14 @@ const OIChart = ({ data = [], meta = {} }) => {
           <XAxis
             dataKey="strike"
             stroke="#555"
-            fontSize={12}
+            fontSize={11}
             tickLine={false}
             axisLine={false}
             dy={10}
           />
           <YAxis
             stroke="#555"
-            fontSize={12}
+            fontSize={11}
             tickLine={false}
             axisLine={false}
             tickFormatter={(val) => `${val}L`}
@@ -224,28 +247,40 @@ const OIChart = ({ data = [], meta = {} }) => {
             label={{
               value: "ATM",
               fill: "#3b82f6",
-              fontSize: 11,
+              fontSize: 10,
               position: "top",
               fontWeight: "bold",
             }}
           />
 
-          {/* Put Column */}
-          <Bar dataKey="putBase" stackId="put" fill="#14532d" barSize={18} />
+          {/* Max Pain Level */}
+          <ReferenceLine
+            x={meta.maxPainStrike}
+            stroke="#facc15"
+            strokeWidth={2}
+            label={{
+              value: "MAX PAIN",
+              fill: "#facc15",
+              fontSize: 10,
+              position: "top",
+              fontWeight: "bold",
+            }}
+          />
+
+          {/* Bars */}
+          <Bar dataKey="putBase" stackId="put" fill="#14532d" barSize={16} />
           <Bar
             dataKey="putChange"
             stackId="put"
             fill="url(#stripesPut)"
-            barSize={18}
+            barSize={16}
           />
-
-          {/* Call Column */}
-          <Bar dataKey="callBase" stackId="call" fill="#7f1d1d" barSize={18} />
+          <Bar dataKey="callBase" stackId="call" fill="#7f1d1d" barSize={16} />
           <Bar
             dataKey="callChange"
             stackId="call"
             fill="url(#stripesCall)"
-            barSize={18}
+            barSize={16}
           />
 
           {/* Net OI Sentiment Line */}
@@ -253,7 +288,7 @@ const OIChart = ({ data = [], meta = {} }) => {
             type="monotone"
             dataKey="netOI"
             stroke="#3b82f6"
-            strokeWidth={2}
+            strokeWidth={1.5}
             dot={false}
             strokeDasharray="5 5"
           />

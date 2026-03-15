@@ -1,5 +1,41 @@
 import { detectStrikeStep } from "./strikeUtils";
 
+/**
+ * Helper to calculate Max Pain
+ * Iterates through all strikes to find the one with the minimum total value loss for buyers
+ */
+const calculateMaxPain = (data) => {
+  let minPain = Infinity;
+  let maxPainStrike = 0;
+
+  // We use the full formatted list to find the "pain" at each possible strike
+  data.forEach((potentialExpiry) => {
+    const expiryStrike = potentialExpiry.strike;
+    let totalPain = 0;
+
+    data.forEach((strikeData) => {
+      const strike = strikeData.strike;
+
+      // Call Pain: If market expires ABOVE strike, buyers gain (expiry - strike)
+      // Sellers lose that amount * Open Interest
+      if (expiryStrike > strike) {
+        totalPain += (expiryStrike - strike) * strikeData.callOI;
+      }
+      // Put Pain: If market expires BELOW strike
+      else if (expiryStrike < strike) {
+        totalPain += (strike - expiryStrike) * strikeData.putOI;
+      }
+    });
+
+    if (totalPain < minPain) {
+      minPain = totalPain;
+      maxPainStrike = expiryStrike;
+    }
+  });
+
+  return maxPainStrike;
+};
+
 export const processOptionData = (json) => {
   const spot = json.records.underlyingValue;
   const rows = json.records.data;
@@ -29,6 +65,8 @@ export const processOptionData = (json) => {
       putPriceChange: PE.pChange || 0,
     };
   });
+
+  const maxPainStrike = calculateMaxPain(formatted);
 
   const expiries = Array.from(expirySet);
 
@@ -95,5 +133,7 @@ export const processOptionData = (json) => {
     support,
     buildUpData,
     step,
+    maxPainStrike,
+    spotPrice: spot,
   };
 };
