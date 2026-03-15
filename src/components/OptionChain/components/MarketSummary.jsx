@@ -10,10 +10,8 @@ const MarketSummary = ({ signal, smartMoney, probability }) => {
   // 2. Dynamic Color Logic
   const getSentimentColor = (text) => {
     const t = String(text).toLowerCase();
-    if (t.includes("buy") || t.includes("bull") || t.includes("long"))
-      return "#22c55e";
-    if (t.includes("sell") || t.includes("bear") || t.includes("short"))
-      return "#ef4444";
+    if (t.includes("buy call")) return "#22c55e";
+    if (t.includes("buy put")) return "#ef4444";
     return "#facc15"; // Yellow for Neutral/Wait
   };
 
@@ -58,7 +56,6 @@ const MarketSummary = ({ signal, smartMoney, probability }) => {
             style={{
               ...styles.barFill,
               width: `${upsideProb}%`,
-              background: signalColor, // Uses signal color for the bar fill
             }}
           />
         </div>
