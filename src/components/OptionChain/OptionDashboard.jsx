@@ -77,15 +77,19 @@ const OptionDashboard = ({ optionChainData }) => {
         </div>
 
         <div className="card">
-          <MarketSummary
+          <OIChart
+            data={filtered}
             meta={meta}
+            timeStamp={optionChainData.records?.timestamp}
+          />
+        </div>
+
+        <div className="card">
+          <MarketSummary
             signal={analytics?.sig}
             smartMoney={analytics?.sm}
             probability={analytics?.prob}
           />
-        </div>
-        <div>
-          <OIChart data={filtered} meta={meta} />
         </div>
       </div>
     </div>

@@ -51,16 +51,10 @@ const App = ({ companyObj, indexObj, onClose }) => {
       <Modal isOpen={true} onClose={onClose}>
         <h1 className="title">Option Chain - {companyObj.label}</h1>
         {optionChainData.records ? (
-          <>
-            <h5 className="subtitle">
-              Underlying Value: {optionChainData.records.underlyingValue} |
-              Timestamp: {optionChainData.records.timestamp}
-            </h5>
-            <OptionDashboard
-              optionChainData={optionChainData}
-              selectedExpiry={selectedExpiry}
-            />
-          </>
+          <OptionDashboard
+            optionChainData={optionChainData}
+            selectedExpiry={selectedExpiry}
+          />
         ) : isFOFetching ? (
           "Please wait..."
         ) : (

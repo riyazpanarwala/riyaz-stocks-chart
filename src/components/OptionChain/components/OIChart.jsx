@@ -1,7 +1,5 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -9,13 +7,20 @@ import {
   ReferenceLine,
   CartesianGrid,
   Line,
-  ComposedChart, // Switched to ComposedChart to allow Bars + Lines
+  Bar,
+  ComposedChart,
 } from "recharts";
+
+// --- Helper for Number Safety ---
+const safeNum = (val) => {
+  const num = Number(val);
+  return Number.isNaN(num) ? 0 : num;
+};
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const d = payload[0].payload;
-    const netOI = (d.putOI - d.callOI).toFixed(1);
+    const netOI = (safeNum(d.putOI) - safeNum(d.callOI)).toFixed(1);
     const isBullish = netOI > 0;
 
     return (
@@ -25,7 +30,7 @@ const CustomTooltip = ({ active, payload, label }) => {
           border: "1px solid #333",
           borderRadius: "8px",
           padding: "14px",
-          minWidth: "260px",
+          minWidth: "240px",
           boxShadow: "0 10px 30px rgba(0,0,0,0.8)",
           backdropFilter: "blur(6px)",
           zIndex: 1000,
@@ -73,8 +78,8 @@ const CustomTooltip = ({ active, payload, label }) => {
               color: "#94a3b8",
             }}
           >
-            <span>Total: {d.callOI}L</span>
-            <span style={{ color: "#ef4444" }}>
+            <span>Total: {safeNum(d.callOI).toFixed(1)}L</span>
+            <span style={{ color: d.callChange >= 0 ? "#ef4444" : "#888" }}>
               Chg: {d.callChange > 0 ? `+${d.callChange}` : d.callChange}L
             </span>
           </div>
@@ -108,8 +113,8 @@ const CustomTooltip = ({ active, payload, label }) => {
               color: "#94a3b8",
             }}
           >
-            <span>Total: {d.putOI}L</span>
-            <span style={{ color: "#22c55e" }}>
+            <span>Total: {safeNum(d.putOI).toFixed(1)}L</span>
+            <span style={{ color: d.putChange >= 0 ? "#22c55e" : "#888" }}>
               Chg: {d.putChange > 0 ? `+${d.putChange}` : d.putChange}L
             </span>
           </div>
@@ -143,29 +148,122 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-const OIChart = ({ data = [], meta = {} }) => {
+const OIChart = ({ data = [], meta = {}, timeStamp }) => {
+  // Memoize data transformation for performance
+  const chartData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+
+    return data.map((d) => {
+      const callOI = safeNum(d.callOI);
+      const putOI = safeNum(d.putOI);
+      const callChange = safeNum(d.callChange);
+      const putChange = safeNum(d.putChange);
+
+      // Logic Improvement: Handle Unwinding vs Buildup
+      // If change is positive, split the bar (Base + Change).
+      // If change is negative, show only the current OI to avoid visual glitches.
+      const isCallBuildup = callChange > 0;
+      const isPutBuildup = putChange > 0;
+
+      return {
+        ...d,
+        callOI,
+        putOI,
+        // Visual Logic
+        callBase: isCallBuildup ? Math.max(0, callOI - callChange) : callOI,
+        callChangeVisual: isCallBuildup ? callChange : 0,
+
+        putBase: isPutBuildup ? Math.max(0, putOI - putChange) : putOI,
+        putChangeVisual: isPutBuildup ? putChange : 0,
+
+        netOI: putOI - callOI,
+      };
+    });
+  }, [data]);
+
   if (!data || data.length === 0) return null;
 
-  const chartData = data.map((d) => ({
-    ...d,
-    putBase: Math.max(0, d.putOI - d.putChange),
-    callBase: Math.max(0, d.callOI - d.callChange),
-    netOI: d.putOI - d.callOI, // Sentiment indicator
-  }));
+  const sentiment =
+    meta.PCR > 1 ? "Bullish" : meta.PCR < 0.8 ? "Bearish" : "Neutral";
 
   return (
-    <div
-      style={{
-        height: 450,
-        width: "100%",
-        background: "#050505",
-        padding: "25px",
-        borderRadius: "12px",
-        fontFamily: "sans-serif",
-      }}
-    >
-      <ResponsiveContainer width="100%" height="450">
-        {/* Using ComposedChart so we can mix Bar and Line */}
+    <div style={{ height: 550, width: "100%", background: "transparent" }}>
+      {/* Legend / Stats Header - Added flexWrap for responsiveness */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "10px",
+          marginBottom: "20px",
+          borderBottom: "1px solid #1a1a1a",
+          paddingBottom: "10px",
+        }}
+      >
+        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            SPOT:{" "}
+            <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
+              {meta.spotPrice}
+            </span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            PCR:{" "}
+            <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
+              {meta.PCR?.toFixed(2)}
+            </span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            Sentiment:{" "}
+            <span
+              style={{
+                color:
+                  sentiment === "Bullish"
+                    ? "#22c55e"
+                    : sentiment === "Bearish"
+                      ? "#ef4444"
+                      : "#3b82f6",
+                fontWeight: "bold",
+              }}
+            >
+              {sentiment}
+            </span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            ATM: <span style={{ color: "#3b82f6" }}>{meta.atmStrike}</span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            Support:{" "}
+            <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
+              {meta.support?.join(", ")}
+            </span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            Resistance:{" "}
+            <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
+              {meta.resistance?.join(", ")}
+            </span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            Max Pain:{" "}
+            <span style={{ color: "#facc15", fontWeight: "bold" }}>
+              {meta.maxPainStrike}
+            </span>
+          </div>
+        </div>
+        <div
+          style={{
+            color: "#555",
+            fontSize: "11px",
+            textAlign: "right",
+          }}
+        >
+          Last Updated: {timeStamp}
+        </div>
+      </div>
+
+      <ResponsiveContainer width="100%" height={450}>
         <ComposedChart
           data={chartData}
           margin={{ top: 20, right: 10, left: 10, bottom: 20 }}
@@ -175,21 +273,22 @@ const OIChart = ({ data = [], meta = {} }) => {
             <pattern
               id="stripesCall"
               width="4"
-              height="3"
+              height="4"
               patternUnits="userSpaceOnUse"
             >
-              <rect width="4" height="1.5" fill="#ef4444" fillOpacity="0.9" />
+              <rect width="4" height="2" fill="#ef4444" fillOpacity="0.9" />
             </pattern>
             <pattern
               id="stripesPut"
               width="4"
-              height="3"
+              height="4"
               patternUnits="userSpaceOnUse"
             >
-              <rect width="4" height="1.5" fill="#22c55e" fillOpacity="0.9" />
+              <rect width="4" height="2" fill="#22c55e" fillOpacity="0.9" />
             </pattern>
           </defs>
 
+          {/* Performance: Disable animation for grid/lines */}
           <CartesianGrid
             strokeDasharray="3 3"
             stroke="#1a1a1a"
@@ -198,14 +297,15 @@ const OIChart = ({ data = [], meta = {} }) => {
           <XAxis
             dataKey="strike"
             stroke="#555"
-            fontSize={12}
+            fontSize={11}
             tickLine={false}
             axisLine={false}
             dy={10}
           />
+
           <YAxis
             stroke="#555"
-            fontSize={12}
+            fontSize={11}
             tickLine={false}
             axisLine={false}
             tickFormatter={(val) => `${val}L`}
@@ -217,6 +317,8 @@ const OIChart = ({ data = [], meta = {} }) => {
             allowEscapeViewBox={{ x: false, y: false }}
           />
 
+          <ReferenceLine y={0} stroke="#333" strokeWidth={1} />
+
           <ReferenceLine
             x={meta.atmStrike}
             stroke="#3b82f6"
@@ -224,31 +326,44 @@ const OIChart = ({ data = [], meta = {} }) => {
             label={{
               value: "ATM",
               fill: "#3b82f6",
-              fontSize: 11,
+              fontSize: 10,
               position: "top",
               fontWeight: "bold",
             }}
           />
 
-          {/* Put Column */}
-          <Bar dataKey="putBase" stackId="put" fill="#14532d" barSize={18} />
+          <ReferenceLine
+            x={meta.maxPainStrike}
+            stroke="#facc15"
+            strokeWidth={2}
+            label={{
+              value: "MAX PAIN",
+              fill: "#facc15",
+              fontSize: 10,
+              position: "top",
+              fontWeight: "bold",
+            }}
+          />
+
+          {/* Put Bars */}
+          <Bar dataKey="putBase" stackId="put" fill="#14532d" barSize={14} />
           <Bar
-            dataKey="putChange"
+            dataKey="putChangeVisual"
             stackId="put"
             fill="url(#stripesPut)"
-            barSize={18}
+            barSize={14}
           />
 
-          {/* Call Column */}
-          <Bar dataKey="callBase" stackId="call" fill="#7f1d1d" barSize={18} />
+          {/* Call Bars */}
+          <Bar dataKey="callBase" stackId="call" fill="#7f1d1d" barSize={14} />
           <Bar
-            dataKey="callChange"
+            dataKey="callChangeVisual"
             stackId="call"
             fill="url(#stripesCall)"
-            barSize={18}
+            barSize={14}
           />
 
-          {/* Net OI Sentiment Line */}
+          {/* Net OI Line */}
           <Line
             type="monotone"
             dataKey="netOI"
