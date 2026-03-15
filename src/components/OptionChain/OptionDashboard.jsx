@@ -84,7 +84,7 @@ const OptionDashboard = ({ optionChainData }) => {
           />
         </div>
 
-        <div className="card">
+        <div>
           <MarketSummary
             signal={analytics?.sig}
             smartMoney={analytics?.sm}
