@@ -155,7 +155,7 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
   return (
     <div
       style={{
-        height: 500,
+        height: 550,
         width: "100%",
         background: "#050505",
         padding: "25px",
@@ -167,24 +167,31 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
       <div
         style={{
           display: "flex",
-          gap: "25px",
+          justifyContent: "space-between",
           marginBottom: "20px",
           borderBottom: "1px solid #1a1a1a",
           paddingBottom: "10px",
         }}
       >
-        <div style={{ color: "#fff", fontSize: "13px" }}>
-          Current Price:{" "}
-          <span style={{ color: "#3b82f6" }}>
-            {meta.spotPrice} at {timeStamp}
-          </span>
+        <div style={{ display: "flex", gap: "25px" }}>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            SPOT:{" "}
+            <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
+              {meta.spotPrice}
+            </span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            ATM: <span style={{ color: "#3b82f6" }}>{meta.atmStrike}</span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            MAX PAIN:{" "}
+            <span style={{ color: "#facc15", fontWeight: "bold" }}>
+              {meta.maxPainStrike}
+            </span>
+          </div>
         </div>
-        <div style={{ color: "#fff", fontSize: "13px" }}>
-          ATM: <span style={{ color: "#3b82f6" }}>{meta.atmStrike}</span>
-        </div>
-        <div style={{ color: "#fff", fontSize: "13px" }}>
-          MAX PAIN:{" "}
-          <span style={{ color: "#facc15" }}>{meta.maxPainStrike}</span>
+        <div style={{ color: "#555", fontSize: "11px" }}>
+          Last Updated: {timeStamp}
         </div>
       </div>
 
@@ -226,6 +233,8 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             axisLine={false}
             dy={10}
           />
+
+          {/* Symmetric Y-Axis for Net OI Line */}
           <YAxis
             stroke="#555"
             fontSize={11}
@@ -240,6 +249,10 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             allowEscapeViewBox={{ x: false, y: false }}
           />
 
+          {/* Zero Line to distinguish Bullish/Bearish Net OI */}
+          <ReferenceLine y={0} stroke="#333" strokeWidth={1} />
+
+          {/* ATM Marker */}
           <ReferenceLine
             x={meta.atmStrike}
             stroke="#3b82f6"
@@ -253,7 +266,7 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             }}
           />
 
-          {/* Max Pain Level */}
+          {/* Max Pain Marker */}
           <ReferenceLine
             x={meta.maxPainStrike}
             stroke="#facc15"
@@ -267,7 +280,7 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             }}
           />
 
-          {/* Bars */}
+          {/* Put Bars (Left side of Strike) */}
           <Bar dataKey="putBase" stackId="put" fill="#14532d" barSize={16} />
           <Bar
             dataKey="putChange"
@@ -275,6 +288,8 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             fill="url(#stripesPut)"
             barSize={16}
           />
+
+          {/* Call Bars (Right side of Strike) */}
           <Bar dataKey="callBase" stackId="call" fill="#7f1d1d" barSize={16} />
           <Bar
             dataKey="callChange"
@@ -288,9 +303,10 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             type="monotone"
             dataKey="netOI"
             stroke="#3b82f6"
-            strokeWidth={1.5}
+            strokeWidth={2}
             dot={false}
             strokeDasharray="5 5"
+            animationDuration={500}
           />
         </ComposedChart>
       </ResponsiveContainer>
