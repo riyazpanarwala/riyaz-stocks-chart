@@ -152,15 +152,15 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
     netOI: d.putOI - d.callOI, // Sentiment indicator
   }));
 
+  const sentiment =
+    meta.PCR > 1 ? "Bullish" : meta.PCR < 0.8 ? "Bearish" : "Neutral";
+
   return (
     <div
       style={{
         height: 550,
         width: "100%",
-        background: "#050505",
-        padding: "25px",
-        borderRadius: "12px",
-        fontFamily: "sans-serif",
+        background: "transparent",
       }}
     >
       {/* Legend / Stats Header */}
@@ -181,7 +181,31 @@ const OIChart = ({ data = [], meta = {}, timeStamp }) => {
             </span>
           </div>
           <div style={{ color: "#fff", fontSize: "13px" }}>
+            PCR:{" "}
+            <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
+              {meta.PCR.toFixed(2)}
+            </span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            sentiment:{" "}
+            <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
+              {sentiment}
+            </span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
             ATM: <span style={{ color: "#3b82f6" }}>{meta.atmStrike}</span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            Support:{" "}
+            <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
+              {meta.support?.join(", ")}
+            </span>
+          </div>
+          <div style={{ color: "#fff", fontSize: "13px" }}>
+            Resistance:{" "}
+            <span style={{ color: "#3b82f6", fontWeight: "bold" }}>
+              {meta.resistance?.join(", ")}
+            </span>
           </div>
           <div style={{ color: "#fff", fontSize: "13px" }}>
             MAX PAIN:{" "}
