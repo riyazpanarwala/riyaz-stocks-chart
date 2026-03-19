@@ -1090,12 +1090,6 @@ function ErrorPanel({ error, onRetry, instrument }) {
       >
         {error}
       </div>
-      <div style={{ color: C.muted, fontSize: 10, marginBottom: 16 }}>
-        Make sure your backend proxy at{" "}
-        <code style={{ color: C.text }}>/api/option-chain</code> is running and
-        forwarding NSE requests for{" "}
-        <b style={{ color: C.text }}>{instrument.symbol}</b>.
-      </div>
       <button
         onClick={onRetry}
         style={{
