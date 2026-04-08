@@ -180,8 +180,8 @@ function parseStockChain(data, expiry) {
 const findATM = (rows, uv) =>
   rows.length
     ? rows.reduce((b, r) =>
-        Math.abs(r.strikePrice - uv) < Math.abs(b.strikePrice - uv) ? r : b,
-      ).strikePrice
+      Math.abs(r.strikePrice - uv) < Math.abs(b.strikePrice - uv) ? r : b,
+    ).strikePrice
     : 0;
 
 // PCR: total Put OI / total Call OI across ALL strikes
@@ -329,6 +329,867 @@ const buildupType = (r) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// INSTITUTIONAL (SMART MONEY) ANALYSIS ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+// pcr must be passed in from the top-level App (calcPCRFull on full chain for indices,
+// calcPCR on complete per-expiry rows for stocks). Never recompute from displayRows —
+// the display window excludes far-OTM strikes which carry the bulk of CE OI, causing
+// PCR to read ~0.75 instead of the correct 1.20 (same bug documented in calcPCRFull).
+function calcInstitutional(rows, spot, atm, pcr) {
+  if (!rows.length) return null;
+
+  const atmIdx = rows.findIndex((r) => r.strikePrice === atm);
+  const nearATM = rows.filter((_, i) => Math.abs(i - atmIdx) <= 2);
+
+  const totalCeOI = rows.reduce((s, r) => s + r.CE.openInterest, 0);
+  const totalPeOI = rows.reduce((s, r) => s + r.PE.openInterest, 0);
+
+  // ── STEP 1: OI spike detection ──────────────────────────────
+  const avgCeDOI =
+    rows.reduce((s, r) => s + Math.abs(r.CE.changeinOpenInterest), 0) /
+    rows.length;
+  const avgPeDOI =
+    rows.reduce((s, r) => s + Math.abs(r.PE.changeinOpenInterest), 0) /
+    rows.length;
+
+  const spikes = [];
+  rows.forEach((r, idx) => {
+    const ceDOI = r.CE.changeinOpenInterest;
+    const peDOI = r.PE.changeinOpenInterest;
+    const nearness = Math.abs(idx - atmIdx) <= 3 ? "ATM±3" : "OTM";
+
+    if (ceDOI > avgCeDOI * 2 && ceDOI > 0) {
+      const withVol = r.CE.totalTradedVolume > r.CE.openInterest * 0.04;
+      spikes.push({
+        strike: r.strikePrice,
+        side: "CE",
+        doi: ceDOI,
+        vol: r.CE.totalTradedVolume,
+        ltp: r.CE.lastPrice,
+        chg: r.CE.change,
+        type:
+          r.CE.change <= 0
+            ? "Aggressive Call Writing"
+            : "Call Long Build-up",
+        highConv: withVol,
+        nearness,
+      });
+    }
+    if (peDOI > avgPeDOI * 2 && peDOI > 0) {
+      const withVol = r.PE.totalTradedVolume > r.PE.openInterest * 0.04;
+      spikes.push({
+        strike: r.strikePrice,
+        side: "PE",
+        doi: peDOI,
+        vol: r.PE.totalTradedVolume,
+        ltp: r.PE.lastPrice,
+        chg: r.PE.change,
+        type:
+          r.PE.change >= 0
+            ? "Aggressive Put Writing"
+            : "Put Short Build-up",
+        highConv: withVol,
+        nearness,
+      });
+    }
+  });
+  const topSpikes = [...spikes].sort((a, b) => b.doi - a.doi).slice(0, 3);
+
+  // Cluster detection: consecutive spikes = writing wall
+  const spikeStrikes = new Set(spikes.map((s) => s.strike));
+  const sortedSpikeStrikes = [...spikeStrikes].sort((a, b) => a - b);
+  const clusters = [];
+  let cur = [];
+  for (const s of sortedSpikeStrikes) {
+    if (!cur.length || s - cur[cur.length - 1] <= 100) {
+      cur.push(s);
+    } else {
+      if (cur.length >= 2) clusters.push([...cur]);
+      cur = [s];
+    }
+  }
+  if (cur.length >= 2) clusters.push(cur);
+
+  // ── STEP 2: Footprint — rolling / walls / traps ──────────────
+  const rolls = [];
+  for (let i = 1; i < rows.length; i++) {
+    const prev = rows[i - 1],
+      cur = rows[i];
+    if (prev.CE.changeinOpenInterest < -avgCeDOI && cur.CE.changeinOpenInterest > avgCeDOI)
+      rolls.push({ from: prev.strikePrice, to: cur.strikePrice, side: "CE" });
+    if (prev.PE.changeinOpenInterest < -avgPeDOI && cur.PE.changeinOpenInterest > avgPeDOI)
+      rolls.push({ from: prev.strikePrice, to: cur.strikePrice, side: "PE" });
+  }
+
+  const traps = [];
+  rows.forEach((r) => {
+    // Call writers trapped: CE OI rising but price also rising
+    if (r.CE.changeinOpenInterest > avgCeDOI && r.CE.change > 0)
+      traps.push({
+        strike: r.strikePrice,
+        side: "CE",
+        msg: `CE OI building at ${r.strikePrice} but price rising — call writers exposed`,
+      });
+    // Put writers trapped: PE OI rising but price also falling
+    if (r.PE.changeinOpenInterest > avgPeDOI && r.PE.change < 0)
+      traps.push({
+        strike: r.strikePrice,
+        side: "PE",
+        msg: `PE OI building at ${r.strikePrice} but price falling — put writers exposed`,
+      });
+  });
+
+  // ── STEP 3: Volume confirmation ──────────────────────────────
+  const highConvZones = spikes
+    .filter((s) => s.highConv)
+    .map((s) => s.strike);
+  const lowConvNoise = spikes
+    .filter((s) => !s.highConv)
+    .map((s) => s.strike);
+
+  // ── STEP 4: ATM shift ────────────────────────────────────────
+  const nearCeDOI = nearATM.reduce(
+    (s, r) => s + r.CE.changeinOpenInterest,
+    0
+  );
+  const nearPeDOI = nearATM.reduce(
+    (s, r) => s + r.PE.changeinOpenInterest,
+    0
+  );
+  const atmShift =
+    nearPeDOI > nearCeDOI * 1.3
+      ? "PE Dominant"
+      : nearCeDOI > nearPeDOI * 1.3
+        ? "CE Dominant"
+        : "Balanced";
+
+  // ── STEP 5: Institutional signals ───────────────────────────
+  const signals = [];
+  const aboveSpot = rows.filter((r) => r.strikePrice > spot);
+  const belowSpot = rows.filter((r) => r.strikePrice < spot);
+  const topRes3 = [...aboveSpot]
+    .sort((a, b) => b.CE.openInterest - a.CE.openInterest)
+    .slice(0, 3);
+  const topSup3 = [...belowSpot]
+    .sort((a, b) => b.PE.openInterest - a.PE.openInterest)
+    .slice(0, 3);
+
+  spikes.forEach((s) => {
+    if (s.type === "Aggressive Call Writing" && s.highConv)
+      signals.push({
+        icon: "🔴",
+        label: "Strong Call Writing Zone (Institutional Resistance)",
+        strike: s.strike,
+        conf: "HIGH",
+      });
+    if (s.type === "Aggressive Put Writing" && s.highConv)
+      signals.push({
+        icon: "🟢",
+        label: "Strong Put Writing Zone (Institutional Support)",
+        strike: s.strike,
+        conf: "HIGH",
+      });
+    if (s.type === "Aggressive Call Writing" && !s.highConv)
+      signals.push({
+        icon: "🟡",
+        label: "Fake Move – Low Conviction (CE write, no vol)",
+        strike: s.strike,
+        conf: "LOW",
+      });
+    if (s.type === "Aggressive Put Writing" && !s.highConv)
+      signals.push({
+        icon: "🟡",
+        label: "Fake Move – Low Conviction (PE write, no vol)",
+        strike: s.strike,
+        conf: "LOW",
+      });
+  });
+  rows.forEach((r) => {
+    if (r.CE.changeinOpenInterest < -avgCeDOI && r.CE.change > 0)
+      signals.push({
+        icon: "⚡",
+        label: "Short Covering Rally Possible",
+        strike: r.strikePrice,
+        conf: "MED",
+      });
+    if (r.PE.changeinOpenInterest < -avgPeDOI && r.PE.change < 0)
+      signals.push({
+        icon: "📉",
+        label: "Long Unwinding Detected",
+        strike: r.strikePrice,
+        conf: "MED",
+      });
+  });
+  traps.forEach((t) =>
+    signals.push({
+      icon: "⚠️",
+      label: `Trap Zone – Avoid Trade at ${t.strike}`,
+      strike: t.strike,
+      conf: "TRAP",
+    })
+  );
+  // Breakout check: spot near or above top resistance with vol
+  const nearRes = topRes3[0];
+  if (
+    nearRes &&
+    spot >= nearRes.strikePrice - 50 &&
+    nearRes.CE.totalTradedVolume > nearRes.CE.openInterest * 0.05
+  )
+    signals.push({
+      icon: "🚀",
+      label: "Breakout Supported by Institutions",
+      strike: nearRes.strikePrice,
+      conf: "HIGH",
+    });
+
+  // ── STEP 6: OI concentration ─────────────────────────────────
+  const top3Ce = [...rows]
+    .sort((a, b) => b.CE.openInterest - a.CE.openInterest)
+    .slice(0, 3);
+  const top3Pe = [...rows]
+    .sort((a, b) => b.PE.openInterest - a.PE.openInterest)
+    .slice(0, 3);
+  const concCe =
+    totalCeOI > 0
+      ? (top3Ce.reduce((s, r) => s + r.CE.openInterest, 0) / totalCeOI) * 100
+      : 0;
+  const concPe =
+    totalPeOI > 0
+      ? (top3Pe.reduce((s, r) => s + r.PE.openInterest, 0) / totalPeOI) * 100
+      : 0;
+
+  // ── Smart money bias score ────────────────────────────────────
+  // pcr is the full-chain value passed in from App — do NOT recompute from rows
+  const pcrBias = pcr > 1.2 ? 1 : pcr < 0.8 ? -1 : 0;
+  const oiBias = nearPeDOI > nearCeDOI ? 1 : nearCeDOI > nearPeDOI ? -1 : 0;
+  const closestRes = topRes3.length ? Math.min(...topRes3.map((r) => r.strikePrice)) : Infinity;
+  const closestSup = topSup3.length ? Math.max(...topSup3.map((r) => r.strikePrice)) : 0;
+  const zoneBias = spot - closestSup < closestRes - spot ? 1 : -1;
+  const totalBias = pcrBias + oiBias + zoneBias;
+  const smartBias =
+    totalBias >= 2 ? "BULLISH" : totalBias <= -2 ? "BEARISH" : "NEUTRAL";
+
+  return {
+    topSpikes,
+    clusters,
+    rolls,
+    traps,
+    highConvZones,
+    lowConvNoise,
+    atmShift,
+    signals: signals.slice(0, 10),
+    top3Ce,
+    top3Pe,
+    concCe,
+    concPe,
+    totalCeOI,
+    totalPeOI,
+    smartBias,
+    topRes: topRes3,
+    topSup: topSup3,
+    pcr,
+  };
+}
+
+// ── Institutional Panel Component ─────────────────────────────
+const IBadge = ({ conf }) => {
+  const map = {
+    HIGH: { bg: C.greenBg, color: C.green, border: `${C.green}40` },
+    MED: { bg: "#1c1400", color: C.yellow, border: `${C.yellow}40` },
+    LOW: { bg: C.surface2, color: C.muted, border: `${C.border}` },
+    TRAP: { bg: "#2a1500", color: "#ff7b00", border: "#ff7b0040" },
+  };
+  const s = map[conf] || map.LOW;
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        padding: "1px 7px",
+        borderRadius: 4,
+        fontSize: 9,
+        fontWeight: 700,
+        letterSpacing: 0.5,
+        background: s.bg,
+        color: s.color,
+        border: `1px solid ${s.border}`,
+        flexShrink: 0,
+      }}
+    >
+      {conf}
+    </span>
+  );
+};
+
+function InstitutionalPanel({ rows, spot, atm, maxPain, pcr }) {
+  const inst = calcInstitutional(rows, spot, atm, pcr);
+  if (!inst) return null;
+
+  const {
+    topSpikes,
+    clusters,
+    rolls,
+    traps,
+    highConvZones,
+    lowConvNoise,
+    atmShift,
+    signals,
+    top3Ce,
+    top3Pe,
+    concCe,
+    concPe,
+    totalCeOI,
+    totalPeOI,
+    smartBias,
+    topRes,
+    topSup,
+  } = inst;
+
+  const biasColor =
+    smartBias === "BULLISH" ? C.green : smartBias === "BEARISH" ? C.red : C.yellow;
+  const biasBg =
+    smartBias === "BULLISH" ? C.greenBg : smartBias === "BEARISH" ? C.redBg : C.surface2;
+  const biasIcon = smartBias === "BULLISH" ? "▲" : smartBias === "BEARISH" ? "▼" : "—";
+
+  const card = (children, extra = {}) => (
+    <div
+      style={{
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        marginBottom: 10,
+        ...extra,
+      }}
+    >
+      {children}
+    </div>
+  );
+
+  const cardTitle = (txt, icon) => (
+    <div
+      style={{
+        fontSize: 10,
+        color: C.muted,
+        letterSpacing: 1,
+        marginBottom: 10,
+        textTransform: "uppercase",
+      }}
+    >
+      {icon} {txt}
+    </div>
+  );
+
+  const fmt = (n) => {
+    if (!n && n !== 0) return "—";
+    const abs = Math.abs(n);
+    if (abs >= 100000) return `${(n / 100000).toFixed(1)}L`;
+    if (abs >= 1000) return `${(n / 1000).toFixed(1)}K`;
+    return n.toString();
+  };
+
+  const maxCeOI = Math.max(...top3Ce.map((r) => r.CE.openInterest), 1);
+  const maxPeOI = Math.max(...top3Pe.map((r) => r.PE.openInterest), 1);
+
+  return (
+    <div>
+      {/* ── Smart Money Bias Header ── */}
+      {card(
+        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+          <div
+            style={{
+              background: biasBg,
+              border: `1px solid ${biasColor}44`,
+              borderRadius: 8,
+              padding: "8px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 20, fontWeight: 800, color: biasColor }}>
+              {biasIcon} {smartBias}
+            </span>
+            <span style={{ fontSize: 10, color: C.muted }}>SMART MONEY BIAS</span>
+          </div>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            {[
+              {
+                l: "PCR",
+                v: pcr.toFixed(2),
+                c: pcr > 1.2 ? C.green : pcr < 0.8 ? C.red : C.yellow,
+                sub: pcr > 1.2 ? "Bullish" : pcr < 0.8 ? "Bearish" : "Neutral",
+              },
+              { l: "ATM Shift", v: atmShift, c: atmShift === "PE Dominant" ? C.green : atmShift === "CE Dominant" ? C.red : C.muted },
+              { l: "MaxPain", v: maxPain, c: C.yellow },
+              { l: "Spikes", v: topSpikes.length, c: C.blue },
+              { l: "Traps", v: traps.length, c: traps.length > 0 ? "#ff7b00" : C.muted },
+            ].map(({ l, v, c, sub }) => (
+              <div key={l} style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: C.muted }}>{l}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: c }}>{v}</div>
+                {sub && <div style={{ fontSize: 9, color: c }}>{sub}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Support / Resistance Zones ── */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 160,
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 10,
+            padding: "12px 14px",
+          }}
+        >
+          <div style={{ fontSize: 10, color: C.green, letterSpacing: 1, marginBottom: 8 }}>
+            ▲ SUPPORT — TOP PE OI BELOW SPOT
+          </div>
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+            {topSup.length ? (
+              topSup.map((r, i) => (
+                <span
+                  key={r.strikePrice}
+                  style={{
+                    background: i === 0 ? C.greenBg : "#111",
+                    border: `1px solid ${C.green}40`,
+                    color: C.green,
+                    padding: "2px 9px",
+                    borderRadius: 4,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    opacity: 1 - i * 0.2,
+                  }}
+                >
+                  {r.strikePrice}
+                </span>
+              ))
+            ) : (
+              <span style={{ color: C.muted, fontSize: 10 }}>None below spot</span>
+            )}
+          </div>
+          {topSup.length > 0 && (
+            <div style={{ fontSize: 10, color: `${C.green}88`, marginTop: 6 }}>
+              Wall OI:{" "}
+              {fmt(topSup.reduce((s, r) => s + r.PE.openInterest, 0))} ·{" "}
+              {((topSup.reduce((s, r) => s + r.PE.openInterest, 0) / (totalPeOI || 1)) * 100).toFixed(1)}% of total PE
+            </div>
+          )}
+        </div>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 160,
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 10,
+            padding: "12px 14px",
+          }}
+        >
+          <div style={{ fontSize: 10, color: C.red, letterSpacing: 1, marginBottom: 8 }}>
+            ▼ RESISTANCE — TOP CE OI ABOVE SPOT
+          </div>
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+            {topRes.length ? (
+              topRes.map((r, i) => (
+                <span
+                  key={r.strikePrice}
+                  style={{
+                    background: i === 0 ? C.redBg : "#111",
+                    border: `1px solid ${C.red}40`,
+                    color: C.red,
+                    padding: "2px 9px",
+                    borderRadius: 4,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    opacity: 1 - i * 0.2,
+                  }}
+                >
+                  {r.strikePrice}
+                </span>
+              ))
+            ) : (
+              <span style={{ color: C.muted, fontSize: 10 }}>None above spot</span>
+            )}
+          </div>
+          {topRes.length > 0 && (
+            <div style={{ fontSize: 10, color: `${C.red}88`, marginTop: 6 }}>
+              Wall OI:{" "}
+              {fmt(topRes.reduce((s, r) => s + r.CE.openInterest, 0))} ·{" "}
+              {((topRes.reduce((s, r) => s + r.CE.openInterest, 0) / (totalCeOI || 1)) * 100).toFixed(1)}% of total CE
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Top Institutional Spikes ── */}
+      {card(
+        <>
+          {cardTitle("Top Institutional Spikes (ΔOI)", "🔥")}
+          {topSpikes.length === 0 ? (
+            <div style={{ fontSize: 11, color: C.muted }}>No significant spikes detected in current data.</div>
+          ) : (
+            topSpikes.map((s, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  padding: "8px 0",
+                  borderBottom: i < topSpikes.length - 1 ? `1px solid ${C.border}` : "none",
+                }}
+              >
+                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>
+                  {s.side === "CE" ? "🔴" : "🟢"}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: C.text }}>{s.type}</div>
+                  <div style={{ fontSize: 10, color: C.blue, marginTop: 2 }}>
+                    Strike {s.strike} · {s.side} · ΔOI {fmt(s.doi)} · Vol {fmt(s.vol)} · LTP {s.ltp}
+                    {s.chg !== undefined && (
+                      <span style={{ color: s.chg >= 0 ? C.green : C.red }}>
+                        {" "}({s.chg > 0 ? "+" : ""}{typeof s.chg === "number" ? s.chg.toFixed(1) : s.chg}%)
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      marginTop: 3,
+                      color: s.highConv ? C.green : C.muted,
+                    }}
+                  >
+                    {s.highConv
+                      ? "▰ HIGH CONVICTION — Volume confirms institutional entry"
+                      : "▱ LOW CONVICTION — Volume absent, possibly passive"}
+                  </div>
+                  <div style={{ fontSize: 9, color: C.muted, marginTop: 1 }}>
+                    {s.nearness} ·{" "}
+                    {clusters.some((c) => c.includes(s.strike))
+                      ? "Part of a writing cluster"
+                      : "Isolated spike"}
+                  </div>
+                </div>
+                <IBadge conf={s.highConv ? "HIGH" : "LOW"} />
+              </div>
+            ))
+          )}
+        </>
+      )}
+
+      {/* ── Institutional Signals ── */}
+      {signals.length > 0 &&
+        card(
+          <>
+            {cardTitle("Institutional Signals", "⚡")}
+            {signals.map((s, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "7px 0",
+                  borderBottom: i < signals.length - 1 ? `1px solid ${C.border}` : "none",
+                }}
+              >
+                <span style={{ fontSize: 13, flexShrink: 0 }}>{s.icon}</span>
+                <div style={{ flex: 1, fontSize: 12, color: C.text }}>{s.label}</div>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: C.muted,
+                    flexShrink: 0,
+                    marginRight: 6,
+                  }}
+                >
+                  {s.strike}
+                </span>
+                <IBadge conf={s.conf} />
+              </div>
+            ))}
+          </>
+        )}
+
+      {/* ── Trap Signals ── */}
+      {traps.length > 0 &&
+        card(
+          <>
+            {cardTitle("Trap Signals", "⚠️")}
+            {traps.map((t, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  padding: "7px 0",
+                  borderBottom: i < traps.length - 1 ? `1px solid ${C.border}` : "none",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 13,
+                    flexShrink: 0,
+                    color: "#ff7b00",
+                    animation: "none",
+                  }}
+                >
+                  ⚠️
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: "#ff7b00" }}>{t.msg}</div>
+                  <div style={{ fontSize: 10, color: `#ff7b0088`, marginTop: 2 }}>
+                    Trap Zone — avoid directional trade at this strike
+                  </div>
+                </div>
+                <IBadge conf="TRAP" />
+              </div>
+            ))}
+          </>,
+          { border: `1px solid #ff7b0033` }
+        )}
+
+      {/* ── Position Rolls ── */}
+      {rolls.length > 0 &&
+        card(
+          <>
+            {cardTitle("Position Rolls Detected (Shift in Positions)", "🔄")}
+            {rolls.map((r, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "6px 0",
+                  borderBottom: i < rolls.length - 1 ? `1px solid ${C.border}` : "none",
+                }}
+              >
+                <span style={{ fontSize: 12, color: C.purple }}>↔</span>
+                <div style={{ flex: 1, fontSize: 12, color: C.text }}>
+                  {r.side} position rolled from{" "}
+                  <b style={{ color: C.red }}>{r.from}</b> →{" "}
+                  <b style={{ color: C.green }}>{r.to}</b>
+                </div>
+                <span
+                  style={{
+                    fontSize: 9,
+                    padding: "1px 7px",
+                    borderRadius: 4,
+                    background: "#1a0a1a",
+                    color: C.purple,
+                    border: `1px solid ${C.purple}40`,
+                  }}
+                >
+                  ROLL
+                </span>
+              </div>
+            ))}
+          </>
+        )}
+
+      {/* ── Volume Conviction Zones ── */}
+      {card(
+        <>
+          {cardTitle("Volume Confirmation Zones", "📊")}
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 140 }}>
+              <div style={{ fontSize: 9, color: C.green, marginBottom: 5 }}>
+                ▰ HIGH CONVICTION ZONES (OI + Volume confirmed)
+              </div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {highConvZones.length ? (
+                  highConvZones.map((s) => (
+                    <span
+                      key={s}
+                      style={{
+                        background: C.greenBg,
+                        border: `1px solid ${C.green}40`,
+                        color: C.green,
+                        padding: "2px 7px",
+                        borderRadius: 4,
+                        fontSize: 10,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))
+                ) : (
+                  <span style={{ fontSize: 10, color: C.muted }}>None detected</span>
+                )}
+              </div>
+            </div>
+            <div style={{ flex: 1, minWidth: 140 }}>
+              <div style={{ fontSize: 9, color: C.muted, marginBottom: 5 }}>
+                ▱ LOW CONVICTION NOISE (OI spike, volume absent)
+              </div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {lowConvNoise.length ? (
+                  lowConvNoise.map((s) => (
+                    <span
+                      key={s}
+                      style={{
+                        background: C.surface2,
+                        border: `1px solid ${C.border}`,
+                        color: C.muted,
+                        padding: "2px 7px",
+                        borderRadius: 4,
+                        fontSize: 10,
+                      }}
+                    >
+                      {s}
+                    </span>
+                  ))
+                ) : (
+                  <span style={{ fontSize: 10, color: C.muted }}>None</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── OI Concentration ── */}
+      {card(
+        <>
+          {cardTitle("OI Concentration — Smart Money Distribution", "📈")}
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 140 }}>
+              <div style={{ fontSize: 10, color: C.red, marginBottom: 6 }}>
+                CE — Top 3 hold {concCe.toFixed(1)}% of total OI
+              </div>
+              {top3Ce.map((r, i) => (
+                <div key={r.strikePrice} style={{ marginBottom: 6 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: 10,
+                      marginBottom: 2,
+                    }}
+                  >
+                    <span style={{ color: C.text }}>{r.strikePrice}</span>
+                    <span style={{ color: C.red }}>{fmt(r.CE.openInterest)}</span>
+                  </div>
+                  <div
+                    style={{
+                      height: 4,
+                      background: C.border,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${(r.CE.openInterest / maxCeOI) * 100}%`,
+                        height: "100%",
+                        background: i === 0 ? C.red : `${C.red}66`,
+                        borderRadius: 2,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ flex: 1, minWidth: 140 }}>
+              <div style={{ fontSize: 10, color: C.green, marginBottom: 6 }}>
+                PE — Top 3 hold {concPe.toFixed(1)}% of total OI
+              </div>
+              {top3Pe.map((r, i) => (
+                <div key={r.strikePrice} style={{ marginBottom: 6 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: 10,
+                      marginBottom: 2,
+                    }}
+                  >
+                    <span style={{ color: C.text }}>{r.strikePrice}</span>
+                    <span style={{ color: C.green }}>{fmt(r.PE.openInterest)}</span>
+                  </div>
+                  <div
+                    style={{
+                      height: 4,
+                      background: C.border,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${(r.PE.openInterest / maxPeOI) * 100}%`,
+                        height: "100%",
+                        background: i === 0 ? C.green : `${C.green}66`,
+                        borderRadius: 2,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Institution building or exiting? */}
+          <div
+            style={{
+              marginTop: 10,
+              paddingTop: 10,
+              borderTop: `1px solid ${C.border}`,
+              display: "flex",
+              gap: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            {[
+              {
+                label: "CE Net ΔOI",
+                val: rows.reduce((s, r) => s + r.CE.changeinOpenInterest, 0),
+                up: "Building CE (Bearish pressure)",
+                dn: "CE Exiting (Bullish relief)",
+                upC: C.red,
+                dnC: C.green,
+              },
+              {
+                label: "PE Net ΔOI",
+                val: rows.reduce((s, r) => s + r.PE.changeinOpenInterest, 0),
+                up: "Building PE (Bullish support)",
+                dn: "PE Exiting (Bearish risk)",
+                upC: C.green,
+                dnC: C.red,
+              },
+            ].map(({ label, val, up, dn, upC, dnC }) => (
+              <div key={label} style={{ flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 9, color: C.muted, marginBottom: 3 }}>{label}</div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: val >= 0 ? upC : dnC,
+                  }}
+                >
+                  {val >= 0 ? "+" : ""}{fmt(val)}
+                </div>
+                <div style={{ fontSize: 10, color: val >= 0 ? upC : dnC }}>
+                  {val >= 0 ? up : dn}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // SEARCHABLE SYMBOL PICKER
 // ═══════════════════════════════════════════════════════════════
 function SymbolPicker({ selected, onChange }) {
@@ -382,8 +1243,8 @@ function SymbolPicker({ selected, onChange }) {
       }}
       onMouseEnter={(e) => (e.currentTarget.style.background = C.surface2)}
       onMouseLeave={(e) =>
-        (e.currentTarget.style.background =
-          selected?.symbol === item.symbol ? C.surface2 : "transparent")
+      (e.currentTarget.style.background =
+        selected?.symbol === item.symbol ? C.surface2 : "transparent")
       }
     >
       <div
@@ -1521,6 +2382,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
               <Tab id="oi" label="OI Chart" />
               <Tab id="doi" label="ΔOI Chart" />
               <Tab id="table" label="Table" />
+              <Tab id="inst" label="🧠 Smart Money" />
               {!isIndex && <Tab id="expiry" label="Expiries" />}
             </div>
 
@@ -1914,6 +2776,17 @@ export default function App({ initialData = null, initialSymbol = null }) {
                     </tbody>
                   </table>
                 </div>
+              )}
+
+              {/* Smart Money / Institutional Analysis */}
+              {activeTab === "inst" && (
+                <InstitutionalPanel
+                  rows={displayRows}
+                  spot={underlyingValue}
+                  atm={atm}
+                  maxPain={maxPain}
+                  pcr={pcr}
+                />
               )}
 
               {/* Expiry cards (stock only) */}
