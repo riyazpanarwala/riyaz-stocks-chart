@@ -386,9 +386,9 @@ function calcInstitutional(rows, spot, atm, pcr) {
         ltp: r.PE.lastPrice,
         chg: r.PE.change,
         type:
-          r.PE.change >= 0
+          r.PE.change <= 0
             ? "Aggressive Put Writing"
-            : "Put Short Build-up",
+            : "Put Long Build-up",
         highConv: withVol,
         nearness,
       });
@@ -432,21 +432,21 @@ function calcInstitutional(rows, spot, atm, pcr) {
         msg: `CE OI building at ${r.strikePrice} but price rising — call writers exposed`,
       });
     // Put writers trapped: PE OI rising but price also falling
-    if (r.PE.changeinOpenInterest > avgPeDOI && r.PE.change < 0)
+    if (r.PE.changeinOpenInterest > avgPeDOI && r.PE.change > 0)
       traps.push({
         strike: r.strikePrice,
         side: "PE",
-        msg: `PE OI building at ${r.strikePrice} but price falling — put writers exposed`,
+        msg: `PE OI building at ${r.strikePrice} but price rising — put writers exposed`,
       });
   });
 
   // ── STEP 3: Volume confirmation ──────────────────────────────
-  const highConvZones = spikes
-    .filter((s) => s.highConv)
-    .map((s) => s.strike);
-  const lowConvNoise = spikes
-    .filter((s) => !s.highConv)
-    .map((s) => s.strike);
+  const highConvZones = [
+    ...new Set(spikes.filter((s) => s.highConv).map((s) => s.strike)),
+  ];
+  const lowConvNoise = [
+    ...new Set(spikes.filter((s) => !s.highConv).map((s) => s.strike)),
+  ];
 
   // ── STEP 4: ATM shift ────────────────────────────────────────
   const nearCeDOI = nearATM.reduce(
@@ -2781,7 +2781,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
               {/* Smart Money / Institutional Analysis */}
               {activeTab === "inst" && (
                 <InstitutionalPanel
-                  rows={displayRows}
+                  rows={rows}
                   spot={underlyingValue}
                   atm={atm}
                   maxPain={maxPain}
