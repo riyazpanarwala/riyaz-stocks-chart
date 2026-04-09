@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { getNSEData } from "../getIntervalData";
 import FO_LIST from "./FOlist";
-import { isMarketOpen } from "../utils/indianstockmarket";
+import { isMarketOpen, isHoliday } from "../utils/indianstockmarket";
 
 const INDEX_DATA = {
   timestamp: "",
@@ -622,10 +622,14 @@ function diffInstitutional(prevRows, currRows) {
     const strike = curr.strikePrice;
     const prev = prevMap[strike];
 
-    const prevWasCeSpike = prev ? Math.abs(prev.CE.changeinOpenInterest) > avgCePrev * 2 : false;
-    const currIsCeSpike = Math.abs(curr.CE.changeinOpenInterest) > avgCeCurr * 2;
-    const prevWasPeSpike = prev ? Math.abs(prev.PE.changeinOpenInterest) > avgPePrev * 2 : false;
-    const currIsPeSpike = Math.abs(curr.PE.changeinOpenInterest) > avgPeCurr * 2;
+    const prevWasCeSpike = prev
+      ? prev.CE.changeinOpenInterest > avgCePrev * 2
+      : false;
+    const currIsCeSpike = curr.CE.changeinOpenInterest > avgCeCurr * 2;
+    const prevWasPeSpike = prev
+      ? prev.PE.changeinOpenInterest > avgPePrev * 2
+      : false;
+    const currIsPeSpike = curr.PE.changeinOpenInterest > avgPeCurr * 2;
 
     // ── New CE spike ─────────────────────────────────────────
     if (!prevWasCeSpike && currIsCeSpike) {
@@ -680,8 +684,8 @@ function diffInstitutional(prevRows, currRows) {
     });
 
     // ── New PE trap ───────────────────────────────────────────
-    const prevPeTrap = prev ? prev.PE.changeinOpenInterest > avgPePrev && prev.PE.change < 0 : false;
-    const currPeTrap = curr.PE.changeinOpenInterest > avgPeCurr && curr.PE.change < 0;
+    const prevPeTrap = prev ? prev.PE.changeinOpenInterest > avgPePrev && prev.PE.change > 0 : false;
+    const currPeTrap = curr.PE.changeinOpenInterest > avgPeCurr && curr.PE.change > 0;
     if (!prevPeTrap && currPeTrap) alerts.push({
       type: "TRAP", strike, side: "PE", severity: "NEW",
       label: `New PE trap at ${strike} \u2014 put writers now exposed`,
@@ -1944,24 +1948,10 @@ function ZoneBadges({ sig }) {
 
 const REFRESH_MS = 120_000; // poll interval during market hours (2 min)
 
-// ── Market-hours helpers (IST = UTC+5:30) ───────────────────
-function getISTDate() {
-  const now = new Date();
-  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-  return new Date(utcMs + 5.5 * 3600000);
-}
 function getMarketStatusLabel() {
-  const ist = getISTDate();
-  const day = ist.getDay();
-  const mins = ist.getHours() * 60 + ist.getMinutes();
-  if (day === 0 || day === 6) return { open: false, label: "Weekend" };
-  if (mins < 9 * 60 + 15) return { open: false, label: "Pre-market" };
-
-  // Change here from 15*60 to 15*60 + 30
-  if (mins >= 15 * 60 + 30)
-    return { open: false, label: "Market closed \u00b7 last data" };
-
-  return { open: true, label: "Market open \u00b7 live" };
+  if (isHoliday()) return { open: false, label: "Holiday" };
+  if (isMarketOpen()) return { open: true, label: "Market open \u00b7 live" };
+  else return { open: false, label: "Market closed" };
 }
 
 /**
@@ -2101,6 +2091,7 @@ function useOptionChain(instrument) {
 
   // Initial fetch on mount / symbol change
   useEffect(() => {
+    closedFetchDone.current = !isMarketOpen();
     load(instrument, true);
     return () => abortRef.current?.abort();
   }, [instrument, load]);
