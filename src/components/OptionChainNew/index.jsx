@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { getNSEData } from "../getIntervalData";
 import FO_LIST from "./FOlist";
+import { isMarketOpen } from "../utils/indianstockmarket";
 
 const INDEX_DATA = {
   timestamp: "",
@@ -592,6 +593,153 @@ function calcInstitutional(rows, spot, atm, pcr) {
   };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// DIFF ENGINE
+// Compares prevRows (previous 2-min snapshot) against currRows (current).
+// Returns array of new-activity alerts for the 🔔 highlight panel.
+// severity: "NEW" | "SURGE" | "FLIP" | "WALL_SHIFT"
+// ═══════════════════════════════════════════════════════════════
+function fmtN(n) {
+  if (!n && n !== 0) return "—";
+  const abs = Math.abs(n);
+  if (abs >= 100000) return `${(n / 100000).toFixed(1)}L`;
+  if (abs >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
+}
+
+function diffInstitutional(prevRows, currRows) {
+  if (!prevRows?.length || !currRows?.length) return [];
+  const alerts = [];
+  const prevMap = {};
+  prevRows.forEach((r) => { prevMap[r.strikePrice] = r; });
+
+  const avgCePrev = prevRows.reduce((s, r) => s + Math.abs(r.CE.changeinOpenInterest), 0) / prevRows.length;
+  const avgPePrev = prevRows.reduce((s, r) => s + Math.abs(r.PE.changeinOpenInterest), 0) / prevRows.length;
+  const avgCeCurr = currRows.reduce((s, r) => s + Math.abs(r.CE.changeinOpenInterest), 0) / currRows.length;
+  const avgPeCurr = currRows.reduce((s, r) => s + Math.abs(r.PE.changeinOpenInterest), 0) / currRows.length;
+
+  currRows.forEach((curr) => {
+    const strike = curr.strikePrice;
+    const prev = prevMap[strike];
+
+    const prevWasCeSpike = prev ? Math.abs(prev.CE.changeinOpenInterest) > avgCePrev * 2 : false;
+    const currIsCeSpike = Math.abs(curr.CE.changeinOpenInterest) > avgCeCurr * 2;
+    const prevWasPeSpike = prev ? Math.abs(prev.PE.changeinOpenInterest) > avgPePrev * 2 : false;
+    const currIsPeSpike = Math.abs(curr.PE.changeinOpenInterest) > avgPeCurr * 2;
+
+    // ── New CE spike ─────────────────────────────────────────
+    if (!prevWasCeSpike && currIsCeSpike) {
+      alerts.push({
+        type: "NEW", strike, side: "CE", severity: "NEW",
+        label: `New CE spike at ${strike} — ${curr.CE.change <= 0 ? "Aggressive Call Writing" : "Call Long Build-up"}`,
+        detail: `\u0394OI ${fmtN(curr.CE.changeinOpenInterest)} \u00b7 Vol ${fmtN(curr.CE.totalTradedVolume)} \u00b7 LTP ${curr.CE.lastPrice}`,
+        highConv: curr.CE.totalTradedVolume > curr.CE.openInterest * 0.04,
+      });
+    }
+
+    // ── New PE spike ─────────────────────────────────────────
+    if (!prevWasPeSpike && currIsPeSpike) {
+      alerts.push({
+        type: "NEW", strike, side: "PE", severity: "NEW",
+        label: `New PE spike at ${strike} — ${curr.PE.change <= 0 ? "Aggressive Put Writing" : "Put Long Build-up"}`,
+        detail: `\u0394OI ${fmtN(curr.PE.changeinOpenInterest)} \u00b7 Vol ${fmtN(curr.PE.totalTradedVolume)} \u00b7 LTP ${curr.PE.lastPrice}`,
+        highConv: curr.PE.totalTradedVolume > curr.PE.openInterest * 0.04,
+      });
+    }
+
+    // ── CE OI surge (existing spike grew > 50%) ──────────────
+    if (prev && prevWasCeSpike && currIsCeSpike && prev.CE.changeinOpenInterest > 0) {
+      const g = (curr.CE.changeinOpenInterest - prev.CE.changeinOpenInterest) / prev.CE.changeinOpenInterest;
+      if (g > 0.5) alerts.push({
+        type: "SURGE", strike, side: "CE", severity: "SURGE",
+        label: `CE OI surge at ${strike} \u2014 +${(g * 100).toFixed(0)}% in 2 min`,
+        detail: `Was ${fmtN(prev.CE.changeinOpenInterest)} \u2192 Now ${fmtN(curr.CE.changeinOpenInterest)} \u00b7 Institutional acceleration`,
+        highConv: true,
+      });
+    }
+
+    // ── PE OI surge ──────────────────────────────────────────
+    if (prev && prevWasPeSpike && currIsPeSpike && prev.PE.changeinOpenInterest > 0) {
+      const g = (curr.PE.changeinOpenInterest - prev.PE.changeinOpenInterest) / prev.PE.changeinOpenInterest;
+      if (g > 0.5) alerts.push({
+        type: "SURGE", strike, side: "PE", severity: "SURGE",
+        label: `PE OI surge at ${strike} \u2014 +${(g * 100).toFixed(0)}% in 2 min`,
+        detail: `Was ${fmtN(prev.PE.changeinOpenInterest)} \u2192 Now ${fmtN(curr.PE.changeinOpenInterest)} \u00b7 Institutional acceleration`,
+        highConv: true,
+      });
+    }
+
+    // ── New CE trap ───────────────────────────────────────────
+    const prevCeTrap = prev ? prev.CE.changeinOpenInterest > avgCePrev && prev.CE.change > 0 : false;
+    const currCeTrap = curr.CE.changeinOpenInterest > avgCeCurr && curr.CE.change > 0;
+    if (!prevCeTrap && currCeTrap) alerts.push({
+      type: "TRAP", strike, side: "CE", severity: "NEW",
+      label: `New CE trap at ${strike} \u2014 call writers now exposed`,
+      detail: `CE OI building while price rising \u00b7 avoid writing calls here`,
+      highConv: false,
+    });
+
+    // ── New PE trap ───────────────────────────────────────────
+    const prevPeTrap = prev ? prev.PE.changeinOpenInterest > avgPePrev && prev.PE.change < 0 : false;
+    const currPeTrap = curr.PE.changeinOpenInterest > avgPeCurr && curr.PE.change < 0;
+    if (!prevPeTrap && currPeTrap) alerts.push({
+      type: "TRAP", strike, side: "PE", severity: "NEW",
+      label: `New PE trap at ${strike} \u2014 put writers now exposed`,
+      detail: `PE OI building while price falling \u00b7 avoid writing puts here`,
+      highConv: false,
+    });
+  });
+
+  // ── ATM bias flip ─────────────────────────────────────────
+  const midIdx = Math.floor(currRows.length / 2);
+  const midSpot = currRows[midIdx]?.strikePrice ?? 0;
+  const atmPrev = prevRows.length
+    ? prevRows.reduce((b, r) => Math.abs(r.strikePrice - midSpot) < Math.abs(b.strikePrice - midSpot) ? r : b)
+    : null;
+  const atmCurr = currRows.reduce((b, r) => Math.abs(r.strikePrice - midSpot) < Math.abs(b.strikePrice - midSpot) ? r : b);
+
+  if (atmPrev) {
+    const dom = (r) =>
+      r.PE.changeinOpenInterest > r.CE.changeinOpenInterest * 1.3 ? "PE"
+        : r.CE.changeinOpenInterest > r.PE.changeinOpenInterest * 1.3 ? "CE"
+          : "BAL";
+    const prevDom = dom(atmPrev);
+    const currDom = dom(atmCurr);
+    if (prevDom !== currDom && currDom !== "BAL") alerts.push({
+      type: "FLIP", strike: atmCurr.strikePrice, side: currDom, severity: "FLIP",
+      label: `ATM bias flipped \u2192 ${currDom} Dominant at ${atmCurr.strikePrice}`,
+      detail: `Was ${prevDom === "BAL" ? "Balanced" : prevDom + " Dominant"} \u00b7 Smart money changed sides`,
+      highConv: true,
+    });
+  }
+
+  // ── Resistance wall moved ─────────────────────────────────
+  const prevTopRes = [...prevRows].filter(r => r.strikePrice > midSpot)
+    .sort((a, b) => b.CE.openInterest - a.CE.openInterest)[0];
+  const currTopRes = [...currRows].filter(r => r.strikePrice > midSpot)
+    .sort((a, b) => b.CE.openInterest - a.CE.openInterest)[0];
+  if (prevTopRes && currTopRes && prevTopRes.strikePrice !== currTopRes.strikePrice) alerts.push({
+    type: "WALL_SHIFT", strike: currTopRes.strikePrice, side: "CE", severity: "FLIP",
+    label: `Resistance wall shifted: ${prevTopRes.strikePrice} \u2192 ${currTopRes.strikePrice}`,
+    detail: `Institutions moved their largest call writing position`,
+    highConv: true,
+  });
+
+  // ── Support wall moved ────────────────────────────────────
+  const prevTopSup = [...prevRows].filter(r => r.strikePrice < midSpot)
+    .sort((a, b) => b.PE.openInterest - a.PE.openInterest)[0];
+  const currTopSup = [...currRows].filter(r => r.strikePrice < midSpot)
+    .sort((a, b) => b.PE.openInterest - a.PE.openInterest)[0];
+  if (prevTopSup && currTopSup && prevTopSup.strikePrice !== currTopSup.strikePrice) alerts.push({
+    type: "WALL_SHIFT", strike: currTopSup.strikePrice, side: "PE", severity: "FLIP",
+    label: `Support wall shifted: ${prevTopSup.strikePrice} \u2192 ${currTopSup.strikePrice}`,
+    detail: `Institutions moved their largest put writing position`,
+    highConv: true,
+  });
+
+  return alerts;
+}
+
 // ── Institutional Panel Component ─────────────────────────────
 const IBadge = ({ conf }) => {
   const map = {
@@ -621,8 +769,13 @@ const IBadge = ({ conf }) => {
   );
 };
 
-function InstitutionalPanel({ rows, spot, atm, maxPain, pcr }) {
+function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr }) {
   const inst = calcInstitutional(rows, spot, atm, pcr);
+  // Diff engine: compare previous 2-min snapshot to current
+  const diffAlerts = useMemo(
+    () => diffInstitutional(prevRows, rows),
+    [prevRows, rows],
+  );
   if (!inst) return null;
 
   const {
@@ -693,6 +846,99 @@ function InstitutionalPanel({ rows, spot, atm, maxPain, pcr }) {
 
   return (
     <div>
+      {/* ── New Activity Diff Alerts ── */}
+      {diffAlerts.length > 0 && (
+        <div
+          style={{
+            background: "#130c00",
+            border: "1px solid #ff7b0055",
+            borderRadius: 10,
+            padding: "12px 14px",
+            marginBottom: 10,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              color: "#ff7b00",
+              letterSpacing: 1,
+              marginBottom: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <span style={{ fontSize: 13 }}>🔔</span>
+            NEW INSTITUTIONAL ACTIVITY — since last refresh (2 min ago)
+          </div>
+          {diffAlerts.map((a, i) => (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 10,
+                padding: "7px 0",
+                borderBottom:
+                  i < diffAlerts.length - 1
+                    ? "1px solid #ff7b0022"
+                    : "none",
+              }}
+            >
+              <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>
+                {a.severity === "SURGE"
+                  ? "🚨"
+                  : a.type === "FLIP"
+                    ? "🔄"
+                    : a.type === "WALL_SHIFT"
+                      ? "🧱"
+                      : a.side === "CE"
+                        ? "🔴"
+                        : "🟢"}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: "#ff9a3c" }}>{a.label}</div>
+                <div
+                  style={{ fontSize: 10, color: "#ff7b0088", marginTop: 2 }}
+                >
+                  {a.detail}
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: 9,
+                  padding: "2px 7px",
+                  borderRadius: 4,
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
+                  flexShrink: 0,
+                  background:
+                    a.severity === "SURGE"
+                      ? "#3a0000"
+                      : a.severity === "FLIP"
+                        ? "#0d1e2e"
+                        : "#1a0c00",
+                  color:
+                    a.severity === "SURGE"
+                      ? C.red
+                      : a.severity === "FLIP"
+                        ? C.blue
+                        : "#ff7b00",
+                  border: `1px solid ${a.severity === "SURGE"
+                    ? C.red + "44"
+                    : a.severity === "FLIP"
+                      ? C.blue + "44"
+                      : "#ff7b0044"
+                    }`,
+                }}
+              >
+                {a.severity}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── Smart Money Bias Header ── */}
       {card(
         <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
@@ -1696,7 +1942,27 @@ function ZoneBadges({ sig }) {
 // NSE API FETCH HELPERS
 // ═══════════════════════════════════════════════════════════════
 
-const REFRESH_MS = 120_000; // auto-refresh every 2 minutes
+const REFRESH_MS = 120_000; // poll interval during market hours (2 min)
+
+// ── Market-hours helpers (IST = UTC+5:30) ───────────────────
+function getISTDate() {
+  const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utcMs + 5.5 * 3600000);
+}
+function getMarketStatusLabel() {
+  const ist = getISTDate();
+  const day = ist.getDay();
+  const mins = ist.getHours() * 60 + ist.getMinutes();
+  if (day === 0 || day === 6) return { open: false, label: "Weekend" };
+  if (mins < 9 * 60 + 15) return { open: false, label: "Pre-market" };
+
+  // Change here from 15*60 to 15*60 + 30
+  if (mins >= 15 * 60 + 30)
+    return { open: false, label: "Market closed \u00b7 last data" };
+
+  return { open: true, label: "Market open \u00b7 live" };
+}
 
 /**
  * fetchOptionChain(instrument) → Promise<rawData>
@@ -1775,56 +2041,98 @@ const SEED_DATA = {
 };
 
 // useOptionChain — custom hook
-// Key contract: rawData is ALWAYS the correct shape for the current instrument.
-// It is set to null (or the symbol's seed) synchronously before each fetch,
-// preventing the parse layer from receiving the previous symbol's data.
+//
+// Market-hours behaviour:
+//   During 09:15-15:30 IST Mon-Fri  → polls every REFRESH_MS (2 min)
+//   After 15:30 IST                 → fetches ONCE for final EOD data, then stops
+//   Outside market days (weekends)  → fetches once on mount, then stops
+//
+// prevRawData:
+//   The snapshot from the fetch BEFORE the current one.
+//   Passed to InstitutionalPanel for diff / new-activity detection.
+//   Resets to null on every symbol change.
 function useOptionChain(instrument) {
   const [rawData, setRawData] = useState(
     () => SEED_DATA[instrument.symbol] ?? null,
   );
+  const [prevRawData, setPrevRawData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [fetchedAt, setFetchedAt] = useState(null);
+  const [mktStatus, setMktStatus] = useState(() => getMarketStatusLabel());
+  const closedFetchDone = useRef(false);
   const abortRef = useRef(null);
 
-  const load = useCallback(async (inst) => {
+  const load = useCallback(async (inst, resetPrev = false) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Immediately swap to the new symbol's seed (or null).
-    // This clears stale data BEFORE isIndex/isStock affects the parse layer.
-    setRawData(SEED_DATA[inst.symbol] ?? null);
+    if (resetPrev) {
+      // Symbol changed — wipe previous snapshot so diff engine doesnt
+      // compare two different symbols
+      setRawData(SEED_DATA[inst.symbol] ?? null);
+      setPrevRawData(null);
+      closedFetchDone.current = false;
+    }
     setLoading(true);
     setError(null);
 
     try {
       const data = await fetchOptionChain(inst);
       if (controller.signal.aborted) return;
-      setRawData(data);
+      // Preserve current rawData as prev before overwriting
+      // Skip seed objects — they are placeholders not real fetches
+      setRawData((cur) => {
+        if (cur && cur !== SEED_DATA[inst.symbol] && cur.timestamp) {
+          setPrevRawData(cur);
+        }
+        return data;
+      });
       setFetchedAt(Date.now());
       setError(null);
     } catch (err) {
       if (controller.signal.aborted) return;
       setError(err.message ?? "Failed to fetch option chain");
-      // keep seed visible on error — don't blank out
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
   }, []);
 
+  // Initial fetch on mount / symbol change
   useEffect(() => {
-    load(instrument);
+    load(instrument, true);
     return () => abortRef.current?.abort();
   }, [instrument, load]);
 
+  // Polling loop — market-hours aware
   useEffect(() => {
-    const id = setInterval(() => load(instrument), REFRESH_MS);
+    const tick = () => {
+      const status = getMarketStatusLabel();
+      setMktStatus(status);
+      if (isMarketOpen()) {
+        // Market is live — poll every 2 min
+        closedFetchDone.current = false;
+        load(instrument);
+      } else if (!closedFetchDone.current) {
+        // Market just closed / pre-market / weekend — fetch once for latest data
+        closedFetchDone.current = true;
+        load(instrument);
+      }
+      // After the one post-close fetch, interval keeps running but load is skipped
+    };
+    const id = setInterval(tick, REFRESH_MS);
     return () => clearInterval(id);
   }, [instrument, load]);
 
+  // Keep mktStatus badge fresh every 60 s (cheap — no API call)
+  useEffect(() => {
+    const id = setInterval(() => setMktStatus(getMarketStatusLabel()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const retry = useCallback(() => load(instrument), [instrument, load]);
-  return { rawData, loading, error, fetchedAt, retry };
+  return { rawData, prevRawData, loading, error, fetchedAt, retry, mktStatus };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2042,7 +2350,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
   // The hook handles seed data internally via SEED_DATA[symbol].
   // No seedData variable here — that was the root cause of the crash
   // (useState ignores prop changes after mount, leaving stale cross-type data).
-  const { rawData, loading, error, fetchedAt, retry } =
+  const { rawData, prevRawData, loading, error, fetchedAt, retry, mktStatus } =
     useOptionChain(instrument);
 
   // Reset expiry and tab whenever the user switches instruments
@@ -2125,6 +2433,21 @@ export default function App({ initialData = null, initialSymbol = null }) {
   const displayRows = useMemo(
     () => rows.filter((r) => Math.abs(r.strikePrice - atm) <= range),
     [rows, atm, range],
+  );
+
+  // Parse prevRawData into rows for the diff engine.
+  // Uses the same parser as rawData so shapes always match.
+  const prevRows = useMemo(() => {
+    if (!prevRawData) return [];
+    if (isIndex) return parseIndexChain(prevRawData);
+    return parseStockChain(prevRawData, selectedExpiry).rows;
+  }, [isIndex, prevRawData, selectedExpiry]);
+
+  // Trim prevRows to the same ATM window as displayRows so diff
+  // engine only compares strikes that are visible in the current view.
+  const prevDisplayRows = useMemo(
+    () => prevRows.filter((r) => Math.abs(r.strikePrice - atm) <= range),
+    [prevRows, atm, range],
   );
 
   const chartData = useMemo(
@@ -2781,7 +3104,8 @@ export default function App({ initialData = null, initialSymbol = null }) {
               {/* Smart Money / Institutional Analysis */}
               {activeTab === "inst" && (
                 <InstitutionalPanel
-                  rows={rows}
+                  rows={displayRows}
+                  prevRows={prevDisplayRows}
                   spot={underlyingValue}
                   atm={atm}
                   maxPain={maxPain}
@@ -2945,8 +3269,22 @@ export default function App({ initialData = null, initialSymbol = null }) {
                   {sig?.pcr ?? "—"}
                 </b>
               </span>
-              <span style={{ marginLeft: "auto" }}>
-                {timestamp} · auto-refresh 2 min
+              <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+                {timestamp}
+                <span
+                  style={{
+                    padding: "1px 7px",
+                    borderRadius: 4,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: 0.5,
+                    background: mktStatus?.open ? "#0d2a16" : "#1c2128",
+                    color: mktStatus?.open ? "#3fb950" : "#8b949e",
+                    border: `1px solid ${mktStatus?.open ? "#3fb95044" : "#30363d"}`,
+                  }}
+                >
+                  {mktStatus?.label ?? "—"}
+                </span>
               </span>
             </div>
           </>
