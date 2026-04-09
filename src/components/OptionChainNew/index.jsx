@@ -689,7 +689,7 @@ function diffInstitutional(prevRows, currRows) {
     if (!prevPeTrap && currPeTrap) alerts.push({
       type: "TRAP", strike, side: "PE", severity: "NEW",
       label: `New PE trap at ${strike} \u2014 put writers now exposed`,
-      detail: `PE OI building while price falling \u00b7 avoid writing puts here`,
+      detail: `PE OI building while price rising \u00b7 avoid writing puts here`,
       highConv: false,
     });
   });
