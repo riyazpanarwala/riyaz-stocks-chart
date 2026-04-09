@@ -754,7 +754,18 @@ const IBadge = ({ conf }) => {
   );
 };
 
-function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr }) {
+// ── unified signal → colour/icon helpers ─────────────────────
+function sigMeta(rawSignal) {
+  if (rawSignal === "BUY CALL") return { color: C.green, bg: C.greenBg, icon: "▲" };
+  if (rawSignal === "BUY PUT")  return { color: C.red,   bg: C.redBg,   icon: "▼" };
+  return { color: C.yellow, bg: C.surface2, icon: "—" };
+}
+
+// InstitutionalPanel now receives the top-level `sig` object produced by
+// generateSignal() so it displays the SAME direction verdict as the banner.
+// The old internal `smartBias` computed by calcInstitutional() is kept for
+// the supporting factor breakdown but is no longer shown as a headline.
+function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
   const inst = calcInstitutional(rows, spot, atm, pcr);
   // BUG FIX: pass spot to diffInstitutional so ATM is derived from real price
   const diffAlerts = useMemo(
@@ -766,14 +777,14 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr }) {
   const {
     topSpikes, clusters, rolls, traps, highConvZones, lowConvNoise,
     atmShift, signals, top3Ce, top3Pe, concCe, concPe,
-    totalCeOI, totalPeOI, smartBias, topRes, topSup,
+    totalCeOI, totalPeOI, topRes, topSup,
   } = inst;
 
-  const biasColor =
-    smartBias === "BULLISH" ? C.green : smartBias === "BEARISH" ? C.red : C.yellow;
-  const biasBg =
-    smartBias === "BULLISH" ? C.greenBg : smartBias === "BEARISH" ? C.redBg : C.surface2;
-  const biasIcon = smartBias === "BULLISH" ? "▲" : smartBias === "BEARISH" ? "▼" : "—";
+  // Use the SAME signal as the top banner — single source of truth
+  const meta = sigMeta(sig?.rawSignal ?? "NO TRADE");
+  const biasColor = meta.color;
+  const biasBg    = meta.bg;
+  const biasIcon  = meta.icon;
 
   const card = (children, extra = {}) => (
     <div
@@ -856,41 +867,97 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr }) {
         </div>
       )}
 
-      {/* ── Smart Money Bias Header ── */}
+      {/* ── Unified Signal Header (same as top banner) ── */}
       {card(
-        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-          <div
-            style={{
-              background: biasBg, border: `1px solid ${biasColor}44`,
-              borderRadius: 8, padding: "8px 16px",
-              display: "flex", alignItems: "center", gap: 8,
-            }}
-          >
-            <span style={{ fontSize: 20, fontWeight: 800, color: biasColor }}>
-              {biasIcon} {biasLabel(smartBias)}
-            </span>
+        <div>
+          {/* Main verdict — identical to the top banner */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 14 }}>
+            <div style={{ background: biasBg, border: `1px solid ${biasColor}44`, borderRadius: 8, padding: "10px 18px", display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 22, fontWeight: 800, color: biasColor, letterSpacing: 0.5 }}>
+                {biasIcon} {sig?.signal ?? "—"}
+              </span>
+            </div>
+            <div>
+              <div style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>SIGNAL STRENGTH</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 120, height: 6, background: C.border, borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ width: `${sig?.strength ?? 0}%`, height: "100%", background: (sig?.strength ?? 0) > 70 ? C.green : (sig?.strength ?? 0) > 50 ? C.yellow : C.muted, borderRadius: 3 }} />
+                </div>
+                <span style={{ color: biasColor, fontWeight: 700, fontSize: 14 }}>{sig?.strength ?? 0}%</span>
+                <span style={{ color: C.muted, fontSize: 10 }}>{sig?.strengthLabel ?? ""}</span>
+              </div>
+              <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>
+                This matches the signal shown in the top banner — both use the same analysis
+              </div>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+
+          {/* Why this signal — factor breakdown */}
+          <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+            <div style={{ fontSize: 9, color: C.muted, letterSpacing: 1, marginBottom: 10, textTransform: "uppercase" }}>
+              Why this signal — 5 factors analysed
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {[
+                {
+                  label: "Market Mood (PCR)",
+                  value: pcrLabel(pcr),
+                  detail: `PCR ${pcr.toFixed(2)}`,
+                  vote: pcr > 1.2 ? "UP" : pcr < 0.8 ? "DOWN" : "NEUTRAL",
+                  color: pcr > 1.2 ? C.green : pcr < 0.8 ? C.red : C.yellow,
+                },
+                {
+                  label: "Near Price Activity",
+                  value: atmShiftLabel(atmShift).split(" (")[0],
+                  detail: "positions near current price",
+                  vote: atmShift === "PE Dominant" ? "UP" : atmShift === "CE Dominant" ? "DOWN" : "NEUTRAL",
+                  color: atmShift === "PE Dominant" ? C.green : atmShift === "CE Dominant" ? C.red : C.muted,
+                },
+                {
+                  label: "Recent Trades",
+                  value: sig?.oiChangeBias ?? "—",
+                  detail: "OI change at ATM",
+                  vote: sig?.oiChangeBias === "New buying activity" ? "UP" : sig?.oiChangeBias === "New selling activity" ? "DOWN" : "NEUTRAL",
+                  color: sig?.oiChangeBias === "New buying activity" ? C.green : sig?.oiChangeBias === "New selling activity" ? C.red : C.yellow,
+                },
+                {
+                  label: "Gap to Support",
+                  value: sig ? `-${sig.distToSup} pts` : "—",
+                  detail: "how far below floor is",
+                  vote: sig && sig.distToSup < sig.distToRes ? "UP" : "DOWN",
+                  color: sig && sig.distToSup < sig.distToRes ? C.green : C.red,
+                },
+                {
+                  label: "Gap to Resistance",
+                  value: sig ? `+${sig.distToRes} pts` : "—",
+                  detail: "how far above ceiling is",
+                  vote: sig && sig.distToRes > sig.distToSup ? "UP" : "DOWN",
+                  color: sig && sig.distToRes > sig.distToSup ? C.green : C.red,
+                },
+              ].map(({ label, value, detail, vote, color }) => (
+                <div key={label} style={{ flex: "1 1 140px", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>{label}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color }}>{value}</div>
+                  <div style={{ fontSize: 9, color: C.muted, marginTop: 2 }}>{detail}</div>
+                  <div style={{ marginTop: 5, display: "inline-block", padding: "1px 7px", borderRadius: 3, fontSize: 9, fontWeight: 700, background: vote === "UP" ? C.greenBg : vote === "DOWN" ? C.redBg : C.surface2, color: vote === "UP" ? C.green : vote === "DOWN" ? C.red : C.yellow, border: `1px solid ${vote === "UP" ? C.green + "40" : vote === "DOWN" ? C.red + "40" : C.yellow + "40"}` }}>
+                    {vote === "UP" ? "▲ Bullish vote" : vote === "DOWN" ? "▼ Bearish vote" : "— Neutral"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Key levels */}
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
             {[
-              {
-                l: "Sentiment (PCR)",
-                v: `${pcr.toFixed(2)}`,
-                c: pcr > 1.2 ? C.green : pcr < 0.8 ? C.red : C.yellow,
-                sub: pcrLabel(pcr),
-              },
-              {
-                l: "Near ATM Activity",
-                v: atmShiftLabel(atmShift).split(" (")[0],
-                c: atmShift === "PE Dominant" ? C.green : atmShift === "CE Dominant" ? C.red : C.muted,
-              },
-              { l: "Max Pain Level", v: maxPain, c: C.yellow, sub: "price magnets here" },
-              { l: "Big Moves Detected", v: topSpikes.length, c: C.blue },
-              { l: "Danger Zones", v: traps.length, c: traps.length > 0 ? "#ff7b00" : C.muted },
+              { l: "Max Pain", v: maxPain, c: C.yellow, sub: "where price is pulled at expiry" },
+              { l: "Big Moves Detected", v: topSpikes.length, c: C.blue, sub: "institutional spikes" },
+              { l: "Danger Zones", v: traps.length, c: traps.length > 0 ? "#ff7b00" : C.muted, sub: "strikes to avoid" },
             ].map(({ l, v, c, sub }) => (
               <div key={l} style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 9, color: C.muted }}>{l}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: c }}>{v}</div>
-                {sub && <div style={{ fontSize: 9, color: c }}>{sub}</div>}
+                <div style={{ fontSize: 16, fontWeight: 700, color: c }}>{v}</div>
+                <div style={{ fontSize: 9, color: C.muted }}>{sub}</div>
               </div>
             ))}
           </div>
@@ -1964,6 +2031,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
                   atm={atm}
                   maxPain={maxPain}
                   pcr={pcr}
+                  sig={sig}
                 />
               )}
 
