@@ -13,6 +13,12 @@ import {
 import { getNSEData } from "../getIntervalData";
 import FO_LIST from "./FOlist";
 import { isMarketOpen, isHoliday } from "../utils/indianstockmarket";
+import {
+  detectBreakouts,
+  breakoutSignalMeta,
+  pushSnapshot,
+  MAX_SNAPSHOTS,
+} from "./breakoutDetector";
 
 const INDEX_DATA = {
   timestamp: "",
@@ -80,11 +86,11 @@ function atmShiftLabel(shift) {
 /** Convert build-up type → plain English for table */
 function buildupLabel(type) {
   switch (type) {
-    case "Long Build-up":   return "Fresh buying";
-    case "Short Build-up":  return "Fresh selling";
-    case "Short Covering":  return "Sellers exiting (price may rise)";
-    case "Long Unwinding":  return "Buyers exiting (price may fall)";
-    default:                return type;
+    case "Long Build-up": return "Fresh buying";
+    case "Short Build-up": return "Fresh selling";
+    case "Short Covering": return "Sellers exiting (price may rise)";
+    case "Long Unwinding": return "Buyers exiting (price may fall)";
+    default: return type;
   }
 }
 
@@ -214,8 +220,8 @@ function parseStockChain(data, expiry) {
 const findATM = (rows, uv) =>
   rows.length
     ? rows.reduce((b, r) =>
-        Math.abs(r.strikePrice - uv) < Math.abs(b.strikePrice - uv) ? r : b,
-      ).strikePrice
+      Math.abs(r.strikePrice - uv) < Math.abs(b.strikePrice - uv) ? r : b,
+    ).strikePrice
     : 0;
 
 const calcPCR = (rows) => {
@@ -452,7 +458,7 @@ function calcInstitutional(rows, spot, atm, pcr) {
   ];
 
   const nearCeDOI = nearATM.reduce((s, r) => s + r.CE.changeinOpenInterest, 0);
-  const nearPeDOI =    nearATM.reduce((s, r) => s + r.PE.changeinOpenInterest, 0);
+  const nearPeDOI = nearATM.reduce((s, r) => s + r.PE.changeinOpenInterest, 0);
 
   // User-friendly ATM shift label
   const atmShiftRaw =
@@ -677,8 +683,8 @@ function diffInstitutional(prevRows, currRows, spot) {
   // This was wrong when the display window was skewed (e.g. 20 strikes above ATM, 5 below).
   const atmCurr = spot
     ? currRows.reduce((b, r) =>
-        Math.abs(r.strikePrice - spot) < Math.abs(b.strikePrice - spot) ? r : b
-      )
+      Math.abs(r.strikePrice - spot) < Math.abs(b.strikePrice - spot) ? r : b
+    )
     : currRows[Math.floor(currRows.length / 2)];
   const atmPrev = atmCurr && prevMap[atmCurr.strikePrice];
 
@@ -757,7 +763,7 @@ const IBadge = ({ conf }) => {
 // ── unified signal → colour/icon helpers ─────────────────────
 function sigMeta(rawSignal) {
   if (rawSignal === "BUY CALL") return { color: C.green, bg: C.greenBg, icon: "▲" };
-  if (rawSignal === "BUY PUT")  return { color: C.red,   bg: C.redBg,   icon: "▼" };
+  if (rawSignal === "BUY PUT") return { color: C.red, bg: C.redBg, icon: "▼" };
   return { color: C.yellow, bg: C.surface2, icon: "—" };
 }
 
@@ -783,8 +789,8 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
   // Use the SAME signal as the top banner — single source of truth
   const meta = sigMeta(sig?.rawSignal ?? "NO TRADE");
   const biasColor = meta.color;
-  const biasBg    = meta.bg;
-  const biasIcon  = meta.icon;
+  const biasBg = meta.bg;
+  const biasIcon = meta.icon;
 
   const card = (children, extra = {}) => (
     <div
@@ -1375,8 +1381,8 @@ function SignalBanner({ sig, atm, maxPain, spot }) {
   // Map rawSignal → visual styling
   const meta = {
     "BUY CALL": { color: C.green, bg: C.greenBg, icon: "▲" },
-    "BUY PUT":  { color: C.red,   bg: C.redBg,   icon: "▼" },
-    "NO TRADE": { color: C.muted, bg: C.surface,  icon: "—" },
+    "BUY PUT": { color: C.red, bg: C.redBg, icon: "▼" },
+    "NO TRADE": { color: C.muted, bg: C.surface, icon: "—" },
   }[sig.rawSignal] || { color: C.muted, bg: C.surface, icon: "—" };
 
   const pcrColor = parseFloat(sig.pcr) > 1.2 ? C.green : parseFloat(sig.pcr) < 0.8 ? C.red : C.yellow;
@@ -1705,6 +1711,247 @@ function RefreshCountdown({ fetchedAt }) {
   );
 }
 
+function BreakoutPanel({ signals, spot, fetchedAt }) {
+  if (!signals?.length) {
+    return (
+      <div
+        style={{
+          background: "#0d1117",
+          border: "1px solid #21262d",
+          borderRadius: 10,
+          padding: "14px 16px",
+          marginBottom: 10,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        <span style={{ fontSize: 18 }}>🔍</span>
+        <div>
+          <div style={{ fontSize: 12, color: "#8b949e" }}>
+            No breakout signals detected right now
+          </div>
+          <div style={{ fontSize: 10, color: "#8b949e", marginTop: 2 }}>
+            The engine scans on every 2-min refresh. Signals appear when OI
+            imbalances, wall shifts, or momentum patterns are detected.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const topSignal = signals[0];
+  const meta = breakoutSignalMeta(topSignal.type);
+
+  return (
+    <div
+      style={{
+        border: `1px solid ${meta.border}`,
+        borderRadius: 10,
+        overflow: "hidden",
+        marginBottom: 10,
+      }}
+    >
+      {/* Header bar */}
+      <div
+        style={{
+          background: meta.bg,
+          padding: "10px 14px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          flexWrap: "wrap",
+          borderBottom: `1px solid ${meta.border}`,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 20 }}>{meta.icon}</span>
+          <div>
+            <div
+              style={{ fontSize: 13, fontWeight: 700, color: meta.color }}
+            >
+              {topSignal.title}
+            </div>
+            <div style={{ fontSize: 10, color: "#8b949e", marginTop: 2 }}>
+              {topSignal.detail}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Strength bar */}
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 9, color: "#8b949e", marginBottom: 3 }}>
+              SIGNAL STRENGTH
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div
+                style={{
+                  width: 80,
+                  height: 5,
+                  background: "#21262d",
+                  borderRadius: 3,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: `${topSignal.strength}%`,
+                    height: "100%",
+                    background: meta.color,
+                    borderRadius: 3,
+                  }}
+                />
+              </div>
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: meta.color,
+                }}
+              >
+                {topSignal.strength}%
+              </span>
+            </div>
+          </div>
+          {/* Label badge */}
+          <span
+            style={{
+              padding: "3px 10px",
+              borderRadius: 5,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 0.5,
+              background: meta.bg,
+              color: meta.color,
+              border: `1px solid ${meta.border}`,
+            }}
+          >
+            {meta.label}
+          </span>
+        </div>
+      </div>
+
+      {/* Secondary signals */}
+      {signals.length > 1 && (
+        <div style={{ background: "#161b22" }}>
+          {signals.slice(1).map((sig, i) => {
+            const sm = breakoutSignalMeta(sig.type);
+            return (
+              <div
+                key={sig.id}
+                style={{
+                  padding: "9px 14px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  borderBottom:
+                    i < signals.length - 2
+                      ? "1px solid #21262d"
+                      : "none",
+                }}
+              >
+                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>
+                  {sm.icon}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, color: sm.color, fontWeight: 600 }}>
+                    {sig.title}
+                  </div>
+                  <div
+                    style={{ fontSize: 10, color: "#8b949e", marginTop: 2 }}
+                  >
+                    {sig.detail}
+                  </div>
+                  {sig.strike && (
+                    <div
+                      style={{
+                        display: "inline-block",
+                        marginTop: 4,
+                        padding: "1px 7px",
+                        borderRadius: 3,
+                        fontSize: 9,
+                        background: sm.bg,
+                        color: sm.color,
+                        border: `1px solid ${sm.border}`,
+                      }}
+                    >
+                      Strike {sig.strike}
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+                  <div
+                    style={{
+                      width: 50,
+                      height: 4,
+                      background: "#21262d",
+                      borderRadius: 2,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${sig.strength}%`,
+                        height: "100%",
+                        background: sm.color,
+                        borderRadius: 2,
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontSize: 10, color: sm.color }}>{sig.strength}%</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Footer — source legend + freshness */}
+      <div
+        style={{
+          background: "#0d1117",
+          padding: "6px 14px",
+          display: "flex",
+          gap: 8,
+          flexWrap: "wrap",
+          alignItems: "center",
+          borderTop: "1px solid #21262d",
+        }}
+      >
+        <span style={{ fontSize: 9, color: "#8b949e" }}>Sources:</span>
+        {[...new Set(signals.map((s) => s.source))].map((src) => (
+          <span
+            key={src}
+            style={{
+              fontSize: 9,
+              background: "#1c2128",
+              color: "#8b949e",
+              padding: "1px 6px",
+              borderRadius: 3,
+              border: "1px solid #30363d",
+            }}
+          >
+            {src}
+          </span>
+        ))}
+        {fetchedAt && (
+          <span
+            style={{ fontSize: 9, color: "#8b949e", marginLeft: "auto" }}
+          >
+            Last scan:{" "}
+            {new Date(fetchedAt).toLocaleTimeString("en-IN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════
@@ -1714,6 +1961,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
   const [scalpMode, setScalpMode] = useState(false);
   const [activeTab, setActiveTab] = useState("oi");
   const [selectedExpiry, setSelectedExpiry] = useState(null);
+  const snapshotHistoryRef = useRef([]);
 
   const isIndex = instrument.type === "index";
 
@@ -1774,6 +2022,40 @@ export default function App({ initialData = null, initialSymbol = null }) {
       })),
     [displayRows, atm, sig],
   );
+
+  // Push a new snapshot whenever rows + spot update
+  useEffect(() => {
+    if (!rows.length || !underlyingValue) return;
+    snapshotHistoryRef.current = pushSnapshot(snapshotHistoryRef.current, {
+      rows: displayRows,          // use the display (range-filtered) rows
+      spot: underlyingValue,
+      atm,
+      pcr,
+      ts: Date.now(),
+    });
+  }, [rows, underlyingValue]);   // triggers on every 2-min refresh
+
+  // Reset history when symbol changes
+  useEffect(() => {
+    snapshotHistoryRef.current = [];
+  }, [instrument]);
+
+  // Run the breakout engine after every data change
+  const breakoutSignals = useMemo(() => {
+    if (!displayRows.length || !underlyingValue) return [];
+    const snapshots = snapshotHistoryRef.current;
+    const prev = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null;
+
+    return detectBreakouts({
+      rows: displayRows,
+      prevRows: prev?.rows ?? prevDisplayRows,   // fall back to hook's prevRows
+      spot: underlyingValue,
+      prevSpot: prev?.spot ?? 0,
+      pcr,
+      maxPain,
+      snapshots,
+    });
+  }, [displayRows, underlyingValue, pcr, maxPain, prevDisplayRows]);
 
   const Tab = ({ id, label }) => (
     <button
@@ -1878,6 +2160,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
               <Tab id="doi" label="ΔOI Activity" />
               <Tab id="table" label="Strike Table" />
               <Tab id="inst" label="🧠 Smart Money" />
+              <Tab id="breakout" label={`⚡ Breakouts${breakoutSignals.length ? ` (${breakoutSignals.length})` : ""}`} />
               {!isIndex && <Tab id="expiry" label="All Expiries" />}
             </div>
 
@@ -2032,6 +2315,14 @@ export default function App({ initialData = null, initialSymbol = null }) {
                   maxPain={maxPain}
                   pcr={pcr}
                   sig={sig}
+                />
+              )}
+
+              {activeTab === "breakout" && (
+                <BreakoutPanel
+                  signals={breakoutSignals}
+                  spot={underlyingValue}
+                  fetchedAt={fetchedAt}
                 />
               )}
 
