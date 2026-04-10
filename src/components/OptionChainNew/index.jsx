@@ -2027,13 +2027,13 @@ export default function App({ initialData = null, initialSymbol = null }) {
   useEffect(() => {
     if (!rows.length || !underlyingValue) return;
     snapshotHistoryRef.current = pushSnapshot(snapshotHistoryRef.current, {
-      rows: displayRows,          // use the display (range-filtered) rows
+      rows,                       // use full rows for accurate diff calculations
       spot: underlyingValue,
       atm,
       pcr,
       ts: Date.now(),
     });
-  }, [rows, underlyingValue]);   // triggers on every 2-min refresh
+  }, [rows, underlyingValue, atm, pcr]); // triggers on every 2-min refresh
 
   // Reset history when symbol changes
   useEffect(() => {

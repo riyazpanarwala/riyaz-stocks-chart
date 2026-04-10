@@ -41,6 +41,7 @@ function fmtK(n) {
 
 /** Nearest strike to spot */
 function nearestATM(rows, spot) {
+  if (!rows.length) return null;
   return rows.reduce(
     (b, r) =>
       Math.abs(r.strikePrice - spot) < Math.abs(b.strikePrice - spot) ? r : b,
@@ -110,7 +111,7 @@ function oiConcentrationBreakout(rows, spot) {
   const strikePitch =
     rows.length > 1
       ? (rows[rows.length - 1].strikePrice - rows[0].strikePrice) /
-        (rows.length - 1)
+      (rows.length - 1)
       : 50;
 
   // Ceiling breakout zone
@@ -250,11 +251,11 @@ function oiUnwindingBreakout(prevRows, currRows, prevSpot, currSpot) {
     return diff < 0 ? s + Math.abs(diff) : s;
   }, 0);
 
-  if (spotRising && totalCeUnwind > avgCeDelta * aboveSpot.length * 0.5) {
+  if (spotRising && aboveSpot.length > 0 && totalCeUnwind > avgCeDelta * aboveSpot.length * 0.5) {
     signals.push({
       id: "CE_UNWIND_BREAKOUT",
       type: "BULLISH_BREAKOUT",
-      strength: Math.min(100, Math.round((totalCeUnwind / (avgCeDelta * aboveSpot.length)) * 30)),
+      strength: Math.min(100, Math.round((totalCeUnwind / (avgCeDelta * aboveSpot.length || 1)) * 30)),
       title: "Call writers exiting as price rises — confirmed breakout signal",
       detail: `${fmtK(totalCeUnwind)} Call OI removed above ${currSpot.toFixed(0)} in last 2 min while spot rose ${(currSpot - prevSpot).toFixed(0)} pts. Resistance is evaporating.`,
       strike: null,
@@ -313,7 +314,7 @@ function suddenOIBuild(prevRows, currRows, spot) {
       signals.push({
         id: `CE_WALL_BUILD_${r.strikePrice}`,
         type: "RESISTANCE_BUILDING",
-        strength: Math.min(100, Math.round((ceGrowth / avgCePrev) * 20)),
+        strength: Math.min(100, Math.round((ceGrowth / (avgCePrev || 1)) * 20)),
         title: `New resistance wall rapidly building at ${r.strikePrice}`,
         detail: `+${fmtK(ceGrowth)} Call OI added at ${r.strikePrice} in the last 2 min. Large writers are installing a ceiling here.`,
         strike: r.strikePrice,
@@ -413,7 +414,7 @@ function velocityBreakout(snapshots) {
   const strikePitch =
     last.rows.length > 1
       ? (last.rows[last.rows.length - 1].strikePrice - last.rows[0].strikePrice) /
-        (last.rows.length - 1)
+      (last.rows.length - 1)
       : 50;
 
   const totalMove = last.spot - first.spot;
@@ -512,16 +513,18 @@ export function detectBreakouts({ rows, prevRows, spot, prevSpot, pcr, maxPain, 
 
 export function breakoutSignalMeta(type) {
   const map = {
-    BULLISH_BREAKOUT:      { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🚀", label: "Bullish Breakout" },
-    BEARISH_BREAKDOWN:     { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "📉", label: "Bearish Breakdown" },
-    BULLISH_MOMENTUM:      { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "▲", label: "Bullish Momentum" },
-    BEARISH_MOMENTUM:      { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "▼", label: "Bearish Momentum" },
-    BREAKOUT_WATCH:        { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "👀", label: "Watch Zone" },
-    BREAKDOWN_WATCH:       { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "⚠️", label: "Watch Zone" },
-    RESISTANCE_BUILDING:   { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "🧱", label: "Resistance Building" },
-    SUPPORT_BUILDING:      { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🛡️", label: "Support Building" },
-    MEAN_REVERT_DOWN:      { color: "#c084fc", bg: "#1a0a1a", border: "#c084fc44", icon: "↩", label: "Pull-back Risk" },
-    MEAN_REVERT_UP:        { color: "#c084fc", bg: "#1a0a1a", border: "#c084fc44", icon: "↪", label: "Recovery Likely" },
+    BULLISH: { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🟢", label: "Bullish" },
+    BEARISH: { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "🔴", label: "Bearish" },
+    BULLISH_BREAKOUT: { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🚀", label: "Bullish Breakout" },
+    BEARISH_BREAKDOWN: { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "📉", label: "Bearish Breakdown" },
+    BULLISH_MOMENTUM: { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "▲", label: "Bullish Momentum" },
+    BEARISH_MOMENTUM: { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "▼", label: "Bearish Momentum" },
+    BREAKOUT_WATCH: { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "👀", label: "Watch Zone" },
+    BREAKDOWN_WATCH: { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "⚠️", label: "Watch Zone" },
+    RESISTANCE_BUILDING: { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "🧱", label: "Resistance Building" },
+    SUPPORT_BUILDING: { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🛡️", label: "Support Building" },
+    MEAN_REVERT_DOWN: { color: "#c084fc", bg: "#1a0a1a", border: "#c084fc44", icon: "↩", label: "Pull-back Risk" },
+    MEAN_REVERT_UP: { color: "#c084fc", bg: "#1a0a1a", border: "#c084fc44", icon: "↪", label: "Recovery Likely" },
     BULLISH_REVERSAL_RISK: { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "⚡", label: "Reversal Risk" },
     BEARISH_REVERSAL_RISK: { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "⚡", label: "Reversal Risk" },
   };
