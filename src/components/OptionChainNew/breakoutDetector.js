@@ -61,7 +61,10 @@ function atmOIImbalance(rows, spot) {
   const signals = [];
   if (!rows.length) return signals;
   const atm = nearestATM(rows, spot);
-  const ratio = atm.PE.openInterest / (atm.CE.openInterest || 1);
+  const ceOI = atm.CE.openInterest || 0;
+  const peOI = atm.PE.openInterest || 0;
+  if (ceOI === 0 && peOI === 0) return signals;
+  const ratio = peOI / (ceOI || 1);
 
   if (ratio > 2) {
     signals.push({
@@ -272,11 +275,11 @@ function oiUnwindingBreakout(prevRows, currRows, prevSpot, currSpot) {
     return diff < 0 ? s + Math.abs(diff) : s;
   }, 0);
 
-  if (spotFalling && totalPeUnwind > avgPeDelta * belowSpot.length * 0.5) {
+  if (spotFalling && belowSpot.length > 0 && totalPeUnwind > avgPeDelta * belowSpot.length * 0.5) {
     signals.push({
       id: "PE_UNWIND_BREAKDOWN",
       type: "BEARISH_BREAKDOWN",
-      strength: Math.min(100, Math.round((totalPeUnwind / (avgPeDelta * belowSpot.length)) * 30)),
+      strength: Math.min(100, Math.round((totalPeUnwind / (avgPeDelta * belowSpot.length || 1)) * 30)),
       title: "Put writers exiting as price falls — confirmed breakdown signal",
       detail: `${fmtK(totalPeUnwind)} Put OI removed below ${currSpot.toFixed(0)} in last 2 min while spot fell ${Math.abs(currSpot - prevSpot).toFixed(0)} pts. Support is collapsing.`,
       strike: null,

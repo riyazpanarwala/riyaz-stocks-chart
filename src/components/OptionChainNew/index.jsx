@@ -2038,13 +2038,13 @@ export default function App({ initialData = null, initialSymbol = null }) {
   // Reset history when symbol changes
   useEffect(() => {
     snapshotHistoryRef.current = [];
-  }, [instrument]);
+  }, [instrument, activeExpiry]);
 
   // Run the breakout engine after every data change
   const breakoutSignals = useMemo(() => {
     if (!displayRows.length || !underlyingValue) return [];
     const snapshots = snapshotHistoryRef.current;
-    const prev = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null;
+    const prev = snapshots.length >= 1 ? snapshots[snapshots.length - 1] : null;
 
     return detectBreakouts({
       rows: displayRows,
