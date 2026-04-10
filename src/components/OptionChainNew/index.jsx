@@ -78,7 +78,8 @@ function biasLabel(bias) {
 
 /** Convert ATM shift → plain English */
 function atmShiftLabel(shift) {
-  if (shift === "PE Dominant") return "Buyers protecting the downside (Bullish)";
+  if (shift === "PE Dominant")
+    return "Buyers protecting the downside (Bullish)";
   if (shift === "CE Dominant") return "Sellers capping the upside (Bearish)";
   return "Both sides balanced";
 }
@@ -86,11 +87,16 @@ function atmShiftLabel(shift) {
 /** Convert build-up type → plain English for table */
 function buildupLabel(type) {
   switch (type) {
-    case "Long Build-up": return "Fresh buying";
-    case "Short Build-up": return "Fresh selling";
-    case "Short Covering": return "Sellers exiting (price may rise)";
-    case "Long Unwinding": return "Buyers exiting (price may fall)";
-    default: return type;
+    case "Long Build-up":
+      return "Fresh buying";
+    case "Short Build-up":
+      return "Fresh selling";
+    case "Short Covering":
+      return "Sellers exiting (price may rise)";
+    case "Long Unwinding":
+      return "Buyers exiting (price may fall)";
+    default:
+      return type;
   }
 }
 
@@ -220,8 +226,8 @@ function parseStockChain(data, expiry) {
 const findATM = (rows, uv) =>
   rows.length
     ? rows.reduce((b, r) =>
-      Math.abs(r.strikePrice - uv) < Math.abs(b.strikePrice - uv) ? r : b,
-    ).strikePrice
+        Math.abs(r.strikePrice - uv) < Math.abs(b.strikePrice - uv) ? r : b,
+      ).strikePrice
     : 0;
 
 const calcPCR = (rows) => {
@@ -316,7 +322,8 @@ function generateSignal(rows, atm, pcr, spot) {
 
   return {
     signal,
-    rawSignal: totalBias >= 2 ? "BUY CALL" : totalBias <= -2 ? "BUY PUT" : "NO TRADE",
+    rawSignal:
+      totalBias >= 2 ? "BUY CALL" : totalBias <= -2 ? "BUY PUT" : "NO TRADE",
     strength: Math.round(strength),
     strengthLabel:
       strength > 70 ? "Strong" : strength > 50 ? "Moderate" : "Weak",
@@ -371,7 +378,8 @@ function calcInstitutional(rows, spot, atm, pcr) {
   rows.forEach((r, idx) => {
     const ceDOI = r.CE.changeinOpenInterest;
     const peDOI = r.PE.changeinOpenInterest;
-    const nearness = Math.abs(idx - atmIdx) <= 3 ? "Near current price" : "Far from price";
+    const nearness =
+      Math.abs(idx - atmIdx) <= 3 ? "Near current price" : "Far from price";
 
     if (ceDOI > avgCeDOI * 2 && ceDOI > 0) {
       const withVol = r.CE.totalTradedVolume > r.CE.openInterest * 0.04;
@@ -428,9 +436,15 @@ function calcInstitutional(rows, spot, atm, pcr) {
   for (let i = 1; i < rows.length; i++) {
     const prev = rows[i - 1],
       curr = rows[i];
-    if (prev.CE.changeinOpenInterest < -avgCeDOI && curr.CE.changeinOpenInterest > avgCeDOI)
+    if (
+      prev.CE.changeinOpenInterest < -avgCeDOI &&
+      curr.CE.changeinOpenInterest > avgCeDOI
+    )
       rolls.push({ from: prev.strikePrice, to: curr.strikePrice, side: "CE" });
-    if (prev.PE.changeinOpenInterest < -avgPeDOI && curr.PE.changeinOpenInterest > avgPeDOI)
+    if (
+      prev.PE.changeinOpenInterest < -avgPeDOI &&
+      curr.PE.changeinOpenInterest > avgPeDOI
+    )
       rolls.push({ from: prev.strikePrice, to: curr.strikePrice, side: "PE" });
   }
 
@@ -531,7 +545,7 @@ function calcInstitutional(rows, spot, atm, pcr) {
       label: `Avoid trading at ${t.strike} — conditions are unpredictable here`,
       strike: t.strike,
       conf: "TRAP",
-    })
+    }),
   );
   const nearRes = topRes3[0];
   if (
@@ -563,8 +577,12 @@ function calcInstitutional(rows, spot, atm, pcr) {
 
   const pcrBias = pcr > 1.2 ? 1 : pcr < 0.8 ? -1 : 0;
   const oiBias = nearPeDOI > nearCeDOI ? 1 : nearCeDOI > nearPeDOI ? -1 : 0;
-  const closestRes = topRes3.length ? Math.min(...topRes3.map((r) => r.strikePrice)) : Infinity;
-  const closestSup = topSup3.length ? Math.max(...topSup3.map((r) => r.strikePrice)) : 0;
+  const closestRes = topRes3.length
+    ? Math.min(...topRes3.map((r) => r.strikePrice))
+    : Infinity;
+  const closestSup = topSup3.length
+    ? Math.max(...topSup3.map((r) => r.strikePrice))
+    : 0;
   const zoneBias = spot - closestSup < closestRes - spot ? 1 : -1;
   const totalBias = pcrBias + oiBias + zoneBias;
   const smartBias =
@@ -609,25 +627,42 @@ function diffInstitutional(prevRows, currRows, spot) {
   if (!prevRows?.length || !currRows?.length) return [];
   const alerts = [];
   const prevMap = {};
-  prevRows.forEach((r) => { prevMap[r.strikePrice] = r; });
+  prevRows.forEach((r) => {
+    prevMap[r.strikePrice] = r;
+  });
 
-  const avgCePrev = prevRows.reduce((s, r) => s + Math.abs(r.CE.changeinOpenInterest), 0) / prevRows.length;
-  const avgPePrev = prevRows.reduce((s, r) => s + Math.abs(r.PE.changeinOpenInterest), 0) / prevRows.length;
-  const avgCeCurr = currRows.reduce((s, r) => s + Math.abs(r.CE.changeinOpenInterest), 0) / currRows.length;
-  const avgPeCurr = currRows.reduce((s, r) => s + Math.abs(r.PE.changeinOpenInterest), 0) / currRows.length;
+  const avgCePrev =
+    prevRows.reduce((s, r) => s + Math.abs(r.CE.changeinOpenInterest), 0) /
+    prevRows.length;
+  const avgPePrev =
+    prevRows.reduce((s, r) => s + Math.abs(r.PE.changeinOpenInterest), 0) /
+    prevRows.length;
+  const avgCeCurr =
+    currRows.reduce((s, r) => s + Math.abs(r.CE.changeinOpenInterest), 0) /
+    currRows.length;
+  const avgPeCurr =
+    currRows.reduce((s, r) => s + Math.abs(r.PE.changeinOpenInterest), 0) /
+    currRows.length;
 
   currRows.forEach((curr) => {
     const strike = curr.strikePrice;
     const prev = prevMap[strike];
 
-    const prevWasCeSpike = prev ? prev.CE.changeinOpenInterest > avgCePrev * 2 : false;
+    const prevWasCeSpike = prev
+      ? prev.CE.changeinOpenInterest > avgCePrev * 2
+      : false;
     const currIsCeSpike = curr.CE.changeinOpenInterest > avgCeCurr * 2;
-    const prevWasPeSpike = prev ? prev.PE.changeinOpenInterest > avgPePrev * 2 : false;
+    const prevWasPeSpike = prev
+      ? prev.PE.changeinOpenInterest > avgPePrev * 2
+      : false;
     const currIsPeSpike = curr.PE.changeinOpenInterest > avgPeCurr * 2;
 
     if (!prevWasCeSpike && currIsCeSpike) {
       alerts.push({
-        type: "NEW", strike, side: "CE", severity: "NEW",
+        type: "NEW",
+        strike,
+        side: "CE",
+        severity: "NEW",
         label: `New seller activity at ${strike} — ${curr.CE.change <= 0 ? "big players selling Calls (resistance building)" : "fresh Call buyers entering"}`,
         detail: `OI added: ${fmtN(curr.CE.changeinOpenInterest)} · Volume: ${fmtN(curr.CE.totalTradedVolume)} · Price: ₹${curr.CE.lastPrice}`,
         highConv: curr.CE.totalTradedVolume > curr.CE.openInterest * 0.04,
@@ -635,47 +670,86 @@ function diffInstitutional(prevRows, currRows, spot) {
     }
     if (!prevWasPeSpike && currIsPeSpike) {
       alerts.push({
-        type: "NEW", strike, side: "PE", severity: "NEW",
+        type: "NEW",
+        strike,
+        side: "PE",
+        severity: "NEW",
         label: `New activity at ${strike} — ${curr.PE.change <= 0 ? "big players selling Puts (support building)" : "fresh Put buyers entering (bearish pressure)"}`,
         detail: `OI added: ${fmtN(curr.PE.changeinOpenInterest)} · Volume: ${fmtN(curr.PE.totalTradedVolume)} · Price: ₹${curr.PE.lastPrice}`,
         highConv: curr.PE.totalTradedVolume > curr.PE.openInterest * 0.04,
       });
     }
-    if (prev && prevWasCeSpike && currIsCeSpike && prev.CE.changeinOpenInterest > 0) {
-      const g = (curr.CE.changeinOpenInterest - prev.CE.changeinOpenInterest) / prev.CE.changeinOpenInterest;
-      if (g > 0.5) alerts.push({
-        type: "SURGE", strike, side: "CE", severity: "SURGE",
-        label: `Resistance surging at ${strike} — sellers accelerating (+${(g * 100).toFixed(0)}% in 2 min)`,
-        detail: `Was ${fmtN(prev.CE.changeinOpenInterest)} → Now ${fmtN(curr.CE.changeinOpenInterest)} · Institutional acceleration`,
-        highConv: true,
-      });
+    if (
+      prev &&
+      prevWasCeSpike &&
+      currIsCeSpike &&
+      prev.CE.changeinOpenInterest > 0
+    ) {
+      const g =
+        (curr.CE.changeinOpenInterest - prev.CE.changeinOpenInterest) /
+        prev.CE.changeinOpenInterest;
+      if (g > 0.5)
+        alerts.push({
+          type: "SURGE",
+          strike,
+          side: "CE",
+          severity: "SURGE",
+          label: `Resistance surging at ${strike} — sellers accelerating (+${(g * 100).toFixed(0)}% in 2 min)`,
+          detail: `Was ${fmtN(prev.CE.changeinOpenInterest)} → Now ${fmtN(curr.CE.changeinOpenInterest)} · Institutional acceleration`,
+          highConv: true,
+        });
     }
-    if (prev && prevWasPeSpike && currIsPeSpike && prev.PE.changeinOpenInterest > 0) {
-      const g = (curr.PE.changeinOpenInterest - prev.PE.changeinOpenInterest) / prev.PE.changeinOpenInterest;
-      if (g > 0.5) alerts.push({
-        type: "SURGE", strike, side: "PE", severity: "SURGE",
-        label: `Support surging at ${strike} — floor getting stronger (+${(g * 100).toFixed(0)}% in 2 min)`,
-        detail: `Was ${fmtN(prev.PE.changeinOpenInterest)} → Now ${fmtN(curr.PE.changeinOpenInterest)} · Institutional acceleration`,
-        highConv: true,
-      });
+    if (
+      prev &&
+      prevWasPeSpike &&
+      currIsPeSpike &&
+      prev.PE.changeinOpenInterest > 0
+    ) {
+      const g =
+        (curr.PE.changeinOpenInterest - prev.PE.changeinOpenInterest) /
+        prev.PE.changeinOpenInterest;
+      if (g > 0.5)
+        alerts.push({
+          type: "SURGE",
+          strike,
+          side: "PE",
+          severity: "SURGE",
+          label: `Support surging at ${strike} — floor getting stronger (+${(g * 100).toFixed(0)}% in 2 min)`,
+          detail: `Was ${fmtN(prev.PE.changeinOpenInterest)} → Now ${fmtN(curr.PE.changeinOpenInterest)} · Institutional acceleration`,
+          highConv: true,
+        });
     }
 
-    const prevCeTrap = prev ? prev.CE.changeinOpenInterest > avgCePrev && prev.CE.change > 0 : false;
-    const currCeTrap = curr.CE.changeinOpenInterest > avgCeCurr && curr.CE.change > 0;
-    if (!prevCeTrap && currCeTrap) alerts.push({
-      type: "TRAP", strike, side: "CE", severity: "NEW",
-      label: `Danger zone at ${strike} — Call sellers are losing, avoid trading here`,
-      detail: `Sellers added positions but price is rising against them`,
-      highConv: false,
-    });
-    const prevPeTrap = prev ? prev.PE.changeinOpenInterest > avgPePrev && prev.PE.change > 0 : false;
-    const currPeTrap = curr.PE.changeinOpenInterest > avgPeCurr && curr.PE.change > 0;
-    if (!prevPeTrap && currPeTrap) alerts.push({
-      type: "TRAP", strike, side: "PE", severity: "NEW",
-      label: `Unstable zone at ${strike} — Put sellers under pressure, avoid trading here`,
-      detail: `Put sellers added positions but price is moving against them`,
-      highConv: false,
-    });
+    const prevCeTrap = prev
+      ? prev.CE.changeinOpenInterest > avgCePrev && prev.CE.change > 0
+      : false;
+    const currCeTrap =
+      curr.CE.changeinOpenInterest > avgCeCurr && curr.CE.change > 0;
+    if (!prevCeTrap && currCeTrap)
+      alerts.push({
+        type: "TRAP",
+        strike,
+        side: "CE",
+        severity: "NEW",
+        label: `Danger zone at ${strike} — Call sellers are losing, avoid trading here`,
+        detail: `Sellers added positions but price is rising against them`,
+        highConv: false,
+      });
+    const prevPeTrap = prev
+      ? prev.PE.changeinOpenInterest > avgPePrev && prev.PE.change > 0
+      : false;
+    const currPeTrap =
+      curr.PE.changeinOpenInterest > avgPeCurr && curr.PE.change > 0;
+    if (!prevPeTrap && currPeTrap)
+      alerts.push({
+        type: "TRAP",
+        strike,
+        side: "PE",
+        severity: "NEW",
+        label: `Unstable zone at ${strike} — Put sellers under pressure, avoid trading here`,
+        detail: `Put sellers added positions but price is moving against them`,
+        highConv: false,
+      });
   });
 
   // BUG FIX: ATM flip now uses real spot price instead of array midpoint index.
@@ -683,49 +757,76 @@ function diffInstitutional(prevRows, currRows, spot) {
   // This was wrong when the display window was skewed (e.g. 20 strikes above ATM, 5 below).
   const atmCurr = spot
     ? currRows.reduce((b, r) =>
-      Math.abs(r.strikePrice - spot) < Math.abs(b.strikePrice - spot) ? r : b
-    )
+        Math.abs(r.strikePrice - spot) < Math.abs(b.strikePrice - spot) ? r : b,
+      )
     : currRows[Math.floor(currRows.length / 2)];
   const atmPrev = atmCurr && prevMap[atmCurr.strikePrice];
 
   if (atmPrev && atmCurr) {
     const dom = (r) =>
-      r.PE.changeinOpenInterest > r.CE.changeinOpenInterest * 1.3 ? "PE"
-        : r.CE.changeinOpenInterest > r.PE.changeinOpenInterest * 1.3 ? "CE"
+      r.PE.changeinOpenInterest > r.CE.changeinOpenInterest * 1.3
+        ? "PE"
+        : r.CE.changeinOpenInterest > r.PE.changeinOpenInterest * 1.3
+          ? "CE"
           : "BAL";
     const prevDom = dom(atmPrev);
     const currDom = dom(atmCurr);
-    if (prevDom !== currDom && currDom !== "BAL") alerts.push({
-      type: "FLIP", strike: atmCurr.strikePrice, side: currDom, severity: "FLIP",
-      label: `Sentiment shift at ${atmCurr.strikePrice} — ${currDom === "PE" ? "buyers protecting downside (bullish flip)" : "sellers capping upside (bearish flip)"}`,
-      detail: `Was ${prevDom === "BAL" ? "Balanced" : prevDom === "PE" ? "downside protection" : "upside capping"} — big money changed sides`,
-      highConv: true,
-    });
+    if (prevDom !== currDom && currDom !== "BAL")
+      alerts.push({
+        type: "FLIP",
+        strike: atmCurr.strikePrice,
+        side: currDom,
+        severity: "FLIP",
+        label: `Sentiment shift at ${atmCurr.strikePrice} — ${currDom === "PE" ? "buyers protecting downside (bullish flip)" : "sellers capping upside (bearish flip)"}`,
+        detail: `Was ${prevDom === "BAL" ? "Balanced" : prevDom === "PE" ? "downside protection" : "upside capping"} — big money changed sides`,
+        highConv: true,
+      });
   }
 
-  const midSpot = spot || currRows[Math.floor(currRows.length / 2)]?.strikePrice || 0;
+  const midSpot =
+    spot || currRows[Math.floor(currRows.length / 2)]?.strikePrice || 0;
 
-  const prevTopRes = [...prevRows].filter(r => r.strikePrice > midSpot)
+  const prevTopRes = [...prevRows]
+    .filter((r) => r.strikePrice > midSpot)
     .sort((a, b) => b.CE.openInterest - a.CE.openInterest)[0];
-  const currTopRes = [...currRows].filter(r => r.strikePrice > midSpot)
+  const currTopRes = [...currRows]
+    .filter((r) => r.strikePrice > midSpot)
     .sort((a, b) => b.CE.openInterest - a.CE.openInterest)[0];
-  if (prevTopRes && currTopRes && prevTopRes.strikePrice !== currTopRes.strikePrice) alerts.push({
-    type: "WALL_SHIFT", strike: currTopRes.strikePrice, side: "CE", severity: "FLIP",
-    label: `Resistance ceiling moved: ${prevTopRes.strikePrice} → ${currTopRes.strikePrice}`,
-    detail: `Big sellers shifted their position — the upper barrier has changed`,
-    highConv: true,
-  });
+  if (
+    prevTopRes &&
+    currTopRes &&
+    prevTopRes.strikePrice !== currTopRes.strikePrice
+  )
+    alerts.push({
+      type: "WALL_SHIFT",
+      strike: currTopRes.strikePrice,
+      side: "CE",
+      severity: "FLIP",
+      label: `Resistance ceiling moved: ${prevTopRes.strikePrice} → ${currTopRes.strikePrice}`,
+      detail: `Big sellers shifted their position — the upper barrier has changed`,
+      highConv: true,
+    });
 
-  const prevTopSup = [...prevRows].filter(r => r.strikePrice < midSpot)
+  const prevTopSup = [...prevRows]
+    .filter((r) => r.strikePrice < midSpot)
     .sort((a, b) => b.PE.openInterest - a.PE.openInterest)[0];
-  const currTopSup = [...currRows].filter(r => r.strikePrice < midSpot)
+  const currTopSup = [...currRows]
+    .filter((r) => r.strikePrice < midSpot)
     .sort((a, b) => b.PE.openInterest - a.PE.openInterest)[0];
-  if (prevTopSup && currTopSup && prevTopSup.strikePrice !== currTopSup.strikePrice) alerts.push({
-    type: "WALL_SHIFT", strike: currTopSup.strikePrice, side: "PE", severity: "FLIP",
-    label: `Support floor moved: ${prevTopSup.strikePrice} → ${currTopSup.strikePrice}`,
-    detail: `Big buyers shifted their position — the lower safety net has changed`,
-    highConv: true,
-  });
+  if (
+    prevTopSup &&
+    currTopSup &&
+    prevTopSup.strikePrice !== currTopSup.strikePrice
+  )
+    alerts.push({
+      type: "WALL_SHIFT",
+      strike: currTopSup.strikePrice,
+      side: "PE",
+      severity: "FLIP",
+      label: `Support floor moved: ${prevTopSup.strikePrice} → ${currTopSup.strikePrice}`,
+      detail: `Big buyers shifted their position — the lower safety net has changed`,
+      highConv: true,
+    });
 
   return alerts;
 }
@@ -762,7 +863,8 @@ const IBadge = ({ conf }) => {
 
 // ── unified signal → colour/icon helpers ─────────────────────
 function sigMeta(rawSignal) {
-  if (rawSignal === "BUY CALL") return { color: C.green, bg: C.greenBg, icon: "▲" };
+  if (rawSignal === "BUY CALL")
+    return { color: C.green, bg: C.greenBg, icon: "▲" };
   if (rawSignal === "BUY PUT") return { color: C.red, bg: C.redBg, icon: "▼" };
   return { color: C.yellow, bg: C.surface2, icon: "—" };
 }
@@ -781,9 +883,22 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
   if (!inst) return null;
 
   const {
-    topSpikes, clusters, rolls, traps, highConvZones, lowConvNoise,
-    atmShift, signals, top3Ce, top3Pe, concCe, concPe,
-    totalCeOI, totalPeOI, topRes, topSup,
+    topSpikes,
+    clusters,
+    rolls,
+    traps,
+    highConvZones,
+    lowConvNoise,
+    atmShift,
+    signals,
+    top3Ce,
+    top3Pe,
+    concCe,
+    concPe,
+    totalCeOI,
+    totalPeOI,
+    topRes,
+    topSup,
   } = inst;
 
   // Use the SAME signal as the top banner — single source of truth
@@ -808,7 +923,15 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
   );
 
   const cardTitle = (txt, icon) => (
-    <div style={{ fontSize: 10, color: C.muted, letterSpacing: 1, marginBottom: 10, textTransform: "uppercase" }}>
+    <div
+      style={{
+        fontSize: 10,
+        color: C.muted,
+        letterSpacing: 1,
+        marginBottom: 10,
+        textTransform: "uppercase",
+      }}
+    >
       {icon} {txt}
     </div>
   );
@@ -837,7 +960,17 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
             marginBottom: 10,
           }}
         >
-          <div style={{ fontSize: 10, color: "#ff7b00", letterSpacing: 1, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+          <div
+            style={{
+              fontSize: 10,
+              color: "#ff7b00",
+              letterSpacing: 1,
+              marginBottom: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
             <span style={{ fontSize: 13 }}>🔔</span>
             WHAT CHANGED IN THE LAST 2 MINUTES
           </div>
@@ -845,28 +978,59 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
             <div
               key={i}
               style={{
-                display: "flex", alignItems: "flex-start", gap: 10,
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 10,
                 padding: "7px 0",
-                borderBottom: i < diffAlerts.length - 1 ? "1px solid #ff7b0022" : "none",
+                borderBottom:
+                  i < diffAlerts.length - 1 ? "1px solid #ff7b0022" : "none",
               }}
             >
               <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>
-                {a.severity === "SURGE" ? "🚨" : a.type === "FLIP" ? "🔄" : a.type === "WALL_SHIFT" ? "🧱" : a.side === "CE" ? "🔴" : "🟢"}
+                {a.severity === "SURGE"
+                  ? "🚨"
+                  : a.type === "FLIP"
+                    ? "🔄"
+                    : a.type === "WALL_SHIFT"
+                      ? "🧱"
+                      : a.side === "CE"
+                        ? "🔴"
+                        : "🟢"}
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, color: "#ff9a3c" }}>{a.label}</div>
-                <div style={{ fontSize: 10, color: "#ff7b0088", marginTop: 2 }}>{a.detail}</div>
+                <div style={{ fontSize: 10, color: "#ff7b0088", marginTop: 2 }}>
+                  {a.detail}
+                </div>
               </div>
               <span
                 style={{
-                  fontSize: 9, padding: "2px 7px", borderRadius: 4, fontWeight: 700,
-                  letterSpacing: 0.5, flexShrink: 0,
-                  background: a.severity === "SURGE" ? "#3a0000" : a.severity === "FLIP" ? "#0d1e2e" : "#1a0c00",
-                  color: a.severity === "SURGE" ? C.red : a.severity === "FLIP" ? C.blue : "#ff7b00",
+                  fontSize: 9,
+                  padding: "2px 7px",
+                  borderRadius: 4,
+                  fontWeight: 700,
+                  letterSpacing: 0.5,
+                  flexShrink: 0,
+                  background:
+                    a.severity === "SURGE"
+                      ? "#3a0000"
+                      : a.severity === "FLIP"
+                        ? "#0d1e2e"
+                        : "#1a0c00",
+                  color:
+                    a.severity === "SURGE"
+                      ? C.red
+                      : a.severity === "FLIP"
+                        ? C.blue
+                        : "#ff7b00",
                   border: `1px solid ${a.severity === "SURGE" ? C.red + "44" : a.severity === "FLIP" ? C.blue + "44" : "#ff7b0044"}`,
                 }}
               >
-                {a.severity === "SURGE" ? "SURGING" : a.severity === "FLIP" ? "SHIFTED" : "NEW"}
+                {a.severity === "SURGE"
+                  ? "SURGING"
+                  : a.severity === "FLIP"
+                    ? "SHIFTED"
+                    : "NEW"}
               </span>
             </div>
           ))}
@@ -877,30 +1041,92 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
       {card(
         <div>
           {/* Main verdict — identical to the top banner */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 14 }}>
-            <div style={{ background: biasBg, border: `1px solid ${biasColor}44`, borderRadius: 8, padding: "10px 18px", display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 22, fontWeight: 800, color: biasColor, letterSpacing: 0.5 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              flexWrap: "wrap",
+              marginBottom: 14,
+            }}
+          >
+            <div
+              style={{
+                background: biasBg,
+                border: `1px solid ${biasColor}44`,
+                borderRadius: 8,
+                padding: "10px 18px",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: biasColor,
+                  letterSpacing: 0.5,
+                }}
+              >
                 {biasIcon} {sig?.signal ?? "—"}
               </span>
             </div>
             <div>
-              <div style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>SIGNAL STRENGTH</div>
+              <div style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>
+                SIGNAL STRENGTH
+              </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 120, height: 6, background: C.border, borderRadius: 3, overflow: "hidden" }}>
-                  <div style={{ width: `${sig?.strength ?? 0}%`, height: "100%", background: (sig?.strength ?? 0) > 70 ? C.green : (sig?.strength ?? 0) > 50 ? C.yellow : C.muted, borderRadius: 3 }} />
+                <div
+                  style={{
+                    width: 120,
+                    height: 6,
+                    background: C.border,
+                    borderRadius: 3,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${sig?.strength ?? 0}%`,
+                      height: "100%",
+                      background:
+                        (sig?.strength ?? 0) > 70
+                          ? C.green
+                          : (sig?.strength ?? 0) > 50
+                            ? C.yellow
+                            : C.muted,
+                      borderRadius: 3,
+                    }}
+                  />
                 </div>
-                <span style={{ color: biasColor, fontWeight: 700, fontSize: 14 }}>{sig?.strength ?? 0}%</span>
-                <span style={{ color: C.muted, fontSize: 10 }}>{sig?.strengthLabel ?? ""}</span>
+                <span
+                  style={{ color: biasColor, fontWeight: 700, fontSize: 14 }}
+                >
+                  {sig?.strength ?? 0}%
+                </span>
+                <span style={{ color: C.muted, fontSize: 10 }}>
+                  {sig?.strengthLabel ?? ""}
+                </span>
               </div>
               <div style={{ fontSize: 10, color: C.muted, marginTop: 4 }}>
-                This matches the signal shown in the top banner — both use the same analysis
+                This matches the signal shown in the top banner — both use the
+                same analysis
               </div>
             </div>
           </div>
 
           {/* Why this signal — factor breakdown */}
           <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
-            <div style={{ fontSize: 9, color: C.muted, letterSpacing: 1, marginBottom: 10, textTransform: "uppercase" }}>
+            <div
+              style={{
+                fontSize: 9,
+                color: C.muted,
+                letterSpacing: 1,
+                marginBottom: 10,
+                textTransform: "uppercase",
+              }}
+            >
               Why this signal — 5 factors analysed
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -916,15 +1142,35 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
                   label: "Near Price Activity",
                   value: atmShiftLabel(atmShift).split(" (")[0],
                   detail: "positions near current price",
-                  vote: atmShift === "PE Dominant" ? "UP" : atmShift === "CE Dominant" ? "DOWN" : "NEUTRAL",
-                  color: atmShift === "PE Dominant" ? C.green : atmShift === "CE Dominant" ? C.red : C.muted,
+                  vote:
+                    atmShift === "PE Dominant"
+                      ? "UP"
+                      : atmShift === "CE Dominant"
+                        ? "DOWN"
+                        : "NEUTRAL",
+                  color:
+                    atmShift === "PE Dominant"
+                      ? C.green
+                      : atmShift === "CE Dominant"
+                        ? C.red
+                        : C.muted,
                 },
                 {
                   label: "Recent Trades",
                   value: sig?.oiChangeBias ?? "—",
                   detail: "OI change at ATM",
-                  vote: sig?.oiChangeBias === "New buying activity" ? "UP" : sig?.oiChangeBias === "New selling activity" ? "DOWN" : "NEUTRAL",
-                  color: sig?.oiChangeBias === "New buying activity" ? C.green : sig?.oiChangeBias === "New selling activity" ? C.red : C.yellow,
+                  vote:
+                    sig?.oiChangeBias === "New buying activity"
+                      ? "UP"
+                      : sig?.oiChangeBias === "New selling activity"
+                        ? "DOWN"
+                        : "NEUTRAL",
+                  color:
+                    sig?.oiChangeBias === "New buying activity"
+                      ? C.green
+                      : sig?.oiChangeBias === "New selling activity"
+                        ? C.red
+                        : C.yellow,
                 },
                 {
                   label: "Gap to Support",
@@ -941,12 +1187,53 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
                   color: sig && sig.distToRes > sig.distToSup ? C.green : C.red,
                 },
               ].map(({ label, value, detail, vote, color }) => (
-                <div key={label} style={{ flex: "1 1 140px", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 10px" }}>
-                  <div style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>{label}</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color }}>{value}</div>
-                  <div style={{ fontSize: 9, color: C.muted, marginTop: 2 }}>{detail}</div>
-                  <div style={{ marginTop: 5, display: "inline-block", padding: "1px 7px", borderRadius: 3, fontSize: 9, fontWeight: 700, background: vote === "UP" ? C.greenBg : vote === "DOWN" ? C.redBg : C.surface2, color: vote === "UP" ? C.green : vote === "DOWN" ? C.red : C.yellow, border: `1px solid ${vote === "UP" ? C.green + "40" : vote === "DOWN" ? C.red + "40" : C.yellow + "40"}` }}>
-                    {vote === "UP" ? "▲ Bullish vote" : vote === "DOWN" ? "▼ Bearish vote" : "— Neutral"}
+                <div
+                  key={label}
+                  style={{
+                    flex: "1 1 140px",
+                    background: C.bg,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 8,
+                    padding: "8px 10px",
+                  }}
+                >
+                  <div style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>
+                    {label}
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color }}>
+                    {value}
+                  </div>
+                  <div style={{ fontSize: 9, color: C.muted, marginTop: 2 }}>
+                    {detail}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 5,
+                      display: "inline-block",
+                      padding: "1px 7px",
+                      borderRadius: 3,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      background:
+                        vote === "UP"
+                          ? C.greenBg
+                          : vote === "DOWN"
+                            ? C.redBg
+                            : C.surface2,
+                      color:
+                        vote === "UP"
+                          ? C.green
+                          : vote === "DOWN"
+                            ? C.red
+                            : C.yellow,
+                      border: `1px solid ${vote === "UP" ? C.green + "40" : vote === "DOWN" ? C.red + "40" : C.yellow + "40"}`,
+                    }}
+                  >
+                    {vote === "UP"
+                      ? "▲ Bullish vote"
+                      : vote === "DOWN"
+                        ? "▼ Bearish vote"
+                        : "— Neutral"}
                   </div>
                 </div>
               ))}
@@ -954,69 +1241,173 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
           </div>
 
           {/* Key levels */}
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              flexWrap: "wrap",
+              marginTop: 12,
+              paddingTop: 12,
+              borderTop: `1px solid ${C.border}`,
+            }}
+          >
             {[
-              { l: "Max Pain", v: maxPain, c: C.yellow, sub: "where price is pulled at expiry" },
-              { l: "Big Moves Detected", v: topSpikes.length, c: C.blue, sub: "institutional spikes" },
-              { l: "Danger Zones", v: traps.length, c: traps.length > 0 ? "#ff7b00" : C.muted, sub: "strikes to avoid" },
+              {
+                l: "Max Pain",
+                v: maxPain,
+                c: C.yellow,
+                sub: "where price is pulled at expiry",
+              },
+              {
+                l: "Big Moves Detected",
+                v: topSpikes.length,
+                c: C.blue,
+                sub: "institutional spikes",
+              },
+              {
+                l: "Danger Zones",
+                v: traps.length,
+                c: traps.length > 0 ? "#ff7b00" : C.muted,
+                sub: "strikes to avoid",
+              },
             ].map(({ l, v, c, sub }) => (
               <div key={l} style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 9, color: C.muted }}>{l}</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: c }}>{v}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: c }}>
+                  {v}
+                </div>
                 <div style={{ fontSize: 9, color: C.muted }}>{sub}</div>
               </div>
             ))}
           </div>
-        </div>
+        </div>,
       )}
 
       {/* ── Support / Resistance Zones ── */}
-      <div style={{ display: "flex", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 160, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px" }}>
-          <div style={{ fontSize: 10, color: C.green, letterSpacing: 1, marginBottom: 8 }}>
+      <div
+        style={{ display: "flex", gap: 10, marginBottom: 10, flexWrap: "wrap" }}
+      >
+        <div
+          style={{
+            flex: 1,
+            minWidth: 160,
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 10,
+            padding: "12px 14px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              color: C.green,
+              letterSpacing: 1,
+              marginBottom: 8,
+            }}
+          >
             ▲ SUPPORT LEVELS — Price floor below current price
           </div>
           <div style={{ fontSize: 9, color: `${C.green}88`, marginBottom: 6 }}>
-            Big players have placed large Put positions here — these act as cushions
+            Big players have placed large Put positions here — these act as
+            cushions
           </div>
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
             {topSup.length ? (
               topSup.map((r, i) => (
-                <span key={r.strikePrice} style={{ background: i === 0 ? C.greenBg : "#111", border: `1px solid ${C.green}40`, color: C.green, padding: "2px 9px", borderRadius: 4, fontSize: 11, fontWeight: 700, opacity: 1 - i * 0.2 }}>
+                <span
+                  key={r.strikePrice}
+                  style={{
+                    background: i === 0 ? C.greenBg : "#111",
+                    border: `1px solid ${C.green}40`,
+                    color: C.green,
+                    padding: "2px 9px",
+                    borderRadius: 4,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    opacity: 1 - i * 0.2,
+                  }}
+                >
                   {r.strikePrice}
                 </span>
               ))
             ) : (
-              <span style={{ color: C.muted, fontSize: 10 }}>No support found below price</span>
+              <span style={{ color: C.muted, fontSize: 10 }}>
+                No support found below price
+              </span>
             )}
           </div>
           {topSup.length > 0 && (
             <div style={{ fontSize: 10, color: `${C.green}88`, marginTop: 6 }}>
-              Total size: {fmt(topSup.reduce((s, r) => s + r.PE.openInterest, 0))} ({((topSup.reduce((s, r) => s + r.PE.openInterest, 0) / (totalPeOI || 1)) * 100).toFixed(1)}% of all Put positions)
+              Total size:{" "}
+              {fmt(topSup.reduce((s, r) => s + r.PE.openInterest, 0))} (
+              {(
+                (topSup.reduce((s, r) => s + r.PE.openInterest, 0) /
+                  (totalPeOI || 1)) *
+                100
+              ).toFixed(1)}
+              % of all Put positions)
             </div>
           )}
         </div>
-        <div style={{ flex: 1, minWidth: 160, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px" }}>
-          <div style={{ fontSize: 10, color: C.red, letterSpacing: 1, marginBottom: 8 }}>
+        <div
+          style={{
+            flex: 1,
+            minWidth: 160,
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 10,
+            padding: "12px 14px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              color: C.red,
+              letterSpacing: 1,
+              marginBottom: 8,
+            }}
+          >
             ▼ RESISTANCE LEVELS — Price ceiling above current price
           </div>
           <div style={{ fontSize: 9, color: `${C.red}88`, marginBottom: 6 }}>
-            Big players have placed large Call positions here — these act as barriers
+            Big players have placed large Call positions here — these act as
+            barriers
           </div>
           <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
             {topRes.length ? (
               topRes.map((r, i) => (
-                <span key={r.strikePrice} style={{ background: i === 0 ? C.redBg : "#111", border: `1px solid ${C.red}40`, color: C.red, padding: "2px 9px", borderRadius: 4, fontSize: 11, fontWeight: 700, opacity: 1 - i * 0.2 }}>
+                <span
+                  key={r.strikePrice}
+                  style={{
+                    background: i === 0 ? C.redBg : "#111",
+                    border: `1px solid ${C.red}40`,
+                    color: C.red,
+                    padding: "2px 9px",
+                    borderRadius: 4,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    opacity: 1 - i * 0.2,
+                  }}
+                >
                   {r.strikePrice}
                 </span>
               ))
             ) : (
-              <span style={{ color: C.muted, fontSize: 10 }}>No resistance found above price</span>
+              <span style={{ color: C.muted, fontSize: 10 }}>
+                No resistance found above price
+              </span>
             )}
           </div>
           {topRes.length > 0 && (
             <div style={{ fontSize: 10, color: `${C.red}88`, marginTop: 6 }}>
-              Total size: {fmt(topRes.reduce((s, r) => s + r.CE.openInterest, 0))} ({((topRes.reduce((s, r) => s + r.CE.openInterest, 0) / (totalCeOI || 1)) * 100).toFixed(1)}% of all Call positions)
+              Total size:{" "}
+              {fmt(topRes.reduce((s, r) => s + r.CE.openInterest, 0))} (
+              {(
+                (topRes.reduce((s, r) => s + r.CE.openInterest, 0) /
+                  (totalCeOI || 1)) *
+                100
+              ).toFixed(1)}
+              % of all Call positions)
             </div>
           )}
         </div>
@@ -1027,35 +1418,62 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
         <>
           {cardTitle("Biggest Position Changes (Where Big Money Moved)", "🔥")}
           {topSpikes.length === 0 ? (
-            <div style={{ fontSize: 11, color: C.muted }}>No unusually large position changes detected.</div>
+            <div style={{ fontSize: 11, color: C.muted }}>
+              No unusually large position changes detected.
+            </div>
           ) : (
             topSpikes.map((s, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0", borderBottom: i < topSpikes.length - 1 ? `1px solid ${C.border}` : "none" }}>
-                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{s.side === "CE" ? "🔴" : "🟢"}</span>
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  padding: "8px 0",
+                  borderBottom:
+                    i < topSpikes.length - 1 ? `1px solid ${C.border}` : "none",
+                }}
+              >
+                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>
+                  {s.side === "CE" ? "🔴" : "🟢"}
+                </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, color: C.text }}>{s.type}</div>
                   <div style={{ fontSize: 10, color: C.blue, marginTop: 2 }}>
-                    Strike {s.strike} · {s.side === "CE" ? "Call" : "Put"} · Positions added: {fmt(s.doi)} · Volume: {fmt(s.vol)} · Price: ₹{s.ltp}
+                    Strike {s.strike} · {s.side === "CE" ? "Call" : "Put"} ·
+                    Positions added: {fmt(s.doi)} · Volume: {fmt(s.vol)} ·
+                    Price: ₹{s.ltp}
                     {s.chg !== undefined && (
                       <span style={{ color: s.chg >= 0 ? C.green : C.red }}>
-                        {" "}({s.chg > 0 ? "+" : ""}{typeof s.chg === "number" ? s.chg.toFixed(1) : s.chg}%)
+                        {" "}
+                        ({s.chg > 0 ? "+" : ""}
+                        {typeof s.chg === "number" ? s.chg.toFixed(1) : s.chg}%)
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: 10, marginTop: 3, color: s.highConv ? C.green : C.muted }}>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      marginTop: 3,
+                      color: s.highConv ? C.green : C.muted,
+                    }}
+                  >
                     {s.highConv
                       ? "✓ Confirmed by trading volume — likely a genuine institutional move"
                       : "⚠ Low trading volume — could be a passive or misleading entry"}
                   </div>
                   <div style={{ fontSize: 9, color: C.muted, marginTop: 1 }}>
-                    {s.nearness} · {clusters.some((c) => c.includes(s.strike)) ? "Part of a cluster of positions" : "Isolated position"}
+                    {s.nearness} ·{" "}
+                    {clusters.some((c) => c.includes(s.strike))
+                      ? "Part of a cluster of positions"
+                      : "Isolated position"}
                   </div>
                 </div>
                 <IBadge conf={s.highConv ? "HIGH" : "LOW"} />
               </div>
             ))
           )}
-        </>
+        </>,
       )}
 
       {/* ── Institutional Signals ── */}
@@ -1064,14 +1482,35 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
           <>
             {cardTitle("What This Means for You", "⚡")}
             {signals.map((s, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: i < signals.length - 1 ? `1px solid ${C.border}` : "none" }}>
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "7px 0",
+                  borderBottom:
+                    i < signals.length - 1 ? `1px solid ${C.border}` : "none",
+                }}
+              >
                 <span style={{ fontSize: 13, flexShrink: 0 }}>{s.icon}</span>
-                <div style={{ flex: 1, fontSize: 12, color: C.text }}>{s.label}</div>
-                <span style={{ fontSize: 10, color: C.muted, flexShrink: 0, marginRight: 6 }}>{s.strike}</span>
+                <div style={{ flex: 1, fontSize: 12, color: C.text }}>
+                  {s.label}
+                </div>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: C.muted,
+                    flexShrink: 0,
+                    marginRight: 6,
+                  }}
+                >
+                  {s.strike}
+                </span>
                 <IBadge conf={s.conf} />
               </div>
             ))}
-          </>
+          </>,
         )}
 
       {/* ── Trap Signals ── */}
@@ -1080,19 +1519,34 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
           <>
             {cardTitle("⚠ Zones to Avoid Trading", "⚠️")}
             {traps.map((t, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "7px 0", borderBottom: i < traps.length - 1 ? `1px solid ${C.border}` : "none" }}>
-                <span style={{ fontSize: 13, flexShrink: 0, color: "#ff7b00" }}>⚠️</span>
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                  padding: "7px 0",
+                  borderBottom:
+                    i < traps.length - 1 ? `1px solid ${C.border}` : "none",
+                }}
+              >
+                <span style={{ fontSize: 13, flexShrink: 0, color: "#ff7b00" }}>
+                  ⚠️
+                </span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, color: "#ff7b00" }}>{t.msg}</div>
-                  <div style={{ fontSize: 10, color: "#ff7b0088", marginTop: 2 }}>
-                    Avoid entering new trades at this strike — conditions are unstable
+                  <div
+                    style={{ fontSize: 10, color: "#ff7b0088", marginTop: 2 }}
+                  >
+                    Avoid entering new trades at this strike — conditions are
+                    unstable
                   </div>
                 </div>
                 <IBadge conf="TRAP" />
               </div>
             ))}
           </>,
-          { border: `1px solid #ff7b0033` }
+          { border: `1px solid #ff7b0033` },
         )}
 
       {/* ── Position Rolls ── */}
@@ -1101,22 +1555,42 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
           <>
             {cardTitle("Positions Being Moved (Rollovers)", "🔄")}
             <div style={{ fontSize: 10, color: C.muted, marginBottom: 8 }}>
-              Big players are closing their position at one strike and reopening at another
+              Big players are closing their position at one strike and reopening
+              at another
             </div>
             {rolls.map((r, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderBottom: i < rolls.length - 1 ? `1px solid ${C.border}` : "none" }}>
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "6px 0",
+                  borderBottom:
+                    i < rolls.length - 1 ? `1px solid ${C.border}` : "none",
+                }}
+              >
                 <span style={{ fontSize: 12, color: C.purple }}>↔</span>
                 <div style={{ flex: 1, fontSize: 12, color: C.text }}>
                   {r.side === "CE" ? "Call" : "Put"} position moved from{" "}
                   <b style={{ color: C.red }}>{r.from}</b> →{" "}
                   <b style={{ color: C.green }}>{r.to}</b>
                 </div>
-                <span style={{ fontSize: 9, padding: "1px 7px", borderRadius: 4, background: "#1a0a1a", color: C.purple, border: `1px solid ${C.purple}40` }}>
+                <span
+                  style={{
+                    fontSize: 9,
+                    padding: "1px 7px",
+                    borderRadius: 4,
+                    background: "#1a0a1a",
+                    color: C.purple,
+                    border: `1px solid ${C.purple}40`,
+                  }}
+                >
                   ROLLOVER
                 </span>
               </div>
             ))}
-          </>
+          </>,
         )}
 
       {/* ── Volume Conviction Zones ── */}
@@ -1131,12 +1605,25 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {highConvZones.length ? (
                   highConvZones.map((s) => (
-                    <span key={s} style={{ background: C.greenBg, border: `1px solid ${C.green}40`, color: C.green, padding: "2px 7px", borderRadius: 4, fontSize: 10, fontWeight: 700 }}>
+                    <span
+                      key={s}
+                      style={{
+                        background: C.greenBg,
+                        border: `1px solid ${C.green}40`,
+                        color: C.green,
+                        padding: "2px 7px",
+                        borderRadius: 4,
+                        fontSize: 10,
+                        fontWeight: 700,
+                      }}
+                    >
                       {s}
                     </span>
                   ))
                 ) : (
-                  <span style={{ fontSize: 10, color: C.muted }}>None detected</span>
+                  <span style={{ fontSize: 10, color: C.muted }}>
+                    None detected
+                  </span>
                 )}
               </div>
             </div>
@@ -1147,7 +1634,17 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {lowConvNoise.length ? (
                   lowConvNoise.map((s) => (
-                    <span key={s} style={{ background: C.surface2, border: `1px solid ${C.border}`, color: C.muted, padding: "2px 7px", borderRadius: 4, fontSize: 10 }}>
+                    <span
+                      key={s}
+                      style={{
+                        background: C.surface2,
+                        border: `1px solid ${C.border}`,
+                        color: C.muted,
+                        padding: "2px 7px",
+                        borderRadius: 4,
+                        fontSize: 10,
+                      }}
+                    >
                       {s}
                     </span>
                   ))
@@ -1157,7 +1654,7 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
               </div>
             </div>
           </div>
-        </>
+        </>,
       )}
 
       {/* ── OI Concentration ── */}
@@ -1171,12 +1668,37 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
               </div>
               {top3Ce.map((r, i) => (
                 <div key={r.strikePrice} style={{ marginBottom: 6 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, marginBottom: 2 }}>
-                    <span style={{ color: C.text }}>Strike {r.strikePrice}</span>
-                    <span style={{ color: C.red }}>{fmt(r.CE.openInterest)}</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: 10,
+                      marginBottom: 2,
+                    }}
+                  >
+                    <span style={{ color: C.text }}>
+                      Strike {r.strikePrice}
+                    </span>
+                    <span style={{ color: C.red }}>
+                      {fmt(r.CE.openInterest)}
+                    </span>
                   </div>
-                  <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: "hidden" }}>
-                    <div style={{ width: `${(r.CE.openInterest / maxCeOI) * 100}%`, height: "100%", background: i === 0 ? C.red : `${C.red}66`, borderRadius: 2 }} />
+                  <div
+                    style={{
+                      height: 4,
+                      background: C.border,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${(r.CE.openInterest / maxCeOI) * 100}%`,
+                        height: "100%",
+                        background: i === 0 ? C.red : `${C.red}66`,
+                        borderRadius: 2,
+                      }}
+                    />
                   </div>
                 </div>
               ))}
@@ -1187,18 +1709,52 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
               </div>
               {top3Pe.map((r, i) => (
                 <div key={r.strikePrice} style={{ marginBottom: 6 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, marginBottom: 2 }}>
-                    <span style={{ color: C.text }}>Strike {r.strikePrice}</span>
-                    <span style={{ color: C.green }}>{fmt(r.PE.openInterest)}</span>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: 10,
+                      marginBottom: 2,
+                    }}
+                  >
+                    <span style={{ color: C.text }}>
+                      Strike {r.strikePrice}
+                    </span>
+                    <span style={{ color: C.green }}>
+                      {fmt(r.PE.openInterest)}
+                    </span>
                   </div>
-                  <div style={{ height: 4, background: C.border, borderRadius: 2, overflow: "hidden" }}>
-                    <div style={{ width: `${(r.PE.openInterest / maxPeOI) * 100}%`, height: "100%", background: i === 0 ? C.green : `${C.green}66`, borderRadius: 2 }} />
+                  <div
+                    style={{
+                      height: 4,
+                      background: C.border,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${(r.PE.openInterest / maxPeOI) * 100}%`,
+                        height: "100%",
+                        background: i === 0 ? C.green : `${C.green}66`,
+                        borderRadius: 2,
+                      }}
+                    />
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}`, display: "flex", gap: 16, flexWrap: "wrap" }}>
+          <div
+            style={{
+              marginTop: 10,
+              paddingTop: 10,
+              borderTop: `1px solid ${C.border}`,
+              display: "flex",
+              gap: 16,
+              flexWrap: "wrap",
+            }}
+          >
             {[
               {
                 label: "Call Positions (Net)",
@@ -1218,9 +1774,18 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
               },
             ].map(({ label, val, up, dn, upC, dnC }) => (
               <div key={label} style={{ flex: 1, minWidth: 140 }}>
-                <div style={{ fontSize: 9, color: C.muted, marginBottom: 3 }}>{label}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: val >= 0 ? upC : dnC }}>
-                  {val >= 0 ? "+" : ""}{fmt(val)}
+                <div style={{ fontSize: 9, color: C.muted, marginBottom: 3 }}>
+                  {label}
+                </div>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: val >= 0 ? upC : dnC,
+                  }}
+                >
+                  {val >= 0 ? "+" : ""}
+                  {fmt(val)}
                 </div>
                 <div style={{ fontSize: 10, color: val >= 0 ? upC : dnC }}>
                   {val >= 0 ? up : dn}
@@ -1228,7 +1793,7 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
               </div>
             ))}
           </div>
-        </>
+        </>,
       )}
     </div>
   );
@@ -1269,52 +1834,128 @@ function SymbolPicker({ selected, onChange }) {
 
   const Item = ({ item }) => (
     <div
-      onClick={() => { onChange(item); setOpen(false); setQuery(""); }}
+      onClick={() => {
+        onChange(item);
+        setOpen(false);
+        setQuery("");
+      }}
       style={{
-        padding: "8px 12px", cursor: "pointer", display: "flex", alignItems: "center",
-        justifyContent: "space-between", gap: 8, borderRadius: 5,
-        background: selected?.symbol === item.symbol ? C.surface2 : "transparent",
+        padding: "8px 12px",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 8,
+        borderRadius: 5,
+        background:
+          selected?.symbol === item.symbol ? C.surface2 : "transparent",
         transition: "background .1s",
       }}
       onMouseEnter={(e) => (e.currentTarget.style.background = C.surface2)}
-      onMouseLeave={(e) => (e.currentTarget.style.background = selected?.symbol === item.symbol ? C.surface2 : "transparent")}
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.background =
+          selected?.symbol === item.symbol ? C.surface2 : "transparent")
+      }
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-        <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 5px", borderRadius: 3, flexShrink: 0, background: item.type === "index" ? "#0d1e2e" : "#1a0a1a", color: item.type === "index" ? C.blue : C.purple, letterSpacing: 0.5 }}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}
+      >
+        <span
+          style={{
+            fontSize: 9,
+            fontWeight: 700,
+            padding: "2px 5px",
+            borderRadius: 3,
+            flexShrink: 0,
+            background: item.type === "index" ? "#0d1e2e" : "#1a0a1a",
+            color: item.type === "index" ? C.blue : C.purple,
+            letterSpacing: 0.5,
+          }}
+        >
           {item.type === "index" ? "IDX" : "STK"}
         </span>
         <div style={{ minWidth: 0 }}>
-          <div style={{ color: C.text, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div
+            style={{
+              color: C.text,
+              fontSize: 13,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
             {item.symbol}
           </div>
-          <div style={{ color: C.muted, fontSize: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div
+            style={{
+              color: C.muted,
+              fontSize: 10,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
             {item.name}
           </div>
         </div>
       </div>
-      <span style={{ color: C.muted, fontSize: 10, flexShrink: 0 }}>Lot: {item.lot}</span>
+      <span style={{ color: C.muted, fontSize: 10, flexShrink: 0 }}>
+        Lot: {item.lot}
+      </span>
     </div>
   );
 
   return (
-    <div ref={ref} style={{ position: "relative", minWidth: 0, flex: 1, maxWidth: 320 }}>
+    <div
+      ref={ref}
+      style={{ position: "relative", minWidth: 0, flex: 1, maxWidth: 320 }}
+    >
       <button
         onClick={() => setOpen((o) => !o)}
         style={{
-          width: "100%", padding: "8px 12px", borderRadius: 8,
+          width: "100%",
+          padding: "8px 12px",
+          borderRadius: 8,
           border: `1px solid ${open ? C.blue : C.border}`,
-          background: C.surface, color: C.text, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
-          fontFamily: "'IBM Plex Mono',monospace", transition: "border-color .2s",
+          background: C.surface,
+          color: C.text,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          fontFamily: "'IBM Plex Mono',monospace",
+          transition: "border-color .2s",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}
+        >
           {selected && (
-            <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 5px", borderRadius: 3, flexShrink: 0, background: selected.type === "index" ? "#0d1e2e" : "#1a0a1a", color: selected.type === "index" ? C.blue : C.purple }}>
+            <span
+              style={{
+                fontSize: 9,
+                fontWeight: 700,
+                padding: "2px 5px",
+                borderRadius: 3,
+                flexShrink: 0,
+                background: selected.type === "index" ? "#0d1e2e" : "#1a0a1a",
+                color: selected.type === "index" ? C.blue : C.purple,
+              }}
+            >
               {selected.type === "index" ? "IDX" : "STK"}
             </span>
           )}
-          <span style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {selected ? selected.symbol : "Select Symbol"}
           </span>
         </div>
@@ -1322,31 +1963,96 @@ function SymbolPicker({ selected, onChange }) {
       </button>
 
       {open && (
-        <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, zIndex: 1000, boxShadow: "0 8px 32px #00000088", overflow: "hidden", minWidth: 280 }}>
-          <div style={{ padding: "8px 10px", borderBottom: `1px solid ${C.border}` }}>
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            right: 0,
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 10,
+            zIndex: 1000,
+            boxShadow: "0 8px 32px #00000088",
+            overflow: "hidden",
+            minWidth: 280,
+          }}
+        >
+          <div
+            style={{
+              padding: "8px 10px",
+              borderBottom: `1px solid ${C.border}`,
+            }}
+          >
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search symbol or name…"
-              style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.bg, color: C.text, fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, outline: "none", boxSizing: "border-box" }}
+              style={{
+                width: "100%",
+                padding: "7px 10px",
+                borderRadius: 6,
+                border: `1px solid ${C.border}`,
+                background: C.bg,
+                color: C.text,
+                fontFamily: "'IBM Plex Mono',monospace",
+                fontSize: 12,
+                outline: "none",
+                boxSizing: "border-box",
+              }}
             />
           </div>
-          <div style={{ maxHeight: 300, overflowY: "auto", padding: "4px 6px 6px" }}>
+          <div
+            style={{
+              maxHeight: 300,
+              overflowY: "auto",
+              padding: "4px 6px 6px",
+            }}
+          >
             {indices.length > 0 && (
               <>
-                <div style={{ fontSize: 9, color: C.muted, padding: "6px 6px 3px", letterSpacing: 1 }}>── INDICES</div>
-                {indices.map((i) => <Item key={i.symbol} item={i} />)}
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: C.muted,
+                    padding: "6px 6px 3px",
+                    letterSpacing: 1,
+                  }}
+                >
+                  ── INDICES
+                </div>
+                {indices.map((i) => (
+                  <Item key={i.symbol} item={i} />
+                ))}
               </>
             )}
             {stocks.length > 0 && (
               <>
-                <div style={{ fontSize: 9, color: C.muted, padding: "6px 6px 3px", letterSpacing: 1 }}>── STOCKS ({stocks.length})</div>
-                {stocks.map((i) => <Item key={i.symbol} item={i} />)}
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: C.muted,
+                    padding: "6px 6px 3px",
+                    letterSpacing: 1,
+                  }}
+                >
+                  ── STOCKS ({stocks.length})
+                </div>
+                {stocks.map((i) => (
+                  <Item key={i.symbol} item={i} />
+                ))}
               </>
             )}
             {filtered.length === 0 && (
-              <div style={{ padding: "20px", textAlign: "center", color: C.muted, fontSize: 12 }}>
+              <div
+                style={{
+                  padding: "20px",
+                  textAlign: "center",
+                  color: C.muted,
+                  fontSize: 12,
+                }}
+              >
                 No results for "{query}"
               </div>
             )}
@@ -1363,8 +2069,18 @@ function SymbolPicker({ selected, onChange }) {
 const ChartTip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 11 }}>
-      <p style={{ color: C.muted, marginBottom: 4 }}>Strike <b style={{ color: C.text }}>{label}</b></p>
+    <div
+      style={{
+        background: C.bg,
+        border: `1px solid ${C.border}`,
+        borderRadius: 8,
+        padding: "8px 12px",
+        fontSize: 11,
+      }}
+    >
+      <p style={{ color: C.muted, marginBottom: 4 }}>
+        Strike <b style={{ color: C.text }}>{label}</b>
+      </p>
       {payload.map((p, i) => (
         <p key={i} style={{ color: p.color, margin: "2px 0" }}>
           {p.name}: <b>{(p.value / 1000).toFixed(1)}K</b>
@@ -1385,28 +2101,71 @@ function SignalBanner({ sig, atm, maxPain, spot }) {
     "NO TRADE": { color: C.muted, bg: C.surface, icon: "—" },
   }[sig.rawSignal] || { color: C.muted, bg: C.surface, icon: "—" };
 
-  const pcrColor = parseFloat(sig.pcr) > 1.2 ? C.green : parseFloat(sig.pcr) < 0.8 ? C.red : C.yellow;
+  const pcrColor =
+    parseFloat(sig.pcr) > 1.2
+      ? C.green
+      : parseFloat(sig.pcr) < 0.8
+        ? C.red
+        : C.yellow;
 
   return (
     <div
       style={{
-        background: meta.bg, border: `1px solid ${meta.color}40`,
-        borderRadius: 10, padding: "12px 14px", marginBottom: 12,
-        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10,
+        background: meta.bg,
+        border: `1px solid ${meta.color}40`,
+        borderRadius: 10,
+        padding: "12px 14px",
+        marginBottom: 12,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 10,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{ fontSize: 20, fontWeight: 800, color: meta.color, letterSpacing: 1 }}>
+        <span
+          style={{
+            fontSize: 20,
+            fontWeight: 800,
+            color: meta.color,
+            letterSpacing: 1,
+          }}
+        >
           {meta.icon} {sig.signal}
         </span>
         <div>
           <div style={{ fontSize: 10, color: C.muted }}>Signal Strength</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 80, height: 5, background: C.border, borderRadius: 3, overflow: "hidden" }}>
-              <div style={{ width: `${sig.strength}%`, height: "100%", background: sig.strength > 70 ? C.green : sig.strength > 50 ? C.yellow : C.muted, borderRadius: 3 }} />
+            <div
+              style={{
+                width: 80,
+                height: 5,
+                background: C.border,
+                borderRadius: 3,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${sig.strength}%`,
+                  height: "100%",
+                  background:
+                    sig.strength > 70
+                      ? C.green
+                      : sig.strength > 50
+                        ? C.yellow
+                        : C.muted,
+                  borderRadius: 3,
+                }}
+              />
             </div>
-            <span style={{ color: meta.color, fontWeight: 700, fontSize: 13 }}>{sig.strength}%</span>
-            <span style={{ color: C.muted, fontSize: 10 }}>{sig.strengthLabel}</span>
+            <span style={{ color: meta.color, fontWeight: 700, fontSize: 13 }}>
+              {sig.strength}%
+            </span>
+            <span style={{ color: C.muted, fontSize: 10 }}>
+              {sig.strengthLabel}
+            </span>
           </div>
         </div>
       </div>
@@ -1435,46 +2194,110 @@ function SignalBanner({ sig, atm, maxPain, spot }) {
 // ═══════════════════════════════════════════════════════════════
 function ZoneBadges({ sig }) {
   return (
-    <div style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+    <div
+      style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap" }}
+    >
       <div style={{ flex: 1, minWidth: 160 }}>
-        <div style={{ fontSize: 9, color: C.green, marginBottom: 5, letterSpacing: 1 }}>
+        <div
+          style={{
+            fontSize: 9,
+            color: C.green,
+            marginBottom: 5,
+            letterSpacing: 1,
+          }}
+        >
           ▲ SUPPORT — Price floor (strong Put positions below)
         </div>
         <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
           {sig.topSupport.length ? (
             sig.topSupport.map((s, i) => (
-              <span key={s} style={{ background: i === 0 ? C.greenBg : "#111", border: `1px solid ${C.green}40`, color: C.green, padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700 }}>
+              <span
+                key={s}
+                style={{
+                  background: i === 0 ? C.greenBg : "#111",
+                  border: `1px solid ${C.green}40`,
+                  color: C.green,
+                  padding: "2px 8px",
+                  borderRadius: 4,
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
                 {s}
               </span>
             ))
           ) : (
-            <span style={{ color: C.muted, fontSize: 10 }}>No data below price</span>
+            <span style={{ color: C.muted, fontSize: 10 }}>
+              No data below price
+            </span>
           )}
         </div>
       </div>
       <div style={{ flex: 1, minWidth: 160 }}>
-        <div style={{ fontSize: 9, color: C.red, marginBottom: 5, letterSpacing: 1 }}>
+        <div
+          style={{
+            fontSize: 9,
+            color: C.red,
+            marginBottom: 5,
+            letterSpacing: 1,
+          }}
+        >
           ▼ RESISTANCE — Price ceiling (strong Call positions above)
         </div>
         <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
           {sig.topResistance.length ? (
             sig.topResistance.map((s, i) => (
-              <span key={s} style={{ background: i === 0 ? C.redBg : "#111", border: `1px solid ${C.red}40`, color: C.red, padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700 }}>
+              <span
+                key={s}
+                style={{
+                  background: i === 0 ? C.redBg : "#111",
+                  border: `1px solid ${C.red}40`,
+                  color: C.red,
+                  padding: "2px 8px",
+                  borderRadius: 4,
+                  fontSize: 11,
+                  fontWeight: 700,
+                }}
+              >
                 {s}
               </span>
             ))
           ) : (
-            <span style={{ color: C.muted, fontSize: 10 }}>No data above price</span>
+            <span style={{ color: C.muted, fontSize: 10 }}>
+              No data above price
+            </span>
           )}
         </div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <div style={{ fontSize: 9, color: C.muted }}>RECENT ACTIVITY</div>
-        <span style={{ color: sig.oiChangeBias === "New buying activity" ? C.green : sig.oiChangeBias === "New selling activity" ? C.red : C.yellow, fontWeight: 700, fontSize: 12 }}>
+        <span
+          style={{
+            color:
+              sig.oiChangeBias === "New buying activity"
+                ? C.green
+                : sig.oiChangeBias === "New selling activity"
+                  ? C.red
+                  : C.yellow,
+            fontWeight: 700,
+            fontSize: 12,
+          }}
+        >
           {sig.oiChangeBias}
         </span>
         <div style={{ fontSize: 9, color: C.muted }}>OVERALL MOOD (PCR)</div>
-        <span style={{ color: parseFloat(sig.pcr) > 1.2 ? C.green : parseFloat(sig.pcr) < 0.8 ? C.red : C.yellow, fontWeight: 700, fontSize: 12 }}>
+        <span
+          style={{
+            color:
+              parseFloat(sig.pcr) > 1.2
+                ? C.green
+                : parseFloat(sig.pcr) < 0.8
+                  ? C.red
+                  : C.yellow,
+            fontWeight: 700,
+            fontSize: 12,
+          }}
+        >
           {sig.pcrBias}
         </span>
       </div>
@@ -1508,7 +2331,9 @@ async function fetchOptionChain(instrument) {
     const uv = rec.underlyingValue ?? 0;
     const atmIdx = allRows.reduce(
       (bi, r, i) =>
-        Math.abs(r.strikePrice - uv) < Math.abs(allRows[bi].strikePrice - uv) ? i : bi,
+        Math.abs(r.strikePrice - uv) < Math.abs(allRows[bi].strikePrice - uv)
+          ? i
+          : bi,
       0,
     );
     const displayData = allRows.slice(Math.max(0, atmIdx - 15), atmIdx + 16);
@@ -1542,7 +2367,9 @@ const SEED_DATA = {
 };
 
 function useOptionChain(instrument) {
-  const [rawData, setRawData] = useState(() => SEED_DATA[instrument.symbol] ?? null);
+  const [rawData, setRawData] = useState(
+    () => SEED_DATA[instrument.symbol] ?? null,
+  );
   const [prevRawData, setPrevRawData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1623,7 +2450,9 @@ function LoadingSkeleton() {
   const bar = (w, h = 10, r = 4) => (
     <div
       style={{
-        width: w, height: h, borderRadius: r,
+        width: w,
+        height: h,
+        borderRadius: r,
         background: `linear-gradient(90deg, ${C.surface} 25%, ${C.surface2} 50%, ${C.surface} 75%)`,
         backgroundSize: "200% 100%",
         animation: "shimmer 1.4s infinite",
@@ -1633,7 +2462,17 @@ function LoadingSkeleton() {
   return (
     <div style={{ padding: "0 0 24px" }}>
       <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
-      <div style={{ background: C.surface, borderRadius: 10, padding: 16, marginBottom: 12, display: "flex", gap: 16, alignItems: "center" }}>
+      <div
+        style={{
+          background: C.surface,
+          borderRadius: 10,
+          padding: 16,
+          marginBottom: 12,
+          display: "flex",
+          gap: 16,
+          alignItems: "center",
+        }}
+      >
         {bar(120, 28, 6)}
         {bar(200, 14, 4)}
         {bar(80, 28, 6)}
@@ -1641,16 +2480,57 @@ function LoadingSkeleton() {
         {bar(80, 28, 6)}
       </div>
       <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-        <div style={{ flex: 1, background: C.surface, borderRadius: 8, padding: 12, display: "flex", gap: 8 }}>
-          {[60, 60, 60].map((w, i) => <div key={i}>{bar(w, 22, 4)}</div>)}
+        <div
+          style={{
+            flex: 1,
+            background: C.surface,
+            borderRadius: 8,
+            padding: 12,
+            display: "flex",
+            gap: 8,
+          }}
+        >
+          {[60, 60, 60].map((w, i) => (
+            <div key={i}>{bar(w, 22, 4)}</div>
+          ))}
         </div>
-        <div style={{ flex: 1, background: C.surface, borderRadius: 8, padding: 12, display: "flex", gap: 8 }}>
-          {[60, 60, 60].map((w, i) => <div key={i}>{bar(w, 22, 4)}</div>)}
+        <div
+          style={{
+            flex: 1,
+            background: C.surface,
+            borderRadius: 8,
+            padding: 12,
+            display: "flex",
+            gap: 8,
+          }}
+        >
+          {[60, 60, 60].map((w, i) => (
+            <div key={i}>{bar(w, 22, 4)}</div>
+          ))}
         </div>
       </div>
-      <div style={{ background: C.surface, borderRadius: 10, padding: 16, height: 250, display: "flex", alignItems: "flex-end", gap: 4 }}>
+      <div
+        style={{
+          background: C.surface,
+          borderRadius: 10,
+          padding: 16,
+          height: 250,
+          display: "flex",
+          alignItems: "flex-end",
+          gap: 4,
+        }}
+      >
         {Array.from({ length: 20 }, (_, i) => (
-          <div key={i} style={{ flex: 1, height: `${20 + Math.sin(i) * 30 + 40}%`, background: C.surface2, borderRadius: "3px 3px 0 0", opacity: 0.5 }} />
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              height: `${20 + Math.sin(i) * 30 + 40}%`,
+              background: C.surface2,
+              borderRadius: "3px 3px 0 0",
+              opacity: 0.5,
+            }}
+          />
         ))}
       </div>
     </div>
@@ -1662,15 +2542,45 @@ function LoadingSkeleton() {
 // ═══════════════════════════════════════════════════════════════
 function ErrorPanel({ error, onRetry, instrument }) {
   return (
-    <div style={{ background: "#1a0808", border: `1px solid ${C.red}40`, borderRadius: 10, padding: "20px 24px", marginBottom: 12, textAlign: "center" }}>
+    <div
+      style={{
+        background: "#1a0808",
+        border: `1px solid ${C.red}40`,
+        borderRadius: 10,
+        padding: "20px 24px",
+        marginBottom: 12,
+        textAlign: "center",
+      }}
+    >
       <div style={{ fontSize: 28, marginBottom: 8 }}>⚠️</div>
-      <div style={{ color: C.red, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
+      <div
+        style={{ color: C.red, fontWeight: 700, fontSize: 14, marginBottom: 6 }}
+      >
         Could not load data for {instrument.symbol}
       </div>
-      <div style={{ color: C.muted, fontSize: 11, marginBottom: 16, fontFamily: "monospace" }}>{error}</div>
+      <div
+        style={{
+          color: C.muted,
+          fontSize: 11,
+          marginBottom: 16,
+          fontFamily: "monospace",
+        }}
+      >
+        {error}
+      </div>
       <button
         onClick={onRetry}
-        style={{ padding: "8px 20px", borderRadius: 6, border: `1px solid ${C.red}`, background: C.redBg, color: C.red, cursor: "pointer", fontFamily: "'IBM Plex Mono',monospace", fontWeight: 600, fontSize: 12 }}
+        style={{
+          padding: "8px 20px",
+          borderRadius: 6,
+          border: `1px solid ${C.red}`,
+          background: C.redBg,
+          color: C.red,
+          cursor: "pointer",
+          fontFamily: "'IBM Plex Mono',monospace",
+          fontWeight: 600,
+          fontSize: 12,
+        }}
       >
         ↺ Try Again
       </button>
@@ -1693,14 +2603,30 @@ function RefreshCountdown({ fetchedAt }) {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [fetchedAt]);
-  const pct = fetchedAt ? Math.round(((Date.now() - fetchedAt) / REFRESH_MS) * 100) : 0;
+  const pct = fetchedAt
+    ? Math.round(((Date.now() - fetchedAt) / REFRESH_MS) * 100)
+    : 0;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <svg width={16} height={16} style={{ flexShrink: 0 }}>
-        <circle cx={8} cy={8} r={6} fill="none" stroke={C.border} strokeWidth={2} />
-        <circle cx={8} cy={8} r={6} fill="none" stroke={C.blue} strokeWidth={2}
+        <circle
+          cx={8}
+          cy={8}
+          r={6}
+          fill="none"
+          stroke={C.border}
+          strokeWidth={2}
+        />
+        <circle
+          cx={8}
+          cy={8}
+          r={6}
+          fill="none"
+          stroke={C.blue}
+          strokeWidth={2}
           strokeDasharray={`${(pct / 100) * 37.7} 37.7`}
-          strokeLinecap="round" transform="rotate(-90 8 8)"
+          strokeLinecap="round"
+          transform="rotate(-90 8 8)"
           style={{ transition: "stroke-dasharray 1s linear" }}
         />
       </svg>
@@ -1768,9 +2694,7 @@ function BreakoutPanel({ signals, spot, fetchedAt }) {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 20 }}>{meta.icon}</span>
           <div>
-            <div
-              style={{ fontSize: 13, fontWeight: 700, color: meta.color }}
-            >
+            <div style={{ fontSize: 13, fontWeight: 700, color: meta.color }}>
               {topSignal.title}
             </div>
             <div style={{ fontSize: 10, color: "#8b949e", marginTop: 2 }}>
@@ -1846,21 +2770,19 @@ function BreakoutPanel({ signals, spot, fetchedAt }) {
                   alignItems: "flex-start",
                   gap: 10,
                   borderBottom:
-                    i < signals.length - 2
-                      ? "1px solid #21262d"
-                      : "none",
+                    i < signals.length - 2 ? "1px solid #21262d" : "none",
                 }}
               >
                 <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>
                   {sm.icon}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, color: sm.color, fontWeight: 600 }}>
+                  <div
+                    style={{ fontSize: 11, color: sm.color, fontWeight: 600 }}
+                  >
                     {sig.title}
                   </div>
-                  <div
-                    style={{ fontSize: 10, color: "#8b949e", marginTop: 2 }}
-                  >
+                  <div style={{ fontSize: 10, color: "#8b949e", marginTop: 2 }}>
                     {sig.detail}
                   </div>
                   {sig.strike && (
@@ -1880,7 +2802,14 @@ function BreakoutPanel({ signals, spot, fetchedAt }) {
                     </div>
                   )}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 5,
+                    flexShrink: 0,
+                  }}
+                >
                   <div
                     style={{
                       width: 50,
@@ -1899,7 +2828,9 @@ function BreakoutPanel({ signals, spot, fetchedAt }) {
                       }}
                     />
                   </div>
-                  <span style={{ fontSize: 10, color: sm.color }}>{sig.strength}%</span>
+                  <span style={{ fontSize: 10, color: sm.color }}>
+                    {sig.strength}%
+                  </span>
                 </div>
               </div>
             );
@@ -1936,9 +2867,7 @@ function BreakoutPanel({ signals, spot, fetchedAt }) {
           </span>
         ))}
         {fetchedAt && (
-          <span
-            style={{ fontSize: 9, color: "#8b949e", marginLeft: "auto" }}
-          >
+          <span style={{ fontSize: 9, color: "#8b949e", marginLeft: "auto" }}>
             Last scan:{" "}
             {new Date(fetchedAt).toLocaleTimeString("en-IN", {
               hour: "2-digit",
@@ -1973,26 +2902,67 @@ export default function App({ initialData = null, initialSymbol = null }) {
     setActiveTab("oi");
   }, [instrument]);
 
-  const { rows, expiries, selectedExpiry: activeExpiry, underlyingValue } = useMemo(() => {
-    const empty = { rows: [], expiries: [], selectedExpiry: null, underlyingValue: 0 };
+  const {
+    rows,
+    expiries,
+    selectedExpiry: activeExpiry,
+    underlyingValue,
+  } = useMemo(() => {
+    const empty = {
+      rows: [],
+      expiries: [],
+      selectedExpiry: null,
+      underlyingValue: 0,
+    };
     if (!rawData) return empty;
     if (isIndex) {
       const rows = parseIndexChain(rawData);
       if (!rows.length && !rawData.displayData && !rawData.data) return empty;
-      return { rows, expiries: [], selectedExpiry: null, underlyingValue: rawData.underlyingValue ?? 0 };
+      return {
+        rows,
+        expiries: [],
+        selectedExpiry: null,
+        underlyingValue: rawData.underlyingValue ?? 0,
+      };
     } else {
       const parsed = parseStockChain(rawData, selectedExpiry);
-      return { rows: parsed.rows, expiries: parsed.expiries, selectedExpiry: parsed.selectedExpiry, underlyingValue: rawData.underlyingValue ?? 0 };
+      return {
+        rows: parsed.rows,
+        expiries: parsed.expiries,
+        selectedExpiry: parsed.selectedExpiry,
+        underlyingValue: rawData.underlyingValue ?? 0,
+      };
     }
   }, [isIndex, rawData, selectedExpiry]);
 
-  const atm = useMemo(() => (rows.length ? findATM(rows, underlyingValue) : 0), [rows, underlyingValue]);
-  const pcr = useMemo(() => (isIndex ? calcPCRFull(rawData?.fullOI) : calcPCR(rows)), [isIndex, rawData, rows]);
-  const maxPain = useMemo(() => isIndex ? calcMaxPainFull(rawData?.fullOI) : rows.length ? calcMaxPain(rows) : 0, [isIndex, rawData, rows]);
-  const sig = useMemo(() => rows.length ? generateSignal(rows, atm, pcr, underlyingValue) : null, [rows, atm, pcr, underlyingValue]);
+  const atm = useMemo(
+    () => (rows.length ? findATM(rows, underlyingValue) : 0),
+    [rows, underlyingValue],
+  );
+  const pcr = useMemo(
+    () => (isIndex ? calcPCRFull(rawData?.fullOI) : calcPCR(rows)),
+    [isIndex, rawData, rows],
+  );
+  const maxPain = useMemo(
+    () =>
+      isIndex
+        ? calcMaxPainFull(rawData?.fullOI)
+        : rows.length
+          ? calcMaxPain(rows)
+          : 0,
+    [isIndex, rawData, rows],
+  );
+  const sig = useMemo(
+    () =>
+      rows.length ? generateSignal(rows, atm, pcr, underlyingValue) : null,
+    [rows, atm, pcr, underlyingValue],
+  );
 
   const range = scalpMode ? (isIndex ? 200 : 100) : isIndex ? 1500 : 600;
-  const displayRows = useMemo(() => rows.filter((r) => Math.abs(r.strikePrice - atm) <= range), [rows, atm, range]);
+  const displayRows = useMemo(
+    () => rows.filter((r) => Math.abs(r.strikePrice - atm) <= range),
+    [rows, atm, range],
+  );
 
   const prevRows = useMemo(() => {
     if (!prevRawData) return [];
@@ -2027,7 +2997,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
   useEffect(() => {
     if (!rows.length || !underlyingValue) return;
     snapshotHistoryRef.current = pushSnapshot(snapshotHistoryRef.current, {
-      rows,                       // use full rows for accurate diff calculations
+      rows, // use full rows for accurate diff calculations
       spot: underlyingValue,
       atm,
       pcr,
@@ -2040,29 +3010,59 @@ export default function App({ initialData = null, initialSymbol = null }) {
     snapshotHistoryRef.current = [];
   }, [instrument, activeExpiry]);
 
+  const currentSnapshot = useMemo(
+    () =>
+      !rows.length || !underlyingValue
+        ? null
+        : {
+            rows,
+            spot: underlyingValue,
+            atm,
+            pcr,
+            ts: Date.now(),
+            contractKey: `${instrument.symbol}:${activeExpiry ?? "index"}`,
+          },
+    [rows, underlyingValue, atm, pcr, instrument.symbol, activeExpiry],
+  );
+
   // Run the breakout engine after every data change
   const breakoutSignals = useMemo(() => {
-    if (!displayRows.length || !underlyingValue) return [];
-    const snapshots = snapshotHistoryRef.current;
-    const prev = snapshots.length >= 1 ? snapshots[snapshots.length - 1] : null;
+    if (!displayRows.length || !underlyingValue || !currentSnapshot) return [];
+    const base = snapshotHistoryRef.current.filter(
+      (s) => s.contractKey === currentSnapshot.contractKey,
+    );
+    const snapshots = pushSnapshot(base, currentSnapshot);
+    const prev = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null;
 
     return detectBreakouts({
       rows: displayRows,
-      prevRows: prev?.rows ?? prevDisplayRows,   // fall back to hook's prevRows
+      prevRows: prev?.rows ?? prevDisplayRows, // fall back to hook's prevRows
       spot: underlyingValue,
       prevSpot: prev?.spot ?? 0,
       pcr,
       maxPain,
       snapshots,
     });
-  }, [displayRows, underlyingValue, pcr, maxPain, prevDisplayRows]);
+  }, [
+    displayRows,
+    underlyingValue,
+    pcr,
+    maxPain,
+    prevDisplayRows,
+    currentSnapshot,
+  ]);
 
   const Tab = ({ id, label }) => (
     <button
       onClick={() => setActiveTab(id)}
       style={{
-        padding: "5px 12px", borderRadius: 5, border: "none", cursor: "pointer",
-        fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 600,
+        padding: "5px 12px",
+        borderRadius: 5,
+        border: "none",
+        cursor: "pointer",
+        fontFamily: "'IBM Plex Mono',monospace",
+        fontSize: 11,
+        fontWeight: 600,
         background: activeTab === id ? C.surface2 : "transparent",
         color: activeTab === id ? C.text : C.muted,
       }}
@@ -2074,27 +3074,71 @@ export default function App({ initialData = null, initialSymbol = null }) {
   const timestamp = rawData?.timestamp ?? "—";
 
   return (
-    <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "'IBM Plex Mono',monospace" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 12px 24px" }}>
-
+    <div
+      style={{
+        background: C.bg,
+        minHeight: "100vh",
+        color: C.text,
+        fontFamily: "'IBM Plex Mono',monospace",
+      }}
+    >
+      <div
+        style={{ maxWidth: 1200, margin: "0 auto", padding: "12px 12px 24px" }}
+      >
         {/* ══ TOP BAR ════════════════════════════════════════ */}
         <div style={{ marginBottom: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-            <SymbolPicker selected={instrument} onChange={(ins) => setInstrument(ins)} />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              marginBottom: 8,
+            }}
+          >
+            <SymbolPicker
+              selected={instrument}
+              onChange={(ins) => setInstrument(ins)}
+            />
 
             {!isIndex && expiries.length > 0 && (
               <select
                 value={activeExpiry || ""}
                 onChange={(e) => setSelectedExpiry(e.target.value)}
-                style={{ padding: "8px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.surface, color: C.text, fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, cursor: "pointer", flexShrink: 0 }}
+                style={{
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  border: `1px solid ${C.border}`,
+                  background: C.surface,
+                  color: C.text,
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: 12,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
               >
-                {expiries.map((ex) => <option key={ex} value={ex}>{ex}</option>)}
+                {expiries.map((ex) => (
+                  <option key={ex} value={ex}>
+                    {ex}
+                  </option>
+                ))}
               </select>
             )}
 
             <button
               onClick={() => setScalpMode((s) => !s)}
-              style={{ padding: "7px 12px", borderRadius: 7, flexShrink: 0, border: `1px solid ${scalpMode ? C.yellow : C.border}`, background: scalpMode ? "#2d2200" : "transparent", color: scalpMode ? C.yellow : C.muted, cursor: "pointer", fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 600 }}
+              style={{
+                padding: "7px 12px",
+                borderRadius: 7,
+                flexShrink: 0,
+                border: `1px solid ${scalpMode ? C.yellow : C.border}`,
+                background: scalpMode ? "#2d2200" : "transparent",
+                color: scalpMode ? C.yellow : C.muted,
+                cursor: "pointer",
+                fontFamily: "'IBM Plex Mono',monospace",
+                fontSize: 11,
+                fontWeight: 600,
+              }}
             >
               ⚡ {scalpMode ? "NEARBY ONLY" : "NEARBY STRIKES"}
             </button>
@@ -2103,7 +3147,18 @@ export default function App({ initialData = null, initialSymbol = null }) {
               onClick={retry}
               disabled={loading}
               title="Refresh now"
-              style={{ padding: "7px 10px", borderRadius: 7, flexShrink: 0, border: `1px solid ${C.border}`, background: "transparent", color: loading ? C.muted : C.text, cursor: loading ? "not-allowed" : "pointer", fontFamily: "'IBM Plex Mono',monospace", fontSize: 13, opacity: loading ? 0.5 : 1 }}
+              style={{
+                padding: "7px 10px",
+                borderRadius: 7,
+                flexShrink: 0,
+                border: `1px solid ${C.border}`,
+                background: "transparent",
+                color: loading ? C.muted : C.text,
+                cursor: loading ? "not-allowed" : "pointer",
+                fontFamily: "'IBM Plex Mono',monospace",
+                fontSize: 13,
+                opacity: loading ? 0.5 : 1,
+              }}
             >
               ↺
             </button>
@@ -2117,8 +3172,21 @@ export default function App({ initialData = null, initialSymbol = null }) {
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 20, fontWeight: 800, color: isIndex ? C.blue : C.purple }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 20,
+                fontWeight: 800,
+                color: isIndex ? C.blue : C.purple,
+              }}
+            >
               {instrument.symbol}
             </span>
             {underlyingValue > 0 && (
@@ -2126,73 +3194,195 @@ export default function App({ initialData = null, initialSymbol = null }) {
                 ₹{underlyingValue.toLocaleString("en-IN")}
               </span>
             )}
-            <span style={{ fontSize: 11, color: C.muted }}>{instrument.name}</span>
-            <span style={{ fontSize: 10, color: C.muted, marginLeft: "auto" }}>{timestamp}</span>
+            <span style={{ fontSize: 11, color: C.muted }}>
+              {instrument.name}
+            </span>
+            <span style={{ fontSize: 10, color: C.muted, marginLeft: "auto" }}>
+              {timestamp}
+            </span>
           </div>
 
-          <div style={{ marginTop: 4, display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 10, background: C.surface2, color: C.muted, padding: "2px 8px", borderRadius: 4 }}>
+          <div
+            style={{ marginTop: 4, display: "flex", gap: 8, flexWrap: "wrap" }}
+          >
+            <span
+              style={{
+                fontSize: 10,
+                background: C.surface2,
+                color: C.muted,
+                padding: "2px 8px",
+                borderRadius: 4,
+              }}
+            >
               Lot size: <b style={{ color: C.text }}>{instrument.lot}</b>
             </span>
             {!isIndex && activeExpiry && (
-              <span style={{ fontSize: 10, background: "#1a0a1a", color: C.purple, padding: "2px 8px", borderRadius: 4 }}>
+              <span
+                style={{
+                  fontSize: 10,
+                  background: "#1a0a1a",
+                  color: C.purple,
+                  padding: "2px 8px",
+                  borderRadius: 4,
+                }}
+              >
                 Expiry: {activeExpiry}
               </span>
             )}
             {scalpMode && (
-              <span style={{ fontSize: 10, background: "#2d2200", color: C.yellow, padding: "2px 8px", borderRadius: 4 }}>
+              <span
+                style={{
+                  fontSize: 10,
+                  background: "#2d2200",
+                  color: C.yellow,
+                  padding: "2px 8px",
+                  borderRadius: 4,
+                }}
+              >
                 Showing ±{isIndex ? 200 : 100} points from current price
               </span>
             )}
           </div>
         </div>
 
-        {error && <ErrorPanel error={error} onRetry={retry} instrument={instrument} />}
+        {error && (
+          <ErrorPanel error={error} onRetry={retry} instrument={instrument} />
+        )}
         {loading && !rawData && <LoadingSkeleton />}
 
         {rawData && (
           <>
-            {sig && <SignalBanner sig={sig} atm={atm} maxPain={maxPain} spot={underlyingValue} />}
+            {sig && (
+              <SignalBanner
+                sig={sig}
+                atm={atm}
+                maxPain={maxPain}
+                spot={underlyingValue}
+              />
+            )}
             {sig && <ZoneBadges sig={sig} />}
 
-            <div style={{ display: "flex", gap: 3, marginBottom: 10, borderBottom: `1px solid ${C.border}`, paddingBottom: 4, flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 3,
+                marginBottom: 10,
+                borderBottom: `1px solid ${C.border}`,
+                paddingBottom: 4,
+                flexWrap: "wrap",
+              }}
+            >
               <Tab id="oi" label="OI Chart" />
               <Tab id="doi" label="ΔOI Activity" />
               <Tab id="table" label="Strike Table" />
               <Tab id="inst" label="🧠 Smart Money" />
-              <Tab id="breakout" label={`⚡ Breakouts${breakoutSignals.length ? ` (${breakoutSignals.length})` : ""}`} />
+              <Tab
+                id="breakout"
+                label={`⚡ Breakouts${breakoutSignals.length ? ` (${breakoutSignals.length})` : ""}`}
+              />
               {!isIndex && <Tab id="expiry" label="All Expiries" />}
             </div>
 
             <div style={{ position: "relative" }}>
               {loading && rawData && (
-                <div style={{ position: "absolute", inset: 0, zIndex: 10, borderRadius: 10, background: `${C.bg}55`, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(1px)" }}>
-                  <span style={{ color: C.blue, fontSize: 11 }}>● Refreshing data…</span>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: 10,
+                    borderRadius: 10,
+                    background: `${C.bg}55`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backdropFilter: "blur(1px)",
+                  }}
+                >
+                  <span style={{ color: C.blue, fontSize: 11 }}>
+                    ● Refreshing data…
+                  </span>
                 </div>
               )}
 
               {/* OI Chart */}
               {activeTab === "oi" && (
-                <div style={{ background: C.surface, borderRadius: 10, padding: "12px 8px", marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, color: C.muted, marginBottom: 8, paddingLeft: 4 }}>
-                    Call vs Put open positions · ATM (nearest strike): <b style={{ color: C.blue }}>{atm}</b>
+                <div
+                  style={{
+                    background: C.surface,
+                    borderRadius: 10,
+                    padding: "12px 8px",
+                    marginBottom: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: C.muted,
+                      marginBottom: 8,
+                      paddingLeft: 4,
+                    }}
+                  >
+                    Call vs Put open positions · ATM (nearest strike):{" "}
+                    <b style={{ color: C.blue }}>{atm}</b>
                   </div>
                   <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={chartData} barCategoryGap="15%" margin={{ left: -15, right: 4 }}>
-                      <XAxis dataKey="strike" tick={{ fill: C.muted, fontSize: 9 }} interval="preserveStartEnd" />
-                      <YAxis tick={{ fill: C.muted, fontSize: 9 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} width={38} />
+                    <BarChart
+                      data={chartData}
+                      barCategoryGap="15%"
+                      margin={{ left: -15, right: 4 }}
+                    >
+                      <XAxis
+                        dataKey="strike"
+                        tick={{ fill: C.muted, fontSize: 9 }}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis
+                        tick={{ fill: C.muted, fontSize: 9 }}
+                        tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
+                        width={38}
+                      />
                       <Tooltip content={<ChartTip />} />
                       <Legend wrapperStyle={{ fontSize: 10 }} />
-                      <ReferenceLine x={atm} stroke={C.blue} strokeDasharray="4 3" label={{ value: "ATM", fill: C.blue, fontSize: 9 }} />
-                      <ReferenceLine x={maxPain} stroke={C.yellow} strokeDasharray="4 3" label={{ value: "Max Pain", fill: C.yellow, fontSize: 9 }} />
+                      <ReferenceLine
+                        x={atm}
+                        stroke={C.blue}
+                        strokeDasharray="4 3"
+                        label={{ value: "ATM", fill: C.blue, fontSize: 9 }}
+                      />
+                      <ReferenceLine
+                        x={maxPain}
+                        stroke={C.yellow}
+                        strokeDasharray="4 3"
+                        label={{
+                          value: "Max Pain",
+                          fill: C.yellow,
+                          fontSize: 9,
+                        }}
+                      />
                       <Bar dataKey="Call OI">
                         {chartData.map((e, i) => (
-                          <Cell key={i} fill={e.isRes ? C.red : e.isATM ? "#ff7b72" : "#3a1a1a"} opacity={e.isRes ? 1 : 0.75} />
+                          <Cell
+                            key={i}
+                            fill={
+                              e.isRes ? C.red : e.isATM ? "#ff7b72" : "#3a1a1a"
+                            }
+                            opacity={e.isRes ? 1 : 0.75}
+                          />
                         ))}
                       </Bar>
                       <Bar dataKey="Put OI">
                         {chartData.map((e, i) => (
-                          <Cell key={i} fill={e.isSup ? C.green : e.isATM ? "#56d364" : C.greenBg} opacity={e.isSup ? 1 : 0.75} />
+                          <Cell
+                            key={i}
+                            fill={
+                              e.isSup
+                                ? C.green
+                                : e.isATM
+                                  ? "#56d364"
+                                  : C.greenBg
+                            }
+                            opacity={e.isSup ? 1 : 0.75}
+                          />
                         ))}
                       </Bar>
                     </BarChart>
@@ -2202,43 +3392,117 @@ export default function App({ initialData = null, initialSymbol = null }) {
 
               {/* ΔOI Chart */}
               {activeTab === "doi" && (
-                <div style={{ background: C.surface, borderRadius: 10, padding: "12px 8px", marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, color: C.muted, marginBottom: 8, paddingLeft: 4 }}>
-                    Change in open positions since yesterday · Positive = new positions added
+                <div
+                  style={{
+                    background: C.surface,
+                    borderRadius: 10,
+                    padding: "12px 8px",
+                    marginBottom: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: C.muted,
+                      marginBottom: 8,
+                      paddingLeft: 4,
+                    }}
+                  >
+                    Change in open positions since yesterday · Positive = new
+                    positions added
                   </div>
                   <ResponsiveContainer width="100%" height={210}>
-                    <BarChart data={chartData} barCategoryGap="15%" margin={{ left: -15, right: 4 }}>
-                      <XAxis dataKey="strike" tick={{ fill: C.muted, fontSize: 9 }} interval="preserveStartEnd" />
-                      <YAxis tick={{ fill: C.muted, fontSize: 9 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} width={38} />
+                    <BarChart
+                      data={chartData}
+                      barCategoryGap="15%"
+                      margin={{ left: -15, right: 4 }}
+                    >
+                      <XAxis
+                        dataKey="strike"
+                        tick={{ fill: C.muted, fontSize: 9 }}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis
+                        tick={{ fill: C.muted, fontSize: 9 }}
+                        tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
+                        width={38}
+                      />
                       <Tooltip content={<ChartTip />} />
                       <Legend wrapperStyle={{ fontSize: 10 }} />
                       <ReferenceLine y={0} stroke={C.border} />
-                      <ReferenceLine x={atm} stroke={C.blue} strokeDasharray="4 3" />
+                      <ReferenceLine
+                        x={atm}
+                        stroke={C.blue}
+                        strokeDasharray="4 3"
+                      />
                       <Bar dataKey="CE ΔOI">
                         {chartData.map((e, i) => (
-                          <Cell key={i} fill={e["CE ΔOI"] >= 0 ? C.red : C.green} opacity={0.85} />
+                          <Cell
+                            key={i}
+                            fill={e["CE ΔOI"] >= 0 ? C.red : C.green}
+                            opacity={0.85}
+                          />
                         ))}
                       </Bar>
                       <Bar dataKey="PE ΔOI">
                         {chartData.map((e, i) => (
-                          <Cell key={i} fill={e["PE ΔOI"] >= 0 ? C.green : C.red} opacity={0.85} />
+                          <Cell
+                            key={i}
+                            fill={e["PE ΔOI"] >= 0 ? C.green : C.red}
+                            opacity={0.85}
+                          />
                         ))}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                   {(() => {
-                    const sm = chartData.filter((r) => Math.abs(r["CE ΔOI"]) > 300 || Math.abs(r["PE ΔOI"]) > 300).slice(0, 5);
-                    return sm.length > 0 && (
-                      <div style={{ marginTop: 8, paddingLeft: 4 }}>
-                        <div style={{ fontSize: 9, color: C.yellow, marginBottom: 4 }}>⚡ High Activity Strikes</div>
-                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                          {sm.map((r) => (
-                            <span key={r.strike} style={{ background: "#1c1400", border: `1px solid ${C.yellow}40`, color: C.yellow, padding: "2px 7px", borderRadius: 4, fontSize: 10 }}>
-                              {r.strike} {r["PE ΔOI"] > r["CE ΔOI"] ? "🟢 Puts active" : "🔴 Calls active"}
-                            </span>
-                          ))}
+                    const sm = chartData
+                      .filter(
+                        (r) =>
+                          Math.abs(r["CE ΔOI"]) > 300 ||
+                          Math.abs(r["PE ΔOI"]) > 300,
+                      )
+                      .slice(0, 5);
+                    return (
+                      sm.length > 0 && (
+                        <div style={{ marginTop: 8, paddingLeft: 4 }}>
+                          <div
+                            style={{
+                              fontSize: 9,
+                              color: C.yellow,
+                              marginBottom: 4,
+                            }}
+                          >
+                            ⚡ High Activity Strikes
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 5,
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {sm.map((r) => (
+                              <span
+                                key={r.strike}
+                                style={{
+                                  background: "#1c1400",
+                                  border: `1px solid ${C.yellow}40`,
+                                  color: C.yellow,
+                                  padding: "2px 7px",
+                                  borderRadius: 4,
+                                  fontSize: 10,
+                                }}
+                              >
+                                {r.strike}{" "}
+                                {r["PE ΔOI"] > r["CE ΔOI"]
+                                  ? "🟢 Puts active"
+                                  : "🔴 Calls active"}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )
                     );
                   })()}
                 </div>
@@ -2246,17 +3510,45 @@ export default function App({ initialData = null, initialSymbol = null }) {
 
               {/* Table — BUG FIX: buildupType now called with side argument */}
               {activeTab === "table" && sig && (
-                <div style={{ background: C.surface, borderRadius: 10, padding: 10, marginBottom: 10, overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: 600 }}>
+                <div
+                  style={{
+                    background: C.surface,
+                    borderRadius: 10,
+                    padding: 10,
+                    marginBottom: 10,
+                    overflowX: "auto",
+                  }}
+                >
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: 11,
+                      minWidth: 600,
+                    }}
+                  >
                     <thead>
                       <tr style={{ borderBottom: `1px solid ${C.border}` }}>
                         {[
-                          "Call OI", "Call ΔOI", "Call Price",
+                          "Call OI",
+                          "Call ΔOI",
+                          "Call Price",
                           "STRIKE",
-                          "Put OI", "Put ΔOI", "Put Price",
+                          "Put OI",
+                          "Put ΔOI",
+                          "Put Price",
                           "What's Happening",
                         ].map((h) => (
-                          <th key={h} style={{ padding: "5px 6px", color: C.muted, textAlign: "right", whiteSpace: "nowrap", fontWeight: 600 }}>
+                          <th
+                            key={h}
+                            style={{
+                              padding: "5px 6px",
+                              color: C.muted,
+                              textAlign: "right",
+                              whiteSpace: "nowrap",
+                              fontWeight: 600,
+                            }}
+                          >
                             {h}
                           </th>
                         ))}
@@ -2272,29 +3564,117 @@ export default function App({ initialData = null, initialSymbol = null }) {
                         const buPE = buildupType(r, "PE");
                         // Show CE build-up in the table (Call side is conventionally shown)
                         const buLabel = buildupLabel(buCE);
-                        const buC = buCE === "Long Build-up" ? C.green : buCE === "Short Build-up" ? C.red : buCE === "Short Covering" ? C.blue : C.muted;
+                        const buC =
+                          buCE === "Long Build-up"
+                            ? C.green
+                            : buCE === "Short Build-up"
+                              ? C.red
+                              : buCE === "Short Covering"
+                                ? C.blue
+                                : C.muted;
                         return (
                           <tr
                             key={r.strikePrice}
                             style={{
                               borderBottom: `1px solid ${C.surface2}`,
-                              background: isATM ? "#161e2e" : isRes ? C.redBg : isSup ? C.greenBg : "transparent",
+                              background: isATM
+                                ? "#161e2e"
+                                : isRes
+                                  ? C.redBg
+                                  : isSup
+                                    ? C.greenBg
+                                    : "transparent",
                             }}
                           >
-                            <td style={{ padding: "3px 6px", textAlign: "right", color: C.red }}>{r.CE.openInterest.toLocaleString()}</td>
-                            <td style={{ padding: "3px 6px", textAlign: "right", color: r.CE.changeinOpenInterest >= 0 ? C.red : C.green }}>
-                              {r.CE.changeinOpenInterest > 0 ? "+" : ""}{r.CE.changeinOpenInterest.toLocaleString()}
+                            <td
+                              style={{
+                                padding: "3px 6px",
+                                textAlign: "right",
+                                color: C.red,
+                              }}
+                            >
+                              {r.CE.openInterest.toLocaleString()}
                             </td>
-                            <td style={{ padding: "3px 6px", textAlign: "right", color: C.text }}>₹{r.CE.lastPrice}</td>
-                            <td style={{ padding: "3px 8px", textAlign: "center", fontWeight: 700, color: isATM ? C.blue : isRes ? C.red : isSup ? C.green : C.text, background: isATM ? "#1c2a3a" : undefined }}>
-                              {r.strikePrice}{isATM ? " ◆" : ""}
+                            <td
+                              style={{
+                                padding: "3px 6px",
+                                textAlign: "right",
+                                color:
+                                  r.CE.changeinOpenInterest >= 0
+                                    ? C.red
+                                    : C.green,
+                              }}
+                            >
+                              {r.CE.changeinOpenInterest > 0 ? "+" : ""}
+                              {r.CE.changeinOpenInterest.toLocaleString()}
                             </td>
-                            <td style={{ padding: "3px 6px", textAlign: "right", color: C.green }}>{r.PE.openInterest.toLocaleString()}</td>
-                            <td style={{ padding: "3px 6px", textAlign: "right", color: r.PE.changeinOpenInterest >= 0 ? C.green : C.red }}>
-                              {r.PE.changeinOpenInterest > 0 ? "+" : ""}{r.PE.changeinOpenInterest.toLocaleString()}
+                            <td
+                              style={{
+                                padding: "3px 6px",
+                                textAlign: "right",
+                                color: C.text,
+                              }}
+                            >
+                              ₹{r.CE.lastPrice}
                             </td>
-                            <td style={{ padding: "3px 6px", textAlign: "right", color: C.text }}>₹{r.PE.lastPrice}</td>
-                            <td style={{ padding: "3px 6px", textAlign: "right", color: buC, whiteSpace: "nowrap", fontSize: 10 }}>
+                            <td
+                              style={{
+                                padding: "3px 8px",
+                                textAlign: "center",
+                                fontWeight: 700,
+                                color: isATM
+                                  ? C.blue
+                                  : isRes
+                                    ? C.red
+                                    : isSup
+                                      ? C.green
+                                      : C.text,
+                                background: isATM ? "#1c2a3a" : undefined,
+                              }}
+                            >
+                              {r.strikePrice}
+                              {isATM ? " ◆" : ""}
+                            </td>
+                            <td
+                              style={{
+                                padding: "3px 6px",
+                                textAlign: "right",
+                                color: C.green,
+                              }}
+                            >
+                              {r.PE.openInterest.toLocaleString()}
+                            </td>
+                            <td
+                              style={{
+                                padding: "3px 6px",
+                                textAlign: "right",
+                                color:
+                                  r.PE.changeinOpenInterest >= 0
+                                    ? C.green
+                                    : C.red,
+                              }}
+                            >
+                              {r.PE.changeinOpenInterest > 0 ? "+" : ""}
+                              {r.PE.changeinOpenInterest.toLocaleString()}
+                            </td>
+                            <td
+                              style={{
+                                padding: "3px 6px",
+                                textAlign: "right",
+                                color: C.text,
+                              }}
+                            >
+                              ₹{r.PE.lastPrice}
+                            </td>
+                            <td
+                              style={{
+                                padding: "3px 6px",
+                                textAlign: "right",
+                                color: buC,
+                                whiteSpace: "nowrap",
+                                fontSize: 10,
+                              }}
+                            >
                               {buLabel}
                             </td>
                           </tr>
@@ -2328,37 +3708,104 @@ export default function App({ initialData = null, initialSymbol = null }) {
 
               {/* Expiry cards (stock only) */}
               {activeTab === "expiry" && !isIndex && (
-                <div style={{ background: C.surface, borderRadius: 10, padding: 12, marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, color: C.muted, marginBottom: 10 }}>
-                    Sentiment & open positions across all expiry dates · {instrument.symbol}
+                <div
+                  style={{
+                    background: C.surface,
+                    borderRadius: 10,
+                    padding: 12,
+                    marginBottom: 10,
+                  }}
+                >
+                  <div
+                    style={{ fontSize: 10, color: C.muted, marginBottom: 10 }}
+                  >
+                    Sentiment & open positions across all expiry dates ·{" "}
+                    {instrument.symbol}
                   </div>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {expiries.map((ex) => {
                       const p = parseStockChain(rawData, ex);
                       const pcrV = calcPCR(p.rows).toFixed(2);
-                      const totCE = p.rows.reduce((s, r) => s + r.CE.openInterest, 0);
-                      const totPE = p.rows.reduce((s, r) => s + r.PE.openInterest, 0);
-                      const pc = pcrV > 1.2 ? C.green : pcrV < 0.8 ? C.red : C.yellow;
+                      const totCE = p.rows.reduce(
+                        (s, r) => s + r.CE.openInterest,
+                        0,
+                      );
+                      const totPE = p.rows.reduce(
+                        (s, r) => s + r.PE.openInterest,
+                        0,
+                      );
+                      const pc =
+                        pcrV > 1.2 ? C.green : pcrV < 0.8 ? C.red : C.yellow;
                       const isActive = ex === activeExpiry;
                       return (
                         <div
                           key={ex}
-                          onClick={() => { setSelectedExpiry(ex); setActiveTab("oi"); }}
-                          style={{ background: isActive ? "#0d1e2e" : C.bg, border: `1px solid ${isActive ? C.blue : C.border}`, borderRadius: 8, padding: "10px 14px", cursor: "pointer", flex: "1 1 140px", transition: "border-color .15s" }}
+                          onClick={() => {
+                            setSelectedExpiry(ex);
+                            setActiveTab("oi");
+                          }}
+                          style={{
+                            background: isActive ? "#0d1e2e" : C.bg,
+                            border: `1px solid ${isActive ? C.blue : C.border}`,
+                            borderRadius: 8,
+                            padding: "10px 14px",
+                            cursor: "pointer",
+                            flex: "1 1 140px",
+                            transition: "border-color .15s",
+                          }}
                         >
-                          <div style={{ color: C.blue, fontWeight: 700, fontSize: 11, marginBottom: 6 }}>{ex}</div>
+                          <div
+                            style={{
+                              color: C.blue,
+                              fontWeight: 700,
+                              fontSize: 11,
+                              marginBottom: 6,
+                            }}
+                          >
+                            {ex}
+                          </div>
                           <div style={{ display: "flex", gap: 12 }}>
                             <div>
-                              <div style={{ fontSize: 9, color: C.muted }}>Call OI</div>
-                              <div style={{ color: C.red, fontSize: 12, fontWeight: 700 }}>{(totCE / 1000).toFixed(1)}K</div>
+                              <div style={{ fontSize: 9, color: C.muted }}>
+                                Call OI
+                              </div>
+                              <div
+                                style={{
+                                  color: C.red,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {(totCE / 1000).toFixed(1)}K
+                              </div>
                             </div>
                             <div>
-                              <div style={{ fontSize: 9, color: C.muted }}>Put OI</div>
-                              <div style={{ color: C.green, fontSize: 12, fontWeight: 700 }}>{(totPE / 1000).toFixed(1)}K</div>
+                              <div style={{ fontSize: 9, color: C.muted }}>
+                                Put OI
+                              </div>
+                              <div
+                                style={{
+                                  color: C.green,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {(totPE / 1000).toFixed(1)}K
+                              </div>
                             </div>
                             <div>
-                              <div style={{ fontSize: 9, color: C.muted }}>Mood</div>
-                              <div style={{ color: pc, fontSize: 12, fontWeight: 700 }}>{pcrLabel(parseFloat(pcrV))}</div>
+                              <div style={{ fontSize: 9, color: C.muted }}>
+                                Mood
+                              </div>
+                              <div
+                                style={{
+                                  color: pc,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {pcrLabel(parseFloat(pcrV))}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -2373,19 +3820,70 @@ export default function App({ initialData = null, initialSymbol = null }) {
             </div>
 
             {/* Footer */}
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 10, color: C.muted, marginTop: 4, paddingTop: 8, borderTop: `1px solid ${C.border}` }}>
-              <span>Symbol: <b style={{ color: C.text }}>{instrument.symbol}</b></span>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                fontSize: 10,
+                color: C.muted,
+                marginTop: 4,
+                paddingTop: 8,
+                borderTop: `1px solid ${C.border}`,
+              }}
+            >
+              <span>
+                Symbol: <b style={{ color: C.text }}>{instrument.symbol}</b>
+              </span>
               <span>·</span>
-              <span>Lot size: <b style={{ color: C.text }}>{instrument.lot}</b></span>
+              <span>
+                Lot size: <b style={{ color: C.text }}>{instrument.lot}</b>
+              </span>
               <span>·</span>
-              <span>ATM: <b style={{ color: C.blue }}>{atm || "—"}</b></span>
+              <span>
+                ATM: <b style={{ color: C.blue }}>{atm || "—"}</b>
+              </span>
               <span>·</span>
-              <span>Max Pain: <b style={{ color: C.yellow }}>{maxPain || "—"}</b></span>
+              <span>
+                Max Pain: <b style={{ color: C.yellow }}>{maxPain || "—"}</b>
+              </span>
               <span>·</span>
-              <span>Market mood (PCR): <b style={{ color: parseFloat(sig?.pcr) > 1.2 ? C.green : parseFloat(sig?.pcr) < 0.8 ? C.red : C.yellow }}>{sig ? pcrLabel(parseFloat(sig.pcr)) : "—"}</b></span>
-              <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
+              <span>
+                Market mood (PCR):{" "}
+                <b
+                  style={{
+                    color:
+                      parseFloat(sig?.pcr) > 1.2
+                        ? C.green
+                        : parseFloat(sig?.pcr) < 0.8
+                          ? C.red
+                          : C.yellow,
+                  }}
+                >
+                  {sig ? pcrLabel(parseFloat(sig.pcr)) : "—"}
+                </b>
+              </span>
+              <span
+                style={{
+                  marginLeft: "auto",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
                 {timestamp}
-                <span style={{ padding: "1px 7px", borderRadius: 4, fontSize: 9, fontWeight: 700, letterSpacing: 0.5, background: mktStatus?.open ? "#0d2a16" : "#1c2128", color: mktStatus?.open ? "#3fb950" : "#8b949e", border: `1px solid ${mktStatus?.open ? "#3fb95044" : "#30363d"}` }}>
+                <span
+                  style={{
+                    padding: "1px 7px",
+                    borderRadius: 4,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: 0.5,
+                    background: mktStatus?.open ? "#0d2a16" : "#1c2128",
+                    color: mktStatus?.open ? "#3fb950" : "#8b949e",
+                    border: `1px solid ${mktStatus?.open ? "#3fb95044" : "#30363d"}`,
+                  }}
+                >
                   {mktStatus?.label ?? "—"}
                 </span>
               </span>
