@@ -244,9 +244,9 @@ function calcMaxPain(rows) {
     let loss = 0;
     for (const r of rows) {
       if (t.strikePrice > r.strikePrice)
-        loss += (t.strikePrice - r.strikePrice) * r.PE.openInterest; // FIXED (was CE)
+        loss += (t.strikePrice - r.strikePrice) * r.PE.openInterest;
       if (t.strikePrice < r.strikePrice)
-        loss += (r.strikePrice - t.strikePrice) * r.CE.openInterest; // FIXED (was PE)
+        loss += (r.strikePrice - t.strikePrice) * r.CE.openInterest;
     }
     if (loss < min) {
       min = loss;
@@ -313,7 +313,6 @@ function generateSignal(rows, atm, pcr, spot) {
   );
   const totalBias = pcrBias + oiChangeBias + volBias + zoneBias;
 
-  // User-friendly signal labels
   let signal = "WAIT — No clear direction";
   if (strength > 50) {
     if (totalBias >= 2) signal = "LIKELY UP — Consider buying a Call";
@@ -342,9 +341,8 @@ function generateSignal(rows, atm, pcr, spot) {
   };
 }
 
-// BUG FIX: buildupType() was reading only CE.change / CE.changeinOpenInterest,
-// so the build-up classification shown in the table was wrong for put-heavy strikes.
-// Now accepts a side parameter ('CE' | 'PE') and reads the correct leg.
+// BUG FIX: buildupType() now accepts a side parameter ('CE' | 'PE') and reads
+// the correct leg — previously always read CE, giving wrong results for put-heavy strikes.
 const buildupType = (r, side = "CE") => {
   const leg = r[side];
   const priceChg = leg.change;
@@ -474,7 +472,6 @@ function calcInstitutional(rows, spot, atm, pcr) {
   const nearCeDOI = nearATM.reduce((s, r) => s + r.CE.changeinOpenInterest, 0);
   const nearPeDOI = nearATM.reduce((s, r) => s + r.PE.changeinOpenInterest, 0);
 
-  // User-friendly ATM shift label
   const atmShiftRaw =
     nearPeDOI > nearCeDOI * 1.3
       ? "PE Dominant"
@@ -492,7 +489,6 @@ function calcInstitutional(rows, spot, atm, pcr) {
     .sort((a, b) => b.PE.openInterest - a.PE.openInterest)
     .slice(0, 3);
 
-  // Plain-English institutional signals
   spikes.forEach((s) => {
     if (s.type.includes("selling Calls") && s.highConv)
       signals.push({
@@ -622,8 +618,6 @@ function fmtN(n) {
 }
 
 function diffInstitutional(prevRows, currRows, spot) {
-  // BUG FIX: original used array midpoint as a proxy for ATM — inaccurate
-  // when the display window is asymmetric around ATM. Use real spot price instead.
   if (!prevRows?.length || !currRows?.length) return [];
   const alerts = [];
   const prevMap = {};
@@ -753,8 +747,6 @@ function diffInstitutional(prevRows, currRows, spot) {
   });
 
   // BUG FIX: ATM flip now uses real spot price instead of array midpoint index.
-  // Old code: const midSpot = currRows[Math.floor(currRows.length / 2)]?.strikePrice
-  // This was wrong when the display window was skewed (e.g. 20 strikes above ATM, 5 below).
   const atmCurr = spot
     ? currRows.reduce((b, r) =>
         Math.abs(r.strikePrice - spot) < Math.abs(b.strikePrice - spot) ? r : b,
@@ -869,13 +861,8 @@ function sigMeta(rawSignal) {
   return { color: C.yellow, bg: C.surface2, icon: "—" };
 }
 
-// InstitutionalPanel now receives the top-level `sig` object produced by
-// generateSignal() so it displays the SAME direction verdict as the banner.
-// The old internal `smartBias` computed by calcInstitutional() is kept for
-// the supporting factor breakdown but is no longer shown as a headline.
 function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
   const inst = calcInstitutional(rows, spot, atm, pcr);
-  // BUG FIX: pass spot to diffInstitutional so ATM is derived from real price
   const diffAlerts = useMemo(
     () => diffInstitutional(prevRows, rows, spot),
     [prevRows, rows, spot],
@@ -901,7 +888,6 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
     topSup,
   } = inst;
 
-  // Use the SAME signal as the top banner — single source of truth
   const meta = sigMeta(sig?.rawSignal ?? "NO TRADE");
   const biasColor = meta.color;
   const biasBg = meta.bg;
@@ -1040,7 +1026,6 @@ function InstitutionalPanel({ rows, prevRows, spot, atm, maxPain, pcr, sig }) {
       {/* ── Unified Signal Header (same as top banner) ── */}
       {card(
         <div>
-          {/* Main verdict — identical to the top banner */}
           <div
             style={{
               display: "flex",
@@ -2091,10 +2076,9 @@ const ChartTip = ({ active, payload, label }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// SIGNAL BANNER — plain-English version
+// SIGNAL BANNER
 // ═══════════════════════════════════════════════════════════════
 function SignalBanner({ sig, atm, maxPain, spot }) {
-  // Map rawSignal → visual styling
   const meta = {
     "BUY CALL": { color: C.green, bg: C.greenBg, icon: "▲" },
     "BUY PUT": { color: C.red, bg: C.redBg, icon: "▼" },
@@ -2366,6 +2350,8 @@ const SEED_DATA = {
   MAZDOCK: STOCK_DATA,
 };
 
+// FIX #5 (Race Condition): Track the latest request ID so stale responses
+// from slow/overlapping fetches are discarded instead of overwriting fresh data.
 function useOptionChain(instrument) {
   const [rawData, setRawData] = useState(
     () => SEED_DATA[instrument.symbol] ?? null,
@@ -2376,12 +2362,11 @@ function useOptionChain(instrument) {
   const [fetchedAt, setFetchedAt] = useState(null);
   const [mktStatus, setMktStatus] = useState(() => getMarketStatusLabel());
   const closedFetchDone = useRef(false);
-  const abortRef = useRef(null);
+  const latestRequestRef = useRef(0); // FIX #5: replaces AbortController pattern
 
   const load = useCallback(async (inst, resetPrev = false) => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+    const requestId = Date.now();
+    latestRequestRef.current = requestId;
 
     if (resetPrev) {
       setRawData(SEED_DATA[inst.symbol] ?? null);
@@ -2393,7 +2378,8 @@ function useOptionChain(instrument) {
 
     try {
       const data = await fetchOptionChain(inst);
-      if (controller.signal.aborted) return;
+      // FIX #5: Discard response if a newer request has since been issued
+      if (latestRequestRef.current !== requestId) return;
       setRawData((cur) => {
         if (cur && cur !== SEED_DATA[inst.symbol] && cur.timestamp) {
           setPrevRawData(cur);
@@ -2403,17 +2389,17 @@ function useOptionChain(instrument) {
       setFetchedAt(Date.now());
       setError(null);
     } catch (err) {
-      if (controller.signal.aborted) return;
+      if (latestRequestRef.current !== requestId) return;
       setError(err.message ?? "Failed to fetch option chain");
     } finally {
-      if (!controller.signal.aborted) setLoading(false);
+      // Only clear loading spinner if this is still the latest request
+      if (latestRequestRef.current === requestId) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     closedFetchDone.current = !isMarketOpen();
     load(instrument, true);
-    return () => abortRef.current?.abort();
   }, [instrument, load]);
 
   useEffect(() => {
@@ -2703,7 +2689,6 @@ function BreakoutPanel({ signals, spot, fetchedAt }) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Strength bar */}
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 9, color: "#8b949e", marginBottom: 3 }}>
               SIGNAL STRENGTH
@@ -2738,7 +2723,6 @@ function BreakoutPanel({ signals, spot, fetchedAt }) {
               </span>
             </div>
           </div>
-          {/* Label badge */}
           <span
             style={{
               padding: "3px 10px",
@@ -2838,7 +2822,7 @@ function BreakoutPanel({ signals, spot, fetchedAt }) {
         </div>
       )}
 
-      {/* Footer — source legend + freshness */}
+      {/* Footer */}
       <div
         style={{
           background: "#0d1117",
@@ -2939,19 +2923,31 @@ export default function App({ initialData = null, initialSymbol = null }) {
     () => (rows.length ? findATM(rows, underlyingValue) : 0),
     [rows, underlyingValue],
   );
-  const pcr = useMemo(
-    () => (isIndex ? calcPCRFull(rawData?.fullOI) : calcPCR(rows)),
-    [isIndex, rawData, rows],
-  );
-  const maxPain = useMemo(
-    () =>
-      isIndex
+
+  // FIX #10 (PCR Calculation Inconsistency): For stocks, always use the full
+  // unfiltered chain for PCR, not just the display window. This ensures PCR
+  // is consistent regardless of scalp-mode range or expiry filtering.
+  const pcr = useMemo(() => {
+    if (isIndex) return calcPCRFull(rawData?.fullOI);
+    const allRows = parseStockChain(rawData, selectedExpiry).rows;
+    return calcPCR(allRows);
+  }, [isIndex, rawData, selectedExpiry]);
+
+  // FIX #15 (Error Boundaries): Wrap max pain calculation in try-catch to
+  // prevent a crash on malformed or empty data from taking down the whole app.
+  const maxPain = useMemo(() => {
+    try {
+      return isIndex
         ? calcMaxPainFull(rawData?.fullOI)
         : rows.length
           ? calcMaxPain(rows)
-          : 0,
-    [isIndex, rawData, rows],
-  );
+          : 0;
+    } catch (e) {
+      console.error("MaxPain calc failed:", e);
+      return 0;
+    }
+  }, [isIndex, rawData, rows]);
+
   const sig = useMemo(
     () =>
       rows.length ? generateSignal(rows, atm, pcr, underlyingValue) : null,
@@ -2970,14 +2966,15 @@ export default function App({ initialData = null, initialSymbol = null }) {
     return parseStockChain(prevRawData, selectedExpiry).rows;
   }, [isIndex, prevRawData, selectedExpiry]);
 
-  // BUG FIX: trim prevRows using real atm (from current data) — was already correct
-  // but added comment for clarity. ATM from current data is intentional here;
-  // we want to see what changed at the CURRENT strike window, not the old one.
   const prevDisplayRows = useMemo(
     () => prevRows.filter((r) => Math.abs(r.strikePrice - atm) <= range),
     [prevRows, atm, range],
   );
 
+  // FIX #8 (Chart Data Recomputation): Removed `sig` from chartData dependencies.
+  // `isSup` and `isRes` are computed inline in Cell renders using the `sig` ref
+  // directly — this avoids recomputing the full chart dataset when only the
+  // signal changes, while still reflecting the latest support/resistance.
   const chartData = useMemo(
     () =>
       displayRows.map((r) => ({
@@ -2987,23 +2984,32 @@ export default function App({ initialData = null, initialSymbol = null }) {
         "CE ΔOI": r.CE.changeinOpenInterest,
         "PE ΔOI": r.PE.changeinOpenInterest,
         isATM: r.strikePrice === atm,
-        isSup: sig?.topSupport.includes(r.strikePrice),
-        isRes: sig?.topResistance.includes(r.strikePrice),
       })),
-    [displayRows, atm, sig],
+    [displayRows, atm], // FIX #8: removed `sig` — Cell renders compute isSup/isRes live
   );
 
-  // Push a new snapshot whenever rows + spot update
+  // FIX #3 (Stale Snapshot Push): Guard against pushing a duplicate snapshot
+  // when rows reference changes but data is identical (common on React re-renders
+  // between 2-min API refreshes).
   useEffect(() => {
     if (!rows.length || !underlyingValue) return;
+
+    const lastSnapshot = snapshotHistoryRef.current[snapshotHistoryRef.current.length - 1];
+    const key = `${rows.length}-${rows[0]?.strikePrice}-${underlyingValue}-${pcr}`;
+    const lastKey = lastSnapshot
+      ? `${lastSnapshot.rows.length}-${lastSnapshot.rows[0]?.strikePrice}-${lastSnapshot.spot}-${lastSnapshot.pcr}`
+      : null;
+
+    if (key === lastKey) return; // Skip identical snapshots
+
     snapshotHistoryRef.current = pushSnapshot(snapshotHistoryRef.current, {
-      rows, // use full rows for accurate diff calculations
+      rows,
       spot: underlyingValue,
       atm,
       pcr,
       ts: Date.now(),
     });
-  }, [rows, underlyingValue, atm, pcr]); // triggers on every 2-min refresh
+  }, [rows, underlyingValue, atm, pcr]);
 
   // Reset history when symbol changes
   useEffect(() => {
@@ -3025,7 +3031,6 @@ export default function App({ initialData = null, initialSymbol = null }) {
     [rows, underlyingValue, atm, pcr, instrument.symbol, activeExpiry],
   );
 
-  // Run the breakout engine after every data change
   const breakoutSignals = useMemo(() => {
     if (!displayRows.length || !underlyingValue || !currentSnapshot) return [];
     const base = snapshotHistoryRef.current.filter(
@@ -3036,7 +3041,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
 
     return detectBreakouts({
       rows: displayRows,
-      prevRows: prev?.rows ?? prevDisplayRows, // fall back to hook's prevRows
+      prevRows: prev?.rows ?? prevDisplayRows,
       spot: underlyingValue,
       prevSpot: prev?.spot ?? 0,
       pcr,
@@ -3304,7 +3309,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
                 </div>
               )}
 
-              {/* OI Chart */}
+              {/* OI Chart — FIX #8: isSup/isRes computed live in Cell, not from chartData */}
               {activeTab === "oi" && (
                 <div
                   style={{
@@ -3360,30 +3365,36 @@ export default function App({ initialData = null, initialSymbol = null }) {
                         }}
                       />
                       <Bar dataKey="Call OI">
-                        {chartData.map((e, i) => (
-                          <Cell
-                            key={i}
-                            fill={
-                              e.isRes ? C.red : e.isATM ? "#ff7b72" : "#3a1a1a"
-                            }
-                            opacity={e.isRes ? 1 : 0.75}
-                          />
-                        ))}
+                        {chartData.map((e, i) => {
+                          const isRes = sig?.topResistance.includes(e.strike);
+                          return (
+                            <Cell
+                              key={i}
+                              fill={
+                                isRes ? C.red : e.isATM ? "#ff7b72" : "#3a1a1a"
+                              }
+                              opacity={isRes ? 1 : 0.75}
+                            />
+                          );
+                        })}
                       </Bar>
                       <Bar dataKey="Put OI">
-                        {chartData.map((e, i) => (
-                          <Cell
-                            key={i}
-                            fill={
-                              e.isSup
-                                ? C.green
-                                : e.isATM
-                                  ? "#56d364"
-                                  : C.greenBg
-                            }
-                            opacity={e.isSup ? 1 : 0.75}
-                          />
-                        ))}
+                        {chartData.map((e, i) => {
+                          const isSup = sig?.topSupport.includes(e.strike);
+                          return (
+                            <Cell
+                              key={i}
+                              fill={
+                                isSup
+                                  ? C.green
+                                  : e.isATM
+                                    ? "#56d364"
+                                    : C.greenBg
+                              }
+                              opacity={isSup ? 1 : 0.75}
+                            />
+                          );
+                        })}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -3508,7 +3519,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
                 </div>
               )}
 
-              {/* Table — BUG FIX: buildupType now called with side argument */}
+              {/* Strike Table */}
               {activeTab === "table" && sig && (
                 <div
                   style={{
@@ -3559,10 +3570,7 @@ export default function App({ initialData = null, initialSymbol = null }) {
                         const isATM = r.strikePrice === atm;
                         const isSup = sig.topSupport.includes(r.strikePrice);
                         const isRes = sig.topResistance.includes(r.strikePrice);
-                        // BUG FIX: was always reading CE — now reads the dominant side
                         const buCE = buildupType(r, "CE");
-                        const buPE = buildupType(r, "PE");
-                        // Show CE build-up in the table (Call side is conventionally shown)
                         const buLabel = buildupLabel(buCE);
                         const buC =
                           buCE === "Long Build-up"
