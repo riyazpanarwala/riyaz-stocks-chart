@@ -17,7 +17,6 @@ import {
   detectBreakouts,
   breakoutSignalMeta,
   pushSnapshot,
-  THRESHOLDS,
 } from "./breakoutDetector";
 
 const INDEX_DATA = {
@@ -148,8 +147,8 @@ function calcMaxPainFull(fullOI) {
   for (const t of fullOI) {
     let loss = 0;
     for (const r of fullOI) {
-      if (t.s > r.s) loss += (t.s - r.s) * r.p;
-      if (t.s < r.s) loss += (r.s - t.s) * r.c;
+      if (t.s > r.s) loss += (t.s - r.s) * r.c;
+      if (t.s < r.s) loss += (r.s - t.s) * r.p;
     }
     if (loss < min) {
       min = loss;
@@ -240,9 +239,9 @@ function calcMaxPain(rows) {
     let loss = 0;
     for (const r of rows) {
       if (t.strikePrice > r.strikePrice)
-        loss += (t.strikePrice - r.strikePrice) * r.PE.openInterest;
+        loss += (t.strikePrice - r.strikePrice) * r.CE.openInterest;
       if (t.strikePrice < r.strikePrice)
-        loss += (r.strikePrice - t.strikePrice) * r.CE.openInterest;
+        loss += (r.strikePrice - t.strikePrice) * r.PE.openInterest;
     }
     if (loss < min) {
       min = loss;
@@ -2289,7 +2288,7 @@ function ZoneBadges({ sig }) {
 // NSE API FETCH HELPERS
 // ═══════════════════════════════════════════════════════════════
 
-const REFRESH_MS = THRESHOLDS.REFRESH_MS || 120_000;
+const REFRESH_MS = 120_000;
 
 function getMarketStatusLabel() {
   if (isHoliday()) return { open: false, label: "Holiday" };
