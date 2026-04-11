@@ -2360,7 +2360,7 @@ function useOptionChain(instrument) {
   const latestRequestRef = useRef(0); // FIX #5: replaces AbortController pattern
 
   const load = useCallback(async (inst, resetPrev = false) => {
-    const requestId = Date.now();
+    const requestId = latestRequestRef.current + 1;
     latestRequestRef.current = requestId;
 
     if (resetPrev) {
@@ -2991,9 +2991,17 @@ export default function App({ initialData = null, initialSymbol = null }) {
 
     const lastSnapshot =
       snapshotHistoryRef.current[snapshotHistoryRef.current.length - 1];
-    const key = `${rows.length}-${rows[0]?.strikePrice}-${underlyingValue}-${pcr}`;
+    const mkKey = (snapRows, spot, snapPcr) =>
+      `${spot}|${Number(snapPcr).toFixed(4)}|` +
+      snapRows
+        .map(
+          (r) =>
+            `${r.strikePrice}:${r.CE.openInterest}:${r.PE.openInterest}:${r.CE.changeinOpenInterest}:${r.PE.changeinOpenInterest}`,
+        )
+        .join(";");
+    const key = mkKey(rows, underlyingValue, pcr);
     const lastKey = lastSnapshot
-      ? `${lastSnapshot.rows.length}-${lastSnapshot.rows[0]?.strikePrice}-${lastSnapshot.spot}-${lastSnapshot.pcr}`
+      ? mkKey(lastSnapshot.rows, lastSnapshot.spot, lastSnapshot.pcr)
       : null;
 
     if (key === lastKey) return; // Skip identical snapshots
