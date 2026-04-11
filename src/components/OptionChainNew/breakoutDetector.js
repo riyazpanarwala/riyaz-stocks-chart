@@ -1,30 +1,85 @@
 // ═══════════════════════════════════════════════════════════════
-// BREAKOUT DETECTION ENGINE
+// BREAKOUT DETECTION ENGINE — PATCHED VERSION
 // Works on initial page load and on every 2-min refresh.
 // Designed to be imported into OptionChainNew/index.jsx
+// 
+// PATCH NOTES:
+// - Fixed strikeMigration to use prevSpot correctly (was using curr spot for both)
+// - Added minimum thresholds to prevent division by zero
+// - Increased velocity threshold from 0.8 to 1.5 strike gaps
+// - Added duplicate detection in pushSnapshot
+// - Improved signal strength scaling (logarithmic)
 // ═══════════════════════════════════════════════════════════════
 
-// ── 1. SNAPSHOT STORE ────────────────────────────────────────
-// Keeps the last N snapshots in memory (survives re-renders via ref).
-// On page load we have only 1 snapshot → breakout signals are derived
-// from single-snapshot heuristics. Once 2+ snapshots exist the diff-
-// based signals fire too.
+// ═══════════════════════════════════════════════════════════════
+// CONSTANTS — Extracted magic numbers
+// ═══════════════════════════════════════════════════════════════
+export const THRESHOLDS = {
+  // OI thresholds
+  OI_DISPLAY_HIGH: 300,
+  OI_BUILD_MIN: 5000,
+  OI_SPIKE_MULTIPLIER: 2,
+  OI_BUILD_MULTIPLIER: 1.5,
+  AVG_OI_MINIMUM: 1000,  // Prevent division by zero
+  
+  // PCR thresholds
+  PCR_EXTREME_HIGH: 1.6,
+  PCR_EXTREME_LOW: 0.45,
+  
+  // Velocity
+  VELOCITY_MIN_PCT: 1.5,  // Was 0.8 — too sensitive
+  VELOCITY_SNAPSHOTS: 3,
+  
+  // Max Pain
+  MAX_PAIN_THRESHOLD_MULTIPLIER: 3,
+  
+  // OI Concentration
+  CONCENTRATION_MIN_PCT: 45,
+  CONCENTRATION_DISTANCE_MULTIPLIER: 2,
+  
+  // Unwinding
+  UNWIND_THRESHOLD_MULTIPLIER: 0.5,
+  
+  // Snapshot history
+  MAX_SNAPSHOTS: 10, // ~20 min of history when market is open
+};
 
-export const MAX_SNAPSHOTS = 10; // ~20 min of history when market is open
+// ═══════════════════════════════════════════════════════════════
+// SNAPSHOT STORE
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * Push a new snapshot into the ring buffer.
+ * PATCH: Added duplicate detection to prevent unnecessary pushes
+ * 
  * @param {Array}  history  - existing snapshots array (from useRef)
  * @param {Object} snapshot - { rows, spot, atm, pcr, ts }
  * @returns {Array} updated history (max MAX_SNAPSHOTS entries)
  */
 export function pushSnapshot(history, snapshot) {
+  const last = history[history.length - 1];
+  
+  // PATCH: Don't push if data hasn't meaningfully changed
+  if (last) {
+    const spotUnchanged = Math.abs(last.spot - snapshot.spot) < 0.01;
+    const pcrUnchanged = Math.abs(last.pcr - snapshot.pcr) < 0.001;
+    const rowsUnchanged = last.rows.length === snapshot.rows.length &&
+      last.rows[0]?.strikePrice === snapshot.rows[0]?.strikePrice &&
+      last.rows[last.rows.length - 1]?.strikePrice === snapshot.rows[snapshot.rows.length - 1]?.strikePrice;
+    
+    if (spotUnchanged && pcrUnchanged && rowsUnchanged) {
+      return history; // Skip duplicate
+    }
+  }
+  
   const next = [...history, snapshot];
-  if (next.length > MAX_SNAPSHOTS) next.shift();
+  if (next.length > THRESHOLDS.MAX_SNAPSHOTS) next.shift();
   return next;
 }
 
-// ── 2. HELPER UTILITIES ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// HELPER UTILITIES
+// ═══════════════════════════════════════════════════════════════
 
 function avg(arr, fn) {
   if (!arr.length) return 0;
@@ -49,13 +104,23 @@ function nearestATM(rows, spot) {
   );
 }
 
-// ── 3. SINGLE-SNAPSHOT BREAKOUT SIGNALS ─────────────────────
-// These work immediately on page open with just the current data.
+/** Logarithmic signal strength scaler */
+function calcStrength(ratio, multiplier = 40, cap = 100) {
+  // Use log scale for better distribution
+  const strength = Math.round(Math.log(Math.max(ratio, 1.01)) * multiplier);
+  return Math.min(cap, strength);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SINGLE-SNAPSHOT BREAKOUT SIGNALS
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * OI Imbalance at ATM:
  * If CE OI at ATM >> PE OI → heavy call writing → resistance → bearish wall.
  * If PE OI at ATM >> CE OI → heavy put writing → support floor → bullish bias.
+ * 
+ * PATCH: Improved strength calculation using logarithmic scaling
  */
 function atmOIImbalance(rows, spot) {
   const signals = [];
@@ -70,7 +135,8 @@ function atmOIImbalance(rows, spot) {
     signals.push({
       id: "ATM_PE_WALL",
       type: "BULLISH",
-      strength: Math.min(100, Math.round(ratio * 25)),
+      // PATCH: Logarithmic scaling instead of linear
+      strength: calcStrength(ratio, 35),
       title: "Strong put wall at ATM — floor in place",
       detail: `Put OI at ${atm.strikePrice} is ${ratio.toFixed(1)}× Call OI. Large writers are defending this level, suggesting support.`,
       strike: atm.strikePrice,
@@ -80,7 +146,8 @@ function atmOIImbalance(rows, spot) {
     signals.push({
       id: "ATM_CE_WALL",
       type: "BEARISH",
-      strength: Math.min(100, Math.round((1 / ratio) * 25)),
+      // PATCH: Logarithmic scaling
+      strength: calcStrength(1 / ratio, 35),
       title: "Heavy call wall at ATM — ceiling in place",
       detail: `Call OI at ${atm.strikePrice} is ${(1 / ratio).toFixed(1)}× Put OI. Large writers are capping this level.`,
       strike: atm.strikePrice,
@@ -123,7 +190,9 @@ function oiConcentrationBreakout(rows, spot) {
     const ceilConc = (topCE.reduce((s, r) => s + r.CE.openInterest, 0) / (totalCE || 1)) * 100;
     const distToCeiling = nearestCeiling - spot;
 
-    if (ceilConc > 45 && distToCeiling <= strikePitch * 2 && distToCeiling > 0) {
+    if (ceilConc > THRESHOLDS.CONCENTRATION_MIN_PCT && 
+        distToCeiling <= strikePitch * THRESHOLDS.CONCENTRATION_DISTANCE_MULTIPLIER && 
+        distToCeiling > 0) {
       signals.push({
         id: "CEILING_BREAKOUT_ZONE",
         type: "BREAKOUT_WATCH",
@@ -142,7 +211,9 @@ function oiConcentrationBreakout(rows, spot) {
     const floorConc = (topPE.reduce((s, r) => s + r.PE.openInterest, 0) / (totalPE || 1)) * 100;
     const distToFloor = spot - nearestFloor;
 
-    if (floorConc > 45 && distToFloor <= strikePitch * 2 && distToFloor > 0) {
+    if (floorConc > THRESHOLDS.CONCENTRATION_MIN_PCT && 
+        distToFloor <= strikePitch * THRESHOLDS.CONCENTRATION_DISTANCE_MULTIPLIER && 
+        distToFloor > 0) {
       signals.push({
         id: "FLOOR_BREAKDOWN_ZONE",
         type: "BREAKDOWN_WATCH",
@@ -165,7 +236,7 @@ function oiConcentrationBreakout(rows, spot) {
  */
 function pcrExtremeSignal(pcr) {
   const signals = [];
-  if (pcr > 1.6) {
+  if (pcr > THRESHOLDS.PCR_EXTREME_HIGH) {
     signals.push({
       id: "PCR_EXTREME_HIGH",
       type: "BEARISH_REVERSAL_RISK",
@@ -175,7 +246,7 @@ function pcrExtremeSignal(pcr) {
       strike: null,
       source: "PCR Extreme",
     });
-  } else if (pcr < 0.45) {
+  } else if (pcr < THRESHOLDS.PCR_EXTREME_LOW) {
     signals.push({
       id: "PCR_EXTREME_LOW",
       type: "BULLISH_REVERSAL_RISK",
@@ -198,7 +269,7 @@ function maxPainDivergence(spot, maxPain, strikePitch) {
   const signals = [];
   if (!maxPain || !spot || !strikePitch) return signals;
   const diff = spot - maxPain;
-  const threshold = strikePitch * 3;
+  const threshold = strikePitch * THRESHOLDS.MAX_PAIN_THRESHOLD_MULTIPLIER;
 
   if (diff > threshold) {
     signals.push({
@@ -224,7 +295,9 @@ function maxPainDivergence(spot, maxPain, strikePitch) {
   return signals;
 }
 
-// ── 4. DIFF-BASED BREAKOUT SIGNALS (needs 2+ snapshots) ──────
+// ═══════════════════════════════════════════════════════════════
+// DIFF-BASED BREAKOUT SIGNALS (needs 2+ snapshots)
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * OI Unwinding Breakout:
@@ -254,7 +327,7 @@ function oiUnwindingBreakout(prevRows, currRows, prevSpot, currSpot) {
     return diff < 0 ? s + Math.abs(diff) : s;
   }, 0);
 
-  if (spotRising && aboveSpot.length > 0 && totalCeUnwind > avgCeDelta * aboveSpot.length * 0.5) {
+  if (spotRising && aboveSpot.length > 0 && totalCeUnwind > avgCeDelta * aboveSpot.length * THRESHOLDS.UNWIND_THRESHOLD_MULTIPLIER) {
     signals.push({
       id: "CE_UNWIND_BREAKOUT",
       type: "BULLISH_BREAKOUT",
@@ -275,7 +348,7 @@ function oiUnwindingBreakout(prevRows, currRows, prevSpot, currSpot) {
     return diff < 0 ? s + Math.abs(diff) : s;
   }, 0);
 
-  if (spotFalling && belowSpot.length > 0 && totalPeUnwind > avgPeDelta * belowSpot.length * 0.5) {
+  if (spotFalling && belowSpot.length > 0 && totalPeUnwind > avgPeDelta * belowSpot.length * THRESHOLDS.UNWIND_THRESHOLD_MULTIPLIER) {
     signals.push({
       id: "PE_UNWIND_BREAKDOWN",
       type: "BEARISH_BREAKDOWN",
@@ -294,6 +367,8 @@ function oiUnwindingBreakout(prevRows, currRows, prevSpot, currSpot) {
  * Rapid OI Build-up at a single strike:
  * A large sudden addition of CE OI at a specific strike above spot = new wall forming.
  * A large sudden addition of PE OI below spot = new floor forming.
+ * 
+ * PATCH: Added minimum threshold to avg to prevent division by zero
  */
 function suddenOIBuild(prevRows, currRows, spot) {
   const signals = [];
@@ -302,8 +377,15 @@ function suddenOIBuild(prevRows, currRows, spot) {
   const prevMap = {};
   prevRows.forEach((r) => (prevMap[r.strikePrice] = r));
 
-  const avgCePrev = avg(prevRows, (r) => r.CE.openInterest);
-  const avgPePrev = avg(prevRows, (r) => r.PE.openInterest);
+  // PATCH: Add minimum threshold to prevent division by zero
+  const avgCePrev = Math.max(
+    avg(prevRows, (r) => r.CE.openInterest),
+    THRESHOLDS.AVG_OI_MINIMUM
+  );
+  const avgPePrev = Math.max(
+    avg(prevRows, (r) => r.PE.openInterest),
+    THRESHOLDS.AVG_OI_MINIMUM
+  );
 
   currRows.forEach((r) => {
     const p = prevMap[r.strikePrice];
@@ -313,11 +395,13 @@ function suddenOIBuild(prevRows, currRows, spot) {
     const peGrowth = r.PE.openInterest - p.PE.openInterest;
 
     // New CE wall appearing above spot
-    if (r.strikePrice > spot && ceGrowth > avgCePrev * 1.5 && ceGrowth > 5000) {
+    if (r.strikePrice > spot && 
+        ceGrowth > avgCePrev * THRESHOLDS.OI_BUILD_MULTIPLIER && 
+        ceGrowth > THRESHOLDS.OI_BUILD_MIN) {
       signals.push({
         id: `CE_WALL_BUILD_${r.strikePrice}`,
         type: "RESISTANCE_BUILDING",
-        strength: Math.min(100, Math.round((ceGrowth / (avgCePrev || 1)) * 20)),
+        strength: Math.min(100, Math.round((ceGrowth / avgCePrev) * 20)),
         title: `New resistance wall rapidly building at ${r.strikePrice}`,
         detail: `+${fmtK(ceGrowth)} Call OI added at ${r.strikePrice} in the last 2 min. Large writers are installing a ceiling here.`,
         strike: r.strikePrice,
@@ -326,7 +410,9 @@ function suddenOIBuild(prevRows, currRows, spot) {
     }
 
     // New PE floor appearing below spot
-    if (r.strikePrice < spot && peGrowth > avgPePrev * 1.5 && peGrowth > 5000) {
+    if (r.strikePrice < spot && 
+        peGrowth > avgPePrev * THRESHOLDS.OI_BUILD_MULTIPLIER && 
+        peGrowth > THRESHOLDS.OI_BUILD_MIN) {
       signals.push({
         id: `PE_FLOOR_BUILD_${r.strikePrice}`,
         type: "SUPPORT_BUILDING",
@@ -347,23 +433,26 @@ function suddenOIBuild(prevRows, currRows, spot) {
  * Tracks whether the highest-OI CE or PE strike has SHIFTED between snapshots.
  * A shift of the CE wall upward = bulls pushed through → bullish breakout.
  * A shift of the PE floor downward = bears pushed through → bearish breakdown.
+ * 
+ * PATCH: Fixed to use prevSpot for filtering prevRows (was incorrectly using curr spot)
  */
-function strikeMigration(prevRows, currRows, spot) {
+function strikeMigration(prevRows, currRows, prevSpot, currSpot) {
   const signals = [];
   if (!prevRows?.length || !currRows?.length) return signals;
 
+  // PATCH: Use prevSpot for prevRows, currSpot for currRows
   const prevTopCE = [...prevRows]
-    .filter((r) => r.strikePrice > spot)
+    .filter((r) => r.strikePrice > prevSpot)
     .sort((a, b) => b.CE.openInterest - a.CE.openInterest)[0];
   const currTopCE = [...currRows]
-    .filter((r) => r.strikePrice > spot)
+    .filter((r) => r.strikePrice > currSpot)
     .sort((a, b) => b.CE.openInterest - a.CE.openInterest)[0];
 
   const prevTopPE = [...prevRows]
-    .filter((r) => r.strikePrice < spot)
+    .filter((r) => r.strikePrice < prevSpot)
     .sort((a, b) => b.PE.openInterest - a.PE.openInterest)[0];
   const currTopPE = [...currRows]
-    .filter((r) => r.strikePrice < spot)
+    .filter((r) => r.strikePrice < currSpot)
     .sort((a, b) => b.PE.openInterest - a.PE.openInterest)[0];
 
   if (prevTopCE && currTopCE && currTopCE.strikePrice > prevTopCE.strikePrice) {
@@ -397,13 +486,15 @@ function strikeMigration(prevRows, currRows, spot) {
  * Velocity Breakout:
  * Measures how fast spot is moving relative to the OI-implied range.
  * If spot moves more than 1 strike-gap in 2 min with rising OI on that side → momentum.
+ * 
+ * PATCH: Increased threshold from 0.8 to 1.5 strike gaps (was too sensitive)
  */
 function velocityBreakout(snapshots) {
   const signals = [];
-  if (snapshots.length < 3) return signals;
+  if (snapshots.length < THRESHOLDS.VELOCITY_SNAPSHOTS) return signals;
 
-  // Use last 3 snapshots = ~4 min of data
-  const recent = snapshots.slice(-3);
+  // Use last N snapshots
+  const recent = snapshots.slice(-THRESHOLDS.VELOCITY_SNAPSHOTS);
   const spotMoves = recent
     .slice(1)
     .map((s, i) => s.spot - recent[i].spot);
@@ -423,7 +514,8 @@ function velocityBreakout(snapshots) {
   const totalMove = last.spot - first.spot;
   const pctOfPitch = Math.abs(totalMove) / strikePitch;
 
-  if (pctOfPitch > 0.8 && avgMove > 0) {
+  // PATCH: Increased threshold from 0.8 to 1.5
+  if (pctOfPitch > THRESHOLDS.VELOCITY_MIN_PCT && avgMove > 0) {
     const totalPeOI = last.rows.reduce((s, r) => s + r.PE.openInterest, 0);
     const nearPeOI = last.rows
       .filter((r) => r.strikePrice <= last.spot && r.strikePrice >= last.spot - strikePitch * 2)
@@ -433,14 +525,14 @@ function velocityBreakout(snapshots) {
       signals.push({
         id: "VELOCITY_UP",
         type: "BULLISH_MOMENTUM",
-        strength: Math.min(100, Math.round(pctOfPitch * 50)),
+        strength: Math.min(100, Math.round(pctOfPitch * 35)),  // PATCH: Reduced multiplier
         title: `Upside momentum — spot moved ${totalMove.toFixed(0)} pts in ~4 min with put support`,
         detail: `Consistent upward velocity with put writers defending below. Momentum breakout pattern forming.`,
         strike: null,
         source: "Velocity",
       });
     }
-  } else if (pctOfPitch > 0.8 && avgMove < 0) {
+  } else if (pctOfPitch > THRESHOLDS.VELOCITY_MIN_PCT && avgMove < 0) {
     const totalCeOI = last.rows.reduce((s, r) => s + r.CE.openInterest, 0);
     const nearCeOI = last.rows
       .filter((r) => r.strikePrice >= last.spot && r.strikePrice <= last.spot + strikePitch * 2)
@@ -450,7 +542,7 @@ function velocityBreakout(snapshots) {
       signals.push({
         id: "VELOCITY_DOWN",
         type: "BEARISH_MOMENTUM",
-        strength: Math.min(100, Math.round(pctOfPitch * 50)),
+        strength: Math.min(100, Math.round(pctOfPitch * 35)),  // PATCH: Reduced multiplier
         title: `Downside momentum — spot dropped ${Math.abs(totalMove).toFixed(0)} pts in ~4 min with call resistance`,
         detail: `Consistent downward velocity with call writers overhead. Breakdown momentum pattern forming.`,
         strike: null,
@@ -462,10 +554,14 @@ function velocityBreakout(snapshots) {
   return signals;
 }
 
-// ── 5. MASTER BREAKOUT ANALYZER ──────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// MASTER BREAKOUT ANALYZER
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * Main entry point. Call this on every data refresh and on page load.
+ * 
+ * PATCH: Added prevSpot parameter for strikeMigration fix
  *
  * @param {Object} params
  * @param {Array}  params.rows        - current parsed option chain rows
@@ -495,7 +591,8 @@ export function detectBreakouts({ rows, prevRows, spot, prevSpot, pcr, maxPain, 
     // ── Diff-based (needs prevRows from previous 2-min cycle) ──
     ...oiUnwindingBreakout(prevRows, rows, prevSpot, spot),
     ...suddenOIBuild(prevRows, rows, spot),
-    ...strikeMigration(prevRows, rows, spot),
+    // PATCH: Pass prevSpot to strikeMigration
+    ...strikeMigration(prevRows, rows, prevSpot, spot),
 
     // ── Velocity (needs 3+ snapshots ~4 min) ──
     ...velocityBreakout(snapshots),
@@ -512,7 +609,9 @@ export function detectBreakouts({ rows, prevRows, spot, prevSpot, pcr, maxPain, 
   return unique.sort((a, b) => b.strength - a.strength);
 }
 
-// ── 6. SIGNAL META (color / icon) ────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// SIGNAL META (color / icon)
+// ═══════════════════════════════════════════════════════════════
 
 export function breakoutSignalMeta(type) {
   const map = {
