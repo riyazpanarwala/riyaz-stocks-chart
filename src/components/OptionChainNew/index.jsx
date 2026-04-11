@@ -17,7 +17,7 @@ import {
   detectBreakouts,
   breakoutSignalMeta,
   pushSnapshot,
-  MAX_SNAPSHOTS,
+  THRESHOLDS,
 } from "./breakoutDetector";
 
 const INDEX_DATA = {
@@ -141,10 +141,6 @@ function calcPCRFull(fullOI) {
   return ce === 0 ? 0 : pe / ce;
 }
 
-// BUG FIX: Original had CE and PE OI swapped in the loss formula.
-// Max Pain = price at which total option-writer loss is minimised.
-// Call writers lose when expiry is ABOVE their strike → (T - strike) × CE_OI
-// Put writers lose when expiry is BELOW their strike → (strike - T) × PE_OI
 function calcMaxPainFull(fullOI) {
   if (!fullOI?.length) return 0;
   let min = Infinity,
@@ -152,8 +148,8 @@ function calcMaxPainFull(fullOI) {
   for (const t of fullOI) {
     let loss = 0;
     for (const r of fullOI) {
-      if (t.s > r.s) loss += (t.s - r.s) * r.p; // put writers lose below T — FIXED (was r.c)
-      if (t.s < r.s) loss += (r.s - t.s) * r.c; // call writers lose above T — FIXED (was r.p)
+      if (t.s > r.s) loss += (t.s - r.s) * r.p;
+      if (t.s < r.s) loss += (r.s - t.s) * r.c;
     }
     if (loss < min) {
       min = loss;
@@ -2293,7 +2289,7 @@ function ZoneBadges({ sig }) {
 // NSE API FETCH HELPERS
 // ═══════════════════════════════════════════════════════════════
 
-const REFRESH_MS = 120_000;
+const REFRESH_MS = THRESHOLDS.REFRESH_MS || 120_000;
 
 function getMarketStatusLabel() {
   if (isHoliday()) return { open: false, label: "Holiday" };
@@ -2994,7 +2990,8 @@ export default function App({ initialData = null, initialSymbol = null }) {
   useEffect(() => {
     if (!rows.length || !underlyingValue) return;
 
-    const lastSnapshot = snapshotHistoryRef.current[snapshotHistoryRef.current.length - 1];
+    const lastSnapshot =
+      snapshotHistoryRef.current[snapshotHistoryRef.current.length - 1];
     const key = `${rows.length}-${rows[0]?.strikePrice}-${underlyingValue}-${pcr}`;
     const lastKey = lastSnapshot
       ? `${lastSnapshot.rows.length}-${lastSnapshot.rows[0]?.strikePrice}-${lastSnapshot.spot}-${lastSnapshot.pcr}`
