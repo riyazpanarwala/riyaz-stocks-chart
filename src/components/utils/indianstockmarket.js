@@ -7,7 +7,3 @@ export const isMarketOpen = () => {
 export const isHoliday = () => {
   return ism.isHoliday();
 };
-
-export const hasOpened = () => {
-  return ism.hasOpened();
-};
