@@ -1,4 +1,4 @@
-import { hasOpened } from "./utils/indianstockmarket";
+import { isMarketOpen } from "./utils/indianstockmarket";
 import {
   getIntradayData,
   getHistoricDataNSE,
@@ -13,11 +13,11 @@ export const getDataFromIntraday = (intradayData) => {
 
   const maxValue = Math.max.apply(
     Math,
-    intradayData.map((d) => d[2])
+    intradayData.map((d) => d[2]),
   );
   const minValue = Math.min.apply(
     Math,
-    intradayData.map((d) => d[3])
+    intradayData.map((d) => d[3]),
   );
 
   return {
@@ -64,7 +64,7 @@ export const getCandleArr = (arr, isEchart) => {
 export const getIntradayDataForCurrentDay = async (
   candles,
   indexName,
-  cmpnyObj
+  cmpnyObj,
 ) => {
   const lastCandleDate = candles[candles.length - 1]?.date?.split(" ")[0];
   const currentDateIst = new Intl.DateTimeFormat("en-CA", {
@@ -75,7 +75,7 @@ export const getIntradayDataForCurrentDay = async (
     if (lastCandleDate !== currentDateIst) {
       let currentObj;
       const nowIst = new Date(
-        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
       );
       const currentHour = nowIst.getHours();
       if (
@@ -96,7 +96,7 @@ export const getIntradayDataForCurrentDay = async (
           "minutes",
           cmpnyObj.value,
           indexName,
-          1
+          1,
         );
         let candleData = (arr1?.data?.candles ?? []).reverse();
         if (candleData.length) {
@@ -130,7 +130,7 @@ export const fetchHistoricData = async (
   indexName,
   period,
   companyObj,
-  apiInterval = 1
+  apiInterval = 1,
 ) => {
   let candleArr = [];
   let times = [];
@@ -147,7 +147,7 @@ export const fetchHistoricData = async (
     const { candles } = await getHistoricDataNSE(
       companyObj.symbol,
       period,
-      apiName
+      apiName,
     );
     candleArr = candles;
 
@@ -163,7 +163,7 @@ export const fetchHistoricData = async (
       candleArr = await getNSEDataYahooFinance(
         companyObj.yahooSymbol || companyObj.symbol + ".NS",
         interval,
-        period
+        period,
       );
     } else {
       const arr = await getHistoricData(
@@ -171,14 +171,14 @@ export const fetchHistoricData = async (
         companyObj.value,
         indexName,
         period,
-        apiInterval
+        apiInterval,
       );
       let { dataArr, timeArr } = getCandleArr(arr, isEchart);
-      if (intervalVal === "days" && hasOpened() && !isEchart) {
+      if (intervalVal === "days" && isMarketOpen() && !isEchart) {
         dataArr = await getIntradayDataForCurrentDay(
           dataArr,
           indexName,
-          companyObj
+          companyObj,
         );
       }
 

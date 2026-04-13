@@ -23,8 +23,7 @@ import {
 } from "../components/utils/storage";
 import Fundamentals from "../components/FundaMentals/index.js";
 import ActionButton from "../components/ActionButton.js";
-import OptionChain from "../components/OptionChain/index.js";
-import TrendlyneChecklist from "../components/Trendlyne/TrendlyneChecklist.jsx"
+import TrendlyneChecklist from "../components/Trendlyne/TrendlyneChecklist.jsx";
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -38,7 +37,6 @@ const CandleStickChart = () => {
   const [patternName, setPatternName] = useState("");
   const [modal, setModalOpen] = useState(false);
   const [modal1, setModalOpen1] = useState(false);
-  const [modal2, setModalOpen2] = useState(false);
   const {
     intervalObj,
     intradayObj,
@@ -53,10 +51,9 @@ const CandleStickChart = () => {
     newIndexArr,
     candleData,
     period,
-    isFO,
   } = useCommonHeader();
   const [isCompanyExist, setCompanyExist] = useState(
-    isCompanyExistInStorage(companyObj)
+    isCompanyExistInStorage(companyObj),
   );
   const handle = useFullScreenHandle();
 
@@ -116,10 +113,6 @@ const CandleStickChart = () => {
     setPatternName("");
   };
 
-  const onFOClick = async () => {
-    setModalOpen2(true);
-  };
-
   const getCompanyName = () => {
     return companyObj?.label;
   };
@@ -171,14 +164,16 @@ const CandleStickChart = () => {
   }, [companyObj]);
 
   if (!companyArr.length) {
-    return <section className="page-intro">
-      <h1>Live NSE & BSE Candlestick Charts</h1>
-      <p>
-        Analyze Indian stocks using candlestick charts with RSI, MACD,
-        moving averages, breakout patterns, and trendlines.
-        Supports both intraday and historical market data.
-      </p>
-    </section>;
+    return (
+      <section className="page-intro">
+        <h1>Live NSE & BSE Candlestick Charts</h1>
+        <p>
+          Analyze Indian stocks using candlestick charts with RSI, MACD, moving
+          averages, breakout patterns, and trendlines. Supports both intraday
+          and historical market data.
+        </p>
+      </section>
+    );
   }
 
   let periodArr = [];
@@ -241,13 +236,12 @@ const CandleStickChart = () => {
             <div className="headerContent">
               <h2 className="company-name">{getCompanyName()}</h2>
               <div className="action-buttons">
-                {isFO && <ActionButton onClick={onFOClick}>F&O</ActionButton>}
                 {(indexObj.value === "NSE_EQ" ||
                   indexObj.value === "BSE_EQ") && (
-                    <ActionButton onClick={fundaMentalsClick}>
-                      Fundamentals
-                    </ActionButton>
-                  )}
+                  <ActionButton onClick={fundaMentalsClick}>
+                    Fundamentals
+                  </ActionButton>
+                )}
                 <ActionButton onClick={analysisClick}>
                   Technical Analysis
                 </ActionButton>
@@ -302,7 +296,12 @@ const CandleStickChart = () => {
               ""
             )}
 
-            {!companyObj.nseIndex && <TrendlyneChecklist key={companyObj.symbol} symbol={companyObj.symbol} />}
+            {!companyObj.nseIndex && (
+              <TrendlyneChecklist
+                key={companyObj.symbol}
+                symbol={companyObj.symbol}
+              />
+            )}
           </div>
         </main>
 
@@ -322,16 +321,6 @@ const CandleStickChart = () => {
             indexObj={indexObj}
             onClose={() => {
               setModalOpen1(false);
-            }}
-          />
-        )}
-
-        {modal2 && (
-          <OptionChain
-            companyObj={companyObj}
-            indexObj={indexObj}
-            onClose={() => {
-              setModalOpen2(false);
             }}
           />
         )}
