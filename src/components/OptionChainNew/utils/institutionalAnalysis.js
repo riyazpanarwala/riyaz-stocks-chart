@@ -148,7 +148,7 @@ export function calcInstitutional(rows, spot, atm, pcr) {
     if (r.CE.changeinOpenInterest < -avgCeDOI && r.CE.change > 0)
       signals.push({ icon: "⚡", label: `Sellers exiting at ${r.strikePrice} — price could move up quickly`, strike: r.strikePrice, conf: "MED" });
     if (r.PE.changeinOpenInterest < -avgPeDOI && r.PE.change < 0)
-      signals.push({ icon: "📉", label: `Buyers exiting at ${r.strikePrice} — downside risk increasing`, strike: r.strikePrice, conf: "MED" });
+      signals.push({ icon: "📉", label: `Put unwinding at ${r.strikePrice} — downside pressure easing, possible bounce`, strike: r.strikePrice, conf: "MED" });
   });
   traps.forEach((t) =>
     signals.push({ icon: "⚠️", label: `Avoid trading at ${t.strike} — conditions are unpredictable here`, strike: t.strike, conf: "TRAP" }));
