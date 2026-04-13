@@ -121,8 +121,8 @@ export function calcInstitutional(rows, spot, atm, pcr) {
   const lowConvNoise = [...new Set(spikes.filter((s) => !s.highConv).map((s) => s.strike))];
 
   // ── ATM shift ─────────────────────────────────────────────
-  const nearCeDOI = nearATM.reduce((s, r) => s + r.CE.changeinOpenInterest, 0);
-  const nearPeDOI = nearATM.reduce((s, r) => s + r.PE.changeinOpenInterest, 0);
+  const nearCeDOI = nearATM.reduce((s, r) => s + Math.max(0, r.CE.changeinOpenInterest), 0);
+  const nearPeDOI = nearATM.reduce((s, r) => s + Math.max(0, r.PE.changeinOpenInterest), 0);
   const atmShift = nearPeDOI > nearCeDOI * 1.3 ? "PE Dominant"
     : nearCeDOI > nearPeDOI * 1.3 ? "CE Dominant"
       : "Balanced";
@@ -292,8 +292,8 @@ export function diffInstitutional(prevRows, currRows, spot) {
   const atmPrev = atmCurr && prevMap[atmCurr.strikePrice];
 
   if (atmPrev && atmCurr) {
-    const dom = (r) => r.PE.changeinOpenInterest > r.CE.changeinOpenInterest * 1.3 ? "PE"
-      : r.CE.changeinOpenInterest > r.PE.changeinOpenInterest * 1.3 ? "CE"
+    const dom = (r) => Math.max(0, r.PE.changeinOpenInterest) > Math.max(0, r.CE.changeinOpenInterest) * 1.3 ? "PE"
+      : Math.max(0, r.CE.changeinOpenInterest) > Math.max(0, r.PE.changeinOpenInterest) * 1.3 ? "CE"
         : "BAL";
     const prevDom = dom(atmPrev);
     const currDom = dom(atmCurr);
