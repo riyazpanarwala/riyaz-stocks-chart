@@ -59,10 +59,9 @@ export function useOptionChain(instrument) {
       rawDataRef.current = null;
       setRawData(null);
       setPrevRawData(null);
-      // NOTE: closedFetchDone is NOT reset here — it is reset directly in
-      // the useEffect that triggers on instrument change (FIX #13).
-      // Resetting inside the callback was indirect and could be dropped by a
-      // future refactor that changes the call order.
+
+      // ✅ Reset here explicitly for new instrument
+      closedFetchDone.current = false;
     }
 
     setLoading(true);
@@ -82,9 +81,15 @@ export function useOptionChain(instrument) {
       rawDataRef.current = data;
       setRawData(data);
       setFetchedAt(Date.now());
+      // ✅ CRITICAL FIX: mark closed fetch as done ONLY after success
+      if (!isMarketOpen()) {
+        closedFetchDone.current = true;
+      }
       setError(null);
     } catch (err) {
       if (latestRequestRef.current !== requestId) return; // stale
+      // ❗ DO NOT mark as done on failure
+      closedFetchDone.current = false;
       setError(err?.message ?? "Failed to fetch option chain");
     } finally {
       if (latestRequestRef.current === requestId) setLoading(false);
@@ -93,7 +98,7 @@ export function useOptionChain(instrument) {
 
   // ── Initial load + symbol change ──────────────────────────
   useEffect(() => {
-    closedFetchDone.current = !isMarketOpen();
+    closedFetchDone.current = false;
     load(instrument, true);
   }, [instrument, load]);
 
@@ -105,8 +110,7 @@ export function useOptionChain(instrument) {
         closedFetchDone.current = false;
         load(instrument);
       } else if (!closedFetchDone.current) {
-        closedFetchDone.current = true;
-        load(instrument);
+        load(instrument); // no pre-marking
       }
     };
     const id = setInterval(tick, REFRESH_MS);
