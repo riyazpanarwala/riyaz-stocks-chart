@@ -23,11 +23,20 @@ export const fmtN = fmtK;
 
 /**
  * Convert PCR value → plain-English sentiment label.
+ *
+ * Thresholds (exclusive boundaries):
+ *   +∞  or > 1.4  → "Very Bullish"
+ *   > 1.2          → "Bullish"
+ *   0.8 – 1.2      → "Neutral"
+ *   < 0.8          → "Bearish"
+ *   < 0.6          → "Very Bearish"
+ *   NaN / invalid  → "Neutral"
+ *
  * @param {number} pcr
  * @returns {string}
  */
 export function pcrLabel(pcr) {
-  if (pcr > 1.4) return "Very Bullish";
+  if (!Number.isFinite(pcr) || pcr > 1.4) return "Very Bullish"; // handles +Infinity
   if (pcr > 1.2) return "Bullish";
   if (pcr < 0.6) return "Very Bearish";
   if (pcr < 0.8) return "Bearish";
@@ -67,6 +76,7 @@ export function buildupLabel(type) {
     "Short Build-up": "Fresh selling",
     "Short Covering": "Sellers exiting (price may rise)",
     "Long Unwinding": "Buyers exiting (price may fall)",
+    "No Change":      "No activity",
   };
   return MAP[type] ?? type;
 }

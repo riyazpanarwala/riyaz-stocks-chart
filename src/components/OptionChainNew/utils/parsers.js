@@ -50,6 +50,30 @@ export function parseIndexChain(records) {
     .sort((a, b) => a.strikePrice - b.strikePrice);
 }
 
+// ─── NSE expiry date parser ───────────────────────────────────
+
+/**
+ * Parse an NSE-style expiry string ("DD-MMM-YYYY") into a UTC timestamp.
+ * ECMAScript only guarantees ISO 8601 parsing; "24-Apr-2026" is
+ * implementation-dependent and fails in some non-V8 environments.
+ *
+ * Returns Number.POSITIVE_INFINITY for unrecognised strings so they sort last.
+ *
+ * @param {string} value
+ * @returns {number}
+ */
+function parseNSEExpiry(value) {
+  const NSE_MONTHS = {
+    Jan: 0, Feb: 1, Mar: 2,  Apr: 3,  May: 4,  Jun: 5,
+    Jul: 6, Aug: 7, Sep: 8,  Oct: 9,  Nov: 10, Dec: 11,
+  };
+  const match = /^(\d{2})-([A-Za-z]{3})-(\d{4})$/.exec(value ?? "");
+  if (!match) return Number.POSITIVE_INFINITY;
+  const month = NSE_MONTHS[match[2]];
+  if (month === undefined) return Number.POSITIVE_INFINITY;
+  return Date.UTC(Number(match[3]), month, Number(match[1]));
+}
+
 // ─── Stock chain ──────────────────────────────────────────────
 
 /**
@@ -70,9 +94,12 @@ export function parseStockChain(data, expiry) {
         .filter((r) => r.optionType !== "XX")
         .map((r) => r.expiryDate),
     ),
-  ].sort((a, b) => new Date(a) - new Date(b));
+  ].sort((a, b) => parseNSEExpiry(a) - parseNSEExpiry(b));
 
-  const sel = expiry ?? expiries[0] ?? null;
+  // Validate: only accept the caller-supplied expiry if it actually exists in
+  // this payload. Stale/cached expiry strings from a previous instrument would
+  // otherwise leave `filtered` empty while the UI shows a valid-looking chain.
+  const sel = (expiry && expiries.includes(expiry)) ? expiry : expiries[0] ?? null;
   if (!sel) return EMPTY;
 
   const filtered = data.data.filter(
@@ -120,7 +147,9 @@ export function calcPCRFull(fullOI) {
   if (!fullOI?.length) return 0;
   const ce = fullOI.reduce((s, r) => s + r.c, 0);
   const pe = fullOI.reduce((s, r) => s + r.p, 0);
-  return ce === 0 ? 0 : pe / ce;
+  // ce=0, pe=0 → neutral (0); ce=0, pe>0 → extreme bullish (+∞)
+  if (ce === 0) return pe === 0 ? 0 : Number.POSITIVE_INFINITY;
+  return pe / ce;
 }
 
 /**
@@ -131,7 +160,9 @@ export function calcPCRFull(fullOI) {
 export function calcPCR(rows) {
   const ce = rows.reduce((s, r) => s + r.CE.openInterest, 0);
   const pe = rows.reduce((s, r) => s + r.PE.openInterest, 0);
-  return ce === 0 ? 0 : pe / ce;
+  // ce=0, pe=0 → neutral (0); ce=0, pe>0 → extreme bullish (+∞)
+  if (ce === 0) return pe === 0 ? 0 : Number.POSITIVE_INFINITY;
+  return pe / ce;
 }
 
 // ─── Max Pain ─────────────────────────────────────────────────
@@ -201,14 +232,26 @@ export function findATM(rows, uv) {
 
 /**
  * Classify OI + price-change combination for a single option leg.
+ *
+ * Strict comparisons (> / <) are intentional: a leg with zero price change
+ * AND zero OI change (illiquid / far-OTM strike) must not be mislabelled as
+ * "Long Build-up" by the old `>= 0` logic.
+ *
  * @param {OptionRow} row
  * @param {"CE"|"PE"} side
- * @returns {"Long Build-up"|"Short Build-up"|"Short Covering"|"Long Unwinding"}
+ * @returns {"Long Build-up"|"Short Build-up"|"Short Covering"|"Long Unwinding"|"No Change"}
  */
 export function buildupType(row, side = "CE") {
-  const leg = row[side];
-  const priceUp = leg.change >= 0;
-  const oiUp    = leg.changeinOpenInterest >= 0;
+  const leg      = row[side];
+  const priceChg = leg.change;
+  const oiChg    = leg.changeinOpenInterest;
+
+  // Both flat → no meaningful classification
+  if (priceChg === 0 && oiChg === 0) return "No Change";
+
+  const priceUp = priceChg > 0;
+  const oiUp    = oiChg    > 0;
+
   if (priceUp  && oiUp)  return "Long Build-up";
   if (!priceUp && oiUp)  return "Short Build-up";
   if (priceUp  && !oiUp) return "Short Covering";

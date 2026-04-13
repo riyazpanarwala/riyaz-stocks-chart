@@ -108,7 +108,7 @@ export const DeltaOIChart = React.memo(function DeltaOIChart({ chartData, atm })
                 background: "#1c1400", border: `1px solid ${C.yellow}40`,
                 color: C.yellow, padding: "2px 7px", borderRadius: 4, fontSize: 10,
               }}>
-                {r.strike} {r["PE ΔOI"] > r["CE ΔOI"] ? "🟢 Puts active" : "🔴 Calls active"}
+                {r.strike} {Math.abs(r["PE ΔOI"]) > Math.abs(r["CE ΔOI"]) ? "🟢 Puts active" : "🔴 Calls active"}
               </span>
             ))}
           </div>

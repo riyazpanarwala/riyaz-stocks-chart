@@ -55,7 +55,7 @@ export function useSnapshotHistory({
 
   // ── Push new snapshot when data changes ───────────────────
   useEffect(() => {
-    if (!rows.length || !underlyingValue) return;
+    if (!rows?.length || !underlyingValue) return;
 
     const key = snapshotKey(rows, underlyingValue, pcr);
     if (key === lastKeyRef.current) return;      // skip duplicate

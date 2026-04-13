@@ -26,12 +26,30 @@ import { strikePitch } from "./parsers.js";
 export function pushSnapshot(history, snapshot) {
   const last = history[history.length - 1];
   if (last) {
+    // Two snapshots for different instruments must never merge.
+    const sameContract = last.contractKey === snapshot.contractKey;
+
     const spotSame = Math.abs(last.spot - snapshot.spot) < 0.01;
     const pcrSame  = Math.abs(last.pcr  - snapshot.pcr)  < 0.001;
-    const rowsSame = last.rows.length === snapshot.rows.length &&
-      last.rows[0]?.strikePrice === snapshot.rows[0]?.strikePrice &&
-      last.rows[last.rows.length - 1]?.strikePrice === snapshot.rows[snapshot.rows.length - 1]?.strikePrice;
-    if (spotSame && pcrSame && rowsSame) return history;
+
+    // Check every row's OI values — not just the strike boundaries.
+    // A wall can form/dissolve at a middle strike while spot and PCR
+    // barely move; a boundary-only check would silently drop that refresh
+    // and starve all diff-based detectors of the data they need.
+    const rowsSame =
+      last.rows.length === snapshot.rows.length &&
+      last.rows.every((row, i) => {
+        const next = snapshot.rows[i];
+        return (
+          row.strikePrice               === next?.strikePrice &&
+          row.CE.openInterest           === next?.CE.openInterest &&
+          row.PE.openInterest           === next?.PE.openInterest &&
+          row.CE.changeinOpenInterest   === next?.CE.changeinOpenInterest &&
+          row.PE.changeinOpenInterest   === next?.PE.changeinOpenInterest
+        );
+      });
+
+    if (sameContract && spotSame && pcrSame && rowsSame) return history;
   }
   const next = [...history, snapshot];
   if (next.length > THRESHOLDS.MAX_SNAPSHOTS) next.shift();

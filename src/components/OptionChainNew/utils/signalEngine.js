@@ -54,7 +54,8 @@ export function generateSignal(rows, atm, pcr, spot) {
   const zoneScore = 30;
 
   // ── Factor 2: PCR sentiment ────────────────────────────────
-  const pcrBias  = pcr > 1.2 ? 1 : pcr < 0.8 ? -1 : 0;
+  // +Infinity (CE OI = 0, PE > 0) is correctly > 1.2 in JS; NaN → neutral.
+  const pcrBias  = pcr > 1.2 ? 1 : Number.isFinite(pcr) && pcr < 0.8 ? -1 : 0;
   const pcrScore = 20;
 
   // ── Factor 3: OI change at ATM ────────────────────────────

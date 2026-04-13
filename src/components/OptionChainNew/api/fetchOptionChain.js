@@ -27,6 +27,15 @@ export async function fetchOptionChain(instrument) {
 
   const json = await getNSEData(apiName, instrument.symbol);
 
+  // getNSEData signals network/parse failure via { error: true }.
+  // Throw immediately so the hook surfaces a clean error message instead of
+  // silently mis-reading the error envelope as option-chain data.
+  if (!json || json.error) {
+    throw new Error(
+      json?.message ?? "Failed to fetch option chain data from NSE",
+    );
+  }
+
   if (isIndex) {
     const rec    = json.records ?? json;
     const allRows = (rec.data ?? [])

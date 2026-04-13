@@ -29,8 +29,22 @@ function avgAbsDelta(rows, side) {
 export function calcInstitutional(rows, spot, atm, pcr) {
   if (!rows.length) return null;
 
-  const atmIdx  = rows.findIndex((r) => r.strikePrice === atm);
-  const nearATM = rows.filter((_, i) => Math.abs(i - atmIdx) <= 2);
+  const atmIdx = rows.findIndex((r) => r.strikePrice === atm);
+
+  // findIndex returns -1 when the ATM strike isn't in the filtered row set
+  // (e.g. scalp-mode cut it off).  Math.abs(i - (-1)) <= 2 would incorrectly
+  // match indices 0 and 1.  Fall back to the closest strike by price instead.
+  const safeAtmIdx = atmIdx !== -1
+    ? atmIdx
+    : rows.reduce(
+        (bi, r, i) =>
+          Math.abs(r.strikePrice - atm) < Math.abs(rows[bi].strikePrice - atm)
+            ? i
+            : bi,
+        0,
+      );
+
+  const nearATM = rows.filter((_, i) => Math.abs(i - safeAtmIdx) <= 2);
 
   const totalCeOI = rows.reduce((s, r) => s + r.CE.openInterest, 0);
   const totalPeOI = rows.reduce((s, r) => s + r.PE.openInterest, 0);
@@ -41,7 +55,7 @@ export function calcInstitutional(rows, spot, atm, pcr) {
   // ── Spikes ────────────────────────────────────────────────
   const spikes = [];
   rows.forEach((r, idx) => {
-    const nearness = Math.abs(idx - atmIdx) <= 3 ? "Near current price" : "Far from price";
+    const nearness = Math.abs(idx - safeAtmIdx) <= 3 ? "Near current price" : "Far from price";
 
     const pushSpike = (side, doi, leg, typeMsg) => {
       const withVol = leg.totalTradedVolume > leg.openInterest * 0.04;
