@@ -34,10 +34,10 @@ export const CardTitle = React.memo(function CardTitle({ icon, children }) {
 // ─── Confidence badge ─────────────────────────────────────────
 
 const IBADGE_MAP = {
-  HIGH:  { bg: C.greenBg, color: C.green,  border: `${C.green}40`  },
-  MED:   { bg: "#1c1400", color: C.yellow, border: `${C.yellow}40` },
-  LOW:   { bg: C.surface2, color: C.muted, border: C.border        },
-  TRAP:  { bg: "#2a1500", color: "#ff7b00", border: "#ff7b0040"    },
+  HIGH: { bg: C.greenBg, color: C.green, border: `${C.green}40` },
+  MED: { bg: "#1c1400", color: C.yellow, border: `${C.yellow}40` },
+  LOW: { bg: C.surface2, color: C.muted, border: C.border },
+  TRAP: { bg: "#2a1500", color: "#ff7b00", border: "#ff7b0040" },
 };
 const IBADGE_LABEL = { HIGH: "HIGH", MED: "MEDIUM", LOW: "LOW", TRAP: "RISKY" };
 
@@ -58,6 +58,7 @@ export const IBadge = React.memo(function IBadge({ conf }) {
 // ─── Strength bar ─────────────────────────────────────────────
 
 export const StrengthBar = React.memo(function StrengthBar({ value, color, width = 80 }) {
+  const clampedValue = Math.max(0, Math.min(100, value));
   const barColor = color
     ?? (value > 70 ? C.green : value > 50 ? C.yellow : C.muted);
   return (
@@ -67,7 +68,7 @@ export const StrengthBar = React.memo(function StrengthBar({ value, color, width
         borderRadius: 3, overflow: "hidden",
       }}>
         <div style={{
-          width: `${value}%`, height: "100%",
+          width: `${clampedValue}%`, height: "100%",
           background: barColor, borderRadius: 3,
         }} />
       </div>

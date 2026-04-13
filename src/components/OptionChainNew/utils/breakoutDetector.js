@@ -30,7 +30,7 @@ export function pushSnapshot(history, snapshot) {
     const sameContract = last.contractKey === snapshot.contractKey;
 
     const spotSame = Math.abs(last.spot - snapshot.spot) < 0.01;
-    const pcrSame  = Math.abs(last.pcr  - snapshot.pcr)  < 0.001;
+    const pcrSame = Math.abs(last.pcr - snapshot.pcr) < 0.001;
 
     // Check every row's OI values — not just the strike boundaries.
     // A wall can form/dissolve at a middle strike while spot and PCR
@@ -41,11 +41,11 @@ export function pushSnapshot(history, snapshot) {
       last.rows.every((row, i) => {
         const next = snapshot.rows[i];
         return (
-          row.strikePrice               === next?.strikePrice &&
-          row.CE.openInterest           === next?.CE.openInterest &&
-          row.PE.openInterest           === next?.PE.openInterest &&
-          row.CE.changeinOpenInterest   === next?.CE.changeinOpenInterest &&
-          row.PE.changeinOpenInterest   === next?.PE.changeinOpenInterest
+          row.strikePrice === next?.strikePrice &&
+          row.CE.openInterest === next?.CE.openInterest &&
+          row.PE.openInterest === next?.PE.openInterest &&
+          row.CE.changeinOpenInterest === next?.CE.changeinOpenInterest &&
+          row.PE.changeinOpenInterest === next?.PE.changeinOpenInterest
         );
       });
 
@@ -82,7 +82,7 @@ function atmOIImbalance(rows, spot) {
   const signals = [];
   if (!rows.length) return signals;
 
-  const atm  = nearestATM(rows, spot);
+  const atm = nearestATM(rows, spot);
   const ceOI = atm.CE.openInterest || 0;
   const peOI = atm.PE.openInterest || 0;
   if (ceOI === 0 && peOI === 0) return signals;
@@ -112,9 +112,9 @@ function oiConcentrationBreakout(rows, spot) {
   const signals = [];
   if (rows.length < 5) return signals;
 
-  const totalCE  = rows.reduce((s, r) => s + r.CE.openInterest, 0);
-  const totalPE  = rows.reduce((s, r) => s + r.PE.openInterest, 0);
-  const pitch    = strikePitch(rows);
+  const totalCE = rows.reduce((s, r) => s + r.CE.openInterest, 0);
+  const totalPE = rows.reduce((s, r) => s + r.PE.openInterest, 0);
+  const pitch = strikePitch(rows);
 
   const topCE = [...rows].filter((r) => r.strikePrice > spot)
     .sort((a, b) => b.CE.openInterest - a.CE.openInterest).slice(0, 3);
@@ -123,11 +123,11 @@ function oiConcentrationBreakout(rows, spot) {
 
   if (topCE.length) {
     const nearestCeiling = Math.min(...topCE.map((r) => r.strikePrice));
-    const ceilConc   = (topCE.reduce((s, r) => s + r.CE.openInterest, 0) / (totalCE || 1)) * 100;
+    const ceilConc = (topCE.reduce((s, r) => s + r.CE.openInterest, 0) / (totalCE || 1)) * 100;
     const distToCeil = nearestCeiling - spot;
     if (ceilConc > THRESHOLDS.CONCENTRATION_MIN_PCT &&
-        distToCeil <= pitch * THRESHOLDS.CONCENTRATION_DISTANCE_MULTIPLIER &&
-        distToCeil > 0) {
+      distToCeil <= pitch * THRESHOLDS.CONCENTRATION_DISTANCE_MULTIPLIER &&
+      distToCeil > 0) {
       signals.push({
         id: "CEILING_BREAKOUT_ZONE", type: "BREAKOUT_WATCH",
         strength: Math.min(100, Math.round(ceilConc)),
@@ -140,11 +140,11 @@ function oiConcentrationBreakout(rows, spot) {
 
   if (topPE.length) {
     const nearestFloor = Math.max(...topPE.map((r) => r.strikePrice));
-    const floorConc   = (topPE.reduce((s, r) => s + r.PE.openInterest, 0) / (totalPE || 1)) * 100;
+    const floorConc = (topPE.reduce((s, r) => s + r.PE.openInterest, 0) / (totalPE || 1)) * 100;
     const distToFloor = spot - nearestFloor;
     if (floorConc > THRESHOLDS.CONCENTRATION_MIN_PCT &&
-        distToFloor <= pitch * THRESHOLDS.CONCENTRATION_DISTANCE_MULTIPLIER &&
-        distToFloor > 0) {
+      distToFloor <= pitch * THRESHOLDS.CONCENTRATION_DISTANCE_MULTIPLIER &&
+      distToFloor > 0) {
       signals.push({
         id: "FLOOR_BREAKDOWN_ZONE", type: "BREAKDOWN_WATCH",
         strength: Math.min(100, Math.round(floorConc)),
@@ -165,7 +165,7 @@ function pcrExtremeSignal(pcr) {
       id: "PCR_EXTREME_HIGH", type: "BEARISH_REVERSAL_RISK",
       strength: Math.min(100, Math.round((pcr - 1.0) * 50)),
       title: "Extreme put writing — reversal risk (too bullish = contrarian bearish)",
-      detail: `PCR is ${pcr.toFixed(2)}, well above 1.5. When everyone writes puts (bets on support), it can snap when stops are triggered.`,
+      detail: `PCR is ${pcr.toFixed(2)}, well above ${THRESHOLDS.PCR_EXTREME_HIGH}. When everyone writes puts (bets on support), it can snap when stops are triggered.`,
       strike: null, source: "PCR Extreme",
     });
   } else if (pcr < THRESHOLDS.PCR_EXTREME_LOW) {
@@ -173,7 +173,7 @@ function pcrExtremeSignal(pcr) {
       id: "PCR_EXTREME_LOW", type: "BULLISH_REVERSAL_RISK",
       strength: Math.min(100, Math.round((1.0 - pcr) * 50)),
       title: "Extreme call writing — reversal risk (too bearish = contrarian bullish)",
-      detail: `PCR is ${pcr.toFixed(2)}, well below 0.5. Heavy call writing often precedes a short-covering rally.`,
+      detail: `PCR is ${pcr.toFixed(2)}, well below ${THRESHOLDS.PCR_EXTREME_LOW}. Heavy call writing often precedes a short-covering rally.`,
       strike: null, source: "PCR Extreme",
     });
   }
@@ -184,7 +184,7 @@ function maxPainDivergence(spot, maxPain, pitch) {
   const signals = [];
   if (!maxPain || !spot || !pitch) return signals;
 
-  const diff      = spot - maxPain;
+  const diff = spot - maxPain;
   const threshold = pitch * THRESHOLDS.MAX_PAIN_THRESHOLD_MULTIPLIER;
 
   if (diff > threshold) {
@@ -214,7 +214,7 @@ function oiUnwindingBreakout(prevRows, currRows, prevSpot, currSpot) {
   if (!prevRows?.length || !currRows?.length) return signals;
 
   const prevMap = Object.fromEntries(prevRows.map((r) => [r.strikePrice, r]));
-  const spotRising  = currSpot > prevSpot;
+  const spotRising = currSpot > prevSpot;
   const spotFalling = currSpot < prevSpot;
 
   const avgCeDelta = arrayAvg(currRows, (r) => Math.abs(r.CE.changeinOpenInterest));
@@ -231,7 +231,7 @@ function oiUnwindingBreakout(prevRows, currRows, prevSpot, currSpot) {
   }, 0);
 
   if (spotRising && aboveSpot.length > 0 &&
-      totalCeUnwind > avgCeDelta * aboveSpot.length * THRESHOLDS.UNWIND_THRESHOLD_MULTIPLIER) {
+    totalCeUnwind > avgCeDelta * aboveSpot.length * THRESHOLDS.UNWIND_THRESHOLD_MULTIPLIER) {
     signals.push({
       id: "CE_UNWIND_BREAKOUT", type: "BULLISH_BREAKOUT",
       strength: Math.min(100, Math.round((totalCeUnwind / (avgCeDelta * aboveSpot.length || 1)) * 30)),
@@ -249,7 +249,7 @@ function oiUnwindingBreakout(prevRows, currRows, prevSpot, currSpot) {
   }, 0);
 
   if (spotFalling && belowSpot.length > 0 &&
-      totalPeUnwind > avgPeDelta * belowSpot.length * THRESHOLDS.UNWIND_THRESHOLD_MULTIPLIER) {
+    totalPeUnwind > avgPeDelta * belowSpot.length * THRESHOLDS.UNWIND_THRESHOLD_MULTIPLIER) {
     signals.push({
       id: "PE_UNWIND_BREAKDOWN", type: "BEARISH_BREAKDOWN",
       strength: Math.min(100, Math.round((totalPeUnwind / (avgPeDelta * belowSpot.length || 1)) * 30)),
@@ -338,23 +338,23 @@ function velocityBreakout(snapshots) {
   const signals = [];
   if (snapshots.length < THRESHOLDS.VELOCITY_SNAPSHOTS) return signals;
 
-  const recent    = snapshots.slice(-THRESHOLDS.VELOCITY_SNAPSHOTS);
+  const recent = snapshots.slice(-THRESHOLDS.VELOCITY_SNAPSHOTS);
   const spotMoves = recent.slice(1).map((s, i) => s.spot - recent[i].spot);
-  const avgMove   = spotMoves.reduce((a, b) => a + b, 0) / spotMoves.length;
+  const avgMove = spotMoves.reduce((a, b) => a + b, 0) / spotMoves.length;
 
   const first = recent[0];
-  const last  = recent[recent.length - 1];
+  const last = recent[recent.length - 1];
   if (!first?.rows?.length || !last?.rows?.length) return signals;
 
-  const pitch      = strikePitch(last.rows);
-  const totalMove  = last.spot - first.spot;
+  const pitch = strikePitch(last.rows);
+  const totalMove = last.spot - first.spot;
   const pctOfPitch = Math.abs(totalMove) / pitch;
 
   if (pctOfPitch <= THRESHOLDS.VELOCITY_MIN_PCT) return signals;
 
   if (avgMove > 0) {
     const totalPeOI = last.rows.reduce((s, r) => s + r.PE.openInterest, 0);
-    const nearPeOI  = last.rows
+    const nearPeOI = last.rows
       .filter((r) => r.strikePrice <= last.spot && r.strikePrice >= last.spot - pitch * 2)
       .reduce((s, r) => s + r.PE.openInterest, 0);
 
@@ -368,7 +368,7 @@ function velocityBreakout(snapshots) {
       });
   } else {
     const totalCeOI = last.rows.reduce((s, r) => s + r.CE.openInterest, 0);
-    const nearCeOI  = last.rows
+    const nearCeOI = last.rows
       .filter((r) => r.strikePrice >= last.spot && r.strikePrice <= last.spot + pitch * 2)
       .reduce((s, r) => s + r.CE.openInterest, 0);
 
@@ -427,18 +427,18 @@ export function detectBreakouts({ rows, prevRows, spot, prevSpot, pcr, maxPain, 
 // ─── Signal meta ─────────────────────────────────────────────
 
 const SIGNAL_META_MAP = {
-  BULLISH:               { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🟢", label: "Bullish" },
-  BEARISH:               { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "🔴", label: "Bearish" },
-  BULLISH_BREAKOUT:      { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🚀", label: "Bullish Breakout" },
-  BEARISH_BREAKDOWN:     { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "📉", label: "Bearish Breakdown" },
-  BULLISH_MOMENTUM:      { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "▲",  label: "Bullish Momentum" },
-  BEARISH_MOMENTUM:      { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "▼",  label: "Bearish Momentum" },
-  BREAKOUT_WATCH:        { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "👀", label: "Watch Zone" },
-  BREAKDOWN_WATCH:       { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "⚠️", label: "Watch Zone" },
-  RESISTANCE_BUILDING:   { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "🧱", label: "Resistance Building" },
-  SUPPORT_BUILDING:      { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🛡️", label: "Support Building" },
-  MEAN_REVERT_DOWN:      { color: "#c084fc", bg: "#1a0a1a", border: "#c084fc44", icon: "↩",  label: "Pull-back Risk" },
-  MEAN_REVERT_UP:        { color: "#c084fc", bg: "#1a0a1a", border: "#c084fc44", icon: "↪",  label: "Recovery Likely" },
+  BULLISH: { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🟢", label: "Bullish" },
+  BEARISH: { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "🔴", label: "Bearish" },
+  BULLISH_BREAKOUT: { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🚀", label: "Bullish Breakout" },
+  BEARISH_BREAKDOWN: { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "📉", label: "Bearish Breakdown" },
+  BULLISH_MOMENTUM: { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "▲", label: "Bullish Momentum" },
+  BEARISH_MOMENTUM: { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "▼", label: "Bearish Momentum" },
+  BREAKOUT_WATCH: { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "👀", label: "Watch Zone" },
+  BREAKDOWN_WATCH: { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "⚠️", label: "Watch Zone" },
+  RESISTANCE_BUILDING: { color: "#f85149", bg: "#2a0d0d", border: "#f8514944", icon: "🧱", label: "Resistance Building" },
+  SUPPORT_BUILDING: { color: "#3fb950", bg: "#0d2a16", border: "#3fb95044", icon: "🛡️", label: "Support Building" },
+  MEAN_REVERT_DOWN: { color: "#c084fc", bg: "#1a0a1a", border: "#c084fc44", icon: "↩", label: "Pull-back Risk" },
+  MEAN_REVERT_UP: { color: "#c084fc", bg: "#1a0a1a", border: "#c084fc44", icon: "↪", label: "Recovery Likely" },
   BULLISH_REVERSAL_RISK: { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "⚡", label: "Reversal Risk" },
   BEARISH_REVERSAL_RISK: { color: "#e3b341", bg: "#1c1400", border: "#e3b34144", icon: "⚡", label: "Reversal Risk" },
 };

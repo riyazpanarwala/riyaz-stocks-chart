@@ -37,12 +37,12 @@ export function calcInstitutional(rows, spot, atm, pcr) {
   const safeAtmIdx = atmIdx !== -1
     ? atmIdx
     : rows.reduce(
-        (bi, r, i) =>
-          Math.abs(r.strikePrice - atm) < Math.abs(rows[bi].strikePrice - atm)
-            ? i
-            : bi,
-        0,
-      );
+      (bi, r, i) =>
+        Math.abs(r.strikePrice - atm) < Math.abs(rows[bi].strikePrice - atm)
+          ? i
+          : bi,
+      0,
+    );
 
   const nearATM = rows.filter((_, i) => Math.abs(i - safeAtmIdx) <= 2);
 
@@ -61,9 +61,9 @@ export function calcInstitutional(rows, spot, atm, pcr) {
       const withVol = leg.totalTradedVolume > leg.openInterest * 0.04;
       spikes.push({
         strike: r.strikePrice, side, doi,
-        vol:  leg.totalTradedVolume,
-        ltp:  leg.lastPrice,
-        chg:  leg.change,
+        vol: leg.totalTradedVolume,
+        ltp: leg.lastPrice,
+        chg: leg.change,
         type: typeMsg,
         highConv: withVol,
         nearness,
@@ -105,29 +105,33 @@ export function calcInstitutional(rows, spot, atm, pcr) {
   const traps = [];
   rows.forEach((r) => {
     if (r.CE.changeinOpenInterest > avgCeDOI && r.CE.change > 0)
-      traps.push({ strike: r.strikePrice, side: "CE",
-        msg: `Call sellers at ${r.strikePrice} are losing money — price rising against them` });
+      traps.push({
+        strike: r.strikePrice, side: "CE",
+        msg: `Call sellers at ${r.strikePrice} are losing money — price rising against them`
+      });
     if (r.PE.changeinOpenInterest > avgPeDOI && r.PE.change > 0)
-      traps.push({ strike: r.strikePrice, side: "PE",
-        msg: `Put sellers at ${r.strikePrice} are under pressure — watch for a reversal` });
+      traps.push({
+        strike: r.strikePrice, side: "PE",
+        msg: `Put sellers at ${r.strikePrice} are under pressure — watch for a reversal`
+      });
   });
 
   // ── Conviction zones ─────────────────────────────────────
   const highConvZones = [...new Set(spikes.filter((s) => s.highConv).map((s) => s.strike))];
-  const lowConvNoise  = [...new Set(spikes.filter((s) => !s.highConv).map((s) => s.strike))];
+  const lowConvNoise = [...new Set(spikes.filter((s) => !s.highConv).map((s) => s.strike))];
 
   // ── ATM shift ─────────────────────────────────────────────
   const nearCeDOI = nearATM.reduce((s, r) => s + r.CE.changeinOpenInterest, 0);
   const nearPeDOI = nearATM.reduce((s, r) => s + r.PE.changeinOpenInterest, 0);
-  const atmShift  = nearPeDOI > nearCeDOI * 1.3 ? "PE Dominant"
-                  : nearCeDOI > nearPeDOI * 1.3 ? "CE Dominant"
-                  : "Balanced";
+  const atmShift = nearPeDOI > nearCeDOI * 1.3 ? "PE Dominant"
+    : nearCeDOI > nearPeDOI * 1.3 ? "CE Dominant"
+      : "Balanced";
 
   // ── Smart-money signals ───────────────────────────────────
   const aboveSpot = rows.filter((r) => r.strikePrice > spot);
   const belowSpot = rows.filter((r) => r.strikePrice < spot);
-  const topRes3   = [...aboveSpot].sort((a, b) => b.CE.openInterest - a.CE.openInterest).slice(0, 3);
-  const topSup3   = [...belowSpot].sort((a, b) => b.PE.openInterest - a.PE.openInterest).slice(0, 3);
+  const topRes3 = [...aboveSpot].sort((a, b) => b.CE.openInterest - a.CE.openInterest).slice(0, 3);
+  const topSup3 = [...belowSpot].sort((a, b) => b.PE.openInterest - a.PE.openInterest).slice(0, 3);
 
   const signals = [];
   spikes.forEach((s) => {
@@ -160,11 +164,15 @@ export function calcInstitutional(rows, spot, atm, pcr) {
   const concPe = totalPeOI > 0 ? (top3Pe.reduce((s, r) => s + r.PE.openInterest, 0) / totalPeOI) * 100 : 0;
 
   // ── Smart bias ────────────────────────────────────────────
-  const pcrBias  = pcr > 1.2 ? 1 : pcr < 0.8 ? -1 : 0;
-  const oiBias   = nearPeDOI > nearCeDOI ? 1 : nearCeDOI > nearPeDOI ? -1 : 0;
-  const closestRes = topRes3.length ? Math.min(...topRes3.map((r) => r.strikePrice)) : Infinity;
-  const closestSup = topSup3.length ? Math.max(...topSup3.map((r) => r.strikePrice)) : 0;
-  const zoneBias = spot - closestSup < closestRes - spot ? 1 : -1;
+  const pcrBias = pcr > 1.2 ? 1 : pcr < 0.8 ? -1 : 0;
+  const oiBias = nearPeDOI > nearCeDOI ? 1 : nearCeDOI > nearPeDOI ? -1 : 0;
+  const closestRes = topRes3.length ? Math.min(...topRes3.map((r) => r.strikePrice)) : null;
+  const closestSup = topSup3.length ? Math.max(...topSup3.map((r) => r.strikePrice)) : null;
+  const zoneBias =
+    closestRes == null || closestSup == null
+      ? 0
+      : spot - closestSup < closestRes - spot ? 1 : -1;
+
   const totalBias = pcrBias + oiBias + zoneBias;
   const smartBias = totalBias >= 2 ? "BULLISH" : totalBias <= -2 ? "BEARISH" : "NEUTRAL";
 
@@ -196,7 +204,7 @@ export function diffInstitutional(prevRows, currRows, spot) {
   if (!prevRows?.length || !currRows?.length) return [];
 
   const prevMap = Object.fromEntries(prevRows.map((r) => [r.strikePrice, r]));
-  const alerts  = [];
+  const alerts = [];
 
   const avgCePrev = avgAbsDelta(prevRows, "CE");
   const avgPePrev = avgAbsDelta(prevRows, "PE");
@@ -208,11 +216,12 @@ export function diffInstitutional(prevRows, currRows, spot) {
     const prev = prevMap[strike];
 
     const wasSpike = (side, avgPrev) => prev ? prev[side].changeinOpenInterest > avgPrev * 2 : false;
-    const isSpike  = (side, avgCurr) => curr[side].changeinOpenInterest > avgCurr * 2;
+    const isSpike = (side, avgCurr) => curr[side].changeinOpenInterest > avgCurr * 2;
 
     // ── New spikes ───────────────────────────────────────
     const checkNewSpike = (side, avgP, avgC) => {
-      if (!wasSpike(side, avgP) && isSpike(side, avgC)) {
+      const prevDoi = prev?.[side].changeinOpenInterest ?? 0;
+      if (!wasSpike(side, avgP) && isSpike(side, avgC) && curr[side].changeinOpenInterest > prevDoi) {
         const leg = curr[side];
         const isCe = side === "CE";
         alerts.push({
@@ -253,7 +262,9 @@ export function diffInstitutional(prevRows, currRows, spot) {
     const checkTrap = (side, avgP, avgC, isCe) => {
       const prevTrap = prev ? (prev[side].changeinOpenInterest > avgP && prev[side].change > 0) : false;
       const currTrap = curr[side].changeinOpenInterest > avgC && curr[side].change > 0;
-      if (!prevTrap && currTrap)
+      const prevDoi = prev?.[side].changeinOpenInterest ?? 0;
+      const prevChange = prev?.[side].change ?? 0;
+      if (!prevTrap && currTrap && curr[side].changeinOpenInterest > prevDoi && curr[side].change > prevChange)
         alerts.push({
           type: "TRAP", strike, side, severity: "NEW",
           label: isCe
@@ -277,8 +288,8 @@ export function diffInstitutional(prevRows, currRows, spot) {
 
   if (atmPrev && atmCurr) {
     const dom = (r) => r.PE.changeinOpenInterest > r.CE.changeinOpenInterest * 1.3 ? "PE"
-                     : r.CE.changeinOpenInterest > r.PE.changeinOpenInterest * 1.3 ? "CE"
-                     : "BAL";
+      : r.CE.changeinOpenInterest > r.PE.changeinOpenInterest * 1.3 ? "CE"
+        : "BAL";
     const prevDom = dom(atmPrev);
     const currDom = dom(atmCurr);
     if (prevDom !== currDom && currDom !== "BAL") {
@@ -295,7 +306,7 @@ export function diffInstitutional(prevRows, currRows, spot) {
   // ── Wall shifts ──────────────────────────────────────
   const midSpot = spot || currRows[Math.floor(currRows.length / 2)]?.strikePrice || 0;
 
-  const shiftAlert = (aboveSpot, side, prevLabel, currLabel, humanDir) => {
+  const shiftAlert = (aboveSpot, side, humanDir) => {
     const prevTop = [...prevRows].filter((r) => aboveSpot ? r.strikePrice > midSpot : r.strikePrice < midSpot)
       .sort((a, b) => b[side].openInterest - a[side].openInterest)[0];
     const currTop = [...currRows].filter((r) => aboveSpot ? r.strikePrice > midSpot : r.strikePrice < midSpot)
@@ -309,8 +320,8 @@ export function diffInstitutional(prevRows, currRows, spot) {
       });
   };
 
-  shiftAlert(true,  "CE", null, null, "Resistance ceiling");
-  shiftAlert(false, "PE", null, null, "Support floor");
+  shiftAlert(true, "CE", "Resistance ceiling");
+  shiftAlert(false, "PE", "Support floor");
 
   return alerts;
 }
