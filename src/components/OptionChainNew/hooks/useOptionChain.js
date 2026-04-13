@@ -13,8 +13,8 @@ import { fetchOptionChain } from "../api/fetchOptionChain.js";
  */
 
 function getMarketStatusLabel() {
-  if (isHoliday())    return { open: false, label: "Holiday" };
-  if (isMarketOpen()) return { open: true,  label: "Market open · live" };
+  if (isHoliday()) return { open: false, label: "Holiday" };
+  if (isMarketOpen()) return { open: true, label: "Market open · live" };
   return { open: false, label: "Market closed" };
 }
 
@@ -31,19 +31,19 @@ function getMarketStatusLabel() {
  * }}
  */
 export function useOptionChain(instrument) {
-  const [rawData,     setRawData]     = useState(null);
+  const [rawData, setRawData] = useState(null);
   const [prevRawData, setPrevRawData] = useState(null);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState(null);
-  const [fetchedAt,   setFetchedAt]   = useState(null);
-  const [mktStatus,   setMktStatus]   = useState(() => getMarketStatusLabel());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [fetchedAt, setFetchedAt] = useState(null);
+  const [mktStatus, setMktStatus] = useState(() => getMarketStatusLabel());
 
   /**
    * Monotonically-increasing counter — any response with an ID less than the
    * current value is stale and must be discarded.
    */
   const latestRequestRef = useRef(0);
-  const closedFetchDone  = useRef(false);
+  const closedFetchDone = useRef(false);
   /**
    * Mirror of rawData kept in a ref so the load callback can read the current
    * value without capturing a stale closure.  Calling setPrevRawData inside
@@ -93,23 +93,11 @@ export function useOptionChain(instrument) {
 
   // ── Initial load + symbol change ──────────────────────────
   useEffect(() => {
-    // FIX #13: reset closedFetchDone explicitly here, not inside `load`.
-    // The previous approach reset the ref only when resetPrev=true was passed,
-    // which happened to work but was fragile — if call ordering ever changed,
-    // the reset could silently be skipped.  Resetting directly in the effect
-    // that owns the instrument lifecycle makes the intent clear.
     closedFetchDone.current = !isMarketOpen();
     load(instrument, true);
   }, [instrument, load]);
 
   // ── Auto-refresh cycle ─────────────────────────────────────
-  // FIX #4 (documentation): breakoutSignals in useSnapshotHistory are
-  // recomputed via useMemo whenever `displayRows` changes.  Because every
-  // auto-refresh produces new displayRows (new data), the snapshot push and
-  // the signal recompute happen in the same React render cycle — no stale
-  // signals.  This assumption holds as long as snapshots are only pushed from
-  // the auto-refresh path (i.e. not from a WebSocket that fires independently
-  // of the React render cycle).
   useEffect(() => {
     const tick = () => {
       setMktStatus(getMarketStatusLabel());
