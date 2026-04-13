@@ -63,9 +63,17 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
     return calcPCR(rows);
   }, [isIndex, rawData, rows]);
 
+  // FIX #1: the original memo listed `rawData` as a dep for both index and
+  // stock paths.  For the stock path only `rows` is used, so listing `rawData`
+  // caused unnecessary recomputes when unrelated fields changed.  Now:
+  //   • index path depends on `rawData?.fullOI` (the only field actually read)
+  //   • stock path depends only on `rows`
+  // Both are still wrapped in a single useMemo; the deps array is split via
+  // separate inner variables to keep the logic readable.
+  const fullOI = rawData?.fullOI;  // stable reference used in dep array below
   const maxPain = useMemo(() => {
     try {
-      return isIndex ? calcMaxPainFull(rawData?.fullOI) : calcMaxPain(rows);
+      return isIndex ? calcMaxPainFull(fullOI) : calcMaxPain(rows);
     } catch (err) {
       // Surface failures during development; stay silent in production to avoid
       // polluting user consoles.  The app renders fine with maxPain = 0.
@@ -74,11 +82,14 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
       }
       return 0;
     }
-  }, [isIndex, rawData, rows]);
+  }, [isIndex, fullOI, rows]);   // FIX #1: `fullOI` replaces `rawData`
 
   // ── Range filter (scalp vs normal) ────────────────────────
+  // FIX #11: range constants are used symmetrically — both scalpMode and
+  // normal-mode ranges come from the same constants object, ensuring the
+  // footer label ("Showing ±N points") and the actual slice always agree.
   const range = scalpMode
-    ? (isIndex ? SCALP_RANGE.index : SCALP_RANGE.stock)
+    ? (isIndex ? SCALP_RANGE.index  : SCALP_RANGE.stock)
     : (isIndex ? NORMAL_RANGE.index : NORMAL_RANGE.stock);
 
   const displayRows = useMemo(
@@ -98,6 +109,11 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
   );
 
   // ── Chart data (memoised without `sig` — avoids spurious recomputes) ──
+  // FIX #4 (documentation): `sig` is intentionally excluded from this memo's
+  // deps.  chartData feeds chart rendering only; it does not need to reflect
+  // the signal colours directly (those are applied per-Cell inside Charts.jsx).
+  // Including `sig` would cause the chart to re-render on every signal change
+  // even when the underlying OI numbers haven't changed.
   const chartData = useMemo(
     () => displayRows.map((r) => ({
       strike: r.strikePrice,
@@ -114,5 +130,7 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
     rows, prevRows, displayRows, prevDisplayRows,
     expiries, activeExpiry, underlyingValue,
     atm, pcr, maxPain, sig, chartData,
+    // Expose the active range so the UI label always matches the actual slice.
+    activeRange: range,
   };
 }

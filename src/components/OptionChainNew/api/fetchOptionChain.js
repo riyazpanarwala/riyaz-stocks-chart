@@ -7,7 +7,7 @@ import { EMPTY_INDEX_DATA, EMPTY_STOCK_DATA } from "../constants.js";
 import { getNSEData } from "../../getIntervalData.js";  // project-level import
 
 /**
- * @typedef {{ type:"index"|"stock", symbol:string, lot:string, name:string }} Instrument
+ * @typedef {{ type:"index"|"stock", symbol:string, lot:number, name:string }} Instrument
  */
 
 /**
@@ -62,10 +62,21 @@ export async function fetchOptionChain(instrument) {
     };
   }
 
-  // Stock
+  // Stock — FIX #5: data[0] may be any row (PE/CE/any expiry) and its
+  // underlyingValue can be 0 or missing.  Scan all rows for the first
+  // finite, positive value so ATM / signal / support-resistance never
+  // silently base themselves on 0.
+  const rows = json.data ?? [];
+  const underlyingValue =
+    rows.reduce((found, r) => {
+      if (found > 0) return found;
+      const uv = typeof r.underlyingValue === "number" ? r.underlyingValue : 0;
+      return uv > 0 ? uv : found;
+    }, 0);
+
   return {
     timestamp:       json.timestamp ?? new Date().toLocaleString("en-IN"),
-    underlyingValue: json.data?.[0]?.underlyingValue ?? 0,
-    data:            json.data ?? [],
+    underlyingValue,
+    data:            rows,
   };
 }

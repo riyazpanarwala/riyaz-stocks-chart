@@ -68,6 +68,21 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
   const maxPeOI = Math.max(...top3Pe.map((r) => r.PE.openInterest), 1);
   const fmt = fmtK;
 
+  // FIX #6: distToRes / distToSup are number|null — guard all comparison and
+  // display sites so "null" / "Infinity" never reaches the DOM.
+  const fmtDist = (val, prefix) =>
+    val != null && Number.isFinite(val) ? `${prefix}${val} pts` : "—";
+
+  const distVote = (distSup, distRes) => {
+    if (distSup == null || distRes == null) return "NEUTRAL";
+    if (distSup < distRes) return "UP";
+    if (distRes < distSup) return "DOWN";
+    return "NEUTRAL";
+  };
+
+  const distColor = (vote) =>
+    vote === "UP" ? C.green : vote === "DOWN" ? C.red : C.yellow;
+
   // ── Factor breakdown cards ─────────────────────────────────
   const factors = [
     {
@@ -86,42 +101,18 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
       color: sig?.oiChangeBias === "New buying activity" ? C.green : sig?.oiChangeBias === "New selling activity" ? C.red : C.yellow,
     },
     {
-      label: "Gap to Support", value: sig ? `-${sig.distToSup} pts` : "—", detail: "how far below floor is",
-      vote:
-        sig?.distToSup == null || sig?.distToRes == null
-          ? "NEUTRAL"
-          : sig.distToSup < sig.distToRes
-            ? "UP"
-            : sig.distToRes < sig.distToSup
-              ? "DOWN"
-              : "NEUTRAL",
-      color:
-        sig?.distToSup == null || sig?.distToRes == null
-          ? C.yellow
-          : sig.distToSup < sig.distToRes
-            ? C.green
-            : sig.distToRes < sig.distToSup
-              ? C.red
-              : C.yellow,
+      label: "Gap to Support",
+      value: fmtDist(sig?.distToSup, "-"),
+      detail: "how far below floor is",
+      vote: distVote(sig?.distToSup, sig?.distToRes),
+      color: distColor(distVote(sig?.distToSup, sig?.distToRes)),
     },
     {
-      label: "Gap to Resistance", value: sig ? `+${sig.distToRes} pts` : "—", detail: "how far above ceiling is",
-      vote:
-        sig?.distToSup == null || sig?.distToRes == null
-          ? "NEUTRAL"
-          : sig.distToRes > sig.distToSup
-            ? "UP"
-            : sig.distToSup > sig.distToRes
-              ? "DOWN"
-              : "NEUTRAL",
-      color:
-        sig?.distToSup == null || sig?.distToRes == null
-          ? C.yellow
-          : sig.distToRes > sig.distToSup
-            ? C.green
-            : sig.distToSup > sig.distToRes
-              ? C.red
-              : C.yellow,
+      label: "Gap to Resistance",
+      value: fmtDist(sig?.distToRes, "+"),
+      detail: "how far above ceiling is",
+      vote: distVote(sig?.distToRes, sig?.distToSup),
+      color: distColor(distVote(sig?.distToRes, sig?.distToSup)),
     },
   ];
 

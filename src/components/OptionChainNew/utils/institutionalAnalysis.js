@@ -20,6 +20,12 @@ function avgAbsDelta(rows, side) {
  * Full institutional analysis of a snapshot.
  * Returns null if rows is empty.
  *
+ * NOTE: calcMaxPain is intentionally NOT called here per expiry in ExpiryCards
+ * (FIX #3 note): that component shows summary cards for all expiries at once.
+ * calcMaxPain is O(n²) per expiry — calling it for every expiry card would
+ * be O(e × n²) on each render.  Max Pain is derived once for the selected
+ * expiry in useChainDerived and passed down as a prop.
+ *
  * @param {OptionRow[]} rows
  * @param {number}      spot
  * @param {number}      atm    ATM strike
@@ -52,6 +58,15 @@ export function calcInstitutional(rows, spot, atm, pcr) {
   const avgCeDOI = avgAbsDelta(rows, "CE");
   const avgPeDOI = avgAbsDelta(rows, "PE");
 
+  // ── Strike step (used for rollover distance guard) ─────────
+  // Average gap between consecutive strikes; falls back to 50 for thin chains.
+  const strikeStep = rows.slice(1).reduce((minGap, r, i) => {
+    const gap = Math.abs(r.strikePrice - rows[i].strikePrice);
+    return gap > 0 ? Math.min(minGap, gap) : minGap;
+  }, Infinity);
+  const clusterGap     = Number.isFinite(strikeStep) ? strikeStep * 2 : 100;
+  const breakoutBuffer = Number.isFinite(strikeStep) ? strikeStep      : 50;
+
   // ── Spikes ────────────────────────────────────────────────
   const spikes = [];
   rows.forEach((r, idx) => {
@@ -81,13 +96,6 @@ export function calcInstitutional(rows, spot, atm, pcr) {
 
   const topSpikes = [...spikes].sort((a, b) => b.doi - a.doi).slice(0, 3);
 
-  const strikeStep = rows.slice(1).reduce((minGap, r, i) => {
-    const gap = Math.abs(r.strikePrice - rows[i].strikePrice);
-    return gap > 0 ? Math.min(minGap, gap) : minGap;
-  }, Infinity);
-  const clusterGap = Number.isFinite(strikeStep) ? strikeStep * 2 : 100;
-  const breakoutBuffer = Number.isFinite(strikeStep) ? strikeStep : 50;
-
   // ── Clusters ──────────────────────────────────────────────
   const sortedSpikeStrikes = [...new Set(spikes.map((s) => s.strike))].sort((a, b) => a - b);
   const clusters = [];
@@ -99,9 +107,22 @@ export function calcInstitutional(rows, spot, atm, pcr) {
   if (cur.length >= 2) clusters.push(cur);
 
   // ── Rolls ─────────────────────────────────────────────────
+  // FIX #8: a genuine rollover closes at one strike and reopens at another.
+  // The original code detected any consecutive OI-unwind+build pair in the
+  // strike-sorted rows array.  Because rows are sorted by strike price, two
+  // unrelated adjacent strikes could both satisfy the condition and be
+  // mislabelled as a rollover.  Guard added:
+  //   • the unwind strike and the build strike must be within MAX_ROLL_DISTANCE
+  //     of each other (3× strikeStep is generous enough for weekly expiry rolls
+  //     while still filtering clearly unrelated strikes).
+  //   • both legs must move in meaningful size (> avgDOI, not just > 0).
+  const MAX_ROLL_DISTANCE = strikeStep * 3;
   const rolls = [];
   for (let i = 1; i < rows.length; i++) {
     const prev = rows[i - 1], curr = rows[i];
+    const gap  = curr.strikePrice - prev.strikePrice;
+    if (gap > MAX_ROLL_DISTANCE) continue;   // too far apart — not a real roll
+
     if (prev.CE.changeinOpenInterest < -avgCeDOI && curr.CE.changeinOpenInterest > avgCeDOI)
       rolls.push({ from: prev.strikePrice, to: curr.strikePrice, side: "CE" });
     if (prev.PE.changeinOpenInterest < -avgPeDOI && curr.PE.changeinOpenInterest > avgPeDOI)
@@ -125,20 +146,20 @@ export function calcInstitutional(rows, spot, atm, pcr) {
 
   // ── Conviction zones ─────────────────────────────────────
   const highConvZones = [...new Set(spikes.filter((s) => s.highConv).map((s) => s.strike))];
-  const lowConvNoise = [...new Set(spikes.filter((s) => !s.highConv).map((s) => s.strike))];
+  const lowConvNoise  = [...new Set(spikes.filter((s) => !s.highConv).map((s) => s.strike))];
 
   // ── ATM shift ─────────────────────────────────────────────
   const nearCeDOI = nearATM.reduce((s, r) => s + Math.max(0, r.CE.changeinOpenInterest), 0);
   const nearPeDOI = nearATM.reduce((s, r) => s + Math.max(0, r.PE.changeinOpenInterest), 0);
-  const atmShift = nearPeDOI > nearCeDOI * 1.3 ? "PE Dominant"
+  const atmShift  = nearPeDOI > nearCeDOI * 1.3 ? "PE Dominant"
     : nearCeDOI > nearPeDOI * 1.3 ? "CE Dominant"
       : "Balanced";
 
   // ── Smart-money signals ───────────────────────────────────
   const aboveSpot = rows.filter((r) => r.strikePrice > spot);
   const belowSpot = rows.filter((r) => r.strikePrice < spot);
-  const topRes3 = [...aboveSpot].sort((a, b) => b.CE.openInterest - a.CE.openInterest).slice(0, 3);
-  const topSup3 = [...belowSpot].sort((a, b) => b.PE.openInterest - a.PE.openInterest).slice(0, 3);
+  const topRes3   = [...aboveSpot].sort((a, b) => b.CE.openInterest - a.CE.openInterest).slice(0, 3);
+  const topSup3   = [...belowSpot].sort((a, b) => b.PE.openInterest - a.PE.openInterest).slice(0, 3);
 
   const signals = [];
   spikes.forEach((s) => {
@@ -172,7 +193,7 @@ export function calcInstitutional(rows, spot, atm, pcr) {
 
   // ── Smart bias ────────────────────────────────────────────
   const pcrBias = pcr > 1.2 ? 1 : pcr < 0.8 ? -1 : 0;
-  const oiBias = nearPeDOI > nearCeDOI ? 1 : nearCeDOI > nearPeDOI ? -1 : 0;
+  const oiBias  = nearPeDOI > nearCeDOI ? 1 : nearCeDOI > nearPeDOI ? -1 : 0;
   const closestRes = topRes3.length ? Math.min(...topRes3.map((r) => r.strikePrice)) : null;
   const closestSup = topSup3.length ? Math.max(...topSup3.map((r) => r.strikePrice)) : null;
   const zoneBias =
@@ -215,7 +236,7 @@ export function diffInstitutional(prevRows, currRows, spot) {
   if (!prevRows?.length || !currRows?.length) return [];
 
   const prevMap = Object.fromEntries(prevRows.map((r) => [r.strikePrice, r]));
-  const alerts = [];
+  const alerts  = [];
 
   const avgCePrev = avgAbsDelta(prevRows, "CE");
   const avgPePrev = avgAbsDelta(prevRows, "PE");
@@ -228,14 +249,14 @@ export function diffInstitutional(prevRows, currRows, spot) {
     if (!prev) return;
 
     const wasSpike = (side, avgPrev) => prev[side].changeinOpenInterest > avgPrev * 2;
-    const isSpike = (side, avgCurr) => curr[side].changeinOpenInterest > avgCurr * 2;
+    const isSpike  = (side, avgCurr) => curr[side].changeinOpenInterest > avgCurr * 2;
 
     // ── New spikes ───────────────────────────────────────
     const checkNewSpike = (side, avgP, avgC) => {
       const prevDoi = prev?.[side].changeinOpenInterest ?? 0;
       if (!wasSpike(side, avgP) && isSpike(side, avgC) && curr[side].changeinOpenInterest > prevDoi) {
-        const leg = curr[side];
-        const isCe = side === "CE";
+        const leg   = curr[side];
+        const isCe  = side === "CE";
         alerts.push({
           type: "NEW", strike, side, severity: "NEW",
           label: isCe
@@ -272,9 +293,9 @@ export function diffInstitutional(prevRows, currRows, spot) {
 
     // ── Traps ────────────────────────────────────────────
     const checkTrap = (side, avgP, avgC, isCe) => {
-      const prevTrap = prev ? (prev[side].changeinOpenInterest > avgP && prev[side].change > 0) : false;
-      const currTrap = curr[side].changeinOpenInterest > avgC && curr[side].change > 0;
-      const prevDoi = prev?.[side].changeinOpenInterest ?? 0;
+      const prevTrap  = prev ? (prev[side].changeinOpenInterest > avgP && prev[side].change > 0) : false;
+      const currTrap  = curr[side].changeinOpenInterest > avgC && curr[side].change > 0;
+      const prevDoi   = prev?.[side].changeinOpenInterest ?? 0;
       const prevChange = prev?.[side].change ?? 0;
       if (!prevTrap && currTrap && curr[side].changeinOpenInterest > prevDoi && curr[side].change > prevChange)
         alerts.push({
@@ -332,7 +353,7 @@ export function diffInstitutional(prevRows, currRows, spot) {
       });
   };
 
-  shiftAlert(true, "CE", "Resistance ceiling");
+  shiftAlert(true,  "CE", "Resistance ceiling");
   shiftAlert(false, "PE", "Support floor");
 
   return alerts;

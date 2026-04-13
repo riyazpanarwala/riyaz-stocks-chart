@@ -26,6 +26,11 @@ export function sigMeta(rawSignal) {
 /**
  * Derive a trade signal from the current option chain snapshot.
  *
+ * distToRes / distToSup are clamped to finite values before being returned:
+ * - When no resistance exists above spot, distToRes is null (rendered as "—").
+ * - When no support exists below spot,   distToSup is null (rendered as "—").
+ * This prevents "+Infinity" appearing in the UI (FIX #6).
+ *
  * @param {OptionRow[]} rows
  * @param {number}      atm    ATM strike price
  * @param {number}      pcr    Put-call ratio
@@ -34,7 +39,7 @@ export function sigMeta(rawSignal) {
  *   signal: string, rawSignal: string, strength: number,
  *   strengthLabel: string, pcr: string, pcrBias: string,
  *   oiChangeBias: string, topSupport: number[], topResistance: number[],
- *   distToRes: number, distToSup: number
+ *   distToRes: number|null, distToSup: number|null
  * }}
  */
 export function generateSignal(rows, atm, pcr, spot) {
@@ -44,13 +49,21 @@ export function generateSignal(rows, atm, pcr, spot) {
   const resistance = topResistance(rows, spot);
   const support    = topSupport(rows, spot);
 
-  const closestRes  = resistance.length ? Math.min(...resistance) : Infinity;
-  const closestSup  = support.length    ? Math.max(...support)    : 0;
-  const distToRes   = closestRes - spot;
-  const distToSup   = spot - closestSup;
+  const closestRes = resistance.length ? Math.min(...resistance) : null;
+  const closestSup = support.length    ? Math.max(...support)    : null;
+
+  // FIX #6: use null when no level exists so the UI can render "—" instead
+  // of "+Infinity".  All downstream comparisons guard for null explicitly.
+  const distToRes = closestRes != null ? closestRes - spot : null;
+  const distToSup = closestSup != null ? spot - closestSup : null;
 
   // ── Factor 1: Zone proximity ───────────────────────────────
-  const zoneBias  = distToSup < distToRes ? 1 : -1;
+  // When one side is missing, treat as neutral (0) so the signal doesn't
+  // incorrectly skew based on a one-sided market.
+  const zoneBias =
+    distToSup != null && distToRes != null
+      ? distToSup < distToRes ? 1 : -1
+      : 0;
   const zoneScore = 30;
 
   // ── Factor 2: PCR sentiment ────────────────────────────────
@@ -100,7 +113,7 @@ export function generateSignal(rows, atm, pcr, spot) {
     oiChangeBias: oiChangeBiasLabel,
     topSupport: support,
     topResistance: resistance,
-    distToRes: Math.round(distToRes),
-    distToSup: Math.round(distToSup),
+    distToRes,   // number | null
+    distToSup,   // number | null
   };
 }
