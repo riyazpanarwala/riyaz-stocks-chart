@@ -171,7 +171,11 @@ export function calcInstitutional(rows, spot, atm, pcr) {
   const zoneBias =
     closestRes == null || closestSup == null
       ? 0
-      : spot - closestSup < closestRes - spot ? 1 : -1;
+      : spot - closestSup < closestRes - spot
+        ? 1
+        : closestRes - spot < spot - closestSup
+          ? -1
+          : 0;
 
   const totalBias = pcrBias + oiBias + zoneBias;
   const smartBias = totalBias >= 2 ? "BULLISH" : totalBias <= -2 ? "BEARISH" : "NEUTRAL";
@@ -214,8 +218,9 @@ export function diffInstitutional(prevRows, currRows, spot) {
   currRows.forEach((curr) => {
     const { strikePrice: strike } = curr;
     const prev = prevMap[strike];
+    if (!prev) return;
 
-    const wasSpike = (side, avgPrev) => prev ? prev[side].changeinOpenInterest > avgPrev * 2 : false;
+    const wasSpike = (side, avgPrev) => prev[side].changeinOpenInterest > avgPrev * 2;
     const isSpike = (side, avgCurr) => curr[side].changeinOpenInterest > avgCurr * 2;
 
     // ── New spikes ───────────────────────────────────────
