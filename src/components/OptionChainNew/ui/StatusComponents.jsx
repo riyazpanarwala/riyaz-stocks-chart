@@ -62,6 +62,20 @@ export const SignalBanner = React.memo(function SignalBanner({ sig, atm, maxPain
   );
 });
 
+// ─── Zone Pill (module-scope so it is not recreated on every ZoneBadges render) ─
+
+const ZonePill = React.memo(function ZonePill({ strike, primary, type }) {
+  const isSupport = type === "support";
+  return (
+    <span style={{
+      background: primary ? (isSupport ? C.greenBg : C.redBg) : "#111",
+      border:     `1px solid ${primary ? (isSupport ? C.green : C.red) : C.border}40`,
+      color:      primary ? (isSupport ? C.green   : C.red)   : C.muted,
+      padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700,
+    }}>{strike}</span>
+  );
+});
+
 // ─── Zone Badges ─────────────────────────────────────────────
 
 export const ZoneBadges = React.memo(function ZoneBadges({ sig }) {
@@ -69,15 +83,6 @@ export const ZoneBadges = React.memo(function ZoneBadges({ sig }) {
   const oiColor  = sig.oiChangeBias === "New buying activity"  ? C.green
                  : sig.oiChangeBias === "New selling activity" ? C.red
                  : C.yellow;
-
-  const ZonePill = ({ strike, primary }) => (
-    <span style={{
-      background: primary ? (strike > 0 ? C.greenBg : C.redBg) : "#111",
-      border: `1px solid ${primary ? (strike > 0 ? C.green : C.red) : C.border}40`,
-      color:  primary ? (strike > 0 ? C.green : C.red) : C.muted,
-      padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700,
-    }}>{strike}</span>
-  );
 
   return (
     <div style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
@@ -87,7 +92,7 @@ export const ZoneBadges = React.memo(function ZoneBadges({ sig }) {
         </div>
         <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
           {sig.topSupport.length
-            ? sig.topSupport.map((s, i) => <ZonePill key={s} strike={s} primary={i === 0} />)
+            ? sig.topSupport.map((s, i) => <ZonePill key={s} strike={s} primary={i === 0} type="support" />)
             : <span style={{ color: C.muted, fontSize: 10 }}>No data below price</span>}
         </div>
       </div>
@@ -98,7 +103,7 @@ export const ZoneBadges = React.memo(function ZoneBadges({ sig }) {
         </div>
         <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
           {sig.topResistance.length
-            ? sig.topResistance.map((s, i) => <ZonePill key={s} strike={-s} primary={i === 0} />)
+            ? sig.topResistance.map((s, i) => <ZonePill key={s} strike={s} primary={i === 0} type="resistance" />)
             : <span style={{ color: C.muted, fontSize: 10 }}>No data above price</span>}
         </div>
       </div>

@@ -40,16 +40,23 @@ export function useOptionChain(instrument) {
 
   /**
    * Monotonically-increasing counter — any response with an ID less than the
-   * current value is stale and must be discarded. This prevents race conditions
-   * when multiple overlapping fetches are in-flight.
+   * current value is stale and must be discarded.
    */
-  const latestRequestRef  = useRef(0);
-  const closedFetchDone   = useRef(false);
+  const latestRequestRef = useRef(0);
+  const closedFetchDone  = useRef(false);
+  /**
+   * Mirror of rawData kept in a ref so the load callback can read the current
+   * value without capturing a stale closure.  Calling setPrevRawData inside
+   * setRawData's updater function is a side-effect in a state updater, which
+   * is unsafe under React 19's concurrent renderer.
+   */
+  const rawDataRef = useRef(null);
 
   const load = useCallback(async (inst, resetPrev = false) => {
     const requestId = ++latestRequestRef.current;
 
     if (resetPrev) {
+      rawDataRef.current = null;
       setRawData(null);
       setPrevRawData(null);
       closedFetchDone.current = false;
@@ -63,11 +70,14 @@ export function useOptionChain(instrument) {
 
       if (latestRequestRef.current !== requestId) return; // stale
 
-      setRawData((cur) => {
-        // Keep a window of exactly one previous snapshot for diff analysis
-        if (cur && cur.timestamp) setPrevRawData(cur);
-        return data;
-      });
+      // Capture previous snapshot from the ref (always up-to-date) and update
+      // both state values in two separate, sequential calls — no side-effects
+      // inside an updater function.
+      if (rawDataRef.current?.timestamp) {
+        setPrevRawData(rawDataRef.current);
+      }
+      rawDataRef.current = data;
+      setRawData(data);
       setFetchedAt(Date.now());
       setError(null);
     } catch (err) {
@@ -76,7 +86,7 @@ export function useOptionChain(instrument) {
     } finally {
       if (latestRequestRef.current === requestId) setLoading(false);
     }
-  }, []); // no deps — stable across renders
+  }, []); // stable — no reactive deps needed
 
   // ── Initial load + symbol change ──────────────────────────
   useEffect(() => {

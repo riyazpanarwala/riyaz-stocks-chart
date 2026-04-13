@@ -53,17 +53,23 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
   // ── Derived scalars ────────────────────────────────────────
   const atm = useMemo(() => findATM(rows, underlyingValue), [rows, underlyingValue]);
 
-  // FIX: Use full unfiltered chain for PCR so scalp-mode doesn't skew it
+  // Use the already-parsed `rows` instead of re-calling parseStockChain here.
+  // `rows` is the full unfiltered set; `displayRows` (range-filtered) is derived
+  // later, so PCR is never skewed by scalp-mode.
   const pcr = useMemo(() => {
     if (isIndex) return calcPCRFull(rawData?.fullOI);
-    const allRows = parseStockChain(rawData, selectedExpiry).rows;
-    return calcPCR(allRows);
-  }, [isIndex, rawData, selectedExpiry]);
+    return calcPCR(rows);
+  }, [isIndex, rawData, rows]);
 
   const maxPain = useMemo(() => {
     try {
       return isIndex ? calcMaxPainFull(rawData?.fullOI) : calcMaxPain(rows);
-    } catch {
+    } catch (err) {
+      // Surface failures during development; stay silent in production to avoid
+      // polluting user consoles.  The app renders fine with maxPain = 0.
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[useChainDerived] maxPain calculation failed:", err, { isIndex, rows });
+      }
       return 0;
     }
   }, [isIndex, rawData, rows]);

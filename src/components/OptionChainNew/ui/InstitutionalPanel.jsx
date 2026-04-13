@@ -173,8 +173,8 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
       {/* ── Support / Resistance ── */}
       <div style={{ display: "flex", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
         {[
-          { zones: topSup, side: "PE", label: "▲ SUPPORT LEVELS — Price floor below current price",  hint: "Big players have placed large Put positions here — these act as cushions",  color: C.green, oi: "PE.openInterest", total: totalPeOI },
-          { zones: topRes, side: "CE", label: "▼ RESISTANCE LEVELS — Price ceiling above current price", hint: "Big players have placed large Call positions here — these act as barriers", color: C.red,   oi: "CE.openInterest", total: totalCeOI },
+          { zones: topSup, side: "PE", label: "▲ SUPPORT LEVELS — Price floor below current price",  hint: "Big players have placed large Put positions here — these act as cushions",  color: C.green, total: totalPeOI },
+          { zones: topRes, side: "CE", label: "▼ RESISTANCE LEVELS — Price ceiling above current price", hint: "Big players have placed large Call positions here — these act as barriers", color: C.red,   total: totalCeOI },
         ].map(({ zones, side, label, hint, color, total }) => {
           const oiSum = zones.reduce((s, r) => s + r[side].openInterest, 0);
           return (

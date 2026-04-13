@@ -77,9 +77,13 @@ export const SymbolPicker = React.memo(function SymbolPicker({ selected, onChang
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Auto-focus search input
+  // Auto-focus search input — requestAnimationFrame is more semantically correct
+  // than an arbitrary setTimeout(, 50): it schedules focus for the very next
+  // paint frame after the dropdown has been inserted into the DOM.
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 50);
+    if (!open) return;
+    const raf = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(raf);
   }, [open]);
 
   const handleSelect = (item) => {

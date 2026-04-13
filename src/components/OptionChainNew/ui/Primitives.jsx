@@ -34,10 +34,10 @@ export const CardTitle = React.memo(function CardTitle({ icon, children }) {
 // ─── Confidence badge ─────────────────────────────────────────
 
 const IBADGE_MAP = {
-  HIGH: { bg: C.greenBg, color: C.green, border: `${C.green}40` },
-  MED: { bg: "#1c1400", color: C.yellow, border: `${C.yellow}40` },
-  LOW: { bg: C.surface2, color: C.muted, border: C.border },
-  TRAP: { bg: "#2a1500", color: "#ff7b00", border: "#ff7b0040" },
+  HIGH:  { bg: C.greenBg, color: C.green,  border: `${C.green}40`  },
+  MED:   { bg: "#1c1400", color: C.yellow, border: `${C.yellow}40` },
+  LOW:   { bg: C.surface2, color: C.muted, border: C.border        },
+  TRAP:  { bg: "#2a1500", color: "#ff7b00", border: "#ff7b0040"    },
 };
 const IBADGE_LABEL = { HIGH: "HIGH", MED: "MEDIUM", LOW: "LOW", TRAP: "RISKY" };
 
@@ -58,9 +58,10 @@ export const IBadge = React.memo(function IBadge({ conf }) {
 // ─── Strength bar ─────────────────────────────────────────────
 
 export const StrengthBar = React.memo(function StrengthBar({ value, color, width = 80 }) {
-  const clampedValue = Math.max(0, Math.min(100, value));
+  // Clamp to [0, 100] and treat NaN as 0 so the inner div never overflows or goes negative.
+  const clampedValue = Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
   const barColor = color
-    ?? (value > 70 ? C.green : value > 50 ? C.yellow : C.muted);
+    ?? (clampedValue > 70 ? C.green : clampedValue > 50 ? C.yellow : C.muted);
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <div style={{
