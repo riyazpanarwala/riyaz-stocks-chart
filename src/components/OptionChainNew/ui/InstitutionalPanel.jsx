@@ -35,8 +35,8 @@ const DiffAlerts = React.memo(function DiffAlerts({ alerts }) {
           <span style={{
             fontSize: 9, padding: "2px 7px", borderRadius: 4, fontWeight: 700, letterSpacing: 0.5, flexShrink: 0,
             background: a.severity === "SURGE" ? "#3a0000" : a.severity === "FLIP" ? "#0d1e2e" : "#1a0c00",
-            color:      a.severity === "SURGE" ? C.red    : a.severity === "FLIP" ? C.blue    : "#ff7b00",
-            border:     `1px solid ${a.severity === "SURGE" ? C.red + "44" : a.severity === "FLIP" ? C.blue + "44" : "#ff7b0044"}`,
+            color: a.severity === "SURGE" ? C.red : a.severity === "FLIP" ? C.blue : "#ff7b00",
+            border: `1px solid ${a.severity === "SURGE" ? C.red + "44" : a.severity === "FLIP" ? C.blue + "44" : "#ff7b0044"}`,
           }}>
             {a.severity === "SURGE" ? "SURGING" : a.severity === "FLIP" ? "SHIFTED" : "NEW"}
           </span>
@@ -51,7 +51,7 @@ const DiffAlerts = React.memo(function DiffAlerts({ alerts }) {
 export const InstitutionalPanel = React.memo(function InstitutionalPanel({
   rows, prevRows, spot, atm, maxPain, pcr, sig,
 }) {
-  const inst       = useMemo(() => calcInstitutional(rows, spot, atm, pcr), [rows, spot, atm, pcr]);
+  const inst = useMemo(() => calcInstitutional(rows, spot, atm, pcr), [rows, spot, atm, pcr]);
   const diffAlerts = useMemo(() => diffInstitutional(prevRows, rows, spot), [prevRows, rows, spot]);
 
   if (!inst) return null;
@@ -63,10 +63,10 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
     topRes, topSup,
   } = inst;
 
-  const meta      = sigMeta(sig?.rawSignal ?? "NO TRADE");
-  const maxCeOI   = Math.max(...top3Ce.map((r) => r.CE.openInterest), 1);
-  const maxPeOI   = Math.max(...top3Pe.map((r) => r.PE.openInterest), 1);
-  const fmt       = fmtK;
+  const meta = sigMeta(sig?.rawSignal ?? "NO TRADE");
+  const maxCeOI = Math.max(...top3Ce.map((r) => r.CE.openInterest), 1);
+  const maxPeOI = Math.max(...top3Pe.map((r) => r.PE.openInterest), 1);
+  const fmt = fmtK;
 
   // ── Factor breakdown cards ─────────────────────────────────
   const factors = [
@@ -87,13 +87,41 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
     },
     {
       label: "Gap to Support", value: sig ? `-${sig.distToSup} pts` : "—", detail: "how far below floor is",
-      vote: sig && sig.distToSup < sig.distToRes ? "UP" : "DOWN",
-      color: sig && sig.distToSup < sig.distToRes ? C.green : C.red,
+      vote:
+        sig?.distToSup == null || sig?.distToRes == null
+          ? "NEUTRAL"
+          : sig.distToSup < sig.distToRes
+            ? "UP"
+            : sig.distToRes < sig.distToSup
+              ? "DOWN"
+              : "NEUTRAL",
+      color:
+        sig?.distToSup == null || sig?.distToRes == null
+          ? C.yellow
+          : sig.distToSup < sig.distToRes
+            ? C.green
+            : sig.distToRes < sig.distToSup
+              ? C.red
+              : C.yellow,
     },
     {
       label: "Gap to Resistance", value: sig ? `+${sig.distToRes} pts` : "—", detail: "how far above ceiling is",
-      vote: sig && sig.distToRes > sig.distToSup ? "UP" : "DOWN",
-      color: sig && sig.distToRes > sig.distToSup ? C.green : C.red,
+      vote:
+        sig?.distToSup == null || sig?.distToRes == null
+          ? "NEUTRAL"
+          : sig.distToRes > sig.distToSup
+            ? "UP"
+            : sig.distToSup > sig.distToRes
+              ? "DOWN"
+              : "NEUTRAL",
+      color:
+        sig?.distToSup == null || sig?.distToRes == null
+          ? C.yellow
+          : sig.distToRes > sig.distToSup
+            ? C.green
+            : sig.distToSup > sig.distToRes
+              ? C.red
+              : C.yellow,
     },
   ];
 
@@ -144,8 +172,8 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
                 <div style={{
                   marginTop: 5, display: "inline-block", padding: "1px 7px", borderRadius: 3, fontSize: 9, fontWeight: 700,
                   background: vote === "UP" ? C.greenBg : vote === "DOWN" ? C.redBg : C.surface2,
-                  color:      vote === "UP" ? C.green   : vote === "DOWN" ? C.red   : C.yellow,
-                  border:     `1px solid ${vote === "UP" ? C.green + "40" : vote === "DOWN" ? C.red + "40" : C.yellow + "40"}`,
+                  color: vote === "UP" ? C.green : vote === "DOWN" ? C.red : C.yellow,
+                  border: `1px solid ${vote === "UP" ? C.green + "40" : vote === "DOWN" ? C.red + "40" : C.yellow + "40"}`,
                 }}>
                   {vote === "UP" ? "▲ Bullish vote" : vote === "DOWN" ? "▼ Bearish vote" : "— Neutral"}
                 </div>
@@ -157,9 +185,9 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
         {/* Key stats */}
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
           {[
-            { l: "Max Pain",          v: maxPain,       c: C.yellow,                   sub: "where price is pulled at expiry" },
-            { l: "Big Moves Detected",v: topSpikes.length, c: C.blue,                  sub: "institutional spikes" },
-            { l: "Danger Zones",      v: traps.length,  c: traps.length > 0 ? "#ff7b00" : C.muted, sub: "strikes to avoid" },
+            { l: "Max Pain", v: maxPain, c: C.yellow, sub: "where price is pulled at expiry" },
+            { l: "Big Moves Detected", v: topSpikes.length, c: C.blue, sub: "institutional spikes" },
+            { l: "Danger Zones", v: traps.length, c: traps.length > 0 ? "#ff7b00" : C.muted, sub: "strikes to avoid" },
           ].map(({ l, v, c, sub }) => (
             <div key={l} style={{ textAlign: "center" }}>
               <div style={{ fontSize: 9, color: C.muted }}>{l}</div>
@@ -173,8 +201,8 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
       {/* ── Support / Resistance ── */}
       <div style={{ display: "flex", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
         {[
-          { zones: topSup, side: "PE", label: "▲ SUPPORT LEVELS — Price floor below current price",  hint: "Big players have placed large Put positions here — these act as cushions",  color: C.green, total: totalPeOI },
-          { zones: topRes, side: "CE", label: "▼ RESISTANCE LEVELS — Price ceiling above current price", hint: "Big players have placed large Call positions here — these act as barriers", color: C.red,   total: totalCeOI },
+          { zones: topSup, side: "PE", label: "▲ SUPPORT LEVELS — Price floor below current price", hint: "Big players have placed large Put positions here — these act as cushions", color: C.green, total: totalPeOI },
+          { zones: topRes, side: "CE", label: "▼ RESISTANCE LEVELS — Price ceiling above current price", hint: "Big players have placed large Call positions here — these act as barriers", color: C.red, total: totalCeOI },
         ].map(({ zones, side, label, hint, color, total }) => {
           const oiSum = zones.reduce((s, r) => s + r[side].openInterest, 0);
           return (
@@ -324,7 +352,7 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
           {[
             { title: `Top Call positions — ${concCe.toFixed(1)}% of all Calls are here`, color: C.red, items: top3Ce, maxOI: maxCeOI, side: "CE" },
-            { title: `Top Put positions — ${concPe.toFixed(1)}% of all Puts are here`,  color: C.green, items: top3Pe, maxOI: maxPeOI, side: "PE" },
+            { title: `Top Put positions — ${concPe.toFixed(1)}% of all Puts are here`, color: C.green, items: top3Pe, maxOI: maxPeOI, side: "PE" },
           ].map(({ title, color, items, maxOI, side }) => (
             <div key={side} style={{ flex: 1, minWidth: 140 }}>
               <div style={{ fontSize: 10, color, marginBottom: 6 }}>{title}</div>
@@ -345,10 +373,14 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
 
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}`, display: "flex", gap: 16, flexWrap: "wrap" }}>
           {[
-            { label: "Call Positions (Net)", val: rows.reduce((s, r) => s + r.CE.changeinOpenInterest, 0),
-              up: "More Calls being added — sellers expect a ceiling", dn: "Calls being removed — resistance weakening", upC: C.red, dnC: C.green },
-            { label: "Put Positions (Net)",  val: rows.reduce((s, r) => s + r.PE.changeinOpenInterest, 0),
-              up: "More Puts being added — buyers building a floor",  dn: "Puts being removed — support weakening",    upC: C.green, dnC: C.red },
+            {
+              label: "Call Positions (Net)", val: rows.reduce((s, r) => s + r.CE.changeinOpenInterest, 0),
+              up: "More Calls being added — sellers expect a ceiling", dn: "Calls being removed — resistance weakening", upC: C.red, dnC: C.green
+            },
+            {
+              label: "Put Positions (Net)", val: rows.reduce((s, r) => s + r.PE.changeinOpenInterest, 0),
+              up: "More Puts being added — buyers building a floor", dn: "Puts being removed — support weakening", upC: C.green, dnC: C.red
+            },
           ].map(({ label, val, up, dn, upC, dnC }) => (
             <div key={label} style={{ flex: 1, minWidth: 140 }}>
               <div style={{ fontSize: 9, color: C.muted, marginBottom: 3 }}>{label}</div>

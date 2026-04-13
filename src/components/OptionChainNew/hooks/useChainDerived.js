@@ -27,8 +27,8 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
 
     if (isIndex) {
       return {
-        rows:           parseIndexChain(rawData),
-        expiries:       [],
+        rows: parseIndexChain(rawData),
+        expiries: [],
         selectedExpiry: null,
         underlyingValue: rawData.underlyingValue ?? 0,
       };
@@ -36,8 +36,8 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
 
     const parsed = parseStockChain(rawData, selectedExpiry);
     return {
-      rows:           parsed.rows,
-      expiries:       parsed.expiries,
+      rows: parsed.rows,
+      expiries: parsed.expiries,
       selectedExpiry: parsed.selectedExpiry,
       underlyingValue: rawData.underlyingValue ?? 0,
     };
@@ -47,8 +47,10 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
   const prevRows = useMemo(() => {
     if (!prevRawData) return [];
     if (isIndex) return parseIndexChain(prevRawData);
-    return parseStockChain(prevRawData, selectedExpiry).rows;
-  }, [prevRawData, isIndex, selectedExpiry]);
+    if (!activeExpiry) return [];
+    const parsedPrev = parseStockChain(prevRawData, activeExpiry);
+    return parsedPrev.selectedExpiry === activeExpiry ? parsedPrev.rows : [];
+  }, [prevRawData, isIndex, activeExpiry]);
 
   // ── Derived scalars ────────────────────────────────────────
   const atm = useMemo(() => findATM(rows, underlyingValue), [rows, underlyingValue]);
@@ -76,7 +78,7 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
 
   // ── Range filter (scalp vs normal) ────────────────────────
   const range = scalpMode
-    ? (isIndex ? SCALP_RANGE.index  : SCALP_RANGE.stock)
+    ? (isIndex ? SCALP_RANGE.index : SCALP_RANGE.stock)
     : (isIndex ? NORMAL_RANGE.index : NORMAL_RANGE.stock);
 
   const displayRows = useMemo(
@@ -98,12 +100,12 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
   // ── Chart data (memoised without `sig` — avoids spurious recomputes) ──
   const chartData = useMemo(
     () => displayRows.map((r) => ({
-      strike:   r.strikePrice,
+      strike: r.strikePrice,
       "Call OI": r.CE.openInterest,
-      "Put OI":  r.PE.openInterest,
-      "CE ΔOI":  r.CE.changeinOpenInterest,
-      "PE ΔOI":  r.PE.changeinOpenInterest,
-      isATM:     r.strikePrice === atm,
+      "Put OI": r.PE.openInterest,
+      "CE ΔOI": r.CE.changeinOpenInterest,
+      "PE ΔOI": r.PE.changeinOpenInterest,
+      isATM: r.strikePrice === atm,
     })),
     [displayRows, atm],
   );

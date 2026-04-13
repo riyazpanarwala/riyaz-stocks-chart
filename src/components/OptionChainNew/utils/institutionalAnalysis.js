@@ -81,12 +81,19 @@ export function calcInstitutional(rows, spot, atm, pcr) {
 
   const topSpikes = [...spikes].sort((a, b) => b.doi - a.doi).slice(0, 3);
 
+  const strikeStep = rows.slice(1).reduce((minGap, r, i) => {
+    const gap = Math.abs(r.strikePrice - rows[i].strikePrice);
+    return gap > 0 ? Math.min(minGap, gap) : minGap;
+  }, Infinity);
+  const clusterGap = Number.isFinite(strikeStep) ? strikeStep * 2 : 100;
+  const breakoutBuffer = Number.isFinite(strikeStep) ? strikeStep : 50;
+
   // ── Clusters ──────────────────────────────────────────────
   const sortedSpikeStrikes = [...new Set(spikes.map((s) => s.strike))].sort((a, b) => a - b);
   const clusters = [];
   let cur = [];
   for (const s of sortedSpikeStrikes) {
-    if (!cur.length || s - cur[cur.length - 1] <= 100) { cur.push(s); }
+    if (!cur.length || s - cur[cur.length - 1] <= clusterGap) { cur.push(s); }
     else { if (cur.length >= 2) clusters.push([...cur]); cur = [s]; }
   }
   if (cur.length >= 2) clusters.push(cur);
@@ -154,7 +161,7 @@ export function calcInstitutional(rows, spot, atm, pcr) {
     signals.push({ icon: "⚠️", label: `Avoid trading at ${t.strike} — conditions are unpredictable here`, strike: t.strike, conf: "TRAP" }));
 
   const nearRes = topRes3[0];
-  if (nearRes && spot >= nearRes.strikePrice - 50 && nearRes.CE.totalTradedVolume > nearRes.CE.openInterest * 0.05)
+  if (nearRes && spot >= nearRes.strikePrice - breakoutBuffer && nearRes.CE.totalTradedVolume > nearRes.CE.openInterest * 0.05)
     signals.push({ icon: "🚀", label: `Breakout possible above ${nearRes.strikePrice} — institutions are supporting the move`, strike: nearRes.strikePrice, conf: "HIGH" });
 
   // ── OI concentration ─────────────────────────────────────

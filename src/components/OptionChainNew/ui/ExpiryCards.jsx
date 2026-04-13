@@ -13,10 +13,10 @@ export const ExpiryCards = React.memo(function ExpiryCards({
   // with many contracts, and calling it on every render for every expiry adds up.
   // Keep pcr as a number throughout; only format for display at the leaf node.
   const expiryData = useMemo(() => expiries.map((ex) => {
-    const p      = parseStockChain(rawData, ex);
+    const p = parseStockChain(rawData, ex);
     const pcrNum = calcPCR(p.rows);
-    const totCE  = p.rows.reduce((s, r) => s + r.CE.openInterest, 0);
-    const totPE  = p.rows.reduce((s, r) => s + r.PE.openInterest, 0);
+    const totCE = p.rows.reduce((s, r) => s + r.CE.openInterest, 0);
+    const totPE = p.rows.reduce((s, r) => s + r.PE.openInterest, 0);
     return { ex, pcrNum, totCE, totPE };
   }), [rawData, expiries]);
 
@@ -27,7 +27,7 @@ export const ExpiryCards = React.memo(function ExpiryCards({
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {expiryData.map(({ ex, pcrNum, totCE, totPE }) => {
-          const pc       = pcrNum > 1.2 ? C.green : pcrNum < 0.8 ? C.red : C.yellow;
+          const pc = pcrNum > 1.2 ? C.green : pcrNum < 0.8 ? C.red : C.yellow;
           const isActive = ex === activeExpiry;
 
           return (
@@ -37,7 +37,12 @@ export const ExpiryCards = React.memo(function ExpiryCards({
               tabIndex={0}
               aria-pressed={isActive}
               onClick={() => onSelectExpiry(ex)}
-              onKeyDown={(e) => e.key === "Enter" && onSelectExpiry(ex)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelectExpiry(ex);
+                }
+              }}
               style={{
                 background: isActive ? "#0d1e2e" : C.bg,
                 border: `1px solid ${isActive ? C.blue : C.border}`,
@@ -49,7 +54,7 @@ export const ExpiryCards = React.memo(function ExpiryCards({
               <div style={{ display: "flex", gap: 12 }}>
                 <div>
                   <div style={{ fontSize: 9, color: C.muted }}>Call OI</div>
-                  <div style={{ color: C.red,   fontSize: 12, fontWeight: 700 }}>{(totCE / 1000).toFixed(1)}K</div>
+                  <div style={{ color: C.red, fontSize: 12, fontWeight: 700 }}>{(totCE / 1000).toFixed(1)}K</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 9, color: C.muted }}>Put OI</div>
