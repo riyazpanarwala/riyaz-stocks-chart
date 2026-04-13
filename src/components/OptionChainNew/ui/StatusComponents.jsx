@@ -16,6 +16,11 @@ export const SignalBanner = React.memo(function SignalBanner({ sig, atm, maxPain
   const pcrVal   = parseFloat(sig.pcr);
   const pcrColor = pcrVal > 1.2 ? C.green : pcrVal < 0.8 ? C.red : C.yellow;
 
+  // FIX #6: distToRes / distToSup are number|null — guard before display so
+  // "+Infinity" or "NaN" never reaches the DOM.
+  const fmtDist = (val, prefix) =>
+    val != null && Number.isFinite(val) ? `${prefix}${Math.round(val)}` : "—";
+
   return (
     <div style={{
       background: meta.bg, border: `1px solid ${meta.color}40`, borderRadius: 10,
@@ -44,12 +49,12 @@ export const SignalBanner = React.memo(function SignalBanner({ sig, atm, maxPain
 
       <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
         {[
-          { l: "Current Price",      v: spot?.toFixed(1), c: C.text    },
-          { l: "ATM Strike",         v: atm,              c: C.blue    },
-          { l: "Max Pain",           v: maxPain,          c: C.yellow  },
-          { l: "PCR",                v: sig.pcr,          c: pcrColor, sub: sig.pcrBias },
-          { l: "Gap to Resistance",  v: `+${sig.distToRes}`, c: C.red   },
-          { l: "Gap to Support",     v: `-${sig.distToSup}`, c: C.green },
+          { l: "Current Price",     v: spot?.toFixed(1),            c: C.text   },
+          { l: "ATM Strike",        v: atm,                          c: C.blue   },
+          { l: "Max Pain",          v: maxPain,                      c: C.yellow },
+          { l: "PCR",               v: sig.pcr, c: pcrColor, sub: sig.pcrBias   },
+          { l: "Gap to Resistance", v: fmtDist(sig.distToRes, "+"),  c: C.red    },
+          { l: "Gap to Support",    v: fmtDist(sig.distToSup, "-"),  c: C.green  },
         ].map(({ l, v, c, sub }) => (
           <div key={l} style={{ textAlign: "center" }}>
             <div style={{ fontSize: 9, color: C.muted }}>{l}</div>

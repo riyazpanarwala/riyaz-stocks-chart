@@ -13,8 +13,8 @@ import { fetchOptionChain } from "../api/fetchOptionChain.js";
  */
 
 function getMarketStatusLabel() {
-  if (isHoliday())    return { open: false, label: "Holiday" };
-  if (isMarketOpen()) return { open: true,  label: "Market open · live" };
+  if (isHoliday()) return { open: false, label: "Holiday" };
+  if (isMarketOpen()) return { open: true, label: "Market open · live" };
   return { open: false, label: "Market closed" };
 }
 
@@ -31,19 +31,19 @@ function getMarketStatusLabel() {
  * }}
  */
 export function useOptionChain(instrument) {
-  const [rawData,     setRawData]     = useState(null);
+  const [rawData, setRawData] = useState(null);
   const [prevRawData, setPrevRawData] = useState(null);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState(null);
-  const [fetchedAt,   setFetchedAt]   = useState(null);
-  const [mktStatus,   setMktStatus]   = useState(() => getMarketStatusLabel());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [fetchedAt, setFetchedAt] = useState(null);
+  const [mktStatus, setMktStatus] = useState(() => getMarketStatusLabel());
 
   /**
    * Monotonically-increasing counter — any response with an ID less than the
    * current value is stale and must be discarded.
    */
   const latestRequestRef = useRef(0);
-  const closedFetchDone  = useRef(false);
+  const closedFetchDone = useRef(false);
   /**
    * Mirror of rawData kept in a ref so the load callback can read the current
    * value without capturing a stale closure.  Calling setPrevRawData inside
@@ -59,6 +59,8 @@ export function useOptionChain(instrument) {
       rawDataRef.current = null;
       setRawData(null);
       setPrevRawData(null);
+
+      // ✅ Reset here explicitly for new instrument
       closedFetchDone.current = false;
     }
 
@@ -79,9 +81,15 @@ export function useOptionChain(instrument) {
       rawDataRef.current = data;
       setRawData(data);
       setFetchedAt(Date.now());
+      // ✅ CRITICAL FIX: mark closed fetch as done ONLY after success
+      if (!isMarketOpen()) {
+        closedFetchDone.current = true;
+      }
       setError(null);
     } catch (err) {
       if (latestRequestRef.current !== requestId) return; // stale
+      // ❗ DO NOT mark as done on failure
+      closedFetchDone.current = false;
       setError(err?.message ?? "Failed to fetch option chain");
     } finally {
       if (latestRequestRef.current === requestId) setLoading(false);
@@ -90,7 +98,7 @@ export function useOptionChain(instrument) {
 
   // ── Initial load + symbol change ──────────────────────────
   useEffect(() => {
-    closedFetchDone.current = !isMarketOpen();
+    closedFetchDone.current = false;
     load(instrument, true);
   }, [instrument, load]);
 
@@ -102,8 +110,7 @@ export function useOptionChain(instrument) {
         closedFetchDone.current = false;
         load(instrument);
       } else if (!closedFetchDone.current) {
-        closedFetchDone.current = true;
-        load(instrument);
+        load(instrument); // no pre-marking
       }
     };
     const id = setInterval(tick, REFRESH_MS);

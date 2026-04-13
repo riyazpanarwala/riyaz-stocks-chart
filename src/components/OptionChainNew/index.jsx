@@ -8,8 +8,8 @@ import FO_LIST from "./FOlist.js";
 import { pcrLabel } from "./utils/formatters.js";
 
 // ── Hooks ─────────────────────────────────────────────────────
-import { useOptionChain }    from "./hooks/useOptionChain.js";
-import { useChainDerived }   from "./hooks/useChainDerived.js";
+import { useOptionChain }     from "./hooks/useOptionChain.js";
+import { useChainDerived }    from "./hooks/useChainDerived.js";
 import { useSnapshotHistory } from "./hooks/useSnapshotHistory.js";
 
 // ── UI components ─────────────────────────────────────────────
@@ -63,10 +63,13 @@ export default function App({ initialSymbol = null }) {
   }, [instrument]);
 
   // ── Derived chain data (all memoised in one place) ────────
+  // FIX #11: useChainDerived now returns `activeRange` so the scalpMode
+  // badge label is always consistent with the actual display slice.
   const {
     rows, prevRows, displayRows, prevDisplayRows,
     expiries, activeExpiry, underlyingValue,
     atm, pcr, maxPain, sig, chartData,
+    activeRange,
   } = useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode });
 
   // ── Snapshot history + breakout signals ──────────────────
@@ -86,6 +89,10 @@ export default function App({ initialSymbol = null }) {
   const timestamp = rawData?.timestamp ?? "—";
   const pcrVal    = sig ? parseFloat(sig.pcr) : 0;
   const pcrColor  = pcrVal > 1.2 ? C.green : pcrVal < 0.8 ? C.red : C.yellow;
+
+  // FIX #6: guard distToRes/distToSup (now number|null) in footer display.
+  const fmtFooterDist = (val, prefix) =>
+    val != null && Number.isFinite(val) ? `${prefix}${val}` : "—";
 
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "'IBM Plex Mono',monospace" }}>
@@ -169,9 +176,11 @@ export default function App({ initialSymbol = null }) {
                 Expiry: {activeExpiry}
               </span>
             )}
+            {/* FIX #11: use activeRange from the hook so this badge always
+                matches the actual display slice, even if constants change. */}
             {scalpMode && (
               <span style={{ fontSize: 10, background: "#2d2200", color: C.yellow, padding: "2px 8px", borderRadius: 4 }}>
-                Showing ±{isIndex ? 200 : 100} points from current price
+                Showing ±{activeRange} points from current price
               </span>
             )}
           </div>
@@ -240,6 +249,15 @@ export default function App({ initialSymbol = null }) {
               <span>·</span>
               <span>Max Pain: <b style={{ color: C.yellow }}>{maxPain || "—"}</b></span>
               <span>·</span>
+              {/* FIX #6: distToRes/distToSup are number|null — guard here too */}
+              {sig && (
+                <>
+                  <span>Resistance: <b style={{ color: C.red }}>{fmtFooterDist(sig.distToRes, "+")}</b></span>
+                  <span>·</span>
+                  <span>Support: <b style={{ color: C.green }}>{fmtFooterDist(sig.distToSup, "-")}</b></span>
+                  <span>·</span>
+                </>
+              )}
               <span>
                 Market mood (PCR):{" "}
                 <b style={{ color: pcrColor }}>{sig ? pcrLabel(pcrVal) : "—"}</b>

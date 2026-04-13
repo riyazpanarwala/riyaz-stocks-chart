@@ -334,27 +334,47 @@ function strikeMigration(prevRows, currRows, prevSpot, currSpot) {
   return signals;
 }
 
+/**
+ * FIX #7: Velocity breakout now uses actual wall-clock timestamps from each
+ * snapshot's `ts` field instead of assuming evenly-spaced intervals.
+ *
+ * Previously the check only used VELOCITY_SNAPSHOTS count, which meant a user
+ * manually retrying three times in quick succession would produce near-zero
+ * elapsed time but a large spot move — generating false momentum signals.
+ *
+ * The guard requires at least MIN_ELAPSED_MS of real elapsed time across the
+ * velocity window before firing.  The default matches ≈2 auto-refresh cycles.
+ */
+const VELOCITY_MIN_ELAPSED_MS = 90_000; // 1.5 min — slightly under 2× REFRESH_MS
+
 function velocityBreakout(snapshots) {
   const signals = [];
   if (snapshots.length < THRESHOLDS.VELOCITY_SNAPSHOTS) return signals;
 
   const recent = snapshots.slice(-THRESHOLDS.VELOCITY_SNAPSHOTS);
-  const spotMoves = recent.slice(1).map((s, i) => s.spot - recent[i].spot);
-  const avgMove = spotMoves.reduce((a, b) => a + b, 0) / spotMoves.length;
+  const first  = recent[0];
+  const last   = recent[recent.length - 1];
 
-  const first = recent[0];
-  const last = recent[recent.length - 1];
   if (!first?.rows?.length || !last?.rows?.length) return signals;
 
-  const pitch = strikePitch(last.rows);
-  const totalMove = last.spot - first.spot;
+  // FIX #7: require minimum real elapsed time — guards against rapid manual
+  // retries stacking up multiple near-simultaneous snapshots that would
+  // otherwise look like high-velocity moves.
+  const elapsedMs = (last.ts ?? 0) - (first.ts ?? 0);
+  if (elapsedMs < VELOCITY_MIN_ELAPSED_MS) return signals;
+
+  const spotMoves = recent.slice(1).map((s, i) => s.spot - recent[i].spot);
+  const avgMove   = spotMoves.reduce((a, b) => a + b, 0) / spotMoves.length;
+
+  const pitch      = strikePitch(last.rows);
+  const totalMove  = last.spot - first.spot;
   const pctOfPitch = Math.abs(totalMove) / pitch;
 
   if (pctOfPitch <= THRESHOLDS.VELOCITY_MIN_PCT) return signals;
 
   if (avgMove > 0) {
     const totalPeOI = last.rows.reduce((s, r) => s + r.PE.openInterest, 0);
-    const nearPeOI = last.rows
+    const nearPeOI  = last.rows
       .filter((r) => r.strikePrice <= last.spot && r.strikePrice >= last.spot - pitch * 2)
       .reduce((s, r) => s + r.PE.openInterest, 0);
 
@@ -362,13 +382,13 @@ function velocityBreakout(snapshots) {
       signals.push({
         id: "VELOCITY_UP", type: "BULLISH_MOMENTUM",
         strength: Math.min(100, Math.round(pctOfPitch * 35)),
-        title: `Upside momentum — spot moved ${totalMove.toFixed(0)} pts in ~4 min with put support`,
+        title: `Upside momentum — spot moved ${totalMove.toFixed(0)} pts in ~${Math.round(elapsedMs / 60000)} min with put support`,
         detail: "Consistent upward velocity with put writers defending below. Momentum breakout pattern forming.",
         strike: null, source: "Velocity",
       });
   } else {
     const totalCeOI = last.rows.reduce((s, r) => s + r.CE.openInterest, 0);
-    const nearCeOI = last.rows
+    const nearCeOI  = last.rows
       .filter((r) => r.strikePrice >= last.spot && r.strikePrice <= last.spot + pitch * 2)
       .reduce((s, r) => s + r.CE.openInterest, 0);
 
@@ -376,7 +396,7 @@ function velocityBreakout(snapshots) {
       signals.push({
         id: "VELOCITY_DOWN", type: "BEARISH_MOMENTUM",
         strength: Math.min(100, Math.round(pctOfPitch * 35)),
-        title: `Downside momentum — spot dropped ${Math.abs(totalMove).toFixed(0)} pts in ~4 min with call resistance`,
+        title: `Downside momentum — spot dropped ${Math.abs(totalMove).toFixed(0)} pts in ~${Math.round(elapsedMs / 60000)} min with call resistance`,
         detail: "Consistent downward velocity with call writers overhead. Breakdown momentum pattern forming.",
         strike: null, source: "Velocity",
       });
