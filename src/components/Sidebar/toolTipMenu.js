@@ -45,8 +45,8 @@ const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
       {tooltipOpen && (
         <div
           className={styles.tooltip}
-          onMouseEnter={showTooltip}
-          onMouseLeave={hideTooltip}
+          // onMouseEnter={showTooltip}
+          // onMouseLeave={hideTooltip}
           style={{
             position: "fixed",
             top: pos.top,
