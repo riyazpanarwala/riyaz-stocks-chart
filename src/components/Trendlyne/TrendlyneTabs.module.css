@@ -1,42 +1,43 @@
 /* ─────────────────────────────────────────────
-   TrendlyneTabs.module.css
+   TrendlyneTabs.module.css  — using globals.css vars
    ───────────────────────────────────────────── */
 
 .mainDiv {
-  width:   100%;
-  display: flex;
+  width:          100%;
+  display:        flex;
   justify-content: space-between;
-  gap:     12px;
-  padding: 14px 16px;
+  gap:            12px;
+  padding:        14px 16px;
 }
 
 .mainDiv > div {
-  min-width:     340px;
-  background:    #12151f;
-  border:        1px solid rgba(255,255,255,0.07);
-  border-radius: 10px;
-  overflow:      hidden;
+  min-width:      340px;
+  background:     var(--surface-1);           /* #12151f */
+  border:         1px solid var(--bd-faint);  /* rgba(255,255,255,0.05) */
+  border-radius:  var(--radius-md);           /* 8px — or keep 10px */
+  overflow:       hidden;
 }
 
 .loadingBox,
 .errorBox {
-  padding:       26px 20px;
-  border:        1px solid rgba(255,255,255,0.07);
-  border-radius: 10px;
-  text-align:    center;
-  background:    #181c28;
-  color:         #7a82a0;
-  font-size:     13px;
+  padding:        26px 20px;
+  border:         1px solid var(--bd-faint);
+  border-radius:  var(--radius-md);
+  text-align:     center;
+  background:     var(--surface-2);           /* #181c28 */
+  color:          var(--tx-second);           /* #7a82a0 */
+  font-size:      13px;
+  font-family:    var(--font-ui);
 }
 
 .spinner {
-  width:         20px;
-  height:        20px;
-  border:        2px solid rgba(255,255,255,0.08);
-  border-top-color: #00cff7;
-  border-radius: 50%;
-  animation:     spin 0.65s linear infinite;
-  margin:        0 auto 10px;
+  width:          20px;
+  height:         20px;
+  border:         2px solid var(--bd-dim);    /* rgba(255,255,255,0.09) */
+  border-top-color: var(--accent);            /* #00cff7 */
+  border-radius:  50%;
+  animation:      spin 0.65s linear infinite;
+  margin:         0 auto 10px;
 }
 
 @keyframes spin {
@@ -45,6 +46,14 @@
 }
 
 @media (max-width: 768px) {
-  .mainDiv { display: block; padding: 12px; gap: 0; }
-  .mainDiv > div { margin-bottom: 12px; min-width: auto; width: 100%; }
+  .mainDiv { 
+    display: block; 
+    padding: 12px; 
+    gap: 0; 
+  }
+  .mainDiv > div { 
+    margin-bottom: 12px; 
+    min-width: auto; 
+    width: 100%; 
+  }
 }

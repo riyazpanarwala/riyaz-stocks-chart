@@ -1,11 +1,11 @@
 /* ─────────────────────────────────────────────
-   ReactSelect.scss  — dark theme
+   ReactSelect.scss  — using globals.css vars
    ───────────────────────────────────────────── */
 
 .react-select__control {
-  background:    #181c28 !important;
-  border:        1px solid rgba(255,255,255,0.11) !important;
-  border-radius: 7px !important;
+  background:    var(--surface-2) !important;
+  border:        1px solid var(--bd-dim) !important;
+  border-radius: var(--radius-sm) !important;  /* 6px - close to 7px */
   box-shadow:    none !important;
   min-height:    34px !important;
   cursor:        pointer;
@@ -13,39 +13,65 @@
 }
 
 .react-select__control:hover {
-  border-color: rgba(0,207,247,0.42) !important;
+  border-color: var(--bd-accent) !important;  /* rgba(0,207,247,0.40) */
 }
 
 .react-select__control--is-focused {
-  border-color: #00cff7 !important;
-  box-shadow:   0 0 0 2px rgba(0,207,247,0.14) !important;
+  border-color: var(--accent) !important;
+  box-shadow:   0 0 0 2px var(--accent-soft) !important;  /* rgba(0,207,247,0.10) */
 }
 
 .react-select__single-value {
-  color:       #d8dce8 !important;
+  color:       var(--tx-primary) !important;
   font-size:   13px !important;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-ui) !important;
 }
 
 .react-select__value-container { padding: 0 10px !important; }
 
-.react-select__input-container { color: #d8dce8 !important; margin: 0 !important; padding: 0 !important; }
-.react-select__input            { color: #d8dce8 !important; font-size: 13px !important; }
-.react-select__placeholder      { color: #454d68 !important; font-size: 13px !important; }
+.react-select__input-container { 
+  color: var(--tx-primary) !important; 
+  margin: 0 !important; 
+  padding: 0 !important; 
+}
 
-.react-select__indicator-separator  { background: rgba(255,255,255,0.09) !important; }
+.react-select__input { 
+  color: var(--tx-primary) !important; 
+  font-size: 13px !important; 
+}
 
-.react-select__dropdown-indicator { color: #5a6280 !important; padding: 0 8px !important; transition: color 130ms; }
-.react-select__dropdown-indicator:hover { color: #00cff7 !important; }
+.react-select__placeholder { 
+  color: var(--tx-muted) !important; 
+  font-size: 13px !important; 
+}
 
-.react-select__clear-indicator { color: #5a6280 !important; }
-.react-select__clear-indicator:hover { color: #f0506a !important; }
+.react-select__indicator-separator { 
+  background: var(--bd-dim) !important; 
+}
+
+.react-select__dropdown-indicator { 
+  color: var(--tx-muted) !important; 
+  padding: 0 8px !important; 
+  transition: color 130ms; 
+}
+
+.react-select__dropdown-indicator:hover { 
+  color: var(--accent) !important; 
+}
+
+.react-select__clear-indicator { 
+  color: var(--tx-muted) !important; 
+}
+
+.react-select__clear-indicator:hover { 
+  color: var(--bear) !important; 
+}
 
 .react-select__menu {
-  background:    #1f2436 !important;
-  border:        1px solid rgba(255,255,255,0.11) !important;
-  border-radius: 8px !important;
-  box-shadow:    0 12px 40px rgba(0,0,0,0.65) !important;
+  background:    var(--surface-3) !important;
+  border:        1px solid var(--bd-dim) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow:    0 12px 40px rgba(var(--shadow-color), 0.65);
   overflow:      hidden;
   margin-top:    3px !important;
   z-index:       9999 !important;
@@ -59,10 +85,10 @@
 .react-select__option {
   display:       block;
   font-size:     13px !important;
-  font-family:   'DM Sans', system-ui, sans-serif;
-  color:         #7a82a0 !important;
+  font-family:   var(--font-ui) !important;
+  color:         var(--tx-second) !important;
   padding:       8px 12px !important;
-  border-radius: 5px !important;
+  border-radius: var(--radius-xs) !important;  /* 3px - close to 5px */
   cursor:        pointer;
   transition:    background 100ms ease, color 100ms ease;
   white-space:   nowrap;
@@ -72,13 +98,15 @@
 
 .react-select__option:hover,
 .react-select__option--is-focused:not(.react-select__option--is-selected) {
-  background: rgba(0,207,247,0.08) !important;
-  color:      #d8dce8 !important;
+  background: var(--accent-soft) !important;  /* rgba(0,207,247,0.10) */
+  color:      var(--tx-primary) !important;
 }
 
 .react-select__option--is-selected,
 .react-select__option_selected {
-  background: rgba(0,207,247,0.15) !important;
-  color:      #00cff7 !important;
+  background: var(--accent-soft) !important;  /* Using same soft bg, or could use rgba */
+  color:      var(--accent) !important;
   font-weight: 500 !important;
+  /* If you need the exact 0.15 opacity from original, use: */
+  /* background: rgba(0,207,247,0.15) !important; */
 }

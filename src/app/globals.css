@@ -2,81 +2,97 @@
    globals.css  — complete dark theme
    ───────────────────────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap');
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-:root {
-  --bg:          #0c0e14;
-  --surface-1:   #12151f;
-  --surface-2:   #181c28;
-  --surface-3:   #1f2436;
-  --surface-4:   #262d42;
+ :root {
+  /* ── Typography ── */
+  --font-ui:   'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'DM Mono', monospace;
 
-  --bd-faint:    rgba(255,255,255,0.05);
-  --bd-dim:      rgba(255,255,255,0.09);
+  /* ── Core Backgrounds (deeper, more charcoal-blue) ── */
+  --bg:          #0a0e17;           /* Deep navy-black */
+  --surface-1:   #111824;           /* Card backgrounds */
+  --surface-2:   #161d2a;           /* Elevated sections */
+  --surface-3:   #1e2636;           /* Hover/active states */
+  --surface-4:   #252d3f;           /* Borders, dividers */
+
+  /* ── Borders (subtle, refined) ── */
+  --bd-faint:    rgba(255,255,255,0.04);
+  --bd-dim:      rgba(255,255,255,0.08);
   --bd-soft:     rgba(255,255,255,0.14);
-  --bd-accent:   rgba(0,207,247,0.40);
+  --bd-accent:   rgba(56,189,248,0.45);  /* Cyan border glow */
 
-  --tx-primary:  #d8dce8;
-  --tx-second:   #7a82a0;
-  --tx-muted:    #454d68;
-  --tx-inverse:  #0c0e14;
+  /* ── Text (crisper hierarchy) ── */
+  --tx-primary:  #f0f6fc;           /* Almost white */
+  --tx-second:   #8b949e;           /* Muted gray-blue */
+  --tx-muted:    #484f58;           /* Very muted */
+  --tx-inverse:  #0a0e17;           /* For light text on bright bg */
 
-  --accent:      #00cff7;
-  --accent-soft: rgba(0,207,247,0.10);
-  --accent-glow: rgba(0,207,247,0.22);
+  /* ── Accents (brighter, more vibrant) ── */
+  --accent:      #38bdf8;           /* Bright cyan (sky-400) */
+  --accent-soft: rgba(56,189,248,0.12);
+  --accent-glow: rgba(56,189,248,0.30);
 
-  --bull:        #1ec99a;
-  --bull-soft:   rgba(30,201,154,0.12);
-  --bear:        #f0506a;
-  --bear-soft:   rgba(240,80,106,0.12);
-  --warn:        #f0a030;
-  --info:        #5b9cf6;
+  /* ── Status Colors (financial style) ── */
+  --bull:        #10b981;           /* Emerald green (gains) */
+  --bull-soft:   rgba(16,185,129,0.15);
+  --bull-glow:   rgba(16,185,129,0.25);
+  --bull-light: #4de8b8;
+   
+  --bear:        #f85149;           /* Coral red (losses) */
+  --bear-soft:   rgba(248,81,73,0.15);
+  --bear-glow:   rgba(248,81,73,0.25);
+  --bear-light: #ff7a8a;
+  
+  --warn:        #f59e0b;           /* Amber (warnings) */
+  --info:        #3b82f6;           /* Blue (info) */
 
-  --font-ui:   'DM Sans', system-ui, sans-serif;
-  --font-mono: 'DM Mono', 'JetBrains Mono', monospace;
+  --shadow-color: 0, 0, 0; /* For consistent shadow color across themes */
 
-  --radius-xs: 3px;
+  /* ── Chart Colors (matched to UI) ── */
+  --chart-grid-line:     rgba(255,255,255,0.05);
+  --chart-axis:          rgba(255,255,255,0.25);
+  --chart-axis-label:    #6e7681;
+  --chart-crosshair:     rgba(56,189,248,0.60);
+  --chart-edge-fill:     #1e2636;
+  --chart-edge-stroke:   #38bdf8;
+  
+  --chart-vol-bull:      rgba(16,185,129,0.35);
+  --chart-vol-bear:      rgba(248,81,73,0.35);
+  
+  --chart-indicator:     #38bdf8;
+  --chart-macd-line:     #f85149;
+  --chart-macd-signal:   #10b981;
+  --chart-macd-hist:     #3b82f6;
+  
+  --chart-dmi-adx:       #f85149;
+  --chart-dmi-plus:      #38bdf8;
+  --chart-dmi-minus:     #f59e0b;
+  
+  --chart-bb-top:        #f59e0b;
+  --chart-bb-mid:        #f0f6fc;
+  --chart-bb-bottom:     #f59e0b;
+  --chart-bb-fill:       rgba(56,189,248,0.10);
+  
+  --chart-rsi-line:      #f0f6fc;
+  --chart-rsi-band:      rgba(255,255,255,0.12);
+  --chart-rsi-oversold:  #10b981;
+  --chart-rsi-overbought:#f85149;
+  
+  --chart-pos-target:    rgba(16,185,129,1);
+  --chart-pos-target-bg: rgba(16,185,129,0.30);
+  --chart-pos-stop:      rgba(248,81,73,1);
+  --chart-pos-stop-bg:   rgba(248,81,73,0.30);
+  --chart-pos-entry:     rgba(148,163,184,1);
+
+  /* ── Radii (slightly rounder for modern feel) ── */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-xl: 16px;
 
-  --sidebar-w: 200px;
-
-  /* ── Chart-specific colors (add these) ── */
-  --chart-grid-line:     rgba(255,255,255,0.06);
-  --chart-axis:          rgba(255,255,255,0.22);
-  --chart-axis-label:    #6a7290;
-  --chart-crosshair:     rgba(0,207,247,0.55);
-  --chart-edge-fill:     #1f2436;
-  --chart-edge-stroke:   #00cff7;
-  
-  --chart-vol-bull:      rgba(30,201,154,0.30);
-  --chart-vol-bear:      rgba(240,80,106,0.30);
-  
-  --chart-indicator:     #00cff7;
-  --chart-macd-line:     #f0506a;
-  --chart-macd-signal:   #1ec99a;
-  --chart-macd-hist:     #4a90d9;
-  
-  --chart-dmi-adx:       #f0506a;
-  --chart-dmi-plus:      #00cff7;
-  --chart-dmi-minus:     #f5a623;
-  
-  --chart-bb-top:        #f5a623;
-  --chart-bb-mid:        #d8dce8;
-  --chart-bb-bottom:     #f5a623;
-  --chart-bb-fill:       rgba(0,207,247,0.08);
-  
-  --chart-rsi-line:      #d8dce8;
-  --chart-rsi-band:      rgba(255,255,255,0.15);
-  --chart-rsi-oversold:  #1ec99a;
-  --chart-rsi-overbought:#f0506a;
-  
-  --chart-pos-target:    rgba(30,201,154,1);
-  --chart-pos-target-bg: rgba(30,201,154,0.30);
-  --chart-pos-stop:      rgba(240,80,106,1);
-  --chart-pos-stop-bg:   rgba(240,80,106,0.30);
-  --chart-pos-entry:     rgba(180,180,180,1);
+  --sidebar-w: 200px;  /* Slightly wider for financial data */
 }
 
 /* ── Reset ── */

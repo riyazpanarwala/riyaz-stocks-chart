@@ -1,15 +1,15 @@
 /* ─────────────────────────────────────────────
-   Fundamentals.css
+   Fundamentals.css  — using globals.css vars
    ───────────────────────────────────────────── */
 
 .fundamentals-card {
   max-width:     1200px;
   margin:        16px auto;
   padding:       0;
-  border-radius: 12px;
-  border:        1px solid rgba(255,255,255,0.08);
-  background:    #12151f;
-  font-family:   'DM Sans', system-ui, sans-serif;
+  border-radius: var(--radius-lg);           /* 12px */
+  border:        1px solid var(--bd-dim);    /* rgba(255,255,255,0.09) */
+  background:    var(--surface-1);           /* #12151f */
+  font-family:   var(--font-ui);             /* 'DM Sans', system-ui, sans-serif */
   overflow:      hidden;
 }
 
@@ -18,9 +18,9 @@
   padding:        13px 18px;
   font-size:      13px;
   font-weight:    600;
-  color:          #d8dce8;
-  border-bottom:  1px solid rgba(255,255,255,0.07);
-  background:     #181c28;
+  color:          var(--tx-primary);         /* #d8dce8 */
+  border-bottom:  1px solid var(--bd-dim);   /* rgba(255,255,255,0.09) */
+  background:     var(--surface-2);          /* #181c28 */
   letter-spacing: 0.02em;
 }
 
@@ -28,7 +28,7 @@
   display:               grid;
   grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
   gap:                   1px;
-  background:            rgba(255,255,255,0.05);
+  background:            var(--bd-faint);    /* rgba(255,255,255,0.05) */
   padding:               1px;
 }
 
@@ -36,15 +36,17 @@
   display:        flex;
   flex-direction: column;
   padding:        13px 15px;
-  background:     #12151f;
+  background:     var(--surface-1);
   transition:     background 130ms ease;
 }
 
-.fundamentals-item:hover { background: #181c28; }
+.fundamentals-item:hover { 
+  background: var(--surface-2);              /* #181c28 */
+}
 
 .fundamentals-name {
   font-size:      11px;
-  color:          #5a6280;
+  color:          var(--tx-second);          /* #7a82a0 — closest to #5a6280 */
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-bottom:  4px;
@@ -53,7 +55,7 @@
 .fundamentals-value {
   font-size:   15px;
   font-weight: 600;
-  color:       #00cff7;
-  font-family: 'DM Mono', monospace;
+  color:       var(--accent);                /* #00cff7 */
+  font-family: var(--font-mono);             /* 'DM Mono', monospace */
   margin-top:  2px;
 }

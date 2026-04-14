@@ -1,20 +1,8 @@
-import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import { GOOGLE_ANALYTICS_GA_ID } from "../components/config";
 
 import "./globals.css";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
 
 export const metadata = {
   title: "Riyaz Panarwala | Live NSE & BSE Stock Charts",
@@ -28,13 +16,13 @@ export const metadata = {
       index: true,
       follow: true,
     },
-  }
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body>
         {/* Google Analytics */}
         {GOOGLE_ANALYTICS_GA_ID && (
           <>

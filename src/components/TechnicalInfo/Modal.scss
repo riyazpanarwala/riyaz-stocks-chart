@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────
-   Modal.scss
+   Modal.scss  — using globals.css variables
    ───────────────────────────────────────────── */
 
 .modal-overlay {
@@ -18,9 +18,9 @@
 }
 
 .modal-content {
-  background:    #12151f;
-  border:        1px solid rgba(255,255,255,0.10);
-  border-radius: 14px;
+  background:    var(--surface-1);           /* #12151f */
+  border:        1px solid var(--bd-dim);    /* rgba(255,255,255,0.09) */
+  border-radius: var(--radius-lg);           /* 12px (or 14px if you prefer) */
   padding:       0;
   width:         95%;
   max-height:    92vh;
@@ -31,43 +31,46 @@
 
 .modal-content::-webkit-scrollbar             { width: 4px; }
 .modal-content::-webkit-scrollbar-track       { background: transparent; }
-.modal-content::-webkit-scrollbar-thumb       { background: rgba(255,255,255,0.12); border-radius: 2px; }
+.modal-content::-webkit-scrollbar-thumb       { background: var(--tx-muted); border-radius: 2px; }
 
 .close-btn {
   position:      absolute;
   top:           12px;
   right:         14px;
-  background:    rgba(240,80,106,0.14);
-  color:         #f0506a;
-  border:        1px solid rgba(240,80,106,0.28);
+  background:    var(--bear-soft);           /* rgba(240,80,106,0.12) */
+  color:         var(--bear);                /* #f0506a */
+  border:        1px solid rgba(240,80,106,0.28); /* Or var(--bear) with opacity */
   padding:       4px 10px;
   cursor:        pointer;
-  border-radius: 5px;
+  border-radius: var(--radius-xs);           /* 3px (or 5px if preferred) */
   font-size:     13px;
   font-weight:   500;
   z-index:       1;
   transition:    background 130ms ease;
 }
-.close-btn:hover { background: rgba(240,80,106,0.26); }
+
+.close-btn:hover { 
+  background: rgba(240,80,106,0.26);         /* Slightly darker than --bear-soft */
+}
 
 .open-modal-btn {
-  background:    #00cff7;
-  color:         #0c0e14;
+  background:    var(--accent);              /* #00cff7 */
+  color:         var(--tx-inverse);          /* #0c0e14 */
   padding:       8px 16px;
   border:        none;
   cursor:        pointer;
   font-size:     13px;
   font-weight:   600;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);           /* 6px */
 }
 
 .modal-tabs-header {
   display:                 flex;
-  border-bottom:           1px solid rgba(255,255,255,0.08);
-  background:              #181c28;
+  border-bottom:           1px solid var(--bd-dim);  /* rgba(255,255,255,0.09) */
+  background:              var(--surface-2);         /* #181c28 */
   padding:                 0 16px;
-  border-top-left-radius:  14px;
-  border-top-right-radius: 14px;
+  border-top-left-radius:  var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
 }
 
 .modal-tab-btn {
@@ -75,18 +78,22 @@
   border:        none;
   padding:       11px 15px;
   font-size:     13px;
-  font-family:   'DM Sans', system-ui, sans-serif;
+  font-family:   var(--font-ui);             /* 'DM Sans', system-ui, sans-serif */
   cursor:        pointer;
   margin-right:  2px;
   border-bottom: 2px solid transparent;
-  color:         #7a82a0;
+  color:         var(--tx-second);           /* #7a82a0 */
   font-weight:   400;
   transition:    color 130ms ease, border-color 130ms ease;
   outline:       none;
 }
-.modal-tab-btn:hover { color: #d8dce8; }
+
+.modal-tab-btn:hover { 
+  color: var(--tx-primary);                  /* #d8dce8 */
+}
+
 .modal-tab-btn.active {
-  border-bottom: 2px solid #00cff7;
-  color:         #00cff7;
+  border-bottom: 2px solid var(--accent);    /* #00cff7 */
+  color:         var(--accent);
   font-weight:   600;
 }
