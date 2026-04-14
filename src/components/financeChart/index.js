@@ -102,6 +102,16 @@ const FinanceChart = ({
   const trendLineRef = useRef(trendLines);
   const textListRef = useRef(textList);
 
+  // Fix: never read window during render — that crashes SSR/static export.
+  // Initialise to false and update after the component mounts in the browser.
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const {
     calculatedData, ema12, ema26, rsiCalculator, rsiYAccessor,
     angles, macdCalculator, sma20, sma50, sma200, bb, ema5, ema8, ema13, ma1, ma2,
@@ -260,7 +270,6 @@ const FinanceChart = ({
       xAccessor={xAccessor}
       xExtents={xExtents}
       zoomAnchor={lastVisibleItemBasedZoomAnchor}
-      /* dark background for the whole canvas */
       style={{ background: DARK.bg }}
     >
       {/* ── Volume bars ── */}
@@ -276,7 +285,6 @@ const FinanceChart = ({
       {/* ── Main candle chart ── */}
       <Chart id={3} height={chartHeight} yExtents={candleChartExtents}>
 
-        {/* Axes with dark styling */}
         <XAxis
           showGridLines
           gridLinesStrokeStyle={DARK.gridLine}
@@ -297,7 +305,6 @@ const FinanceChart = ({
           fontSize={10}
         />
 
-        {/* Candles */}
         <CandlestickSeries
           wickStroke={openCloseColor}
           fill={openCloseColor}
@@ -305,7 +312,6 @@ const FinanceChart = ({
           candleStrokeWidth={0.5}
         />
 
-        {/* Breakout / Pattern overlays */}
         {breakoutName ? (
           <Breakout patternName={breakoutName} data={initialData} isIntraday={isIntraday} />
         ) : ""}
@@ -314,7 +320,6 @@ const FinanceChart = ({
           <PatternChart patternName={patternName} data={initialData} isIntraday={isIntraday} />
         ) : ""}
 
-        {/* Mouse coords */}
         <MouseCoordinateY
           rectWidth={margin.right}
           displayFormat={pricesDisplayFormat}
@@ -334,7 +339,6 @@ const FinanceChart = ({
           fontSize={10}
         />
 
-        {/* Last-price edge indicator */}
         <EdgeIndicator
           itemType="last"
           rectWidth={margin.right}
@@ -347,7 +351,6 @@ const FinanceChart = ({
           fontFamily="DM Mono, monospace"
         />
 
-        {/* Trendline */}
         <TrendLine
           ref={saveInteractiveNode("Trendline", 3)}
           trends={trendLines}
@@ -369,7 +372,6 @@ const FinanceChart = ({
           }}
         />
 
-        {/* Interactive text */}
         <InteractiveText
           ref={saveInteractiveNode("Interactive", 3)}
           enabled={textEnable}
@@ -390,7 +392,6 @@ const FinanceChart = ({
           }}
         />
 
-        {/* Measurement */}
         <Measurement
           ref={saveInteractiveNode("Measurement", 3)}
           enabled={measurementEnable}
@@ -400,7 +401,6 @@ const FinanceChart = ({
           interactiveState={{}}
         />
 
-        {/* Long / Short positions */}
         {positionName && (
           <ClickCallback
             onClick={(e, moreProps) => {
@@ -451,7 +451,6 @@ const FinanceChart = ({
           />
         ))}
 
-        {/* Shapes */}
         {shapeName && (
           <ClickCallback
             onClick={(e, moreProps) => {
@@ -528,7 +527,9 @@ const FinanceChart = ({
           <MACrossOverChart ma1={ma1} ma2={ma2} indicatorName={indicatorName} isIntraday={isIntraday} />
         ) : ""}
 
-        {window.innerWidth <= 768 ? <ZoomButtons /> : ""}
+        {/* Fix: isMobile state (set after mount) replaces the direct
+            window.innerWidth call that crashed Next.js SSR/static builds */}
+        {isMobile ? <ZoomButtons /> : ""}
 
         <OHLCTooltip
           origin={[8, 16]}

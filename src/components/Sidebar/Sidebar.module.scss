@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────
-   Sidebar.module.scss  — fixed tooltip + dark theme
+   Sidebar.module.scss  — fixed hamburger overlap + dark theme
    ───────────────────────────────────────────── */
 
 /* ── Shell ── */
@@ -17,9 +17,9 @@
   border-right:     1px solid rgba(255,255,255,0.07);
   box-shadow:       2px 0 20px rgba(0,0,0,0.55);
   transition:       transform 0.3s ease;
-  z-index:          500;          /* must be above main content */
+  z-index:          500;
   overflow-y:       auto;
-  overflow-x:       visible;      /* needed for tooltip overflow */
+  overflow-x:       visible;
 }
 
 .sidebar::-webkit-scrollbar             { width: 3px; }
@@ -44,7 +44,6 @@
   gap:            10px;
   letter-spacing: 0.01em;
   transition:     background 130ms ease, color 130ms ease;
-  /* KEY: relative so tooltip can position absolutely off this */
   position:       relative;
   overflow:       visible;
 }
@@ -90,7 +89,7 @@
   border-radius: 6px;
   border:        1px solid rgba(255,255,255,0.10);
   cursor:        pointer;
-  z-index:       1000;
+  z-index:       600;
   box-shadow:    0 2px 8px rgba(0,0,0,0.50);
   transition:    background 130ms ease, color 130ms ease;
 }
@@ -100,12 +99,47 @@
   color:      #00cff7;
 }
 
+/* ── Close button (replaces hamburger when sidebar is open on mobile) ── */
+/* Sits just inside the right edge of the sidebar so it never overlaps content */
+.closeBtn {
+  display:       none;
+  position:      fixed;
+  top:           12px;
+  /* 200px sidebar width − 40px button width − 4px gap from edge */
+  left:          156px;
+  background:    rgba(240,80,106,0.14);
+  color:         #f0506a;
+  font-size:     18px;
+  padding:       8px 10px;
+  border-radius: 6px;
+  border:        1px solid rgba(240,80,106,0.30);
+  cursor:        pointer;
+  /* Must be above the open sidebar (500) and the overlay (450) */
+  z-index:       700;
+  box-shadow:    0 2px 8px rgba(0,0,0,0.50);
+  transition:    background 130ms ease;
+  line-height:   1;
+}
+
+.closeBtn:hover {
+  background: rgba(240,80,106,0.28);
+}
+
+/* ── Overlay — dims page behind open sidebar on mobile ── */
+.overlay {
+  display:    none;
+  position:   fixed;
+  inset:      0;
+  background: rgba(0,0,0,0.55);
+  z-index:    450;
+}
+
 /* ─────────────────────────────────────────────
-   TOOLTIP SUBMENU  — critical fixes
+   TOOLTIP SUBMENU
    ───────────────────────────────────────────── */
 .tooltip {
   position:      absolute;
-  left:          100%;          /* sits to the right of sidebar */
+  left:          100%;
   top:           0;
   background:    #1f2436;
   border:        1px solid rgba(255,255,255,0.11);
@@ -116,9 +150,7 @@
   overflow-y:    auto;
   overflow-x:    hidden;
   box-shadow:    8px 4px 32px rgba(0,0,0,0.65);
-  /* KEY: z-index must beat sidebar (500) */
   z-index:       600;
-  /* prevent parent overflow:hidden from clipping */
   pointer-events: auto;
 }
 
@@ -155,6 +187,8 @@
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .hamburger { display: block; }
+  .closeBtn  { display: block; }
+  .overlay   { display: block; }
 
   .sidebar              { transform: translateX(-200px); }
   .sidebar.open         { transform: translateX(0); }
