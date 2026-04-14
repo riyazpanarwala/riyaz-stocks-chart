@@ -10,10 +10,19 @@ const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
   const showTooltip = () => {
     clearTimeout(hideTimer.current);
     const rect = ref.current.getBoundingClientRect();
-    setPos({
-      top: rect.top - rect.height / 2,
-      left: rect.right + 5,
-    });
+
+    if (rect.top + rect.height / 2 < 220) {
+      setPos({
+        top: rect.top + rect.height / 2 + 40, // Position tooltip above the button
+        left: rect.right + 5,
+      });
+    } else {
+      setPos({
+        top: rect.top + rect.height / 2, // Center tooltip vertically on button
+        left: rect.right + 5,
+      });
+    }
+
     setTooltipOpen(true);
   };
 
