@@ -8,27 +8,28 @@ import {
 import { XAxis, YAxis } from "@riyazpanarwala/axes";
 import { format } from "d3-format";
 import { timeFormat } from "d3-time-format";
-
-const macdAppearance = {
-  strokeStyle: {
-    macd: "#FF0000",
-    signal: "#00F300",
-  },
-  fillStyle: {
-    divergence: "#4682B4",
-  },
-};
-
-const mouseEdgeAppearance = {
-  textFill: "#542605",
-  stroke: "#05233B",
-  strokeOpacity: 1,
-  strokeWidth: 3,
-  arrowWidth: 5,
-  fill: "#BCDEFA",
-};
+import DARK from "./colorscheme.js";
 
 const MACDChart = ({ macdCalculator }) => {
+  const macdAppearance = {
+    strokeStyle: {
+      macd:   DARK.macdLine,
+      signal: DARK.macdSignal,
+    },
+    fillStyle: {
+      divergence: DARK.macdHist,
+    },
+  };
+
+  const mouseEdgeAppearance = {
+    textFill:      DARK.macdEdgeText,
+    stroke:        DARK.macdEdgeStroke,
+    strokeOpacity: 1,
+    strokeWidth:   1,
+    arrowWidth:    4,
+    fill:          DARK.macdEdgeFill,
+  };
+
   return (
     <>
       <XAxis axisAt="bottom" orient="bottom" />

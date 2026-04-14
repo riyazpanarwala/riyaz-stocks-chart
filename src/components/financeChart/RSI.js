@@ -12,15 +12,14 @@ const RSIChart = ({ data, rsiYAccessor, rsiCalculator }) => {
       <RSISeries
         yAccessor={rsiYAccessor}
         strokeStyle={{
-          line: "#000000",
-          top: "#B8C2CC",
-          middle: "#8795A1",
-          bottom: "#B8C2CC",
-          outsideThreshold: "green",
-          insideThreshold: "blue",
+          line:             DARK.rsiLine,
+          top:              DARK.rsiBand,
+          middle:           DARK.rsiBand,
+          bottom:           DARK.rsiBand,
+          outsideThreshold: DARK.rsiOversold,
+          insideThreshold:  DARK.rsiOverbought,
         }}
       />
-
       <RSITooltip
         origin={[8, 32]}
         labelFill={DARK.axisLabel}
