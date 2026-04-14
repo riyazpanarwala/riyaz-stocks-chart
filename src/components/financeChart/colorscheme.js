@@ -1,83 +1,91 @@
-/* ── Dark theme palette (matches globals.css) ── */
+// cssVar.js - Helper to read CSS custom properties
+export const getCssVar = (name, fallback) => {
+  if (typeof window === "undefined") return fallback;
+  const val = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return val || fallback;
+};
+
 const DARK = {
-  /* ── Canvas / structural ── */
-  bg:           "#0c0e14",
-  gridLine:     "rgba(255,255,255,0.06)",
-  axis:         "rgba(255,255,255,0.22)",
-  axisLabel:    "#6a7290",
-  crosshair:    "rgba(0,207,247,0.55)",
-  edgeFill:     "#1f2436",
-  edgeStroke:   "#00cff7",
-  edgeText:     "#d8dce8",
+  // Canvas/structural - read from CSS
+  bg: getCssVar("--bg", "#0c0e14"),
+  gridLine: getCssVar("--chart-grid-line", "rgba(255,255,255,0.06)"),
+  axis: getCssVar("--chart-axis", "rgba(255,255,255,0.22)"),
+  axisLabel: getCssVar("--chart-axis-label", "#6a7290"),
+  crosshair: getCssVar("--chart-crosshair", "rgba(0,207,247,0.55)"),
+  edgeFill: getCssVar("--chart-edge-fill", "#1f2436"),
+  edgeStroke: getCssVar("--accent", "#00cff7"), // Reuse UI accent
+  edgeText: getCssVar("--tx-primary", "#d8dce8"),
 
-  /* ── Candle / bar ── */
-  bull:         "#1ec99a",
-  bear:         "#f0506a",
-  volBull:      "rgba(30,201,154,0.30)",
-  volBear:      "rgba(240,80,106,0.30)",
+  // Candle/bar - synced with UI bull/bear
+  bull: getCssVar("--bull", "#1ec99a"),
+  bear: getCssVar("--bear", "#f0506a"),
+  volBull: getCssVar("--chart-vol-bull", "rgba(30,201,154,0.30)"),
+  volBear: getCssVar("--chart-vol-bear", "rgba(240,80,106,0.30)"),
 
-  /* ── Mouse / coordinate ── */
-  mouseCoord:   "#1f2436",
-  mouseText:    "#d8dce8",
+  // Mouse/coordinate
+  mouseCoord: getCssVar("--surface-3", "#1f2436"),
+  mouseText: getCssVar("--tx-primary", "#d8dce8"),
 
-  /* ── Text ── */
-  ohlcText:     "#7a82a0",
-  tx_primary:   "#d8dce8",
+  // Text
+  ohlcText: getCssVar("--tx-second", "#7a82a0"),
+  tx_primary: getCssVar("--tx-primary", "#d8dce8"),
 
-  /* ── Indicators (single accent used across IndicatorChart, SuperTrendChart, OBV) ── */
-  indicator:    "#00cff7",
+  // Indicators
+  indicator: getCssVar("--chart-indicator", "#00cff7"),
 
-  /* ── MACD series ── */
-  macdLine:     "#f0506a",
-  macdSignal:   "#1ec99a",
-  macdHist:     "#4a90d9",
-  macdEdgeFill: "#1f2436",
-  macdEdgeStroke:"#00cff7",
-  macdEdgeText: "#d8dce8",
+  // MACD
+  macdLine: getCssVar("--chart-macd-line", "#f0506a"),
+  macdSignal: getCssVar("--chart-macd-signal", "#1ec99a"),
+  macdHist: getCssVar("--chart-macd-hist", "#4a90d9"),
+  macdEdgeFill: getCssVar("--surface-3", "#1f2436"),
+  macdEdgeStroke: getCssVar("--accent", "#00cff7"),
+  macdEdgeText: getCssVar("--tx-primary", "#d8dce8"),
 
-  /* ── MA crossover annotations ── */
-  longArrow:    "#1ec99a",
-  shortArrow:   "#f0506a",
+  // MA crossover
+  longArrow: getCssVar("--bull", "#1ec99a"),
+  shortArrow: getCssVar("--bear", "#f0506a"),
 
-  /* ── DMI ── */
-  dmiAdx:       "#f0506a",
-  dmiPlusDI:    "#00cff7",
-  dmiMinusDI:   "#f5a623",
+  // DMI
+  dmiAdx: getCssVar("--chart-dmi-adx", "#f0506a"),
+  dmiPlusDI: getCssVar("--chart-dmi-plus", "#00cff7"),
+  dmiMinusDI: getCssVar("--chart-dmi-minus", "#f5a623"),
 
-  /* ── Bollinger Bands ── */
-  bbTop:        "#f5a623",
-  bbMiddle:     "#d8dce8",
-  bbBottom:     "#f5a623",
-  bbFill:       "rgba(0,207,247,0.08)",
+  // Bollinger
+  bbTop: getCssVar("--chart-bb-top", "#f5a623"),
+  bbMiddle: getCssVar("--chart-bb-mid", "#d8dce8"),
+  bbBottom: getCssVar("--chart-bb-bottom", "#f5a623"),
+  bbFill: getCssVar("--chart-bb-fill", "rgba(0,207,247,0.08)"),
 
-  /* ── RSI series ── */
-  rsiLine:      "#d8dce8",
-  rsiBand:      "rgba(255,255,255,0.15)",
-  rsiOversold:  "#1ec99a",
-  rsiOverbought:"#f0506a",
+  // RSI
+  rsiLine: getCssVar("--chart-rsi-line", "#d8dce8"),
+  rsiBand: getCssVar("--chart-rsi-band", "rgba(255,255,255,0.15)"),
+  rsiOversold: getCssVar("--chart-rsi-oversold", "#1ec99a"),
+  rsiOverbought: getCssVar("--chart-rsi-overbought", "#f0506a"),
 
-  /* ── Annotations (breakout / pattern pins) ── */
-  annotBull:    "#1ec99a",
-  annotBear:    "#f0506a",
-  annotVolume:  "#00cff7",
+  // Annotations
+  annotBull: getCssVar("--bull", "#1ec99a"),
+  annotBear: getCssVar("--bear", "#f0506a"),
+  annotVolume: getCssVar("--accent", "#00cff7"),
   annotDefault: "#a78bfa",
 
-  /* ── Long / short position lines ── */
-  posTarget:    "rgba(30,201,154,1)",
-  posTargetBg:  "rgba(30,201,154,0.30)",
-  posStop:      "rgba(240,80,106,1)",
-  posStopBg:    "rgba(240,80,106,0.30)",
-  posEntry:     "rgba(180,180,180,1)",
-  posGain:      "rgba(30,201,154,0.18)",
-  posLoss:      "rgba(240,80,106,0.18)",
-  posTextGain:  "#1ec99a",
-  posTextLoss:  "#f0506a",
-  posEdgeFill:  "#2a2e40",
-  posEdgeStroke:"#6a7290",
+  // Position lines
+  posTarget: getCssVar("--chart-pos-target", "rgba(30,201,154,1)"),
+  posTargetBg: getCssVar("--chart-pos-target-bg", "rgba(30,201,154,0.30)"),
+  posStop: getCssVar("--chart-pos-stop", "rgba(240,80,106,1)"),
+  posStopBg: getCssVar("--chart-pos-stop-bg", "rgba(240,80,106,0.30)"),
+  posEntry: getCssVar("--chart-pos-entry", "rgba(180,180,180,1)"),
+  posGain: "rgba(30,201,154,0.18)",
+  posLoss: "rgba(240,80,106,0.18)",
+  posTextGain: getCssVar("--bull", "#1ec99a"),
+  posTextLoss: getCssVar("--bear", "#f0506a"),
+  posEdgeFill: getCssVar("--surface-3", "#2a2e40"),
+  posEdgeStroke: getCssVar("--tx-second", "#6a7290"),
 
-  /* ── Angle calculator overlay ── */
-  angleStroke:  "rgba(0,207,247,0.70)",
-  angleText:    "#d8dce8",
+  // Angle overlay
+  angleStroke: getCssVar("--accent", "rgba(0,207,247,0.70)"),
+  angleText: getCssVar("--tx-primary", "#d8dce8"),
 };
 
 export default DARK;

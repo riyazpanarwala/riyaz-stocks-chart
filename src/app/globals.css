@@ -41,6 +41,42 @@
   --radius-lg: 12px;
 
   --sidebar-w: 200px;
+
+  /* ── Chart-specific colors (add these) ── */
+  --chart-grid-line:     rgba(255,255,255,0.06);
+  --chart-axis:          rgba(255,255,255,0.22);
+  --chart-axis-label:    #6a7290;
+  --chart-crosshair:     rgba(0,207,247,0.55);
+  --chart-edge-fill:     #1f2436;
+  --chart-edge-stroke:   #00cff7;
+  
+  --chart-vol-bull:      rgba(30,201,154,0.30);
+  --chart-vol-bear:      rgba(240,80,106,0.30);
+  
+  --chart-indicator:     #00cff7;
+  --chart-macd-line:     #f0506a;
+  --chart-macd-signal:   #1ec99a;
+  --chart-macd-hist:     #4a90d9;
+  
+  --chart-dmi-adx:       #f0506a;
+  --chart-dmi-plus:      #00cff7;
+  --chart-dmi-minus:     #f5a623;
+  
+  --chart-bb-top:        #f5a623;
+  --chart-bb-mid:        #d8dce8;
+  --chart-bb-bottom:     #f5a623;
+  --chart-bb-fill:       rgba(0,207,247,0.08);
+  
+  --chart-rsi-line:      #d8dce8;
+  --chart-rsi-band:      rgba(255,255,255,0.15);
+  --chart-rsi-oversold:  #1ec99a;
+  --chart-rsi-overbought:#f0506a;
+  
+  --chart-pos-target:    rgba(30,201,154,1);
+  --chart-pos-target-bg: rgba(30,201,154,0.30);
+  --chart-pos-stop:      rgba(240,80,106,1);
+  --chart-pos-stop-bg:   rgba(240,80,106,0.30);
+  --chart-pos-entry:     rgba(180,180,180,1);
 }
 
 /* ── Reset ── */

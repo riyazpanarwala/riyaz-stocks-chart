@@ -11,7 +11,7 @@ const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
     clearTimeout(hideTimer.current);
     const rect = ref.current.getBoundingClientRect();
     setPos({
-      top: rect.top,
+      top: rect.top - rect.height / 2,
       left: rect.right + 5,
     });
     setTooltipOpen(true);
@@ -48,8 +48,9 @@ const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
         >
           {subMenu.map((v) => (
             <div
-              className={`${styles.tooltipItem} ${v.isActive ? styles.active : ""
-                }`}
+              className={`${styles.tooltipItem} ${
+                v.isActive ? styles.active : ""
+              }`}
               onClick={(e) => {
                 setTooltipOpen(false);
                 onClick(e, v.id ? v.id : v);
