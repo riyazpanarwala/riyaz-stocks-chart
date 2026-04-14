@@ -60,22 +60,17 @@ const HeaderWithDropdowns = ({
 
 const styles = {
   header: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    padding: "10px",
-    backgroundColor: "#f5f5f5",
-    borderBottom: "2px solid #ddd",
+    display:         "flex",
+    flexDirection:   "column",
+    alignItems:      "center",
+    padding:         "8px 14px",
+    backgroundColor: "#12151f",
+    borderBottom:    "1px solid rgba(255,255,255,0.09)",
   },
   dropdownContainer: {
     display: "flex",
-    gap: "10px",
-  },
-  select: {
-    padding: "10px",
-    fontSize: "16px",
-    border: "1px solid #ccc",
-    borderRadius: "4px",
+    gap:     "8px",
+    width:   "100%",
   },
 };
 

@@ -1,6 +1,7 @@
 import React from "react";
 import { RSISeries } from "@riyazpanarwala/series";
 import { RSITooltip } from "@riyazpanarwala/tooltip";
+import DARK from "./colorscheme.js";
 
 const RSIChart = ({ data, rsiYAccessor, rsiCalculator }) => {
   if (data.length < 2) {
@@ -22,6 +23,8 @@ const RSIChart = ({ data, rsiYAccessor, rsiCalculator }) => {
 
       <RSITooltip
         origin={[8, 32]}
+        labelFill={DARK.axisLabel}
+        textFill={DARK.tx_primary}
         yAccessor={rsiYAccessor}
         options={rsiCalculator.options()}
       />
