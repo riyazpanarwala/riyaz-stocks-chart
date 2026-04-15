@@ -1,12 +1,18 @@
 import React from "react";
 import { StochasticSeries } from "@riyazpanarwala/series";
 import { StochasticTooltip } from "@riyazpanarwala/tooltip";
-
-const stoAppearance = {
-  stroke: Object.assign({}, StochasticSeries.defaultProps.stroke),
-};
+import { useThemeColors } from "./useThemeColors";
 
 const STOChart = () => {
+  const colors = useThemeColors();
+
+  const stoAppearance = {
+    stroke: {
+      dLine: colors.tx_primary,
+      kLine: colors.tx_primary,
+    }
+  };
+
   return (
     <>
       <StochasticSeries yAccessor={(d) => d.fullSTO} {...stoAppearance} />
@@ -15,6 +21,7 @@ const STOChart = () => {
         yAccessor={(d) => d.fullSTO}
         options={{ windowSize: 20, kWindowSize: 20, dWindowSize: 3 }}
         appearance={stoAppearance}
+        labelFill={colors.ohlcText}
         label="Full STO"
       />
     </>
