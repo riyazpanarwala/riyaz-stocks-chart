@@ -17,6 +17,9 @@ import { isMarketOpen } from "./utils/indianstockmarket";
 import { getCandleArr, fetchHistoricData } from "./common";
 import _ from "lodash";
 
+// ETF trades on NSE as an equity — reuse the NSE_EQ entry
+const etfIndexArr = [{ label: "NSE ETF", value: "NSE_EQ" }];
+
 const useCommonHeader = (isEchart) => {
   const [period, setPeriod] = useState(periodDays[1]);
   const [intervalObj, setInterval] = useState([]);
@@ -91,8 +94,15 @@ const useCommonHeader = (isEchart) => {
     }
   };
 
-  const setIndexes = ({ nse, bse, nseIndex, bseIndex }) => {
-    if (nse && bse) {
+  /**
+   * Determine which index tabs to show based on the selected company's flags.
+   * ETFs are listed on NSE as equities, so we show a single "NSE ETF" entry.
+   */
+  const setIndexes = ({ nse, bse, nseIndex, bseIndex, etf }) => {
+    if (etf) {
+      setNewIndexArr(etfIndexArr);
+      setIndex(etfIndexArr[0]);
+    } else if (nse && bse) {
       setNewIndexArr(indexArr);
       setIndex(indexArr[0]);
     } else if (nse) {

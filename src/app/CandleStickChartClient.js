@@ -232,10 +232,10 @@ const CandleStickChart = () => {
               <div className="action-buttons">
                 {(indexObj.value === "NSE_EQ" ||
                   indexObj.value === "BSE_EQ") && (
-                  <ActionButton onClick={fundaMentalsClick}>
-                    Fundamentals
-                  </ActionButton>
-                )}
+                    <ActionButton onClick={fundaMentalsClick}>
+                      Fundamentals
+                    </ActionButton>
+                  )}
                 <ActionButton onClick={analysisClick}>
                   Technical Analysis
                 </ActionButton>
@@ -290,7 +290,7 @@ const CandleStickChart = () => {
               ""
             )}
 
-            {!companyObj.nseIndex && (
+            {!(companyObj.nseIndex || companyObj.etf) && (
               <TrendlyneChecklist
                 key={companyObj.symbol}
                 symbol={companyObj.symbol}
