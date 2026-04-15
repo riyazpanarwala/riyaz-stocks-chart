@@ -93,6 +93,10 @@ export const getThemeColors = () => ({
 
   surface3: getCssVar("--surface-3", "#1f2436"),
   accentSoft: getCssVar("--accent-soft", "rgba(56,189,248,0.12)"),
+
+  accent: getCssVar("--accent", "#00cff7"),
+  accentSoft: getCssVar("--accent-soft", "rgba(0,207,247,0.08)"),
+  accentGlow: getCssVar("--accent-glow", "rgba(0,207,247,0.18)"),
 });
 
 // Default export for backward compatibility (calls function once)

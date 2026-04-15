@@ -49,8 +49,6 @@ const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
       {tooltipOpen && (
         <div
           className={styles.tooltip}
-          onMouseEnter={showTooltip}
-          onMouseLeave={hideTooltip}
           style={{
             position: "fixed",
             top: pos.top,
@@ -65,9 +63,9 @@ const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
                 }`}
               onClick={(e) => {
                 setTooltipOpen(false);
-                onClick(e, v.id ? v.id : v);
+                onClick(e, v.id ?? v);
               }}
-              key={v.id || v.value || v.label || v.name}
+              key={v.id ?? v.value ?? v.label ?? v.name}
             >
               {v.name || v.label}
             </div>
