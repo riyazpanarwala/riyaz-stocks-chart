@@ -24,6 +24,7 @@ const TradingViewWidget = () => {
       hotlist: true,
       calendar: true,
     };
+    let existingScriptWithListener = null;
 
     const initWidget = () => {
       const container = document.getElementById(containerId);
@@ -47,6 +48,7 @@ const TradingViewWidget = () => {
         // Still loading: wait for the existing script's load event
         const existingScript = document.getElementById(scriptId);
         if (existingScript) {
+          existingScriptWithListener = existingScript;
           existingScript.addEventListener("load", initWidget, { once: true });
         }
       }
@@ -56,6 +58,9 @@ const TradingViewWidget = () => {
     // This prevents stale widget instances and duplicate renders (e.g. React
     // StrictMode double-invoke or HMR hot reload).
     return () => {
+      if (existingScriptWithListener) {
+        existingScriptWithListener.removeEventListener("load", initWidget);
+      }
       const container = document.getElementById(containerId);
       if (container) container.innerHTML = "";
     };

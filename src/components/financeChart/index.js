@@ -363,12 +363,12 @@ const FinanceChart = ({
             disableAllTools();
           }}
           appearance={{
-            strokeStyle: DARK.accent,           // was "#00cff7"
+            strokeStyle: DARK.edgeStroke,           // was "#00cff7"
             strokeWidth: 1.5,
             strokeDasharray: "Solid",
             edgeStrokeWidth: 1,
             edgeFill: DARK.surface3,            // was "#1f2436"
-            edgeStroke: DARK.accent,            // was "#00cff7"
+            edgeStroke: DARK.edgeStroke,            // was "#00cff7"
           }}
         />
 
@@ -467,7 +467,7 @@ const FinanceChart = ({
                     x: xValue, y: yValue, x1: xScale.invert(mouseX + radius),
                     radius,
                     color: DARK.accentSoft,              // was "rgba(0,207,247,0.18)"
-                    strokeStyle: DARK.accent,            // was "#00cff7"
+                    strokeStyle: DARK.edgeStroke,            // was "#00cff7"
                     lineWidth: 1, selected: true,
                   },
                 ]);
@@ -483,7 +483,7 @@ const FinanceChart = ({
                     color: DARK.accentSoft,               // was "rgba(0,207,247,0.12)"
                     lineWidth: 1,
                     selected: true,
-                    strokeStyle: DARK.accent,             // was "#00cff7"
+                    strokeStyle: DARK.edgeStroke,             // was "#00cff7"
                   },
                 ]);
               }
