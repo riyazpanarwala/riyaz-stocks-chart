@@ -4,10 +4,11 @@ import { RSITooltip } from "@riyazpanarwala/tooltip";
 import { useThemeColors } from "./useThemeColors";
 
 const RSIChart = ({ data, rsiYAccessor, rsiCalculator }) => {
+  const DARK = useThemeColors();
+
   if (data.length < 2) {
     return "";
   }
-  const DARK = useThemeColors();
 
   return (
     <>

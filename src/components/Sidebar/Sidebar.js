@@ -155,6 +155,27 @@ const Sidebar = ({
         </div>
       )}
 
+      {isOpen ? (
+        <button
+          type="button"
+          className={styles.closeBtn}
+          onClick={toggleSidebar}
+          aria-label="Close sidebar"
+        >
+          <FaTimes />
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={styles.hamburger}
+          onClick={toggleSidebar}
+          aria-label="Open sidebar"
+        >
+          <FaBars />
+        </button>
+      )}
+
+
       {/* Overlay — tap outside to close on mobile */}
       {isOpen && (
         <div className={styles.overlay} onClick={closeSidebar} />
@@ -183,9 +204,8 @@ const Sidebar = ({
           <span>Text</span>
         </div>
         <div
-          className={`${styles.button} ${
-            measurementEnable ? styles.active : ""
-          }`}
+          className={`${styles.button} ${measurementEnable ? styles.active : ""
+            }`}
           onClick={(e) => {
             closeSidebar();
             handleMeasurementClick(e);
@@ -232,9 +252,8 @@ const Sidebar = ({
         />
         {indicatorName === "ema" ? (
           <div
-            className={`${styles.button} ${
-              isAngleEnabled ? styles.active : ""
-            }`}
+            className={`${styles.button} ${isAngleEnabled ? styles.active : ""
+              }`}
             onClick={(e) => {
               closeSidebar();
               handleEMAangleClick(e);

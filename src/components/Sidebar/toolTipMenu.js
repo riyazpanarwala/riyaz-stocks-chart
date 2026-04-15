@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
   const [tooltipOpen, setTooltipOpen] = useState(false);
@@ -31,6 +31,10 @@ const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
     hideTimer.current = setTimeout(() => setTooltipOpen(false), 120);
   };
 
+  useEffect(() => {
+    return () => clearTimeout(hideTimer.current);
+  }, []);
+
   return (
     <div
       ref={ref}
@@ -45,8 +49,8 @@ const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
       {tooltipOpen && (
         <div
           className={styles.tooltip}
-          // onMouseEnter={showTooltip}
-          // onMouseLeave={hideTooltip}
+          onMouseEnter={showTooltip}
+          onMouseLeave={hideTooltip}
           style={{
             position: "fixed",
             top: pos.top,
@@ -57,9 +61,8 @@ const TooltipSubMenu = ({ styles, tooltipObj, onClick }) => {
         >
           {subMenu.map((v) => (
             <div
-              className={`${styles.tooltipItem} ${
-                v.isActive ? styles.active : ""
-              }`}
+              className={`${styles.tooltipItem} ${v.isActive ? styles.active : ""
+                }`}
               onClick={(e) => {
                 setTooltipOpen(false);
                 onClick(e, v.id ? v.id : v);

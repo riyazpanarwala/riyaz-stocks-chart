@@ -90,6 +90,9 @@ export const getThemeColors = () => ({
   // Angle overlay
   angleStroke: getCssVar("--accent", "rgba(0,207,247,0.70)"),
   angleText: getCssVar("--tx-primary", "#d8dce8"),
+
+  surface3: getCssVar("--surface-3", "#1f2436"),
+  accentSoft: getCssVar("--accent-soft", "rgba(56,189,248,0.12)"),
 });
 
 // Default export for backward compatibility (calls function once)

@@ -15,7 +15,7 @@ export default function ThemeProvider({ children }) {
     setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
     window.dispatchEvent(new CustomEvent('themechange', {
-      detail: { theme }
+      detail: { theme: next },
     }));
 
     localStorage.setItem("theme", next);

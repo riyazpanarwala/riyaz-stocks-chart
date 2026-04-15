@@ -5,13 +5,15 @@ const Tiles = ({ periods, selectedPeriod, setSelectedPeriod }) => {
   return (
     <div className={styles.tilesContainer}>
       {periods.map((period) => (
-        <div
+        <button
+          type="button"
           key={period}
           className={`${styles.tile} ${selectedPeriod === period ? styles.active : ""}`}
+          aria-pressed={selectedPeriod === period}
           onClick={() => setSelectedPeriod(period)}
         >
           {period}
-        </div>
+        </button>
       ))}
     </div>
   );

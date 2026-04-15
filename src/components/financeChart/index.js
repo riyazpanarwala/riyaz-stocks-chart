@@ -363,12 +363,12 @@ const FinanceChart = ({
             disableAllTools();
           }}
           appearance={{
-            strokeStyle: "#00cff7",
+            strokeStyle: DARK.accent,           // was "#00cff7"
             strokeWidth: 1.5,
             strokeDasharray: "Solid",
             edgeStrokeWidth: 1,
-            edgeFill: "#1f2436",
-            edgeStroke: "#00cff7",
+            edgeFill: DARK.surface3,            // was "#1f2436"
+            edgeStroke: DARK.accent,            // was "#00cff7"
           }}
         />
 
@@ -380,10 +380,10 @@ const FinanceChart = ({
           onDoubleClick={handleDoubleClick}
           onDragComplete={onDragComplete}
           defaultText={{
-            bgFill: "#1f2436",
+            bgFill: DARK.surface3,               // was "#1f2436"
             bgOpacity: 0.92,
             bgStrokeWidth: 1,
-            textFill: "#d8dce8",
+            textFill: DARK.tx_primary,          // was "#d8dce8"
             fontFamily: "DM Sans, system-ui, sans-serif",
             fontSize: 12,
             fontStyle: "normal",
@@ -397,7 +397,7 @@ const FinanceChart = ({
           enabled={measurementEnable}
           type={"2D"}
           onBrush={() => { }}
-          fillStyle="rgba(0,207,247,0.08)"
+          fillStyle={DARK.accentSoft}           // was "rgba(0,207,247,0.08)"
           interactiveState={{}}
         />
 
@@ -465,7 +465,9 @@ const FinanceChart = ({
                   {
                     id: Math.random().toString(16).slice(2),
                     x: xValue, y: yValue, x1: xScale.invert(mouseX + radius),
-                    radius, color: "rgba(0,207,247,0.18)", strokeStyle: "#00cff7",
+                    radius,
+                    color: DARK.accentSoft,              // was "rgba(0,207,247,0.18)"
+                    strokeStyle: DARK.accent,            // was "#00cff7"
                     lineWidth: 1, selected: true,
                   },
                 ]);
@@ -478,8 +480,10 @@ const FinanceChart = ({
                     x1: xValue, y1: yValue,
                     x2: xScale.invert(mouseX + w),
                     y2: chartConfig.yScale.invert(mouseY + h),
-                    color: "rgba(0,207,247,0.12)", lineWidth: 1,
-                    selected: true, strokeStyle: "#00cff7",
+                    color: DARK.accentSoft,               // was "rgba(0,207,247,0.12)"
+                    lineWidth: 1,
+                    selected: true,
+                    strokeStyle: DARK.accent,             // was "#00cff7"
                   },
                 ]);
               }
@@ -575,8 +579,8 @@ const FinanceChart = ({
           {indicatorName === "cci" ? <IndicatorChart keyVal="cci" tooltipName={indicatorName} /> : ""}
           {indicatorName === "obv" ? (
             <>
-              <LineSeries yAccessor={(d) => d.obv} stroke="#00cff7" />
-              <CurrentCoordinate yAccessor={(d) => d.obv} fillStyle="#00cff7" />
+              <LineSeries yAccessor={(d) => d.obv} stroke={DARK.indicator} />
+              <CurrentCoordinate yAccessor={(d) => d.obv} fillStyle={DARK.indicator} />
               <CustomTooltip origin={[8, 32]} yAccessor={(d) => d.obv} displayFormat={format(".2s")} tooltipName="OBV" />
             </>
           ) : ""}
