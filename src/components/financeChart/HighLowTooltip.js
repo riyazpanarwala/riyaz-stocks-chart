@@ -1,5 +1,6 @@
 import React from "react";
 import { ToolTipTSpanLabel, ToolTipText } from "@riyazpanarwala/tooltip";
+import { useThemeColors } from "./useThemeColors";
 
 const defaultTexts = {
   h: "Day High: ",
@@ -12,6 +13,7 @@ const HighLowTooltip = ({
   origin = [0, 0],
   displayTextsDefault = defaultTexts,
 }) => {
+  const DARK = useThemeColors();
   const [x, y] = origin;
   const maxValue = Math.max.apply(
     null,
@@ -26,19 +28,19 @@ const HighLowTooltip = ({
     <g className={className} transform={`translate(${x}, ${y})`}>
       <ToolTipText x={0} y={0}>
         <ToolTipTSpanLabel
-          // fill={labelFill}
+          fill={DARK.ohlcText}
           key="label_H"
         >
           {displayTextsDefault.h}
         </ToolTipTSpanLabel>
-        <tspan key="value_H">{maxValue}</tspan>
+        <tspan key="value_H" fill={DARK.tx_primary}>{maxValue}</tspan>
         <ToolTipTSpanLabel
-          // fill={labelFill}
+          fill={DARK.ohlcText}
           key="label_L"
         >
           {displayTextsDefault.l}
         </ToolTipTSpanLabel>
-        <tspan key="value_L">{minValue}</tspan>
+        <tspan key="value_L" fill={DARK.tx_primary}>{minValue}</tspan>
       </ToolTipText>
     </g>
   );

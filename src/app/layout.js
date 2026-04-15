@@ -1,26 +1,14 @@
-import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import { GOOGLE_ANALYTICS_GA_ID } from "../components/config";
+import ThemeProvider from "../components/ThemeProvider";
 
 import "./globals.css";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
 
 export const metadata = {
   title: "Riyaz Panarwala | Live NSE & BSE Stock Charts",
   description:
     "Analyze Indian stocks with live NSE & BSE candlestick charts and technical indicators.",
-
   robots: {
     index: true,
     follow: true,
@@ -28,14 +16,13 @@ export const metadata = {
       index: true,
       follow: true,
     },
-  }
+  },
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {/* Google Analytics */}
+    <html lang="en" data-theme="dark">
+      <body>
         {GOOGLE_ANALYTICS_GA_ID && (
           <>
             <Script
@@ -54,7 +41,9 @@ export default function RootLayout({ children }) {
             </Script>
           </>
         )}
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

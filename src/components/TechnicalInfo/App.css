@@ -1,12 +1,13 @@
-.container {
-  max-width: 100%;
-  margin: auto;
-  padding: 20px;
-}
+/* ─────────────────────────────────────────────
+   TechnicalInfo/App.css
+   ───────────────────────────────────────────── */
+
+.container { max-width: 100%; margin: auto; padding: 0; }
 
 .summary-grid {
-  display: flex;
-  gap: 16px;
+  display:         flex;
+  gap:             12px;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap:       wrap;
+  padding:         16px;
 }

@@ -136,10 +136,7 @@ const CandleStickChart = () => {
   };
 
   const enterFullScreen = async () => {
-    handle.enter(); // Enter fullscreen
-    // setIsFullScreen(true);
-
-    // Lock screen orientation if supported
+    handle.enter();
     if (screen.orientation?.lock) {
       try {
         await screen.orientation.lock("landscape");
@@ -150,10 +147,7 @@ const CandleStickChart = () => {
   };
 
   const exitFullScreen = async () => {
-    handle.exit(); // Exit fullscreen
-    // setIsFullScreen(false);
-
-    // Unlock screen orientation (optional)
+    handle.exit();
     if (screen.orientation?.unlock) {
       screen.orientation.unlock();
     }
@@ -166,7 +160,7 @@ const CandleStickChart = () => {
   if (!companyArr.length) {
     return (
       <section className="page-intro">
-        <h1>Live NSE & BSE Candlestick Charts</h1>
+        <h1>Live NSE &amp; BSE Candlestick Charts</h1>
         <p>
           Analyze Indian stocks using candlestick charts with RSI, MACD, moving
           averages, breakout patterns, and trendlines. Supports both intraday
@@ -208,7 +202,7 @@ const CandleStickChart = () => {
         }
         indexArr={newIndexArr}
       />
-      <div style={{ display: "flex" }}>
+      <div className="app-layout">
         <Sidebar
           handleTrendLineClick={handleTrendLineClick}
           trendLineEnable={trendLineEnable}

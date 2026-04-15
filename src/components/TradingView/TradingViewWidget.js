@@ -24,45 +24,46 @@ const TradingViewWidget = () => {
       hotlist: true,
       calendar: true,
     };
+    let existingScriptWithListener = null;
 
-    // Avoid duplicates
+    const initWidget = () => {
+      const container = document.getElementById(containerId);
+      if (window.TradingView && container) {
+        new window.TradingView.widget(widgetConfig);
+      }
+    };
+
     if (!document.getElementById(scriptId)) {
       const script = document.createElement("script");
       script.id = scriptId;
       script.src = "https://s3.tradingview.com/tv.js";
       script.async = true;
-
-      script.onload = () => {
-        const container = document.getElementById(containerId);
-        if (window.TradingView && container) {
-          new window.TradingView.widget(widgetConfig);
-        }
-      };
-
+      script.onload = initWidget;
       document.body.appendChild(script);
     } else {
-      // If script is already loaded, just reinitialize widget
-      const container = document.getElementById(containerId);
-      if (window.TradingView && container) {
-        new window.TradingView.widget(widgetConfig);
-      } else if (!window.TradingView) {
-        // Script element exists but hasn't loaded yet; wait for load event
+      // Script tag exists — either already loaded or still loading
+      if (window.TradingView) {
+        initWidget();
+      } else {
+        // Still loading: wait for the existing script's load event
         const existingScript = document.getElementById(scriptId);
-        if (existingScript && container) {
-          existingScript.addEventListener('load', () => {
-            if (window.TradingView) {
-              new window.TradingView.widget(widgetConfig);
-            }
-          }, { once: true });
+        if (existingScript) {
+          existingScriptWithListener = existingScript;
+          existingScript.addEventListener("load", initWidget, { once: true });
         }
       }
-
-      // Optional cleanup: remove the widget on unmount
-      return () => {
-        const container = document.getElementById(containerId);
-        if (container) container.innerHTML = "";
-      };
     }
+
+    // Cleanup always runs on unmount regardless of which branch ran above.
+    // This prevents stale widget instances and duplicate renders (e.g. React
+    // StrictMode double-invoke or HMR hot reload).
+    return () => {
+      if (existingScriptWithListener) {
+        existingScriptWithListener.removeEventListener("load", initWidget);
+      }
+      const container = document.getElementById(containerId);
+      if (container) container.innerHTML = "";
+    };
   }, []);
 
   return (

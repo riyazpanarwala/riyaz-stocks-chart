@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useRef, useEffect } from "react";
 import { format } from "d3-format";
 import { timeFormat } from "d3-time-format";
@@ -53,6 +54,7 @@ import STOChart from "./STOChart";
 import BolingerChart from "./BolingerChart";
 import MACrossOverChart from "./MACrossOverChart";
 import technicalAnalysis from "../technical-analysis/index.js";
+import { useThemeColors } from "./useThemeColors";
 const { analyzeMarketStructure } = technicalAnalysis;
 
 const indicatorYExtentsObj = {
@@ -97,36 +99,32 @@ const FinanceChart = ({
   const [longPositionArr, setLongPositionArr] = useState([]);
   const [circles, setCircles] = useState([]);
   const [rectangles, setRectangles] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
   const trendLineRef = useRef(trendLines);
   const textListRef = useRef(textList);
+  const DARK = useThemeColors();
   const {
-    calculatedData,
-    ema12,
-    ema26,
-    rsiCalculator,
-    rsiYAccessor,
-    angles,
-    macdCalculator,
-    sma20,
-    sma50,
-    sma200,
-    bb,
-    ema5,
-    ema8,
-    ema13,
-    ma1,
-    ma2,
+    calculatedData, ema12, ema26, rsiCalculator, rsiYAccessor,
+    angles, macdCalculator, sma20, sma50, sma200, bb, ema5, ema8, ema13, ma1, ma2,
   } = useData(initialData, indicatorName, isIntraday);
-  const ScaleProvider =
-    discontinuousTimeScaleProviderBuilder().inputDateAccessor(
-      (d) => new Date(d.date)
-    );
 
-  const margin = { left: 0, right: 48, top: 0, bottom: 24 };
+  // Fix: never read window during render — that crashes SSR/static export.
+  // Initialise to false and update after the component mounts in the browser.
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const ScaleProvider = discontinuousTimeScaleProviderBuilder()
+    .inputDateAccessor((d) => new Date(d.date));
+
+  const margin = { left: 0, right: 52, top: 0, bottom: 24 };
   let interactiveNodes = {};
 
-  const { data, xScale, xAccessor, displayXAccessor } =
-    ScaleProvider(calculatedData);
+  const { data, xScale, xAccessor, displayXAccessor } = ScaleProvider(calculatedData);
+
   const pricesDisplayFormat = format(".2f");
   const max = xAccessor(data[data.length - 1]);
   let min = 0;
@@ -138,251 +136,126 @@ const FinanceChart = ({
   const xExtents = [min - 5, max + 5];
 
   const gridHeight = height - margin.top - margin.bottom;
-
   const elderRayHeight = 0;
   const barChartHeight = gridHeight / 4;
   const barChartOrigin = (_, h) => [0, h - barChartHeight - elderRayHeight];
   const chartHeight = gridHeight - barChartHeight - elderRayHeight;
 
-  const barChartExtents = (data) => {
-    return data.volume;
-  };
-
-  const candleChartExtents = (data) => {
-    let high = data.high;
-    let low = data.low;
-    if (data.bb && indicatorName === "bolinger") {
-      high = data.bb.top;
-      low = data.bb.bottom;
-    } else if (data.trend && indicatorName === "supertrend") {
-      const trendVal = data.trend;
-      high = high > trendVal ? high : trendVal;
-      low = low < trendVal ? low : trendVal;
+  /* ── Accessors ── */
+  const barChartExtents = (d) => d.volume;
+  const candleChartExtents = (d) => {
+    let high = d.high, low = d.low;
+    if (d.bb && indicatorName === "bolinger") { high = d.bb.top; low = d.bb.bottom; }
+    else if (d.trend && indicatorName === "supertrend") {
+      high = Math.max(high, d.trend);
+      low = Math.min(low, d.trend);
     }
     return [high + (high * 0.1) / 100, low - (low * 0.1) / 100];
   };
+  const yEdgeIndicator = (d) => d.close;
+  const volumeColor = (d) => d.close > d.open ? DARK.volBull : DARK.volBear;
+  const volumeSeries = (d) => d.volume;
+  const openCloseColor = (d) => d.close > d.open ? DARK.bull : DARK.bear;
 
-  const yEdgeIndicator = (data) => {
-    return data.close;
-  };
-
-  const volumeColor = (data) => {
-    return data.close > data.open
-      ? "rgba(38, 166, 154, 0.3)"
-      : "rgba(239, 83, 80, 0.3)";
-  };
-
-  const volumeSeries = (data) => {
-    return data.volume;
-  };
-
-  const openCloseColor = (data) => {
-    return data.close > data.open ? "#26a69a" : "#ef5350";
-  };
-
+  /* ── Interaction handlers ── */
   const handleSelection = (e, interactives, moreProps) => {
-    const state = toObject(interactives, (each) => {
-      return [each.type, each.objects];
-    });
-
+    const state = toObject(interactives, (each) => [each.type, each.objects]);
     if ("Trendline" in state && state["Trendline"].length > 0) {
       trendLineRef.current = state["Trendline"];
       setTrendLines(state.Trendline);
-      // updateTrendLine(state.Trendline);
     }
-
     if ("Interactive" in state && state["Interactive"].length > 0) {
       textListRef.current = state["Interactive"];
       setTextList(state.Interactive);
-      // updateTextList(state.Interactive)
     }
   };
 
-  const saveInteractiveNode = (type, chartId) => {
-    return (node) => {
-      const key = `${type}_${chartId}`;
-      if (isDefined(node) || isNotDefined(interactiveNodes[key])) {
-        interactiveNodes = {
-          ...interactiveNodes,
-          [key]: { type, chartId, node },
-        };
-      }
-      return interactiveNodes;
-    };
+  const saveInteractiveNode = (type, chartId) => (node) => {
+    const key = `${type}_${chartId}`;
+    if (isDefined(node) || isNotDefined(interactiveNodes[key])) {
+      interactiveNodes = { ...interactiveNodes, [key]: { type, chartId, node } };
+    }
+    return interactiveNodes;
   };
 
   const handleDelete = () => {
     if (trendLineRef.current) {
-      const newTrendlines = trendLineRef?.current?.filter(
-        (each) => !each.selected
-      );
-
-      trendLineRef.current = newTrendlines;
-      setTrendLines(newTrendlines);
-      // updateTrendLine(newTrendlines)
+      const n = trendLineRef.current.filter((e) => !e.selected);
+      trendLineRef.current = n;
+      setTrendLines(n);
     }
-
     if (textListRef.current) {
-      const newTextList = textListRef?.current?.filter((each) => {
-        if (!("selected" in each)) return each;
-        else if (!each.selected) {
-          return each;
-        }
-      });
-
-      textListRef.current = newTextList;
-      setTextList(newTextList);
-      // updateTextList(newTextList);
+      const n = textListRef.current.filter((e) => !("selected" in e) || !e.selected);
+      textListRef.current = n;
+      setTextList(n);
     }
-
     handleRiskRewardDelete();
-
     handleCircleDelete();
-
     handleRectDelete();
   };
 
-  const handleChoosePosition = (event, interactives, moreProps) => {
+  const handleChoosePosition = (event, interactives) => {
     const userInput = prompt("Enter text:");
     if (userInput !== null) {
       interactives["text"] = userInput;
       textListRef.current = [...textList, interactives];
-      setTextList((prevState) => [...prevState, interactives]);
-      // updateTextList([...textList, interactives]);
+      setTextList((p) => [...p, interactives]);
     }
   };
 
-  const onDragComplete = (event, textList, moreProps) => {
-    textListRef.current = textList;
-    setTextList(textList);
-  };
-
-  const handleEditText = (node) => {
-    const userInput = prompt("Enter text:", node["text"]);
-    if (userInput !== null) {
-      return userInput;
-    }
-    return node["text"];
-  };
-
-  const handleDoubleClick = (event, textList, moreProps) => {
+  const onDragComplete = (event, tl) => { textListRef.current = tl; setTextList(tl); };
+  const handleDoubleClick = (event, tl) => {
     if (textListRef.current) {
-      const newTextList = textListRef?.current?.filter((each) => {
-        if (!("selected" in each) || !each.selected) return each;
-        else {
-          each["text"] = handleEditText(each);
-          return each;
+      const n = textListRef.current.map((e) => {
+        if ("selected" in e && e.selected) {
+          const v = prompt("Enter text:", e["text"]);
+          if (v !== null) e["text"] = v;
         }
+        return e;
       });
-
-      textListRef.current = newTextList;
-      setTextList(newTextList);
-      // updateTextList(newTextList);
+      textListRef.current = n; setTextList(n);
     }
   };
 
-  const onDelete = (id) => {
-    // dont use prevState here
-    setLongPositionArr(longPositionArr.filter((v) => v.id !== id));
-  };
+  const onDelete = (id) => setLongPositionArr(longPositionArr.filter((v) => v.id !== id));
+  const handleRiskRewardDelete = () => setLongPositionArr((p) => p.filter((v) => !v.selected));
+  const handleCircleDelete = () => setCircles((p) => p.filter((v) => !v.selected));
+  const handleRectDelete = () => setRectangles((p) => p.filter((v) => !v.selected));
 
-  const handleRiskRewardDelete = () => {
-    setLongPositionArr((prevState) => prevState.filter((v) => !v.selected));
-  };
+  const onChangeCircle = (c) => setCircles((p) => p.map((x) => (x.id === c.id ? c : x)));
+  const onChangeCircle1 = (id, e) => setCircles((p) => p.map((x) => (x.id === id ? { ...x, selected: e } : x)));
+  const onChangeRectangles = (id, e) => setRectangles((p) => p.map((x) => (x.id === id ? { ...x, selected: e } : x)));
+  const onWholeDragCompleteRect = (r) => setRectangles((p) => p.map((x) => (x.id === r.id ? r : x)));
 
-  const handleCircleDelete = () => {
-    setCircles((prevState) => prevState.filter((v) => !v.selected));
-  };
-
-  const handleRectDelete = () => {
-    setRectangles((prevState) => prevState.filter((v) => !v.selected));
-  };
-
-  const onChangeCircle = (newCircle) => {
-    setCircles((prevCircles) =>
-      prevCircles.map((circle) => {
-        if (newCircle.id === circle.id) {
-          return newCircle;
-        }
-        return circle;
-      })
-    );
-  };
-
-  const onChangeCircle1 = (id, isEnable) => {
-    setCircles((prevCircles) =>
-      prevCircles.map((circle) => {
-        if (id === circle.id) {
-          return { ...circle, selected: isEnable };
-        }
-        return circle;
-      })
-    );
-  };
-
-  const onChangeRectangles = (id, isEnable) => {
-    setRectangles((rects) =>
-      rects.map((rect) => {
-        if (rect.id === id) {
-          return { ...rect, selected: isEnable };
-        }
-        return rect;
-      })
-    );
-  };
-
-  const onWholeDragCompleteRect = (newRect) => {
-    setRectangles((rects) =>
-      rects.map((rect) => {
-        if (rect.id === newRect.id) {
-          return newRect;
-        }
-        return rect;
-      })
-    );
-  };
-
-  const onSelected = (isSelected, mainId) => {
-    setLongPositionArr((prevState) =>
-      prevState.map((v) => {
-        if (v.id === mainId) {
-          return { ...v, selected: isSelected };
-        }
-        return v;
-      })
-    );
-  };
+  const onSelected = (isSel, mainId) =>
+    setLongPositionArr((p) => p.map((v) => (v.id === mainId ? { ...v, selected: isSel } : v)));
 
   const onKeyPress = (e) => {
-    const keyCode = e.which;
-
-    switch (keyCode) {
-      case 46:
-        // DEL
-        handleDelete();
-        break;
-
-      case 27:
-        // ESC
-        disableAllTools();
-        break;
-    }
+    if (e.which === 46) handleDelete();
+    if (e.which === 27) disableAllTools();
   };
 
   useEffect(() => {
     document.addEventListener("keyup", onKeyPress);
-    return () => {
-      document.removeEventListener("keyup", onKeyPress);
-    };
+    return () => document.removeEventListener("keyup", onKeyPress);
   }, []);
 
   useEffect(() => {
     if (breakoutName && Array.isArray(initialData) && initialData.length > 0) {
-      // Or for detailed analysis
-      const detailedAnalysis = analyzeMarketStructure(initialData);
-      console.log(detailedAnalysis);
+      const d = analyzeMarketStructure(initialData);
+      console.log(d);
     }
   }, [initialData, breakoutName]);
+
+  /* ── Mouse coordinate edge style ── */
+  const mouseEdge = {
+    textFill: DARK.mouseText,
+    stroke: DARK.edgeStroke,
+    strokeOpacity: 1,
+    strokeWidth: 1,
+    arrowWidth: 4,
+    fill: DARK.edgeFill,
+  };
 
   return (
     <ChartCanvas
@@ -397,7 +270,9 @@ const FinanceChart = ({
       xAccessor={xAccessor}
       xExtents={xExtents}
       zoomAnchor={lastVisibleItemBasedZoomAnchor}
+      style={{ background: DARK.bg }}
     >
+      {/* ── Volume bars ── */}
       <Chart
         id={2}
         height={barChartHeight}
@@ -406,41 +281,64 @@ const FinanceChart = ({
       >
         <BarSeries fillStyle={volumeColor} yAccessor={volumeSeries} />
       </Chart>
+
+      {/* ── Main candle chart ── */}
       <Chart id={3} height={chartHeight} yExtents={candleChartExtents}>
-        <XAxis showGridLines gridLinesStrokeStyle="#e0e3eb" />
-        <YAxis showGridLines tickFormat={pricesDisplayFormat} />
-        <CandlestickSeries />
+
+        <XAxis
+          showGridLines
+          gridLinesStrokeStyle={DARK.gridLine}
+          strokeStyle={DARK.axis}
+          tickStrokeStyle={DARK.axis}
+          tickLabelFill={DARK.axisLabel}
+          fontFamily="DM Mono, JetBrains Mono, monospace"
+          fontSize={10}
+        />
+        <YAxis
+          showGridLines
+          gridLinesStrokeStyle={DARK.gridLine}
+          strokeStyle={DARK.axis}
+          tickStrokeStyle={DARK.axis}
+          tickLabelFill={DARK.axisLabel}
+          tickFormat={pricesDisplayFormat}
+          fontFamily="DM Mono, JetBrains Mono, monospace"
+          fontSize={10}
+        />
+
+        <CandlestickSeries
+          wickStroke={openCloseColor}
+          fill={openCloseColor}
+          stroke={openCloseColor}
+          candleStrokeWidth={0.5}
+        />
 
         {breakoutName ? (
-          <Breakout
-            patternName={breakoutName}
-            data={initialData}
-            isIntraday={isIntraday}
-          />
-        ) : (
-          ""
-        )}
+          <Breakout patternName={breakoutName} data={initialData} isIntraday={isIntraday} />
+        ) : ""}
 
         {patternName ? (
-          <PatternChart
-            patternName={patternName}
-            data={initialData}
-            isIntraday={isIntraday}
-          />
-        ) : (
-          ""
-        )}
+          <PatternChart patternName={patternName} data={initialData} isIntraday={isIntraday} />
+        ) : ""}
 
         <MouseCoordinateY
           rectWidth={margin.right}
           displayFormat={pricesDisplayFormat}
+          fill={DARK.edgeFill}
+          stroke={DARK.edgeStroke}
+          textFill={DARK.edgeText}
+          fontSize={10}
         />
         <MouseCoordinateX
           rectWidth={margin.top}
           displayFormat={timeFormat(
             isIntraday || isDisplayHrAndTime ? "%Y-%m-%d %H:%M" : "%Y-%m-%d"
           )}
+          fill={DARK.edgeFill}
+          stroke={DARK.edgeStroke}
+          textFill={DARK.edgeText}
+          fontSize={10}
         />
+
         <EdgeIndicator
           itemType="last"
           rectWidth={margin.right}
@@ -448,6 +346,9 @@ const FinanceChart = ({
           lineStroke={openCloseColor}
           displayFormat={pricesDisplayFormat}
           yAccessor={yEdgeIndicator}
+          textFill="#ffffff"
+          fontSize={10}
+          fontFamily="DM Mono, monospace"
         />
 
         <TrendLine
@@ -456,19 +357,18 @@ const FinanceChart = ({
           enabled={trendLineEnable}
           type="LINE"
           snap={false}
-          onComplete={(e, newTrends, moreProps) => {
+          onComplete={(e, newTrends) => {
             trendLineRef.current = newTrends;
             setTrendLines([...newTrends]);
-            // updateTrendLine(newTrends);
             disableAllTools();
           }}
           appearance={{
-            strokeStyle: "#FFF",
-            strokeWidth: 1,
+            strokeStyle: DARK.edgeStroke,           // was "#00cff7"
+            strokeWidth: 1.5,
             strokeDasharray: "Solid",
             edgeStrokeWidth: 1,
-            edgeFill: "#FFFFFF",
-            edgeStroke: "#FFF",
+            edgeFill: DARK.surface3,            // was "#1f2436"
+            edgeStroke: DARK.edgeStroke,            // was "#00cff7"
           }}
         />
 
@@ -476,23 +376,19 @@ const FinanceChart = ({
           ref={saveInteractiveNode("Interactive", 3)}
           enabled={textEnable}
           textList={textList}
-          onChoosePosition={(e, interactiveText, moreProps) => {
-            handleChoosePosition(e, interactiveText, moreProps);
-            disableAllTools();
-          }}
+          onChoosePosition={(e, it) => { handleChoosePosition(e, it); disableAllTools(); }}
           onDoubleClick={handleDoubleClick}
           onDragComplete={onDragComplete}
           defaultText={{
-            bgFill: "#FFF",
-            bgOpacity: 1,
+            bgFill: DARK.surface3,               // was "#1f2436"
+            bgOpacity: 0.92,
             bgStrokeWidth: 1,
-            textFill: "#000",
-            fontFamily:
-              "-apple-system, system-ui, Roboto, 'Helvetica Neue', Ubuntu, sans-serif",
+            textFill: DARK.tx_primary,          // was "#d8dce8"
+            fontFamily: "DM Sans, system-ui, sans-serif",
             fontSize: 12,
             fontStyle: "normal",
             fontWeight: "normal",
-            text: "Dummy Text",
+            text: "Label",
           }}
         />
 
@@ -500,120 +396,97 @@ const FinanceChart = ({
           ref={saveInteractiveNode("Measurement", 3)}
           enabled={measurementEnable}
           type={"2D"}
-          onBrush={() => {}}
-          fillStyle="#d9d9d9"
+          onBrush={() => { }}
+          fillStyle={DARK.accentSoft}           // was "rgba(0,207,247,0.08)"
           interactiveState={{}}
         />
 
         {positionName && (
-          <>
-            <ClickCallback
-              onClick={(e, moreProps) => {
-                const { mouseXY, chartConfig, xScale } = moreProps;
-                const [mouseX, mouseY] = mouseXY; // Extract the Y-coordinate of the mouse
-                const yValue = chartConfig.yScale.invert(mouseY); // Convert pixel value to data value
-
-                let percent = 2;
-                let targetValue = yValue + (yValue * percent) / 100;
-                let stopLossValue = yValue - (yValue * percent) / 100;
-                const width = 200;
-
-                const [yMin, yHigh] = chartConfig.realYDomain;
-                if (targetValue > yHigh || stopLossValue < yMin) {
-                  if (yHigh - yValue > yValue - yMin) {
-                    stopLossValue = yMin;
-                    percent = (
-                      ((yValue - stopLossValue) * 100) /
-                      yValue
-                    ).toFixed(2);
-                    targetValue = yValue + (yValue * percent) / 100;
-                  } else {
-                    targetValue = yHigh;
-                    percent = (((targetValue - yValue) * 100) / yValue).toFixed(
-                      2
-                    );
-                    stopLossValue = yValue - (yValue * percent) / 100;
-                  }
+          <ClickCallback
+            onClick={(e, moreProps) => {
+              const { mouseXY, chartConfig, xScale } = moreProps;
+              const [mouseX, mouseY] = mouseXY;
+              const yValue = chartConfig.yScale.invert(mouseY);
+              let percent = 2;
+              let targetVal = yValue + (yValue * percent) / 100;
+              let stopLoss = yValue - (yValue * percent) / 100;
+              const width = 200;
+              const [yMin, yHigh] = chartConfig.realYDomain;
+              if (targetVal > yHigh || stopLoss < yMin) {
+                if (yHigh - yValue > yValue - yMin) {
+                  stopLoss = yMin;
+                  percent = (((yValue - stopLoss) * 100) / yValue).toFixed(2);
+                  targetVal = yValue + (yValue * percent) / 100;
+                } else {
+                  targetVal = yHigh;
+                  percent = (((targetVal - yValue) * 100) / yValue).toFixed(2);
+                  stopLoss = yValue - (yValue * percent) / 100;
                 }
-
-                setLongPositionArr((prevState) => [
-                  ...prevState,
-                  {
-                    currentVal: yValue,
-                    targetVal: targetValue,
-                    stopLossVal: stopLossValue,
-                    xValue: xScale.invert(mouseX),
-                    x1Value: xScale.invert(mouseX),
-                    x2Value: xScale.invert(mouseX + width),
-                    percent,
-                    id: Math.random().toString(16).slice(2),
-                    isShortPosition: positionName === "short",
-                    selected: true,
-                  },
-                ]);
-                disableAllTools();
-              }}
-            />
-          </>
+              }
+              setLongPositionArr((p) => [
+                ...p,
+                {
+                  currentVal: yValue, targetVal, stopLossVal: stopLoss,
+                  xValue: xScale.invert(mouseX), x1Value: xScale.invert(mouseX),
+                  x2Value: xScale.invert(mouseX + width), percent,
+                  id: Math.random().toString(16).slice(2),
+                  isShortPosition: positionName === "short",
+                  selected: true,
+                },
+              ]);
+              disableAllTools();
+            }}
+          />
         )}
 
-        {longPositionArr.map((v) => {
-          return (
-            <LongPosition
-              saveInteractiveNode={saveInteractiveNode}
-              currentObj={v}
-              key={v.id}
-              onDeleteMain={onDelete}
-              isPriceObj={true}
-              isEnabled={!!positionName}
-              onSelected={onSelected}
-            />
-          );
-        })}
+        {longPositionArr.map((v) => (
+          <LongPosition
+            key={v.id}
+            saveInteractiveNode={saveInteractiveNode}
+            currentObj={v}
+            onDeleteMain={onDelete}
+            isPriceObj={true}
+            isEnabled={!!positionName}
+            onSelected={onSelected}
+          />
+        ))}
 
         {shapeName && (
           <ClickCallback
             onClick={(e, moreProps) => {
               const { mouseXY, xScale, chartConfig } = moreProps;
               const [mouseX, mouseY] = mouseXY;
-              const xValue = xScale.invert(mouseX); // Convert pixel to date
-              const yValue = chartConfig.yScale.invert(mouseY); // Convert pixel to value
-
+              const xValue = xScale.invert(mouseX);
+              const yValue = chartConfig.yScale.invert(mouseY);
               if (shapeName === "circle") {
                 const radius = 50;
-                setCircles((prevCircles) => [
-                  ...prevCircles,
+                setCircles((p) => [
+                  ...p,
                   {
                     id: Math.random().toString(16).slice(2),
-                    x: xValue,
-                    y: yValue,
-                    x1: xScale.invert(mouseX + radius),
-                    radius: radius,
-                    color: "rgb(0, 0, 0, 0.3)",
-                    strokeStyle: "#000",
-                    lineWidth: 1,
-                    selected: true,
+                    x: xValue, y: yValue, x1: xScale.invert(mouseX + radius),
+                    radius,
+                    color: DARK.accentSoft,              // was "rgba(0,207,247,0.18)"
+                    strokeStyle: DARK.edgeStroke,            // was "#00cff7"
+                    lineWidth: 1, selected: true,
                   },
                 ]);
               } else if (shapeName === "rectangle") {
-                const width = 200;
-                const height = 100;
-                setRectangles((prevRec) => [
-                  ...prevRec,
+                const w = 200, h = 100;
+                setRectangles((p) => [
+                  ...p,
                   {
                     id: Math.random().toString(16).slice(2),
-                    x1: xValue,
-                    y1: yValue,
-                    x2: xScale.invert(mouseX + width),
-                    y2: chartConfig.yScale.invert(mouseY + height),
-                    color: "rgba(70, 130, 180, 0.5)",
+                    x1: xValue, y1: yValue,
+                    x2: xScale.invert(mouseX + w),
+                    y2: chartConfig.yScale.invert(mouseY + h),
+                    color: DARK.accentSoft,               // was "rgba(0,207,247,0.12)"
                     lineWidth: 1,
                     selected: true,
-                    strokeStyle: "steelblue",
+                    strokeStyle: DARK.edgeStroke,             // was "#00cff7"
                   },
                 ]);
               }
-
               disableAllTools();
             }}
           />
@@ -624,95 +497,55 @@ const FinanceChart = ({
           onCircleWholeDragComplete={onChangeCircle}
           onMouseDownClick={onChangeCircle1}
         />
-
         <CustomShapeRectangle
           rectangles={rectangles}
           onWholeDragCompleteRect={onWholeDragCompleteRect}
           onMouseDownClick={onChangeRectangles}
         />
 
-        {indicatorName === "ema" && isAngleEnabled ? (
-          <AngleCalculator enabled />
-        ) : (
-          ""
-        )}
+        {indicatorName === "ema" && isAngleEnabled ? <AngleCalculator enabled /> : ""}
 
-        {indicatorName === "macd" || indicatorName === "zerolagmacd" ? (
-          <EMAChart
-            emaArr={[
-              { id: "ema12", val: ema12 },
-              { id: "ema26", val: ema26 },
-            ]}
-            isIntraday={isIntraday}
-          />
-        ) : (
-          ""
-        )}
+        {(indicatorName === "macd" || indicatorName === "zerolagmacd") ? (
+          <EMAChart emaArr={[{ id: "ema12", val: ema12 }, { id: "ema26", val: ema26 }]} isIntraday={isIntraday} />
+        ) : ""}
 
         {indicatorName === "sma" ? (
-          <SMAChart
-            smaArr={[
-              { id: "sma50", val: sma50 },
-              { id: "sma200", val: sma200 },
-            ]}
-            isIntraday={isIntraday}
-          />
-        ) : (
-          ""
-        )}
+          <SMAChart smaArr={[{ id: "sma50", val: sma50 }, { id: "sma200", val: sma200 }]} isIntraday={isIntraday} />
+        ) : ""}
 
         {indicatorName === "ema" ? (
           <EMAChart
-            emaArr={
-              isIntraday
-                ? [
-                    { id: "ema5", val: ema5 },
-                    // { id: "ema8", val: ema8 },
-                    { id: "ema13", val: ema13 },
-                  ]
-                : [
-                    { id: "ema12", val: ema12 },
-                    { id: "ema26", val: ema26 },
-                  ]
+            emaArr={isIntraday
+              ? [{ id: "ema5", val: ema5 }, { id: "ema13", val: ema13 }]
+              : [{ id: "ema12", val: ema12 }, { id: "ema26", val: ema26 }]
             }
             angles={angles}
             isIntraday={isIntraday}
           />
-        ) : (
-          ""
-        )}
+        ) : ""}
 
         {indicatorName === "supertrend" ? <SuperTrendChart /> : ""}
+        {indicatorName === "bolinger" ? <BolingerChart bb={bb} sma20={sma20} /> : ""}
 
-        {indicatorName === "bolinger" ? (
-          <BolingerChart bb={bb} sma20={sma20} />
-        ) : (
-          ""
-        )}
+        {["5-20-sma", "20-50-sma", "50-200-sma"].includes(indicatorName) ? (
+          <MACrossOverChart ma1={ma1} ma2={ma2} indicatorName={indicatorName} isIntraday={isIntraday} />
+        ) : ""}
 
-        {indicatorName === "5-20-sma" ||
-        indicatorName === "20-50-sma" ||
-        indicatorName === "50-200-sma" ? (
-          <MACrossOverChart
-            ma1={ma1}
-            ma2={ma2}
-            indicatorName={indicatorName}
-            isIntraday={isIntraday}
-          />
-        ) : (
-          ""
-        )}
+        {/* Fix: isMobile state (set after mount) replaces the direct
+            window.innerWidth call that crashed Next.js SSR/static builds */}
+        {isMobile ? <ZoomButtons /> : ""}
 
-        {window.innerWidth <= 768 ? <ZoomButtons /> : ""}
-
-        <OHLCTooltip origin={[8, 16]} />
-        {isIntraday ? (
-          <HighLowTooltip origin={[8, 32]} ohlcData={initialData} />
-        ) : (
-          ""
-        )}
+        <OHLCTooltip
+          origin={[8, 16]}
+          labelFill={DARK.axisLabel}
+          textFill={DARK.tx_primary}
+          fontSize={11}
+          fontFamily="DM Mono, monospace"
+        />
+        {isIntraday ? <HighLowTooltip origin={[8, 32]} ohlcData={initialData} /> : ""}
       </Chart>
 
+      {/* ── Sub-chart (indicator panel) ── */}
       {indicatorName ? (
         <Chart
           id={4}
@@ -724,89 +557,53 @@ const FinanceChart = ({
           height={barChartHeight}
           origin={barChartOrigin}
         >
-          <XAxis />
+          <XAxis
+            strokeStyle={DARK.axis}
+            tickStrokeStyle={DARK.axis}
+            tickLabelFill={DARK.axisLabel}
+            fontFamily="DM Mono, monospace"
+            fontSize={10}
+          />
 
           {indicatorName === "rsi" ? (
-            <YAxis tickValues={[30, 50, 70]} />
+            <YAxis tickValues={[30, 50, 70]} tickLabelFill={DARK.axisLabel} tickStrokeStyle={DARK.axis} strokeStyle={DARK.axis} fontSize={10} fontFamily="DM Mono, monospace" />
           ) : indicatorName === "mfi" ? (
-            <YAxis tickValues={[20, 50, 80]} />
+            <YAxis tickValues={[20, 50, 80]} tickLabelFill={DARK.axisLabel} tickStrokeStyle={DARK.axis} strokeStyle={DARK.axis} fontSize={10} fontFamily="DM Mono, monospace" />
           ) : (
-            <YAxis />
+            <YAxis tickLabelFill={DARK.axisLabel} tickStrokeStyle={DARK.axis} strokeStyle={DARK.axis} fontSize={10} fontFamily="DM Mono, monospace" />
           )}
 
-          {indicatorName === "rsi" ? (
-            <RSIChart
-              data={initialData}
-              rsiYAccessor={rsiYAccessor}
-              rsiCalculator={rsiCalculator}
-            />
-          ) : (
-            ""
-          )}
-
+          {indicatorName === "rsi" ? <RSIChart data={initialData} rsiYAccessor={rsiYAccessor} rsiCalculator={rsiCalculator} /> : ""}
           {indicatorName === "sto" ? <STOChart /> : ""}
-
-          {indicatorName === "mfi" ? (
-            <IndicatorChart keyVal="mfi" tooltipName={indicatorName} />
-          ) : (
-            ""
-          )}
-
-          {indicatorName === "cci" ? (
-            <IndicatorChart keyVal="cci" tooltipName={indicatorName} />
-          ) : (
-            ""
-          )}
-
+          {indicatorName === "mfi" ? <IndicatorChart keyVal="mfi" tooltipName={indicatorName} /> : ""}
+          {indicatorName === "cci" ? <IndicatorChart keyVal="cci" tooltipName={indicatorName} /> : ""}
           {indicatorName === "obv" ? (
             <>
-              <LineSeries yAccessor={(d) => d.obv} stroke="#4682B4" />
-              <CurrentCoordinate
-                yAccessor={(d) => d.obv}
-                fillStyle={"#4682B4"}
-              />
-
-              <CustomTooltip
-                origin={[8, 32]}
-                yAccessor={(d) => d.obv}
-                displayFormat={format(".2s")}
-                tooltipName="OBV"
-              />
+              <LineSeries yAccessor={(d) => d.obv} stroke={DARK.indicator} />
+              <CurrentCoordinate yAccessor={(d) => d.obv} fillStyle={DARK.indicator} />
+              <CustomTooltip origin={[8, 32]} yAccessor={(d) => d.obv} displayFormat={format(".2s")} tooltipName="OBV" />
             </>
-          ) : (
-            ""
-          )}
-
+          ) : ""}
           {indicatorName === "dmi" ? <DMI /> : ""}
-
-          {indicatorName === "macd" || indicatorName === "zerolagmacd" ? (
-            <MACDChart macdCalculator={macdCalculator} />
-          ) : (
-            ""
-          )}
+          {indicatorName === "macd" || indicatorName === "zerolagmacd"
+            ? <MACDChart macdCalculator={macdCalculator} /> : ""}
         </Chart>
-      ) : (
-        ""
-      )}
+      ) : ""}
 
-      <CrossHairCursor />
+      {/* ── Crosshair ── */}
+      <CrossHairCursor
+        strokeStyle={DARK.crosshair}
+        strokeDasharray="ShortDash"
+      />
+
       <DrawingObjectSelector
         enabled={true}
         getInteractiveNodes={() => interactiveNodes}
-        drawingObjectMap={{
-          Trendline: "trends",
-          Interactive: "textList",
-        }}
+        drawingObjectMap={{ Trendline: "trends", Interactive: "textList" }}
         onSelect={handleSelection}
       />
     </ChartCanvas>
   );
 };
 
-// export default FinanceChart;
-
-export default withSize({
-  style: {
-    minHeight: 550,
-  },
-})(withDeviceRatio()(FinanceChart));
+export default withSize({ style: { minHeight: 600 } })(withDeviceRatio()(FinanceChart));

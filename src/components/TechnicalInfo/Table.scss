@@ -1,40 +1,65 @@
+/* ─────────────────────────────────────────────
+   Table.scss  — using globals.css variables
+   ───────────────────────────────────────────── */
+
 .table-container {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 16px;
-  background: white;
-  margin-top: 16px;
-  display: inline-block;
-  margin-right: 20px;
+  display:       inline-block;
+  margin-right:  14px;
+  margin-top:    14px;
+  border:        1px solid var(--bd-dim);       /* rgba(255,255,255,0.09) */
+  border-radius: var(--radius-md);              /* 8px — or keep 10px */
+  padding:       0;
+  background:    var(--surface-1);              /* #12151f */
 }
 
 .table-title {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 8px;
+  font-size:      14px;
+  font-weight:    600;
+  color:          var(--tx-primary);            /* #d8dce8 */
+  padding:        13px 16px 12px;
+  border-bottom:  1px solid var(--bd-faint);    /* rgba(255,255,255,0.05) */
+  background:     var(--surface-2);             /* #181c28 */
+  letter-spacing: 0.02em;
+  font-family:    var(--font-ui);
 }
 
 table {
-  width: 100%;
+  width:           100%;
   border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 8px;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
+  font-family:     var(--font-ui);
 }
 
 th {
-  background: #f4f4f4;
+  padding:        9px 14px;
+  border-bottom:  1px solid var(--bd-dim);
+  text-align:     left;
+  background:     var(--surface-2);
+  color:          var(--tx-second);             /* #7a82a0 — was #5a6280 */
+  font-size:      11px;
+  font-weight:    600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
-.red-text {
-  color: red;
-  font-weight: bold;
+td {
+  padding:       9px 14px;
+  border-bottom: 1px solid var(--bd-faint);     /* rgba(255,255,255,0.04~0.05) */
+  text-align:    left;
+  font-size:     13px;
+  color:         var(--tx-primary);             /* Was #a8b0c8 — now brighter */
 }
 
-.blue {
-  color: blue;
+tr:last-child td { border-bottom: none; }
+
+tr:hover td { 
+  background: var(--surface-3);                 /* #1f2436 — cleaner than rgba */
+}
+
+.red-text { 
+  color:       var(--bear) !important;          /* #f0506a */
+  font-weight: 600; 
+}
+
+.blue { 
+  color: var(--info);                           /* #5b9cf6 */
 }

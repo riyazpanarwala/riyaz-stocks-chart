@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaBars } from "react-icons/fa";
+import { FaBars, FaTimes } from "react-icons/fa";
 import {
   MdTrendingFlat,
   MdOutlineRotate90DegreesCw,
@@ -45,7 +45,7 @@ const Sidebar = ({
   };
 
   const closeSidebar = () => {
-    setIsOpen(false); // Close sidebar on navigation for mobile
+    setIsOpen(false);
   };
 
   const indicatorArr = [
@@ -137,17 +137,49 @@ const Sidebar = ({
   ];
 
   const patternArr = getPatternArr(patternName);
-  const watchlistArray1 = getStorageData(); // watchlistArray(companyObj.value);
+  const watchlistArray1 = getStorageData();
   watchlistArray1.forEach((v) => {
     v.isActive = companyObj.value === v.value;
   });
 
   return (
     <>
-      {/* Hamburger Menu */}
-      <div className={styles.hamburger} onClick={toggleSidebar}>
-        <FaBars />
-      </div>
+      {/* Toggle button — shows hamburger when closed, X when open */}
+      {isOpen ? (
+        <div className={styles.closeBtn} onClick={toggleSidebar}>
+          <FaTimes />
+        </div>
+      ) : (
+        <div className={styles.hamburger} onClick={toggleSidebar}>
+          <FaBars />
+        </div>
+      )}
+
+      {isOpen ? (
+        <button
+          type="button"
+          className={styles.closeBtn}
+          onClick={toggleSidebar}
+          aria-label="Close sidebar"
+        >
+          <FaTimes />
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={styles.hamburger}
+          onClick={toggleSidebar}
+          aria-label="Open sidebar"
+        >
+          <FaBars />
+        </button>
+      )}
+
+
+      {/* Overlay — tap outside to close on mobile */}
+      {isOpen && (
+        <div className={styles.overlay} onClick={closeSidebar} />
+      )}
 
       {/* Sidebar */}
       <div className={`${styles.sidebar} ${isOpen ? styles.open : ""}`}>
@@ -172,9 +204,8 @@ const Sidebar = ({
           <span>Text</span>
         </div>
         <div
-          className={`${styles.button} ${
-            measurementEnable ? styles.active : ""
-          }`}
+          className={`${styles.button} ${measurementEnable ? styles.active : ""
+            }`}
           onClick={(e) => {
             closeSidebar();
             handleMeasurementClick(e);
@@ -221,9 +252,8 @@ const Sidebar = ({
         />
         {indicatorName === "ema" ? (
           <div
-            className={`${styles.button} ${
-              isAngleEnabled ? styles.active : ""
-            }`}
+            className={`${styles.button} ${isAngleEnabled ? styles.active : ""
+              }`}
             onClick={(e) => {
               closeSidebar();
               handleEMAangleClick(e);

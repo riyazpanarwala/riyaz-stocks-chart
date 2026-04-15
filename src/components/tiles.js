@@ -1,45 +1,22 @@
 import React from "react";
+import styles from "./Tiles.module.css";
 
 const Tiles = ({ periods, selectedPeriod, setSelectedPeriod }) => {
   return (
-    <div style={styles.header}>
-      <div style={styles.tilesContainer}>
-        {periods.map((period) => (
-          <div
-            key={period}
-            style={{
-              ...styles.tile,
-              backgroundColor:
-                selectedPeriod === period ? "#007bff" : "#f0f0f0",
-              color: selectedPeriod === period ? "#fff" : "#333",
-            }}
-            onClick={() => setSelectedPeriod(period)}
-          >
-            {period}
-          </div>
-        ))}
-      </div>
+    <div className={styles.tilesContainer}>
+      {periods.map((period) => (
+        <button
+          type="button"
+          key={period}
+          className={`${styles.tile} ${selectedPeriod === period ? styles.active : ""}`}
+          aria-pressed={selectedPeriod === period}
+          onClick={() => setSelectedPeriod(period)}
+        >
+          {period}
+        </button>
+      ))}
     </div>
   );
-};
-
-const styles = {
-  header: {
-    textAlign: "center",
-  },
-  tilesContainer: {
-    display: "flex",
-    justifyContent: "left",
-    gap: "5px",
-  },
-  tile: {
-    padding: "10px 20px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontSize: "16px",
-    fontWeight: "bold",
-    transition: "background-color 0.3s, color 0.3s",
-  },
 };
 
 export default Tiles;

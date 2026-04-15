@@ -1,49 +1,61 @@
+/* ─────────────────────────────────────────────
+   Fundamentals.css  — using globals.css vars
+   ───────────────────────────────────────────── */
+
 .fundamentals-card {
-  max-width: 1200px;
-  margin: 20px auto;
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  background: #fff;
-  font-family: "Segoe UI", Arial, sans-serif;
+  max-width:     1200px;
+  margin:        16px auto;
+  padding:       0;
+  border-radius: var(--radius-lg);           /* 12px */
+  border:        1px solid var(--bd-dim);    /* rgba(255,255,255,0.09) */
+  background:    var(--surface-1);           /* #12151f */
+  font-family:   var(--font-ui);             /* 'DM Sans', system-ui, sans-serif */
+  overflow:      hidden;
 }
 
 .fundamentals-title {
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-  border-bottom: 2px solid #f0f0f0;
-  padding-bottom: 8px;
+  margin:         0;
+  padding:        13px 18px;
+  font-size:      13px;
+  font-weight:    600;
+  color:          var(--tx-primary);         /* #d8dce8 */
+  border-bottom:  1px solid var(--bd-dim);   /* rgba(255,255,255,0.09) */
+  background:     var(--surface-2);          /* #181c28 */
+  letter-spacing: 0.02em;
 }
 
 .fundamentals-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
+  display:               grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap:                   1px;
+  background:            var(--bd-faint);    /* rgba(255,255,255,0.05) */
+  padding:               1px;
 }
 
 .fundamentals-item {
-  display: flex;
+  display:        flex;
   flex-direction: column;
-  padding: 12px;
-  border-radius: 8px;
-  background: #fafafa;
-  transition: background 0.2s ease;
+  padding:        13px 15px;
+  background:     var(--surface-1);
+  transition:     background 130ms ease;
 }
 
-.fundamentals-item:hover {
-  background: #f0f8ff;
+.fundamentals-item:hover { 
+  background: var(--surface-2);              /* #181c28 */
 }
 
 .fundamentals-name {
-  font-size: 13px;
-  color: #666;
+  font-size:      11px;
+  color:          var(--tx-second);          /* #7a82a0 — closest to #5a6280 */
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom:  4px;
 }
 
 .fundamentals-value {
-  font-size: 15px;
+  font-size:   15px;
   font-weight: 600;
-  color: #0073e6;
-  margin-top: 4px;
+  color:       var(--accent);                /* #00cff7 */
+  font-family: var(--font-mono);             /* 'DM Mono', monospace */
+  margin-top:  2px;
 }

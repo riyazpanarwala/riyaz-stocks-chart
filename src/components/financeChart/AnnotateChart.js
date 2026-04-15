@@ -1,6 +1,7 @@
 import React from "react";
 import { Annotate, SvgPathAnnotation } from "@riyazpanarwala/annotations";
 import { ToolTipTSpanLabel, ToolTipText } from "@riyazpanarwala/tooltip";
+import { useThemeColors } from "./useThemeColors";
 
 const AnnotateChart = ({
   dataArr,
@@ -9,10 +10,11 @@ const AnnotateChart = ({
   tooltipCallback,
   origin: [x, y],
 }) => {
+  const DARK = useThemeColors();
   const getColor = (patternObj) => {
-    if (patternObj.bull) return "Green";
-    if (patternObj.bear) return "red";
-    return patternObj.isVolume ? "darkblue" : "mediumslateblue";
+    if (patternObj.bull) return DARK.annotBull;
+    if (patternObj.bear) return DARK.annotBear;
+    return patternObj.isVolume ? DARK.annotVolume : DARK.annotDefault;
   };
 
   const anotateFunc = (patternObj) => {
@@ -34,8 +36,10 @@ const AnnotateChart = ({
         transform={`translate(${x}, ${y})`}
       >
         <ToolTipText x={0} y={0}>
-          <ToolTipTSpanLabel>{tooltipName}: </ToolTipTSpanLabel>
-          <tspan>{tooltipTxt}</tspan>
+          <ToolTipTSpanLabel fill={DARK.ohlcText}>
+            {tooltipName}:{" "}
+          </ToolTipTSpanLabel>
+          <tspan fill={DARK.tx_primary}>{tooltipTxt}</tspan>
         </ToolTipText>
       </g>
     );

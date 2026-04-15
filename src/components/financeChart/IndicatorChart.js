@@ -2,17 +2,19 @@ import React from "react";
 import { LineSeries } from "@riyazpanarwala/series";
 import { CurrentCoordinate } from "@riyazpanarwala/coordinates";
 import CustomTooltip from "./CustomTooltip";
+import { useThemeColors } from "./useThemeColors";
 
 const IndicatorChart = ({ keyVal, tooltipName }) => {
+  const DARK = useThemeColors();
   return (
     <>
-      <LineSeries yAccessor={(d) => d[keyVal]} stroke="#4682B4" />
-      <CurrentCoordinate yAccessor={(d) => d[keyVal]} fillStyle={"#4682B4"} />
+      <LineSeries yAccessor={(d) => d[keyVal]} strokeStyle={DARK.indicator} />
+      <CurrentCoordinate yAccessor={(d) => d[keyVal]} fillStyle={DARK.indicator} />
       <CustomTooltip
         origin={[8, 32]}
         yAccessor={(d) => d[keyVal]}
         tooltipName={tooltipName}
-        textFill={"#4682B4"}
+        textFill={DARK.indicator}
       />
     </>
   );

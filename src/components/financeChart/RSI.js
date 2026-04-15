@@ -1,27 +1,32 @@
 import React from "react";
 import { RSISeries } from "@riyazpanarwala/series";
 import { RSITooltip } from "@riyazpanarwala/tooltip";
+import { useThemeColors } from "./useThemeColors";
 
 const RSIChart = ({ data, rsiYAccessor, rsiCalculator }) => {
+  const DARK = useThemeColors();
+
   if (data.length < 2) {
     return "";
   }
+
   return (
     <>
       <RSISeries
         yAccessor={rsiYAccessor}
         strokeStyle={{
-          line: "#000000",
-          top: "#B8C2CC",
-          middle: "#8795A1",
-          bottom: "#B8C2CC",
-          outsideThreshold: "green",
-          insideThreshold: "blue",
+          line: DARK.rsiLine,
+          top: DARK.rsiBand,
+          middle: DARK.rsiBand,
+          bottom: DARK.rsiBand,
+          outsideThreshold: DARK.rsiOversold,
+          insideThreshold: DARK.rsiOverbought,
         }}
       />
-
       <RSITooltip
         origin={[8, 32]}
+        labelFill={DARK.axisLabel}
+        textFill={DARK.tx_primary}
         yAccessor={rsiYAccessor}
         options={rsiCalculator.options()}
       />

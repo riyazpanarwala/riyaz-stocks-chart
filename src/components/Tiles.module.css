@@ -1,0 +1,34 @@
+.tilesContainer {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 5px;
+}
+
+.tile {
+  padding: 4px 13px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  border: 1px solid var(--bd-dim);
+  transition: background-color 0.14s, color 0.14s, border-color 0.14s, box-shadow 0.14s;
+  user-select: none;
+  line-height: 1.6;
+  background-color: var(--surface-3);
+  color: var(--tx-second);
+}
+
+.tile:hover {
+  background-color: var(--surface-4);
+  color: var(--tx-primary);
+}
+
+.active {
+  background-color: var(--accent) !important;
+  color: var(--tx-inverse) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 8px var(--accent-glow);
+  font-weight: 600;
+}

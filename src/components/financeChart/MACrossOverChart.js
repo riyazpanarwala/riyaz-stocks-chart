@@ -3,8 +3,10 @@ import { LineSeries } from "@riyazpanarwala/series";
 import { CurrentCoordinate } from "@riyazpanarwala/coordinates";
 import { Annotate, SvgPathAnnotation } from "@riyazpanarwala/annotations";
 import CustomTooltip from "./CustomTooltip";
+import { useThemeColors } from "./useThemeColors";
 
 const MACrossOverChart = ({ ma1, ma2, indicatorName, isIntraday }) => {
+  const DARK = useThemeColors();
   const defaultAnnotationProps = {
     onClick: console.log.bind(console),
   };
@@ -12,7 +14,7 @@ const MACrossOverChart = ({ ma1, ma2, indicatorName, isIntraday }) => {
   const longAnnotationProps = {
     ...defaultAnnotationProps,
     y: ({ yScale, datum }) => yScale(datum.low),
-    fill: "#006517",
+    fill: DARK.longArrow,
     path: () => "M12 4L6 10H10V20H14V10H18L12 4Z",
     pathWidth: 12,
     pathHeight: 12,
@@ -22,7 +24,7 @@ const MACrossOverChart = ({ ma1, ma2, indicatorName, isIntraday }) => {
   const shortAnnotationProps = {
     ...defaultAnnotationProps,
     y: ({ yScale, datum }) => yScale(datum.high),
-    fill: "#FF0000",
+    fill: DARK.shortArrow,
     path: () => "M12 20L18 14H14V4H10V14H6L12 20Z",
     pathWidth: 12,
     pathHeight: 12,

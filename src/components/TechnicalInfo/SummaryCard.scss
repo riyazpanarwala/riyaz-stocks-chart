@@ -1,52 +1,63 @@
+/* ─────────────────────────────────────────────
+   SummaryCard.scss  — using globals.css vars
+   ───────────────────────────────────────────── */
+
 .card {
-  border: 1px solid #ddd;
-  padding: 16px;
-  border-radius: 8px;
-  background: white;
-  margin-bottom: 16px;
+  border:        1px solid var(--bd-faint);     /* rgba(255,255,255,0.05) */
+  padding:       13px 15px;
+  border-radius: var(--radius-md);              /* 8px (or 10px if preferred) */
+  background:    var(--surface-2);              /* #181c28 */
+  margin-bottom: 12px;
 }
 
 .card-header {
-  display: flex;
+  display:         flex;
   justify-content: space-between;
-  font-size: 16px;
-  font-weight: bold;
+  align-items:     center;
+  font-size:       13px;
+  margin-bottom:   9px;
 }
 
 .card-title {
-  color: #333;
+  color:       var(--tx-second);                /* #7a82a0 */
+  font-weight: 400;
 }
 
 .status {
-  font-weight: bold;
+  font-weight:   600;
+  font-size:     12px;
+  padding:       3px 8px;
+  border-radius: var(--radius-xs);              /* 3px (or 4px if preferred) */
 }
 
-.red {
-  color: red;
+.red   { 
+  color:      var(--bear);                      /* #f0506a */
+  background: var(--bear-soft);                 /* rgba(240,80,106,0.12) */
 }
 
-.green {
-  color: green;
+.green { 
+  color:      var(--bull);                      /* #1ec99a */
+  background: var(--bull-soft);                 /* rgba(30,201,154,0.12) */
 }
 
 .progress-bar {
-  width: 100%;
-  height: 8px;
-  background: #ddd;
-  border-radius: 4px;
-  margin-top: 8px;
-  position: relative;
+  width:         100%;
+  height:        5px;
+  background:    var(--bd-faint);               /* Subtle track */
+  border-radius: var(--radius-xs);
+  overflow:      hidden;
 }
 
-.progress {
-  height: 100%;
-  border-radius: 4px;
+.progress { 
+  height:        100%; 
+  border-radius: var(--radius-xs); 
+  transition:    width 0.4s ease; 
 }
 
-.progress.red {
-  background: red;
+.progress.red   { 
+  background: linear-gradient(90deg, var(--bear), var(--bear-light)); 
 }
 
-.progress.green {
-  background: green;
+.progress.green { 
+  background: linear-gradient(90deg, var(--bull), var(--bull-light)); 
 }
