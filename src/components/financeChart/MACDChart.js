@@ -8,12 +8,13 @@ import {
 import { XAxis, YAxis } from "@riyazpanarwala/axes";
 import { format } from "d3-format";
 import { timeFormat } from "d3-time-format";
-import DARK from "./colorscheme.js";
+import { useThemeColors } from "./useThemeColors";
 
 const MACDChart = ({ macdCalculator }) => {
+  const DARK = useThemeColors();
   const macdAppearance = {
     strokeStyle: {
-      macd:   DARK.macdLine,
+      macd: DARK.macdLine,
       signal: DARK.macdSignal,
     },
     fillStyle: {
@@ -22,12 +23,12 @@ const MACDChart = ({ macdCalculator }) => {
   };
 
   const mouseEdgeAppearance = {
-    textFill:      DARK.macdEdgeText,
-    stroke:        DARK.macdEdgeStroke,
+    textFill: DARK.macdEdgeText,
+    stroke: DARK.macdEdgeStroke,
     strokeOpacity: 1,
-    strokeWidth:   1,
-    arrowWidth:    4,
-    fill:          DARK.macdEdgeFill,
+    strokeWidth: 1,
+    arrowWidth: 4,
+    fill: DARK.macdEdgeFill,
   };
 
   return (

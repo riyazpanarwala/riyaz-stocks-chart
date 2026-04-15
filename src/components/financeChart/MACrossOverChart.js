@@ -3,31 +3,32 @@ import { LineSeries } from "@riyazpanarwala/series";
 import { CurrentCoordinate } from "@riyazpanarwala/coordinates";
 import { Annotate, SvgPathAnnotation } from "@riyazpanarwala/annotations";
 import CustomTooltip from "./CustomTooltip";
-import DARK from "./colorscheme.js";
+import { useThemeColors } from "./useThemeColors";
 
 const MACrossOverChart = ({ ma1, ma2, indicatorName, isIntraday }) => {
+  const DARK = useThemeColors();
   const defaultAnnotationProps = {
     onClick: console.log.bind(console),
   };
 
   const longAnnotationProps = {
     ...defaultAnnotationProps,
-    y:          ({ yScale, datum }) => yScale(datum.low),
-    fill:       DARK.longArrow,
-    path:       () => "M12 4L6 10H10V20H14V10H18L12 4Z",
-    pathWidth:  12,
+    y: ({ yScale, datum }) => yScale(datum.low),
+    fill: DARK.longArrow,
+    path: () => "M12 4L6 10H10V20H14V10H18L12 4Z",
+    pathWidth: 12,
     pathHeight: 12,
-    tooltip:    (datum) => `Go long (Close:${datum.close} date:${datum.date})`,
+    tooltip: (datum) => `Go long (Close:${datum.close} date:${datum.date})`,
   };
 
   const shortAnnotationProps = {
     ...defaultAnnotationProps,
-    y:          ({ yScale, datum }) => yScale(datum.high),
-    fill:       DARK.shortArrow,
-    path:       () => "M12 20L18 14H14V4H10V14H6L12 20Z",
-    pathWidth:  12,
+    y: ({ yScale, datum }) => yScale(datum.high),
+    fill: DARK.shortArrow,
+    path: () => "M12 20L18 14H14V4H10V14H6L12 20Z",
+    pathWidth: 12,
     pathHeight: 12,
-    tooltip:    (datum) => `Go short (Close:${datum.close} date:${datum.date})`,
+    tooltip: (datum) => `Go short (Close:${datum.close} date:${datum.date})`,
   };
 
   const yVal = isIntraday ? 48 : 32;

@@ -1,23 +1,25 @@
 import React from "react";
 import { RSISeries } from "@riyazpanarwala/series";
 import { RSITooltip } from "@riyazpanarwala/tooltip";
-import DARK from "./colorscheme.js";
+import { useThemeColors } from "./useThemeColors";
 
 const RSIChart = ({ data, rsiYAccessor, rsiCalculator }) => {
   if (data.length < 2) {
     return "";
   }
+  const DARK = useThemeColors();
+
   return (
     <>
       <RSISeries
         yAccessor={rsiYAccessor}
         strokeStyle={{
-          line:             DARK.rsiLine,
-          top:              DARK.rsiBand,
-          middle:           DARK.rsiBand,
-          bottom:           DARK.rsiBand,
+          line: DARK.rsiLine,
+          top: DARK.rsiBand,
+          middle: DARK.rsiBand,
+          bottom: DARK.rsiBand,
           outsideThreshold: DARK.rsiOversold,
-          insideThreshold:  DARK.rsiOverbought,
+          insideThreshold: DARK.rsiOverbought,
         }}
       />
       <RSITooltip

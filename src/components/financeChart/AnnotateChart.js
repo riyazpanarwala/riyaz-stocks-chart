@@ -1,7 +1,7 @@
 import React from "react";
 import { Annotate, SvgPathAnnotation } from "@riyazpanarwala/annotations";
 import { ToolTipTSpanLabel, ToolTipText } from "@riyazpanarwala/tooltip";
-import DARK from "./colorscheme.js";
+import { useThemeColors } from "./useThemeColors";
 
 const AnnotateChart = ({
   dataArr,
@@ -10,6 +10,7 @@ const AnnotateChart = ({
   tooltipCallback,
   origin: [x, y],
 }) => {
+  const DARK = useThemeColors();
   const getColor = (patternObj) => {
     if (patternObj.bull) return DARK.annotBull;
     if (patternObj.bear) return DARK.annotBear;

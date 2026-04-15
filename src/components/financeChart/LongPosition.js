@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { InteractiveYCoordinate } from "@riyazpanarwala/interactive";
-import DARK from "./colorscheme.js";
+import { useThemeColors } from "./useThemeColors";
 
 /* ── Base coordinate style builders ── */
 
-const makeAlert = (isPriceObj) => ({
+const makeAlert = (isPriceObj, DARK) => ({
   ...InteractiveYCoordinate.defaultProps.defaultPriceCoordinate,
-  text:        "Target",
+  text: "Target",
   strokeWidth: 3,
-  stroke:      DARK.posTarget,
+  stroke: DARK.posTarget,
   textBox: {
-    height:  24,
-    left:    20,
+    height: 24,
+    left: 20,
     padding: { left: 10, right: 5 },
     closeIcon: { padding: { left: 0, right: 0 }, width: 15, strokeWidth: 2 },
   },
@@ -20,34 +20,34 @@ const makeAlert = (isPriceObj) => ({
     edge: {
       ...InteractiveYCoordinate.defaultProps.defaultPriceCoordinate.edge,
       stroke: DARK.posEdgeStroke,
-      fill:   DARK.posEdgeFill,
+      fill: DARK.posEdgeFill,
     },
   }),
 });
 
-const makeSell = (isPriceObj) => ({
+const makeSell = (isPriceObj, DARK) => ({
   ...InteractiveYCoordinate.defaultProps.defaultPriceCoordinate,
-  stroke:      DARK.posStop,
-  textFill:    isPriceObj ? DARK.tx_primary : DARK.posTextLoss,
-  text:        "Sell",
+  stroke: DARK.posStop,
+  textFill: isPriceObj ? DARK.tx_primary : DARK.posTextLoss,
+  text: "Sell",
   strokeWidth: 3,
   edge: {
     ...InteractiveYCoordinate.defaultProps.defaultPriceCoordinate.edge,
     stroke: isPriceObj ? DARK.posEdgeStroke : DARK.posStop,
-    fill:   isPriceObj ? DARK.posEdgeFill   : undefined,
+    fill: isPriceObj ? DARK.posEdgeFill : undefined,
   },
 });
 
-const makeBuy = (isPriceObj) => ({
+const makeBuy = (isPriceObj, DARK) => ({
   ...InteractiveYCoordinate.defaultProps.defaultPriceCoordinate,
-  stroke:      DARK.posEntry,
-  textFill:    isPriceObj ? DARK.tx_primary : DARK.posTextGain,
-  text:        "Buy",
+  stroke: DARK.posEntry,
+  textFill: isPriceObj ? DARK.tx_primary : DARK.posTextGain,
+  text: "Buy",
   strokeWidth: 3,
   edge: {
     ...InteractiveYCoordinate.defaultProps.defaultPriceCoordinate.edge,
     stroke: isPriceObj ? DARK.posEdgeStroke : DARK.posTextGain,
-    fill:   isPriceObj ? DARK.posEdgeFill   : undefined,
+    fill: isPriceObj ? DARK.posEdgeFill : undefined,
   },
 });
 
@@ -61,21 +61,22 @@ const LongPosition = ({
 }) => {
   const [yCoordinateList, setYCoordinateList] = useState([]);
   const [priceObj, setPriceObj] = useState({});
+  const DARK = useThemeColors();
 
   React.useEffect(() => {
     const { currentVal, targetVal, stopLossVal, percent, isShortPosition } = currentObj;
 
-    const alertObj = makeAlert(isPriceObj);
-    const buyObj   = makeBuy(isPriceObj);
-    const sellObj  = makeSell(isPriceObj);
+    const alertObj = makeAlert(isPriceObj, DARK);
+    const buyObj = makeBuy(isPriceObj, DARK);
+    const sellObj = makeSell(isPriceObj, DARK);
 
     setYCoordinateList([
       {
         ...alertObj,
         selected: true,
-        stroke:   isShortPosition ? DARK.posStop : DARK.posTarget,
-        yValue:   round2Decimal(targetVal),
-        id:       10,
+        stroke: isShortPosition ? DARK.posStop : DARK.posTarget,
+        yValue: round2Decimal(targetVal),
+        id: 10,
         draggable: true,
         text: `${isShortPosition ? "Stop" : "Target"}: ${round2Decimal(
           targetVal - currentVal
@@ -84,17 +85,17 @@ const LongPosition = ({
       {
         ...buyObj,
         selected: true,
-        yValue:   round2Decimal(currentVal),
-        id:       11,
+        yValue: round2Decimal(currentVal),
+        id: 11,
         draggable: true,
-        text:     "Risk/Reward : 1",
+        text: "Risk/Reward : 1",
       },
       {
         ...sellObj,
         selected: true,
-        stroke:   isShortPosition ? DARK.posTarget : DARK.posStop,
-        yValue:   round2Decimal(stopLossVal),
-        id:       12,
+        stroke: isShortPosition ? DARK.posTarget : DARK.posStop,
+        yValue: round2Decimal(stopLossVal),
+        id: 12,
         draggable: true,
         text: `${isShortPosition ? "Target" : "Stop"}: ${round2Decimal(
           currentVal - stopLossVal
@@ -120,7 +121,7 @@ const LongPosition = ({
 
   const getCoordinates = (coordinates) => {
     const { isShortPosition } = currentObj;
-    const targetVal   = coordinates[0].yValue - coordinates[1].yValue;
+    const targetVal = coordinates[0].yValue - coordinates[1].yValue;
     const stopLossVal = coordinates[1].yValue - coordinates[2].yValue;
     coordinates[0].text = `${isShortPosition ? "Stop" : "Target"}: ${round2Decimal(targetVal)} (${round2Decimal((targetVal * 100) / coordinates[1].yValue)}%)`;
     coordinates[1].text = `Risk/Reward : ${isShortPosition ? round2Decimal(stopLossVal / targetVal) : round2Decimal(targetVal / stopLossVal)}`;
@@ -185,12 +186,12 @@ const LongPosition = ({
       onDragComplete={onDragComplete}
       onDelete={onDelete}
       yCoordinateList={yCoordinateList}
-      onChoosePosition={() => {}}
+      onChoosePosition={() => { }}
       priceObj={isPriceObj ? priceObj : ""}
       fillStyleGain={DARK.posGain}
       fillStyleLoss={DARK.posLoss}
       onComplete={onComplete}
-      onDragCompleteWhole={() => {}}
+      onDragCompleteWhole={() => { }}
       isShortPosition={priceObj.isShortPosition}
       onRiskRewardClick={onRiskRewardClick}
       onOutsideClick={onOutsideClick}

@@ -11,17 +11,6 @@ import {
 import useCommonHeader from "../../components/useCommonHeader";
 import Echart from "../../components/Echart";
 
-/*
-{
-"timestamp": "2024-11-22T00:00:00+05:30",
-"open": 123.0,
-"high": 128.0,
-"low": 122.0,
-"close": 127.0,
-"volume": 41000
-}
-*/
-
 const CandleStickChart = () => {
   const {
     intervalObj,
@@ -62,9 +51,9 @@ const CandleStickChart = () => {
         }
         indexArr={newIndexArr}
       />
-      <div style={{ display: "flex" }}>
+      <div className="app-layout">
         <main className="mainChart">
-          <div style={{ margin: "20px" }}>
+          <div className="chart-page-inner">
             {intradayObj.value === "historical" && (
               <Tiles
                 periods={periodDays}

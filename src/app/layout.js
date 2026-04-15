@@ -1,6 +1,7 @@
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import { GOOGLE_ANALYTICS_GA_ID } from "../components/config";
+import ThemeProvider from "../components/ThemeProvider";
 
 import "./globals.css";
 
@@ -8,7 +9,6 @@ export const metadata = {
   title: "Riyaz Panarwala | Live NSE & BSE Stock Charts",
   description:
     "Analyze Indian stocks with live NSE & BSE candlestick charts and technical indicators.",
-
   robots: {
     index: true,
     follow: true,
@@ -21,9 +21,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
       <body>
-        {/* Google Analytics */}
         {GOOGLE_ANALYTICS_GA_ID && (
           <>
             <Script
@@ -42,7 +41,9 @@ export default function RootLayout({ children }) {
             </Script>
           </>
         )}
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

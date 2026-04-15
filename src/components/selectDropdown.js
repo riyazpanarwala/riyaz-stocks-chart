@@ -16,8 +16,8 @@ const HeaderWithDropdowns = ({
   indexArr,
 }) => {
   return (
-    <header style={styles.header}>
-      <div style={styles.dropdownContainer}>
+    <header className="app-header">
+      <div className="dropdown-container">
         <div className="grid-container">
           <div className="grid-item">
             <ReactSelect
@@ -56,22 +56,6 @@ const HeaderWithDropdowns = ({
       </div>
     </header>
   );
-};
-
-const styles = {
-  header: {
-    display:         "flex",
-    flexDirection:   "column",
-    alignItems:      "center",
-    padding:         "8px 14px",
-    backgroundColor: "#12151f",
-    borderBottom:    "1px solid rgba(255,255,255,0.09)",
-  },
-  dropdownContainer: {
-    display: "flex",
-    gap:     "8px",
-    width:   "100%",
-  },
 };
 
 export default HeaderWithDropdowns;

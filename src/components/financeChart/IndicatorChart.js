@@ -2,9 +2,10 @@ import React from "react";
 import { LineSeries } from "@riyazpanarwala/series";
 import { CurrentCoordinate } from "@riyazpanarwala/coordinates";
 import CustomTooltip from "./CustomTooltip";
-import DARK from "./colorscheme.js";
+import { useThemeColors } from "./useThemeColors";
 
 const IndicatorChart = ({ keyVal, tooltipName }) => {
+  const DARK = useThemeColors();
   return (
     <>
       <LineSeries yAccessor={(d) => d[keyVal]} strokeStyle={DARK.indicator} />

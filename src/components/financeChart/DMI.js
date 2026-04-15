@@ -7,20 +7,21 @@ import {
 } from "@riyazpanarwala/coordinates";
 import { format } from "d3-format";
 import CustomTooltip from "./CustomTooltip";
-import DARK from "./colorscheme.js";
+import { useThemeColors } from "./useThemeColors";
 
 const DMI = () => {
+  const DARK = useThemeColors();
   return (
     <>
       <MouseCoordinateY rectWidth={60} displayFormat={format(".2f")} />
 
-      <CurrentCoordinate yAccessor={(d) => d.plusDI}  fillStyle={DARK.dmiPlusDI} />
+      <CurrentCoordinate yAccessor={(d) => d.plusDI} fillStyle={DARK.dmiPlusDI} />
       <CurrentCoordinate yAccessor={(d) => d.minusDI} fillStyle={DARK.dmiMinusDI} />
-      <CurrentCoordinate yAccessor={(d) => d.adx}     fillStyle={DARK.dmiAdx} />
+      <CurrentCoordinate yAccessor={(d) => d.adx} fillStyle={DARK.dmiAdx} />
 
-      <LineSeries yAccessor={(d) => d.plusDI}  strokeStyle={DARK.dmiPlusDI} />
+      <LineSeries yAccessor={(d) => d.plusDI} strokeStyle={DARK.dmiPlusDI} />
       <LineSeries yAccessor={(d) => d.minusDI} strokeStyle={DARK.dmiMinusDI} />
-      <LineSeries yAccessor={(d) => d.adx}     strokeStyle={DARK.dmiAdx} />
+      <LineSeries yAccessor={(d) => d.adx} strokeStyle={DARK.dmiAdx} />
 
       <CustomTooltip
         origin={[8, 32]}

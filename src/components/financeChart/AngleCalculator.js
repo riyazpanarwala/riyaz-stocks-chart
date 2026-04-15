@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { getMouseCanvas, GenericChartComponent } from "@riyazpanarwala/core";
 import { emaAngleIndividual } from "./indicator";
-import DARK from "./colorscheme.js";
+import { useThemeColors } from "./useThemeColors";
 
 const AngleCalculator = ({ enabled }) => {
-  const [rect, setRect]         = useState(null);
-  const [x1y1, setX1y1]         = useState(null);
-  const [start, setStart]       = useState(null);
-  const [end, setEnd]           = useState(null);
+  const [rect, setRect] = useState(null);
+  const [x1y1, setX1y1] = useState(null);
+  const [start, setStart] = useState(null);
+  const [end, setEnd] = useState(null);
   const [isComplete, setComplete] = useState(false);
+  const DARK = useThemeColors();
 
   const terminate = () => {
     setX1y1(null);
@@ -29,14 +30,14 @@ const AngleCalculator = ({ enabled }) => {
     ctx.stroke();
 
     const { plotData } = moreProps;
-    const endIdx   = end.item.idx.index;
+    const endIdx = end.item.idx.index;
     const startIdx = start.item.idx.index;
     const barCount = Math.abs(endIdx - startIdx);
-    const angle    = emaAngleIndividual(plotData, startIdx, endIdx, "ema12", "ema26");
+    const angle = emaAngleIndividual(plotData, startIdx, endIdx, "ema12", "ema26");
 
-    ctx.fillStyle    = DARK.angleText;
-    ctx.font         = "13px 'DM Mono', monospace";
-    ctx.textAlign    = "center";
+    ctx.fillStyle = DARK.angleText;
+    ctx.font = "13px 'DM Mono', monospace";
+    ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(
       `angle : ${angle.toFixed(2)} (${barCount} bars)`,

@@ -54,7 +54,7 @@ import STOChart from "./STOChart";
 import BolingerChart from "./BolingerChart";
 import MACrossOverChart from "./MACrossOverChart";
 import technicalAnalysis from "../technical-analysis/index.js";
-import DARK from "./colorscheme.js";
+import { useThemeColors } from "./useThemeColors";
 const { analyzeMarketStructure } = technicalAnalysis;
 
 const indicatorYExtentsObj = {
@@ -99,23 +99,23 @@ const FinanceChart = ({
   const [longPositionArr, setLongPositionArr] = useState([]);
   const [circles, setCircles] = useState([]);
   const [rectangles, setRectangles] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
   const trendLineRef = useRef(trendLines);
   const textListRef = useRef(textList);
+  const DARK = useThemeColors();
+  const {
+    calculatedData, ema12, ema26, rsiCalculator, rsiYAccessor,
+    angles, macdCalculator, sma20, sma50, sma200, bb, ema5, ema8, ema13, ma1, ma2,
+  } = useData(initialData, indicatorName, isIntraday);
 
   // Fix: never read window during render — that crashes SSR/static export.
   // Initialise to false and update after the component mounts in the browser.
-  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  const {
-    calculatedData, ema12, ema26, rsiCalculator, rsiYAccessor,
-    angles, macdCalculator, sma20, sma50, sma200, bb, ema5, ema8, ema13, ma1, ma2,
-  } = useData(initialData, indicatorName, isIntraday);
 
   const ScaleProvider = discontinuousTimeScaleProviderBuilder()
     .inputDateAccessor((d) => new Date(d.date));
@@ -602,4 +602,4 @@ const FinanceChart = ({
   );
 };
 
-export default withSize({ style: { minHeight: 550 } })(withDeviceRatio()(FinanceChart));
+export default withSize({ style: { minHeight: 600 } })(withDeviceRatio()(FinanceChart));

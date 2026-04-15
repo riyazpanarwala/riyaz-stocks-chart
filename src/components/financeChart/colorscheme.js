@@ -1,4 +1,4 @@
-// cssVar.js - Helper to read CSS custom properties
+// cssVar.js - Dynamic theme color helper
 export const getCssVar = (name, fallback) => {
   if (typeof window === "undefined") return fallback;
   const val = getComputedStyle(document.documentElement)
@@ -7,18 +7,22 @@ export const getCssVar = (name, fallback) => {
   return val || fallback;
 };
 
-const DARK = {
-  // Canvas/structural - read from CSS
+/**
+ * Returns fresh color values from current CSS variables
+ * Call this whenever you need colors (e.g., on theme switch)
+ */
+export const getThemeColors = () => ({
+  // Canvas/structural
   bg: getCssVar("--bg", "#0c0e14"),
   gridLine: getCssVar("--chart-grid-line", "rgba(255,255,255,0.06)"),
   axis: getCssVar("--chart-axis", "rgba(255,255,255,0.22)"),
   axisLabel: getCssVar("--chart-axis-label", "#6a7290"),
   crosshair: getCssVar("--chart-crosshair", "rgba(0,207,247,0.55)"),
   edgeFill: getCssVar("--chart-edge-fill", "#1f2436"),
-  edgeStroke: getCssVar("--accent", "#00cff7"), // Reuse UI accent
+  edgeStroke: getCssVar("--accent", "#00cff7"),
   edgeText: getCssVar("--tx-primary", "#d8dce8"),
 
-  // Candle/bar - synced with UI bull/bear
+  // Candle/bar
   bull: getCssVar("--bull", "#1ec99a"),
   bear: getCssVar("--bear", "#f0506a"),
   volBull: getCssVar("--chart-vol-bull", "rgba(30,201,154,0.30)"),
@@ -86,6 +90,7 @@ const DARK = {
   // Angle overlay
   angleStroke: getCssVar("--accent", "rgba(0,207,247,0.70)"),
   angleText: getCssVar("--tx-primary", "#d8dce8"),
-};
+});
 
-export default DARK;
+// Default export for backward compatibility (calls function once)
+// export default getThemeColors();
