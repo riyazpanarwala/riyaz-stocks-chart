@@ -123,9 +123,13 @@ const LongPosition = ({
     const { isShortPosition } = currentObj;
     const targetVal = coordinates[0].yValue - coordinates[1].yValue;
     const stopLossVal = coordinates[1].yValue - coordinates[2].yValue;
-    coordinates[0].text = `${isShortPosition ? "Stop" : "Target"}: ${round2Decimal(targetVal)} (${round2Decimal((targetVal * 100) / coordinates[1].yValue)}%)`;
-    coordinates[1].text = `Risk/Reward : ${isShortPosition ? round2Decimal(stopLossVal / targetVal) : round2Decimal(targetVal / stopLossVal)}`;
-    coordinates[2].text = `${isShortPosition ? "Target" : "Stop"}: ${round2Decimal(stopLossVal)} (${round2Decimal((stopLossVal * 100) / coordinates[1].yValue)}%)`;
+    const entryVal = coordinates[1].yValue;
+    const percent = (delta) => (entryVal === 0 ? "0.00" : round2Decimal((delta * 100) / entryVal));
+    const ratio = (num, den) => (den === 0 ? "0.00" : round2Decimal(num / den));
+
+    coordinates[0].text = `${isShortPosition ? "Stop" : "Target"}: ${round2Decimal(targetVal)} (${percent(targetVal)}%)`;
+    coordinates[1].text = `Risk/Reward : ${isShortPosition ? ratio(stopLossVal, targetVal) : ratio(targetVal, stopLossVal)}`;
+    coordinates[2].text = `${isShortPosition ? "Target" : "Stop"}: ${round2Decimal(stopLossVal)} (${percent(stopLossVal)}%)`;
     return coordinates;
   };
 
@@ -159,10 +163,11 @@ const LongPosition = ({
 
   const onComplete = (e, obj) => {
     const { x1Value, x2Value, currentVal, targetVal, stopLossVal } = obj;
-    yCoordinateList[0].yValue = targetVal;
-    yCoordinateList[1].yValue = currentVal;
-    yCoordinateList[2].yValue = stopLossVal;
-    setYCoordinateList(getCoordinates(yCoordinateList));
+    const nextCoordinates = yCoordinateList.map((coordinate) => ({ ...coordinate }));
+    nextCoordinates[0].yValue = targetVal;
+    nextCoordinates[1].yValue = currentVal;
+    nextCoordinates[2].yValue = stopLossVal;
+    setYCoordinateList(getCoordinates(nextCoordinates));
     setPriceObj((obj1) => ({ ...obj1, x1Value, x2Value, currentVal, targetVal, stopLossVal }));
   };
 

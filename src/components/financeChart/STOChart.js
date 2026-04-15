@@ -9,7 +9,7 @@ const STOChart = () => {
   const stoAppearance = {
     stroke: {
       dLine: colors.tx_primary,
-      kLine: colors.tx_primary,
+      kLine: colors.ohlcText,
     }
   };
 
