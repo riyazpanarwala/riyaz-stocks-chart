@@ -1,5 +1,5 @@
 // src/app/sitemap.js
-// Next.js App Router automatically serves this at /sitemap.xml
+// Next.js App Router serves this automatically at /sitemap.xml
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://riyaz-stocks-chart.vercel.app";
@@ -21,6 +21,12 @@ export default function sitemap() {
       priority: 0.9,
     },
     {
+      url: `${BASE_URL}/optionchain`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
       url: `${BASE_URL}/TradingView`,
       lastModified: now,
       changeFrequency: "weekly",
@@ -36,13 +42,7 @@ export default function sitemap() {
       url: `${BASE_URL}/riyazstock`,
       lastModified: now,
       changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${BASE_URL}/optionchain`,
-      lastModified: now,
-      changeFrequency: "monthly",
-      priority: 0.9,
+      priority: 0.4,
     },
   ];
 }

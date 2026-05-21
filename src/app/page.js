@@ -1,24 +1,66 @@
+// src/app/page.js
 import CandleStickChartClient from "./CandleStickChartClient";
 
 export const dynamic = "force-static";
 
+const BASE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://riyaz-stocks-chart.vercel.app";
+
 export const metadata = {
-  title: "Live NSE & BSE Stock Candlestick Charts | Riyaz Panarwala Stocks",
-  description: "Free interactive candlestick charts for Indian stocks. Analyze NSE/BSE data with RSI, MACD, and technical indicators.",
-  keywords: ["NSE", "BSE", "Stock Charts", "Candlestick", "Technical Analysis"],
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-    },
+  title:
+    "Free NSE & BSE Candlestick Charts | Live Stock Technical Analysis",
+  description:
+    "View live and historical candlestick charts for 5000+ NSE and BSE stocks. Analyse NIFTY, BANKNIFTY, and Indian equities with RSI, MACD, Bollinger Bands, Supertrend, moving averages, and candlestick pattern scanners. 100% free.",
+  keywords: [
+    "NSE candlestick charts",
+    "BSE stock charts",
+    "live NIFTY chart",
+    "BANKNIFTY chart",
+    "RSI MACD NSE",
+    "Indian stock technical analysis",
+    "free stock charts India",
+    "intraday charts NSE BSE",
+    "Bollinger bands",
+    "supertrend indicator",
+    "candlestick pattern scanner",
+    "stock breakout detection",
+    "moving average crossover",
+  ],
+  alternates: {
+    canonical: BASE_URL,
+  },
+  openGraph: {
+    title: "Free NSE & BSE Candlestick Charts | Live Technical Analysis",
+    description:
+      "Analyse 5000+ Indian stocks with interactive candlestick charts, RSI, MACD, Supertrend, pattern detection, and fundamental data.",
+    url: BASE_URL,
+    type: "website",
   },
 };
 
 export default function Page() {
   return (
     <main>
+      {/*
+        Visually hidden H1 — always present for crawlers and screen readers,
+        but the chart UI dominates the visible page.
+        Use `sr-only` Tailwind class or the inline style below.
+      */}
+      <h1
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: "hidden",
+          clip: "rect(0,0,0,0)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
+      >
+        Free NSE &amp; BSE Stock Candlestick Charts with Technical Indicators
+      </h1>
       <CandleStickChartClient />
     </main>
   );

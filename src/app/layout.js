@@ -8,14 +8,13 @@ import JsonLd from "../components/JsonLd";
 import "./globals.css";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://riyaz-stocks-chart.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://riyaz-stocks-chart.vercel.app/";
 
 export const metadata = {
-  metadataBase: new URL(`${BASE_URL}/`),
+  metadataBase: new URL(BASE_URL),
 
   title: {
-    default:
-      "Free NSE & BSE Stock Charts | Candlestick Charts with Technical Indicators",
+    default: "Free NSE & BSE Stock Charts | Candlestick Charts with Technical Indicators",
     template: "%s | Riyaz Panarwala Stocks",
   },
   description:
@@ -50,20 +49,20 @@ export const metadata = {
   publisher: "Riyaz Panarwala",
 
   alternates: {
-    canonical: `${BASE_URL}/`,
+    canonical: BASE_URL,
   },
 
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: `${BASE_URL}/`,
+    url: BASE_URL,
     siteName: "Riyaz Panarwala Stocks",
     title: "Free NSE & BSE Stock Charts with Technical Indicators",
     description:
       "Analyse 5000+ Indian stocks with interactive candlestick charts, RSI, MACD, Bollinger Bands, Supertrend, pattern detection, and fundamental data. Completely free.",
     images: [
       {
-        url: `${BASE_URL}/og-image.png`,
+        url: `${BASE_URL}og-image.png`,
         width: 1200,
         height: 630,
         alt: "NSE BSE Stock Candlestick Charts – Riyaz Panarwala",
@@ -77,7 +76,7 @@ export const metadata = {
     title: "Free NSE & BSE Stock Charts | Technical Analysis",
     description:
       "Analyse 5000+ Indian stocks with RSI, MACD, Bollinger Bands, Supertrend, and 15+ indicators. Free candlestick charts with intraday & historical data.",
-    images: [`${BASE_URL}/og-image.png`],
+    images: [`${BASE_URL}og-image.png`],
     creator: "@riyazpanarwala",
     site: "@riyazpanarwala",
   },
