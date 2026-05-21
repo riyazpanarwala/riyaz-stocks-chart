@@ -10,7 +10,7 @@ export default function robots() {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/_next/", "/riyazstock", "/optionchain"],
+        disallow: ["/api/", "/_next/"],
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,
