@@ -13,9 +13,10 @@ const BASE_URL =
  * @param {string} exchange - e.g. "NSE" | "BSE"
  */
 export function generateStockMetadata(symbol, name, exchange = "NSE") {
+  const safeSymbol = encodeURIComponent(symbol.toLowerCase());
   const title = `${name} (${symbol}) Stock Chart | ${exchange} Candlestick & Technical Analysis`;
   const description = `View live ${exchange} candlestick chart for ${name} (${symbol}). Analyse with RSI, MACD, Bollinger Bands, Supertrend, and 15+ technical indicators. Free intraday and historical data.`;
-  const canonicalUrl = `${BASE_URL}/chart/${symbol.toLowerCase()}`;
+  const canonicalUrl = `${BASE_URL}/chart/${safeSymbol}`;
 
   return {
     title,
@@ -66,8 +67,14 @@ export function generateStockMetadata(symbol, name, exchange = "NSE") {
  * @param {string} exchange
  * @param {number|null} currentPrice
  */
-export function generateStockJsonLd(symbol, name, exchange = "NSE", currentPrice = null) {
-  const url = `${BASE_URL}/chart/${symbol.toLowerCase()}`;
+export function generateStockJsonLd(
+  symbol,
+  name,
+  exchange = "NSE",
+  currentPrice = null,
+) {
+  const safeSymbol = encodeURIComponent(symbol.toLowerCase());
+  const url = `${BASE_URL}/chart/${safeSymbol}`;
 
   const schema = {
     "@context": "https://schema.org",
@@ -79,8 +86,18 @@ export function generateStockJsonLd(symbol, name, exchange = "NSE", currentPrice
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL },
-        { "@type": "ListItem", position: 2, name: "Charts", item: `${BASE_URL}/chart` },
-        { "@type": "ListItem", position: 3, name: `${symbol} Chart`, item: url },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Charts",
+          item: `${BASE_URL}/chart`,
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: `${symbol} Chart`,
+          item: url,
+        },
       ],
     },
     mainEntity: {
@@ -88,7 +105,7 @@ export function generateStockJsonLd(symbol, name, exchange = "NSE", currentPrice
       name,
       tickerSymbol: symbol,
       exchange,
-      ...(currentPrice && {
+      ...(currentPrice != null && {
         offers: {
           "@type": "Offer",
           price: currentPrice,

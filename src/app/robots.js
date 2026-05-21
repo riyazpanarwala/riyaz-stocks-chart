@@ -12,9 +12,8 @@ export default function robots() {
         allow: ["/", "/chart", "/TradingView", "/optionchain"],
         disallow: [
           "/api/",
-          "/_next/",
-          "/riyazstock",          // internal bulk-analysis tool
-          "/*.json$",             // block raw JSON files
+          "/riyazstock", // internal bulk-analysis tool
+          "/*.json$", // block raw JSON files
           "/api/NSE/",
           "/api/finance/",
           "/api/Fundamentals/",
