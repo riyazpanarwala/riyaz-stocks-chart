@@ -1,0 +1,22 @@
+{
+  "name": "Riyaz Panarwala Stocks",
+  "short_name": "Stock Charts",
+  "description": "Free interactive NSE and BSE stock charts with technical indicators, intraday data, and historical market analysis.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0e17",
+  "theme_color": "#0a0e17",
+  "categories": ["finance", "business", "productivity"],
+  "lang": "en-IN",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ]
+}
