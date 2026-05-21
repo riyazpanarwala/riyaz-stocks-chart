@@ -1,3 +1,4 @@
+// src/app/CandleStickChartClient.js
 "use client";
 import React, { useEffect, useState } from "react";
 import { FullScreen, useFullScreenHandle } from "react-full-screen";
@@ -5,6 +6,7 @@ import Sidebar from "../components/Sidebar/Sidebar.js";
 import HeaderWithDropdowns from "../components/selectDropdown";
 import Tiles from "../components/tiles";
 import FinanceChart from "../components/financeChart";
+import SeoIntro from "../components/SeoIntro.jsx";
 import {
   intraArr,
   intervalArr,
@@ -113,17 +115,10 @@ const CandleStickChart = () => {
     setPatternName("");
   };
 
-  const getCompanyName = () => {
-    return companyObj?.label;
-  };
+  const getCompanyName = () => companyObj?.label;
 
-  const analysisClick = () => {
-    setModalOpen(true);
-  };
-
-  const fundaMentalsClick = () => {
-    setModalOpen1(true);
-  };
+  const analysisClick = () => setModalOpen(true);
+  const fundaMentalsClick = () => setModalOpen1(true);
 
   const addToWatchList = () => {
     setToStorage(companyObj);
@@ -146,27 +141,25 @@ const CandleStickChart = () => {
     }
   };
 
-  const exitFullScreen = async () => {
-    handle.exit();
-    if (screen.orientation?.unlock) {
-      screen.orientation.unlock();
-    }
-  };
-
   useEffect(() => {
     setCompanyExist(isCompanyExistInStorage(companyObj));
   }, [companyObj]);
 
+  // ── Dynamic <title> per selected stock for SEO ──────────────────────────
+  useEffect(() => {
+    if (companyObj?.label) {
+      const symbol = companyObj.symbol || companyObj.label;
+      document.title = `${companyObj.label} (${symbol}) Stock Chart | NSE BSE Technical Analysis`;
+    }
+  }, [companyObj]);
+
+  // ── Loading state – show SEO intro instead of blank page ────────────────
   if (!companyArr.length) {
     return (
-      <section className="page-intro">
-        <h1>Live NSE &amp; BSE Candlestick Charts</h1>
-        <p>
-          Analyze Indian stocks using candlestick charts with RSI, MACD, moving
-          averages, breakout patterns, and trendlines. Supports both intraday
-          and historical market data.
-        </p>
-      </section>
+      <>
+        {/* Static SEO section visible before JS hydrates */}
+        <SeoIntro />
+      </>
     );
   }
 
@@ -225,29 +218,46 @@ const CandleStickChart = () => {
           handleWatchListClick={handleWatchListClick}
           companyObj={companyObj}
         />
-        <main className="mainChart">
+
+        <main className="mainChart" id="main-content">
           <div>
             <div className="headerContent">
-              <h2 className="company-name">{getCompanyName()}</h2>
-              <div className="action-buttons">
-                {(indexObj.value === "NSE_EQ" ||
-                  indexObj.value === "BSE_EQ") && (
-                    <ActionButton onClick={fundaMentalsClick}>
-                      Fundamentals
-                    </ActionButton>
-                  )}
-                <ActionButton onClick={analysisClick}>
+              {/* Semantic heading for screen readers and crawlers */}
+              <h2 className="company-name" aria-label={`${getCompanyName()} stock chart`}>
+                {getCompanyName()}
+              </h2>
+              <div className="action-buttons" role="toolbar" aria-label="Chart actions">
+                {(indexObj.value === "NSE_EQ" || indexObj.value === "BSE_EQ") && (
+                  <ActionButton
+                    onClick={fundaMentalsClick}
+                    aria-label={`View fundamental data for ${getCompanyName()}`}
+                  >
+                    Fundamentals
+                  </ActionButton>
+                )}
+                <ActionButton
+                  onClick={analysisClick}
+                  aria-label={`View technical analysis for ${getCompanyName()}`}
+                >
                   Technical Analysis
                 </ActionButton>
                 {isCompanyExist ? (
-                  <ActionButton onClick={removeFrmWatchList}>
+                  <ActionButton
+                    onClick={removeFrmWatchList}
+                    aria-label={`Remove ${getCompanyName()} from watchlist`}
+                  >
                     ★ Remove
                   </ActionButton>
                 ) : (
-                  <ActionButton onClick={addToWatchList}>☆ Add</ActionButton>
+                  <ActionButton
+                    onClick={addToWatchList}
+                    aria-label={`Add ${getCompanyName()} to watchlist`}
+                  >
+                    ☆ Add
+                  </ActionButton>
                 )}
                 <div className="mobile-view">
-                  <ActionButton onClick={enterFullScreen}>
+                  <ActionButton onClick={enterFullScreen} aria-label="Enter full screen mode">
                     ⛶ Full Screen
                   </ActionButton>
                 </div>
@@ -255,7 +265,7 @@ const CandleStickChart = () => {
             </div>
 
             {intradayObj.value === "historical" && (
-              <div className="tiles-container">
+              <div className="tiles-container" role="navigation" aria-label="Time period selector">
                 <Tiles
                   periods={periodArr}
                   selectedPeriod={period}
@@ -266,7 +276,11 @@ const CandleStickChart = () => {
 
             {candleData.length ? (
               <FullScreen handle={handle}>
-                <div className="finance-charts">
+                <div
+                  className="finance-charts"
+                  role="img"
+                  aria-label={`Candlestick chart for ${getCompanyName()}`}
+                >
                   <FinanceChart
                     isDisplayHrAndTime={isDisplayHrAndTime}
                     isHistoricalMinutes={intervalObj.apiUnit === "minutes"}
@@ -287,7 +301,8 @@ const CandleStickChart = () => {
                 </div>
               </FullScreen>
             ) : (
-              ""
+              /* Show SEO intro while chart data is loading */
+              <SeoIntro />
             )}
 
             {!(companyObj.nseIndex || companyObj.etf) && (
@@ -303,9 +318,7 @@ const CandleStickChart = () => {
           <TechnicalInfo
             companyObj={companyObj}
             indexName={indexObj.value}
-            onClose={() => {
-              setModalOpen(false);
-            }}
+            onClose={() => setModalOpen(false)}
           />
         )}
 
@@ -313,9 +326,7 @@ const CandleStickChart = () => {
           <Fundamentals
             companyObj={companyObj}
             indexObj={indexObj}
-            onClose={() => {
-              setModalOpen1(false);
-            }}
+            onClose={() => setModalOpen1(false)}
           />
         )}
       </div>
