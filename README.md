@@ -49,7 +49,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 - Next.js 16
 - React 19
-- ECharts and Recharts for charting
+- @riyazpanarwala/react-financial-charts for charting
 - Sass for component styling
 - Yahoo Finance, NSE, and Indian stock market data packages
 
