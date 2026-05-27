@@ -1,8 +1,7 @@
 // src/app/robots.js
 // Next.js App Router serves this automatically at /robots.txt
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://rcharts.panarwala.in";
+import { SITE_URL } from "../lib/siteConfig";
 
 export default function robots() {
   return {
@@ -25,7 +24,7 @@ export default function robots() {
         allow: ["/og-image.png", "/apple-touch-icon.png"],
       },
     ],
-    sitemap: `${BASE_URL}/sitemap.xml`,
-    host: BASE_URL,
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

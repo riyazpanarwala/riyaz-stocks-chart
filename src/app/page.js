@@ -1,10 +1,8 @@
 // src/app/page.js
 import CandleStickChartClient from "./CandleStickChartClient";
+import { SITE_URL } from "../lib/siteConfig";
 
 export const dynamic = "force-static";
-
-const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://riyaz-stocks-chart.vercel.app";
 
 export const metadata = {
   title:
@@ -27,13 +25,13 @@ export const metadata = {
     "moving average crossover",
   ],
   alternates: {
-    canonical: BASE_URL,
+    canonical: SITE_URL,
   },
   openGraph: {
     title: "Free NSE & BSE Candlestick Charts | Live Technical Analysis",
     description:
       "Analyse 5000+ Indian stocks with interactive candlestick charts, RSI, MACD, Supertrend, pattern detection, and fundamental data.",
-    url: BASE_URL,
+    url: SITE_URL,
     type: "website",
   },
 };

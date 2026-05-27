@@ -1,8 +1,7 @@
 // src/components/JsonLd.jsx
 // Structured data (JSON-LD) for rich search results
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://riyaz-stocks-chart.vercel.app";
+import { SITE_URL } from "../lib/siteConfig";
 
 export default function JsonLd() {
   const websiteSchema = {
@@ -10,14 +9,14 @@ export default function JsonLd() {
     "@type": "WebSite",
     name: "Riyaz Panarwala Stocks",
     alternateName: "NSE BSE Stock Charts",
-    url: BASE_URL,
+    url: SITE_URL,
     description:
       "Free interactive candlestick charts for Indian stocks. Analyze NSE/BSE data with RSI, MACD, Bollinger Bands, moving averages, and 15+ technical indicators.",
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${BASE_URL}/?q={search_term_string}`,
+        urlTemplate: `${SITE_URL}/?q={search_term_string}`,
       },
       "query-input": "required name=search_term_string",
     },
@@ -27,7 +26,7 @@ export default function JsonLd() {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     name: "NSE BSE Stock Chart Analyzer",
-    url: BASE_URL,
+    url: SITE_URL,
     applicationCategory: "FinanceApplication",
     operatingSystem: "Any",
     browserRequirements: "Requires JavaScript",
@@ -53,7 +52,7 @@ export default function JsonLd() {
     author: {
       "@type": "Person",
       name: "Riyaz Panarwala",
-      url: BASE_URL,
+      url: SITE_URL,
     },
   };
 
@@ -61,7 +60,7 @@ export default function JsonLd() {
     "@context": "https://schema.org",
     "@type": "Person",
     name: "Riyaz Panarwala",
-    url: BASE_URL,
+    url: SITE_URL,
     sameAs: [],
     knowsAbout: [
       "Stock Market Analysis",
@@ -81,25 +80,19 @@ export default function JsonLd() {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: BASE_URL,
+        item: SITE_URL,
       },
       {
         "@type": "ListItem",
         position: 2,
-        name: "Stock Charts",
-        item: `${BASE_URL}/chart`,
+        name: "TradingView Charts",
+        item: `${SITE_URL}/TradingView`,
       },
       {
         "@type": "ListItem",
         position: 3,
-        name: "TradingView Charts",
-        item: `${BASE_URL}/TradingView`,
-      },
-      {
-        "@type": "ListItem",
-        position: 4,
         name: "Option Chain",
-        item: `${BASE_URL}/optionchain`,
+        item: `${SITE_URL}/optionchain`,
       },
     ],
   };
