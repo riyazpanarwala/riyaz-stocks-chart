@@ -10,8 +10,16 @@ import { SITE_URL } from "./siteConfig";
  * @param {string} symbol  - e.g. "RELIANCE"
  * @param {string} name    - e.g. "Reliance Industries Ltd"
  * @param {string} exchange - e.g. "NSE" | "BSE"
+ * @param {string} stockUrl - absolute canonical URL for the stock page
  */
-export function generateStockMetadata(symbol, name, exchange = "NSE") {
+export function generateStockMetadata(
+  symbol,
+  name,
+  exchange = "NSE",
+  stockUrl,
+) {
+  if (!stockUrl) throw new Error("stockUrl is required for stock metadata");
+
   const title = `${name} (${symbol}) Stock Chart | ${exchange} Candlestick & Technical Analysis`;
   const description = `View live ${exchange} candlestick chart for ${name} (${symbol}). Analyse with RSI, MACD, Bollinger Bands, Supertrend, and 15+ technical indicators. Free intraday and historical data.`;
 
@@ -30,12 +38,12 @@ export function generateStockMetadata(symbol, name, exchange = "NSE") {
       "Indian stock technical analysis",
     ],
     alternates: {
-      canonical: SITE_URL,
+      canonical: stockUrl,
     },
     openGraph: {
       title,
       description,
-      url: SITE_URL,
+      url: stockUrl,
       type: "website",
       images: [
         {
@@ -63,19 +71,23 @@ export function generateStockMetadata(symbol, name, exchange = "NSE") {
  * @param {string} name
  * @param {string} exchange
  * @param {number|null} currentPrice
+ * @param {string} stockUrl
  */
 export function generateStockJsonLd(
   symbol,
   name,
   exchange = "NSE",
   currentPrice = null,
+  stockUrl,
 ) {
+  if (!stockUrl) throw new Error("stockUrl is required for stock JSON-LD");
+
   const schema = {
     "@context": "https://schema.org",
     "@type": "WebPage",
     name: `${name} (${symbol}) Stock Chart`,
     description: `Interactive candlestick chart and technical analysis for ${name} listed on ${exchange}.`,
-    url: SITE_URL,
+    url: stockUrl,
     breadcrumb: {
       "@type": "BreadcrumbList",
       itemListElement: [
@@ -84,7 +96,7 @@ export function generateStockJsonLd(
           "@type": "ListItem",
           position: 2,
           name: `${symbol} Chart`,
-          item: SITE_URL,
+          item: stockUrl,
         },
       ],
     },
