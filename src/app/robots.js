@@ -2,14 +2,14 @@
 // Next.js App Router serves this automatically at /robots.txt
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://riyaz-stocks-chart.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://rcharts.panarwala.in";
 
 export default function robots() {
   return {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/chart", "/TradingView", "/optionchain"],
+        allow: ["/", "/TradingView", "/optionchain"],
         disallow: [
           "/api/",
           "/riyazstock", // internal bulk-analysis tool

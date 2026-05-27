@@ -2,7 +2,7 @@
 // Next.js App Router serves this automatically at /sitemap.xml
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://riyaz-stocks-chart.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://rcharts.panarwala.in";
 
 export default function sitemap() {
   const now = new Date();
@@ -13,12 +13,6 @@ export default function sitemap() {
       lastModified: now,
       changeFrequency: "daily",
       priority: 1.0,
-    },
-    {
-      url: `${BASE_URL}/chart`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.9,
     },
     {
       url: `${BASE_URL}/optionchain`,

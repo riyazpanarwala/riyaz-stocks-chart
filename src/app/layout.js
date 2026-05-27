@@ -8,13 +8,14 @@ import JsonLd from "../components/JsonLd";
 import "./globals.css";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://riyaz-stocks-chart.vercel.app/";
+  process.env.NEXT_PUBLIC_SITE_URL || "https://rcharts.panarwala.in";
 
 export const metadata = {
   metadataBase: new URL(BASE_URL),
 
   title: {
-    default: "Free NSE & BSE Stock Charts | Candlestick Charts with Technical Indicators",
+    default:
+      "Free NSE & BSE Stock Charts | Candlestick Charts with Technical Indicators",
     template: "%s | Riyaz Panarwala Stocks",
   },
   description:
