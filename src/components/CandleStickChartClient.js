@@ -1,12 +1,12 @@
-// src/app/CandleStickChartClient.js
+// src/components/CandleStickChartClient.js
 "use client";
 import React, { useEffect, useState } from "react";
 import { FullScreen, useFullScreenHandle } from "react-full-screen";
-import Sidebar from "../components/Sidebar/Sidebar.js";
-import HeaderWithDropdowns from "../components/selectDropdown";
-import Tiles from "../components/tiles";
-import FinanceChart from "../components/financeChart";
-import SeoIntro from "../components/SeoIntro.jsx";
+import Sidebar from "./Sidebar/Sidebar.js";
+import HeaderWithDropdowns from "./selectDropdown";
+import Tiles from "./tiles";
+import FinanceChart from "./financeChart";
+import SeoIntro from "./SeoIntro.jsx";
 import {
   intraArr,
   intervalArr,
@@ -15,17 +15,17 @@ import {
   periodMinutes,
   periodHours,
   periodMax,
-} from "../components/utils/data";
-import useCommonHeader from "../components/useCommonHeader";
-import TechnicalInfo from "../components/TechnicalInfo";
+} from "./utils/data";
+import useCommonHeader from "./useCommonHeader";
+import TechnicalInfo from "./TechnicalInfo";
 import {
   setToStorage,
   updateStorageData,
   isCompanyExistInStorage,
-} from "../components/utils/storage";
-import Fundamentals from "../components/FundaMentals/index.js";
-import ActionButton from "../components/ActionButton.js";
-import TrendlyneChecklist from "../components/Trendlyne/TrendlyneChecklist.jsx";
+} from "./utils/storage";
+import Fundamentals from "./FundaMentals/index.js";
+import ActionButton from "./ActionButton.js";
+import TrendlyneChecklist from "./Trendlyne/TrendlyneChecklist.jsx";
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -335,3 +335,4 @@ const CandleStickChart = () => {
 };
 
 export default CandleStickChart;
+
