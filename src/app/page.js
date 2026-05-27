@@ -1,5 +1,5 @@
 // src/app/page.js
-import CandleStickChartClient from "./CandleStickChartClient";
+import CandleStickChartClient from "../components/CandleStickChartClient";
 import { SITE_URL } from "../lib/siteConfig";
 
 export const dynamic = "force-static";
@@ -39,26 +39,6 @@ export const metadata = {
 export default function Page() {
   return (
     <main>
-      {/*
-        Visually hidden H1 — always present for crawlers and screen readers,
-        but the chart UI dominates the visible page.
-        Use `sr-only` Tailwind class or the inline style below.
-      */}
-      <h1
-        style={{
-          position: "absolute",
-          width: 1,
-          height: 1,
-          padding: 0,
-          margin: -1,
-          overflow: "hidden",
-          clip: "rect(0,0,0,0)",
-          whiteSpace: "nowrap",
-          border: 0,
-        }}
-      >
-        Free NSE &amp; BSE Stock Candlestick Charts with Technical Indicators
-      </h1>
       <CandleStickChartClient />
     </main>
   );
