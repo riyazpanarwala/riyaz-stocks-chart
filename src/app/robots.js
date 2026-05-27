@@ -1,15 +1,14 @@
 // src/app/robots.js
 // Next.js App Router serves this automatically at /robots.txt
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "https://riyaz-stocks-chart.vercel.app";
+import { SITE_URL } from "../lib/siteConfig";
 
 export default function robots() {
   return {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/chart", "/TradingView", "/optionchain"],
+        allow: ["/", "/TradingView", "/optionchain"],
         disallow: [
           "/api/",
           "/riyazstock", // internal bulk-analysis tool
@@ -25,7 +24,7 @@ export default function robots() {
         allow: ["/og-image.png", "/apple-touch-icon.png"],
       },
     ],
-    sitemap: `${BASE_URL}/sitemap.xml`,
-    host: BASE_URL,
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }
