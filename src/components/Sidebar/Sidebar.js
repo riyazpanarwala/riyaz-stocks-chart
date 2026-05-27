@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { FaBars, FaTimes } from "react-icons/fa";
+import React from "react";
+import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from "react-icons/tb";
 import {
   MdTrendingFlat,
   MdOutlineRotate90DegreesCw,
@@ -36,11 +36,15 @@ const Sidebar = ({
   handlePatternClick,
   handleWatchListClick,
   companyObj,
+  isOpen,
+  onToggle,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggleSidebar = () => setIsOpen((prev) => !prev);
-  const closeSidebar = () => setIsOpen(false);
+  const toggleSidebar = () => onToggle((prev) => !prev);
+  const closeSidebar = () => {
+    if (window.innerWidth <= 768) {
+      onToggle(false);
+    }
+  };
 
   const indicatorArr = [
     { id: "sma", name: "SMA(20,50,200)", isActive: indicatorName === "sma" },
@@ -91,18 +95,19 @@ const Sidebar = ({
     <>
       <button
         type="button"
-        className={styles.hamburger}
+        className={`${styles.sidebarToggle} ${isOpen ? styles.toggleOpen : ""}`}
         onClick={toggleSidebar}
         aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
+        title={isOpen ? "Close sidebar" : "Open sidebar"}
       >
-        {isOpen ? <FaTimes /> : <FaBars />}
+        {isOpen ? <TbLayoutSidebarLeftCollapse /> : <TbLayoutSidebarLeftExpand />}
       </button>
 
       {isOpen && (
         <div className={styles.overlay} onClick={closeSidebar} />
       )}
 
-      <div className={`${styles.sidebar} ${isOpen ? styles.open : ""}`}>
+      <div className={`${styles.sidebar} ${isOpen ? styles.open : styles.closed}`}>
         <div
           className={`${styles.button} ${trendLineEnable ? styles.active : ""}`}
           onClick={() => { closeSidebar(); handleTrendLineClick(); }}

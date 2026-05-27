@@ -39,6 +39,7 @@ const CandleStickChart = () => {
   const [patternName, setPatternName] = useState("");
   const [modal, setModalOpen] = useState(false);
   const [modal1, setModalOpen1] = useState(false);
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
   const {
     intervalObj,
     intradayObj,
@@ -145,6 +146,23 @@ const CandleStickChart = () => {
     setCompanyExist(isCompanyExistInStorage(companyObj));
   }, [companyObj]);
 
+  useEffect(() => {
+    let isMobileViewport = window.innerWidth <= 768;
+    setSidebarOpen(!isMobileViewport);
+
+    const syncSidebarForViewportChange = () => {
+      const nextIsMobileViewport = window.innerWidth <= 768;
+      if (nextIsMobileViewport !== isMobileViewport) {
+        isMobileViewport = nextIsMobileViewport;
+        setSidebarOpen(!nextIsMobileViewport);
+      }
+    };
+
+    window.addEventListener("resize", syncSidebarForViewportChange);
+
+    return () => window.removeEventListener("resize", syncSidebarForViewportChange);
+  }, []);
+
   // ── Dynamic <title> per selected stock for SEO ──────────────────────────
   useEffect(() => {
     if (companyObj?.label) {
@@ -178,7 +196,7 @@ const CandleStickChart = () => {
   }
 
   return (
-    <>
+    <div className={`chart-shell ${isSidebarOpen ? "" : "sidebar-collapsed"}`}>
       <HeaderWithDropdowns
         intervalObj={intervalObj}
         intradayObj={intradayObj}
@@ -217,6 +235,8 @@ const CandleStickChart = () => {
           handlePatternClick={handlePatternClick}
           handleWatchListClick={handleWatchListClick}
           companyObj={companyObj}
+          isOpen={isSidebarOpen}
+          onToggle={setSidebarOpen}
         />
 
         <main className="mainChart" id="main-content">
@@ -330,7 +350,7 @@ const CandleStickChart = () => {
           />
         )}
       </div>
-    </>
+    </div>
   );
 };
 
