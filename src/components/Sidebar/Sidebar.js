@@ -94,18 +94,15 @@ const Sidebar = ({
 
   return (
     <>
-      <motion.button
+      <button
         type="button"
         className={`${styles.sidebarToggle} ${isOpen ? styles.toggleOpen : ""}`}
         onClick={toggleSidebar}
         aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
         title={isOpen ? "Close sidebar" : "Open sidebar"}
-        whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.92 }}
-        animate={{ rotate: isOpen ? 0 : 180 }}
       >
         {isOpen ? <TbLayoutSidebarLeftCollapse /> : <TbLayoutSidebarLeftExpand />}
-      </motion.button>
+      </button>
 
       <AnimatePresence>
         {isOpen && (
@@ -122,7 +119,7 @@ const Sidebar = ({
       <motion.div
         className={`${styles.sidebar} ${isOpen ? styles.open : styles.closed}`}
         initial={false}
-        animate={{ x: isOpen ? 0 : -12, opacity: isOpen ? 1 : 0.72 }}
+        animate={{ x: isOpen ? 0 : "calc(var(--sidebar-w) * -1)" }}
         transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
       >
         <div

@@ -87,44 +87,37 @@
 /* ── Sidebar toggle ── */
 .sidebarToggle {
   position:      fixed;
-  top:           50%;
-  left:          14px;
-  background:    var(--surface-2);   /* #181c28 */
+  top:           10px;
+  left:          12px;
+  background:    var(--surface-1);
   color:         var(--tx-second);
-  width:         38px;
-  height:        38px;
-  font-size:     22px;
-  border-radius: 50%;
+  width:         32px;
+  height:        32px;
+  font-size:     18px;
+  border-radius: var(--radius-sm);
   border:        1px solid var(--bd-dim);
   cursor:        pointer;
   z-index:       600;
   display:       flex;
   align-items:   center;
   justify-content: center;
-  box-shadow:    0 8px 24px rgba(0,0,0,0.36);
+  box-shadow:    none;
   transition:    left 260ms cubic-bezier(0.22, 1, 0.36, 1), background 130ms ease, color 130ms ease, border-color 130ms ease, box-shadow 130ms ease, transform 130ms ease;
   line-height:   1;
-  transform:     translateY(-50%);
 }
 
 .toggleOpen {
-  top: 14px;
-  left: calc(var(--sidebar-w) - 52px);
-  transform: none;
+  left: calc(var(--sidebar-w) - 44px);
 }
 
 .sidebarToggle:hover {
   background: var(--accent-soft);
   color:      var(--accent);
   border-color: var(--bd-accent);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.44), 0 0 14px var(--accent-glow);
+  box-shadow: 0 0 10px var(--accent-glow);
 }
 
 .sidebarToggle:active {
-  transform: translateY(-50%) scale(0.94);
-}
-
-.toggleOpen:active {
   transform: scale(0.94);
 }
 
@@ -208,13 +201,8 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .sidebarToggle {
-    top: 12px;
-    transform: none;
-  }
   .toggleOpen {
-    top: 14px;
-    left: calc(var(--sidebar-w) - 52px);
+    left: calc(var(--sidebar-w) - 44px);
   }
   .closeBtn  { display: block; }
   .overlay   { display: block; }
