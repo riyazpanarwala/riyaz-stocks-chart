@@ -208,6 +208,8 @@ html, body {
 
 a { color: var(--accent); text-decoration: none; }
 
+.motion-page { min-height: 100vh; }
+
 ::-webkit-scrollbar             { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track       { background: var(--surface-1); }
 ::-webkit-scrollbar-thumb       { background: var(--surface-4); border-radius: 3px; }
@@ -260,6 +262,7 @@ header {
 
 .chart-shell.sidebar-collapsed header {
   margin-left: 0;
+  padding-left: 54px !important;
 }
 
 .grid-container {
@@ -367,6 +370,15 @@ header {
 
 .custom-button:active { transform: scale(0.97); }
 
+@media (prefers-reduced-motion: reduce) {
+  html, body, *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 /* ─────────────────────────────────────────────
    PAGE INTRO
    ───────────────────────────────────────────── */
@@ -428,6 +440,10 @@ header {
    ───────────────────────────────────────────── */
 @media (max-width: 768px) {
   header       { margin-left: 0; padding-top: 60px !important; }
+  .chart-shell.sidebar-collapsed header {
+    padding-top: 8px !important;
+    padding-left: 54px !important;
+  }
   .mainChart   { margin-left: 0; }
   .mobile-view { display: block; }
 
