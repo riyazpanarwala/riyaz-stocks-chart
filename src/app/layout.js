@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import { GOOGLE_ANALYTICS_GA_ID } from "../components/config";
 import ThemeProvider from "../components/ThemeProvider";
+import MotionShell from "../components/MotionShell";
 import JsonLd from "../components/JsonLd";
 import { SITE_URL } from "../lib/siteConfig";
 
@@ -174,7 +175,9 @@ export default function RootLayout({ children }) {
           </>
         )}
 
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <MotionShell>{children}</MotionShell>
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

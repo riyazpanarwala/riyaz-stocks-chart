@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 export default function ThemeProvider({ children }) {
   const [theme, setTheme] = useState("light");
@@ -23,14 +24,16 @@ export default function ThemeProvider({ children }) {
 
   return (
     <>
-      <button
+      <motion.button
         onClick={toggle}
         className="theme-toggle"
         aria-label="Toggle theme"
         title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+        whileHover={{ scale: 1.08, rotate: 8 }}
+        whileTap={{ scale: 0.9, rotate: -8 }}
       >
         {theme === "dark" ? "☀" : "☽"}
-      </button>
+      </motion.button>
       {children}
     </>
   );

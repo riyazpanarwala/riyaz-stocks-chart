@@ -1,4 +1,5 @@
 import React from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from "react-icons/tb";
 import {
   MdTrendingFlat,
@@ -93,21 +94,37 @@ const Sidebar = ({
 
   return (
     <>
-      <button
+      <motion.button
         type="button"
         className={`${styles.sidebarToggle} ${isOpen ? styles.toggleOpen : ""}`}
         onClick={toggleSidebar}
         aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
         title={isOpen ? "Close sidebar" : "Open sidebar"}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.92 }}
+        animate={{ rotate: isOpen ? 0 : 180 }}
       >
         {isOpen ? <TbLayoutSidebarLeftCollapse /> : <TbLayoutSidebarLeftExpand />}
-      </button>
+      </motion.button>
 
-      {isOpen && (
-        <div className={styles.overlay} onClick={closeSidebar} />
-      )}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className={styles.overlay}
+            onClick={closeSidebar}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+        )}
+      </AnimatePresence>
 
-      <div className={`${styles.sidebar} ${isOpen ? styles.open : styles.closed}`}>
+      <motion.div
+        className={`${styles.sidebar} ${isOpen ? styles.open : styles.closed}`}
+        initial={false}
+        animate={{ x: isOpen ? 0 : -12, opacity: isOpen ? 1 : 0.72 }}
+        transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div
           className={`${styles.button} ${trendLineEnable ? styles.active : ""}`}
           onClick={() => { closeSidebar(); handleTrendLineClick(); }}
@@ -183,7 +200,7 @@ const Sidebar = ({
           tooltipObj={{ name: "Pattern", icon: <MdPattern className={styles.icon} />, subMenu: patternArr }}
           onClick={(e, id) => { closeSidebar(); handlePatternClick(id); }}
         />
-      </div>
+      </motion.div>
     </>
   );
 };

@@ -3,6 +3,7 @@
 // Thin orchestrator — all logic lives in hooks & utilities.
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useEffect, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { C } from "./constants.js";
 import FO_LIST from "./FOlist.js";
 import { pcrLabel } from "./utils/formatters.js";
@@ -25,8 +26,11 @@ import { ExpiryCards }        from "./ui/ExpiryCards.jsx";
 
 function Tab({ id, label, activeTab, setActiveTab }) {
   return (
-    <button
+    <motion.button
       onClick={() => setActiveTab(id)}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.96 }}
+      animate={{ color: activeTab === id ? C.text : C.muted }}
       style={{
         padding: "5px 12px", borderRadius: 5, border: "none", cursor: "pointer",
         fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 600,
@@ -35,7 +39,7 @@ function Tab({ id, label, activeTab, setActiveTab }) {
       }}
     >
       {label}
-    </button>
+    </motion.button>
   );
 }
 
@@ -207,7 +211,11 @@ export default function App({ initialSymbol = null }) {
             </div>
 
             {/* Refresh overlay */}
-            <div style={{ position: "relative" }}>
+            <motion.div
+              style={{ position: "relative" }}
+              layout
+              transition={{ duration: 0.22 }}
+            >
               {loading && rawData && (
                 <div style={{
                   position: "absolute", inset: 0, zIndex: 10, borderRadius: 10,
@@ -218,23 +226,33 @@ export default function App({ initialSymbol = null }) {
                 </div>
               )}
 
-              {activeTab === "oi"      && <OIChart chartData={chartData} atm={atm} maxPain={maxPain} sig={sig} />}
-              {activeTab === "doi"     && <DeltaOIChart chartData={chartData} atm={atm} />}
-              {activeTab === "table"   && sig && <StrikeTable displayRows={displayRows} atm={atm} sig={sig} />}
-              {activeTab === "inst"    && (
-                <InstitutionalPanel
-                  rows={displayRows} prevRows={prevDisplayRows}
-                  spot={underlyingValue} atm={atm} maxPain={maxPain} pcr={pcr} sig={sig}
-                />
-              )}
-              {activeTab === "breakout" && <BreakoutPanel signals={breakoutSignals} fetchedAt={fetchedAt} />}
-              {activeTab === "expiry" && !isIndex && (
-                <ExpiryCards
-                  rawData={rawData} expiries={expiries} activeExpiry={activeExpiry}
-                  instrument={instrument} onSelectExpiry={handleExpirySelect}
-                />
-              )}
-            </div>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {activeTab === "oi"      && <OIChart chartData={chartData} atm={atm} maxPain={maxPain} sig={sig} />}
+                  {activeTab === "doi"     && <DeltaOIChart chartData={chartData} atm={atm} />}
+                  {activeTab === "table"   && sig && <StrikeTable displayRows={displayRows} atm={atm} sig={sig} />}
+                  {activeTab === "inst"    && (
+                    <InstitutionalPanel
+                      rows={displayRows} prevRows={prevDisplayRows}
+                      spot={underlyingValue} atm={atm} maxPain={maxPain} pcr={pcr} sig={sig}
+                    />
+                  )}
+                  {activeTab === "breakout" && <BreakoutPanel signals={breakoutSignals} fetchedAt={fetchedAt} />}
+                  {activeTab === "expiry" && !isIndex && (
+                    <ExpiryCards
+                      rawData={rawData} expiries={expiries} activeExpiry={activeExpiry}
+                      instrument={instrument} onSelectExpiry={handleExpirySelect}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
 
             {/* Footer */}
             <div style={{

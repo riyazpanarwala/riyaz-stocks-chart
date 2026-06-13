@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import TickerTape from "../../components/TradingView/TickerTape";
 import SymbolInfo from "../../components/TradingView/SymbolInfo";
 import AdvancedChart from "../../components/TradingView/AdvancedChart";
@@ -20,9 +21,16 @@ export default function StocksPage() {
     return () => clearTimeout(timer);
   }, [inputValue]);
 
+  const panelMotion = {
+    initial: { opacity: 0, y: 14 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, amount: 0.15 },
+    transition: { duration: 0.35 },
+  };
+
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", color: "#000" }}>
-      <header
+      <motion.header
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -30,6 +38,8 @@ export default function StocksPage() {
           background: "rgba(0,0,0,0.05)",
           padding: "16px 32px",
         }}
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
       >
         <h1
           style={{
@@ -52,7 +62,7 @@ export default function StocksPage() {
             border: "1px solid #ccc",
           }}
         />
-      </header>
+      </motion.header>
 
       <TickerTape />
       <main
@@ -65,24 +75,24 @@ export default function StocksPage() {
           padding: 16,
         }}
       >
-        <section style={{ gridColumn: "span 2" }}>
+        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
           <SymbolInfo symbol={symbol} />
-        </section>
-        <section style={{ gridColumn: "span 2" }}>
+        </motion.section>
+        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
           <AdvancedChart symbol={symbol} />
-        </section>
-        <section style={{ gridColumn: "span 2" }}>
+        </motion.section>
+        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
           <CompanyProfile symbol={symbol} />
-        </section>
-        <section style={{ gridColumn: "span 2" }}>
+        </motion.section>
+        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
           <FundamentalData symbol={symbol} />
-        </section>
-        <section>
+        </motion.section>
+        <motion.section {...panelMotion}>
           <TechnicalAnalysis symbol={symbol} />
-        </section>
-        <section>
+        </motion.section>
+        <motion.section {...panelMotion}>
           <TopStories symbol={symbol} />
-        </section>
+        </motion.section>
       </main>
       <footer
         style={{
