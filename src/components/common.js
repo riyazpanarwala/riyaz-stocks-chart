@@ -53,6 +53,7 @@ export const getCandleArr = (arr, isEchart) => {
           low: item[3],
           close: item[4],
           volume: item[5],
+          openInterest: item[6],
         },
       ];
     });
@@ -138,7 +139,8 @@ export const fetchHistoricData = async (
   if (
     isCallNSE &&
     intervalVal === "days" &&
-    (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
+    (indexName === "NSE_EQ" || indexName === "NSE_INDEX") &&
+    !companyObj.upstoxOnly
   ) {
     let apiName = "historic";
     if (companyObj.nseIndex) {

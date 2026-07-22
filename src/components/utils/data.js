@@ -121,3 +121,5 @@ export const index1Arr = [
   { label: "NSE INDEX", value: "NSE_INDEX" },
   { label: "BSE INDEX", value: "BSE_INDEX" },
 ];
+
+export const globalIndexArr = [{ label: "GLOBAL", value: "GLOBAL_INDEX" }];
