@@ -33,6 +33,22 @@ const indicesArr = [
     symbol: "NIFTY ENERGY",
     yahooSymbol: "^CNXENERGY",
   },
+  {
+    name: "INDIA VIX",
+    value: "India VIX",
+    symbol: "India VIX",
+    upstoxOnly: true,
+  },
+];
+
+const globalInstruments = [
+  { name: "GIFT NIFTY", value: "SGX NIFTY", symbol: "SGX NIFTY", segment: "GLOBAL_INDEX" },
+  { name: "DOW JONES", value: "^DJI", symbol: "^DJI", segment: "GLOBAL_INDEX" },
+  { name: "S&P 500", value: "^GSPC", symbol: "^GSPC", segment: "GLOBAL_INDEX" },
+  { name: "FTSE 100", value: "^FTSE", symbol: "^FTSE", segment: "GLOBAL_INDEX" },
+  { name: "USD/INR", value: "USDINR", symbol: "USDINR", segment: "GLOBAL_INDICATOR" },
+  { name: "Oil (Brent)", value: "BZUSD", symbol: "BZUSD", segment: "GLOBAL_INDICATOR" },
+  { name: "Oil (WTI)", value: "CLUSD", symbol: "CLUSD", segment: "GLOBAL_INDICATOR" },
 ];
 
 const bseIndicesArr = [
@@ -91,6 +107,7 @@ const useParseCsv = () => {
         bse: false,
         nseIndex: true,
         yahooSymbol: v.yahooSymbol,
+        upstoxOnly: v.upstoxOnly,
       };
 
       if (v.symbol === "NIFTY 50") {
@@ -98,6 +115,17 @@ const useParseCsv = () => {
       }
 
       merged.push(niftyObj);
+    });
+
+    globalInstruments.forEach((v) => {
+      merged.push({
+        label: v.name,
+        value: v.value,
+        symbol: v.symbol,
+        global: true,
+        globalSegment: v.segment,
+        upstoxOnly: true,
+      });
     });
 
     // Add BSE Indices

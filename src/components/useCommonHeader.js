@@ -10,6 +10,7 @@ import {
   periodMax,
   indexArr,
   index1Arr,
+  globalIndexArr,
 } from "./utils/data";
 import { getIntradayData } from "./getIntervalData";
 // import isTradingActive from "./utils/isTradingActive";
@@ -98,10 +99,22 @@ const useCommonHeader = (isEchart) => {
    * Determine which index tabs to show based on the selected company's flags.
    * ETFs are listed on NSE as equities, so we show a single "NSE ETF" entry.
    */
-  const setIndexes = ({ nse, bse, nseIndex, bseIndex, etf }) => {
+  const setIndexes = ({
+    nse,
+    bse,
+    nseIndex,
+    bseIndex,
+    etf,
+    global,
+    globalSegment,
+  }) => {
     if (etf) {
       setNewIndexArr(etfIndexArr);
       setIndex(etfIndexArr[0]);
+    } else if (global) {
+      const globalIndex = { ...globalIndexArr[0], value: globalSegment };
+      setNewIndexArr([globalIndex]);
+      setIndex(globalIndex);
     } else if (nse && bse) {
       setNewIndexArr(indexArr);
       setIndex(indexArr[0]);

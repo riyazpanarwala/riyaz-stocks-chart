@@ -79,6 +79,7 @@ export const getIntradayDataForCurrentDay = async (
       );
       const currentHour = nowIst.getHours();
       if (
+	    !cmpnyObj.upstoxOnly &&
         currentHour >= 18 &&
         (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
       ) {
@@ -138,7 +139,8 @@ export const fetchHistoricData = async (
   if (
     isCallNSE &&
     intervalVal === "days" &&
-    (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
+    (indexName === "NSE_EQ" || indexName === "NSE_INDEX") &&
+    !companyObj.upstoxOnly
   ) {
     let apiName = "historic";
     if (companyObj.nseIndex) {
