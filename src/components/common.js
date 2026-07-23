@@ -53,7 +53,6 @@ export const getCandleArr = (arr, isEchart) => {
           low: item[3],
           close: item[4],
           volume: item[5],
-          openInterest: item[6],
         },
       ];
     });
@@ -80,6 +79,7 @@ export const getIntradayDataForCurrentDay = async (
       );
       const currentHour = nowIst.getHours();
       if (
+	    !cmpnyObj.upstoxOnly &&
         currentHour >= 18 &&
         (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
       ) {
