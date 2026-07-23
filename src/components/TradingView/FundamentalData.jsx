@@ -1,30 +1,23 @@
 "use client";
-import React, { useEffect } from "react";
+import React from "react";
+import TradingViewEmbed from "./TradingViewEmbed";
 
 export default function FundamentalData({ symbol = "BSE:TCS" }) {
-  useEffect(() => {
-    const container = document.getElementById("tradingview-fundamentals");
-    if (!container) return;
+  const config = {
+    symbol,
+    colorTheme: "light",
+    isTransparent: true,
+    displayMode: "adaptive",
+    width: "100%",
+    height: "100%",
+    locale: "en",
+  };
 
-    const script = document.createElement("script");
-    script.src =
-      "https://s3.tradingview.com/external-embedding/embed-widget-financials.js";
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      symbol,
-      colorTheme: "light",
-      isTransparent: true,
-      displayMode: "adaptive",
-      width: "100%",
-      height: "100%",
-      locale: "en",
-    });
-    
-    container.appendChild(script);
-    return () => {
-      container.innerHTML = "";
-    };
-  }, [symbol]);
-
-  return <div id="tradingview-fundamentals" style={{ height: 490, width: "100%" }} />;
+  return (
+    <TradingViewEmbed
+      scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-financials.js"
+      config={config}
+      style={{ height: 490, width: "100%" }}
+    />
+  );
 }
