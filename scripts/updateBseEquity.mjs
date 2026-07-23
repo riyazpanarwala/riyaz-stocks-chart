@@ -9,6 +9,12 @@ chromium.use(stealth());
 const PUBLIC_DIR = path.resolve(process.cwd(), "public");
 const URL = "https://www.bseindia.com/corporates/list_scrips";
 
+// Based on the on-screen table: Security Code, Issuer Name, Security Id,
+// Security Name, Status, Group, Face Value, ISIN No, Market Capitalisation.
+// Only checking the first couple of columns keeps this resilient to minor
+// header wording/column-order changes on BSE's end.
+const EXPECTED_HEADER_PREFIX = "Security Code";
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
@@ -48,7 +54,21 @@ async function main() {
   const buffer = Buffer.concat(chunks);
 
   if (buffer.length < 1000) {
-    throw new Error(`Downloaded file looks too small (${buffer.length} bytes) — refusing to overwrite bse_equity.csv`);
+    throw new Error(
+      `Downloaded file looks too small (${buffer.length} bytes) — refusing to overwrite bse_equity.csv`
+    );
+  }
+
+  // Structural check: confirm this is actually the securities list, not an
+  // HTML error page, a blank export, or a differently-shaped file BSE
+  // started serving. Read only the leading bytes — no need to decode the
+  // whole multi-MB file just to check the header row.
+  const headerSample = buffer.subarray(0, 200).toString("utf8").trimStart();
+  if (headerSample.startsWith("<") || !headerSample.includes(EXPECTED_HEADER_PREFIX)) {
+    await writeFile("bse-debug-failure.csv", buffer);
+    throw new Error(
+      `Unexpected file content — expected header to include "${EXPECTED_HEADER_PREFIX}", got: "${headerSample.slice(0, 80)}...". Saved bse-debug-failure.csv for inspection.`
+    );
   }
 
   await writeFile(path.join(PUBLIC_DIR, "bse_equity.csv"), buffer);
