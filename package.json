@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "stockAnalysis": "node --experimental-specifier-resolution=node src/components/StockAnalysis/index.js"
+    "stockAnalysis": "node --experimental-specifier-resolution=node src/components/StockAnalysis/index.js",
+    "updateMarketData": "node scripts/updateMarketData.mjs",
+    "updateBseEquity": "node scripts/updateBseEquity.mjs"
   },
   "dependencies": {
     "@riyazpanarwala/react-financial-charts": "^2.0.10",
@@ -37,7 +39,10 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.6"
+    "eslint-config-next": "^16.2.6",
+    "playwright": "^1.61.1",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "engines": {
     "node": "24.11.1",
