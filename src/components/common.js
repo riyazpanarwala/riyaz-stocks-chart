@@ -39,7 +39,7 @@ export const getCandleArr = (arr, isEchart) => {
     timeArr = candles.map((item) => item[0]);
   } else {
     dataArr = candles.map((item) => {
-      const aa = item[0].split("T");
+      const aa = String(item[0] || "").split("T");
       const hhmmss = aa[1] ? aa[1].split("+")[0] : "";
       return {
         date: `${aa[0]} ${hhmmss}`.trim(),
@@ -125,42 +125,51 @@ export const fetchHistoricData = async (
   companyObj,
   apiInterval = 1,
 ) => {
-  let candleArr = [];
-  let times = [];
+  let arr;
 
   if (
     isYFinanceEnable &&
     (companyObj.yahooSymbol || indexName === "NSE_EQ")
   ) {
-    candleArr = await getNSEDataYahooFinance(
+    const rawData = await getNSEDataYahooFinance(
       companyObj.yahooSymbol || companyObj.symbol + ".NS",
       interval,
       period,
     );
+    if (Array.isArray(rawData)) {
+      // Reverse raw quotes array so getCandleArr's reverse() restores chronological order
+      arr = {
+        data: {
+          candles: rawData
+            .map((q) => [q.date, q.open, q.high, q.low, q.close, q.volume])
+            .reverse(),
+        },
+      };
+    } else {
+      arr = rawData;
+    }
   } else {
-    const arr = await getHistoricData(
+    arr = await getHistoricData(
       intervalVal,
       companyObj.value,
       indexName,
       period,
       apiInterval,
     );
-    let { dataArr, timeArr } = getCandleArr(arr, isEchart);
-    if (intervalVal === "days" && isMarketOpen() && !isEchart) {
-      dataArr = await getIntradayDataForCurrentDay(
-        dataArr,
-        indexName,
-        companyObj,
-      );
-    }
+  }
 
-    candleArr = dataArr;
-    times = timeArr;
+  let { dataArr, timeArr } = getCandleArr(arr, isEchart);
+
+  if (intervalVal === "days" && isMarketOpen() && !isEchart && !isYFinanceEnable) {
+    dataArr = await getIntradayDataForCurrentDay(
+      dataArr,
+      indexName,
+      companyObj,
+    );
   }
 
   return {
-    candles: candleArr,
-    timeArr: times,
+    candles: dataArr,
+    timeArr,
   };
 };
-

@@ -11,7 +11,10 @@ export const getStorageData = () => {
     try {
       const storedData = localStorage.getItem(storageKey);
       if (storedData) {
-        return JSON.parse(storedData);
+        const parsed = JSON.parse(storedData);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
       }
     } catch (err) {
       console.error("Failed to read watchlist from localStorage:", err);

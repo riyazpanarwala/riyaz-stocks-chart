@@ -26,9 +26,10 @@ export async function POST(req) {
       );
     }
 
-    const { symbol, apiName, fromDate, toDate } = body;
+    const { symbol: rawSymbol, apiName, fromDate, toDate } = body;
+    const symbol = typeof rawSymbol === "string" ? rawSymbol.trim() : "";
 
-    if (!symbol || typeof symbol !== "string" || !/^[A-Za-z0-9\-\.\s&%]+$/.test(symbol)) {
+    if (!symbol || !/^[A-Za-z0-9\-\.\s&%]+$/.test(symbol)) {
       return NextResponse.json(
         { error: "Invalid or missing symbol parameter." },
         { status: 400 }

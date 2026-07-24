@@ -10,8 +10,14 @@ export default function StockAnalysisPage() {
     setIsRunning(true);
     setStatusMsg("Running technical analysis across watchlist stocks...");
     try {
-      await stocksAnalysis();
-      setStatusMsg("Analysis completed successfully! Check your downloads for the JSON report.");
+      const summary = await stocksAnalysis();
+      if (summary.successful > 0) {
+        setStatusMsg(
+          `Analysis completed! ${summary.successful}/${summary.total} stocks processed successfully (${summary.failed} failed). Report downloaded.`
+        );
+      } else {
+        setStatusMsg("Analysis failed: 0 stocks could be processed.");
+      }
     } catch (err) {
       console.error(err);
       setStatusMsg("Analysis failed. Please try again.");

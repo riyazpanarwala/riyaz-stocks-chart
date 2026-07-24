@@ -10,13 +10,26 @@ const logError = (context, error) => {
   console.error(`[${context}] Error ${status}:`, details);
 };
 
+const resolveFromDate = (isFrom) => {
+  if (
+    isFrom &&
+    Object.prototype.hasOwnProperty.call(dateObj, isFrom) &&
+    typeof dateObj[isFrom] === "function"
+  ) {
+    const res = dateObj[isFrom]();
+    if (res && typeof res.toISOString === "function") {
+      return res;
+    }
+  }
+  return new Date();
+};
+
 export const getNSEDataYahooFinance = async (symbol, interval, isFrom) => {
   const headers = {
     Accept: "application/json",
   };
 
-  let fromDate = dateObj[isFrom] ? dateObj[isFrom]() : new Date();
-  fromDate = fromDate.toISOString().split("T")[0];
+  let fromDate = resolveFromDate(isFrom).toISOString().split("T")[0];
 
   try {
     const response = await axios.get(
@@ -65,8 +78,7 @@ export const getHistoricDataNSE = async (
 
   let currentDate = new Date();
   let toDate = currentDate.toISOString().split("T")[0];
-  let fromDate = dateObj[isFrom] ? dateObj[isFrom]() : new Date();
-  fromDate = fromDate.toISOString().split("T")[0];
+  let fromDate = resolveFromDate(isFrom).toISOString().split("T")[0];
 
   const payload = {
     fromDate,
@@ -136,8 +148,7 @@ export const getHistoricData = async (
   const instrumentKey = `${indexName}|${companyName}`;
   let currentDate = new Date();
   let toDate = currentDate.toISOString().split("T")[0];
-  let fromDate = dateObj[isFrom] ? dateObj[isFrom]() : new Date();
-  fromDate = fromDate.toISOString().split("T")[0];
+  let fromDate = resolveFromDate(isFrom).toISOString().split("T")[0];
 
   const newUrl = `${baseurl}historical-candle/${instrumentKey}/${interval}/${apiInterval}/${toDate}/${fromDate}`;
 

@@ -40,6 +40,10 @@ export const stockAnalysis = async (
     companyObj
   );
 
+  if (!Array.isArray(candles) || candles.length === 0) {
+    throw new Error(`Insufficient candle history for ${symbol}`);
+  }
+
   const {
     lastClose,
     percentChange,
@@ -70,7 +74,7 @@ export const stockAnalysis = async (
     shortTermMACross,
     mediumTermMACross,
     longTermMACross,
-  } = getStockAnalysis(candles || []);
+  } = getStockAnalysis(candles);
 
   return {
     "RSI(14)": `${rsi} (${getRSIIndication(rsi)})`,
@@ -137,10 +141,6 @@ const stocksAnalysis = async (arrObj = watchlistArray1) => {
 
       data.name = item.label;
       jsonObj.push(data);
-
-      if (arrObj.length === jsonObj.length) {
-        saveFile(jsonObj.sort((a, b) => b.percentChange - a.percentChange));
-      }
     } catch (err) {
       console.error(`Failed analysis for ${item.label}:`, err);
     }
@@ -151,6 +151,16 @@ const stocksAnalysis = async (arrObj = watchlistArray1) => {
     await Promise.all(chunk.map((item) => analyse(item)));
     await sleep(2000);
   }
+
+  if (jsonObj.length > 0) {
+    saveFile(jsonObj.sort((a, b) => (b.percentChange || 0) - (a.percentChange || 0)));
+  }
+
+  return {
+    total: arrObj.length,
+    successful: jsonObj.length,
+    failed: arrObj.length - jsonObj.length,
+  };
 };
 
 export default stocksAnalysis;
