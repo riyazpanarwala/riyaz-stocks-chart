@@ -32,7 +32,8 @@ const useCommonHeader = (isEchart) => {
   const timerRef = useRef(null);
 
   const startTimer = () => {
-    if (isMarketOpen()) {
+    const isTrading = companyObj.global ? true : isMarketOpen();
+    if (isTrading) {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         setApiCall((prevState) => prevState + 1);
