@@ -42,16 +42,17 @@ export default function TrendlyneChecklist({
   negCol = 'EB3B00',
   neuCol = 'F7941E'
 }) {
-  const isGlobalSymbol = isGlobal || GLOBAL_SYMBOLS.has(symbol) || (typeof symbol === 'string' && (symbol.startsWith('^') || symbol.includes('|')));
-
-  if (isGlobalSymbol) {
-    return null;
-  }
-
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
+  const isGlobalSymbol =
+    isGlobal ||
+    GLOBAL_SYMBOLS.has(symbol) ||
+    (typeof symbol === 'string' && (symbol.startsWith('^') || symbol.includes('|')));
+
   useEffect(() => {
+    if (isGlobalSymbol) return;
+
     // Check if script is already loaded
     if (document.querySelector('script[src*="tl-widgets.js"]')) {
       setIsLoaded(true);
@@ -83,7 +84,11 @@ export default function TrendlyneChecklist({
         document.head.removeChild(script);
       }
     };
-  }, []);
+  }, [isGlobalSymbol]);
+
+  if (isGlobalSymbol) {
+    return null;
+  }
 
   const encodedSymbol = encodeURIComponent(symbol);
 
