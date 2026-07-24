@@ -8,6 +8,7 @@ export default function TradingViewEmbed({
   className = "",
 }) {
   const containerRef = useRef(null);
+  const configString = JSON.stringify(config);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -18,7 +19,7 @@ export default function TradingViewEmbed({
     const script = document.createElement("script");
     script.src = scriptSrc;
     script.async = true;
-    script.innerHTML = JSON.stringify(config);
+    script.innerHTML = configString;
 
     container.appendChild(script);
 
@@ -27,7 +28,7 @@ export default function TradingViewEmbed({
         container.innerHTML = "";
       }
     };
-  }, [scriptSrc, JSON.stringify(config)]);
+  }, [scriptSrc, configString]);
 
   return <div ref={containerRef} style={style} className={className} />;
 }

@@ -76,7 +76,7 @@ export async function GET(req) {
 
     const priceInfo = await nseIndia.getEquityDetails(symbol);
     const actualCurrentPrice = priceInfo?.priceInfo?.close || 0;
-    const issuedSize = priceInfo?.securityInfo.issuedSize;
+    const issuedSize = priceInfo?.securityInfo?.issuedSize || 0;
 
     const data = calculateMetrics(
       data1.financial_results.data,
