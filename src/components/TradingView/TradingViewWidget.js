@@ -1,21 +1,29 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 const TradingViewWidget = () => {
+  const containerRef = useRef(null);
+
   useEffect(() => {
-    const containerId = "tradingview-widget-container";
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Use unique container id per instance using containerRef or random ID
+    const containerId = container.id || `tv-widget-${Math.random().toString(36).substring(2, 9)}`;
+    container.id = containerId;
+
     const scriptId = "tradingview-widget-script";
 
     const widgetConfig = {
       container_id: containerId,
       width: "100%",
       height: "500",
-      symbol: "NSE:TCS", // default symbol
-      interval: "D", // Time interval (e.g., 'D', '1W', '1M')
+      symbol: "NSE:TCS",
+      interval: "D",
       timezone: "Asia/Kolkata",
-      theme: "light", // Options: 'light' or 'dark'
-      style: "1", // Chart style
+      theme: "light",
+      style: "1",
       locale: "en",
       toolbar_bg: "#f1f3f6",
       enable_publishing: false,
@@ -24,10 +32,10 @@ const TradingViewWidget = () => {
       hotlist: true,
       calendar: true,
     };
+
     let existingScriptWithListener = null;
 
     const initWidget = () => {
-      const container = document.getElementById(containerId);
       if (window.TradingView && container) {
         new window.TradingView.widget(widgetConfig);
       }
@@ -41,11 +49,9 @@ const TradingViewWidget = () => {
       script.onload = initWidget;
       document.body.appendChild(script);
     } else {
-      // Script tag exists — either already loaded or still loading
       if (window.TradingView) {
         initWidget();
       } else {
-        // Still loading: wait for the existing script's load event
         const existingScript = document.getElementById(scriptId);
         if (existingScript) {
           existingScriptWithListener = existingScript;
@@ -54,31 +60,27 @@ const TradingViewWidget = () => {
       }
     }
 
-    // Cleanup always runs on unmount regardless of which branch ran above.
-    // This prevents stale widget instances and duplicate renders (e.g. React
-    // StrictMode double-invoke or HMR hot reload).
     return () => {
       if (existingScriptWithListener) {
         existingScriptWithListener.removeEventListener("load", initWidget);
       }
-      const container = document.getElementById(containerId);
       if (container) container.innerHTML = "";
     };
   }, []);
 
   return (
     <div
-      id="tradingview-widget-container"
+      ref={containerRef}
       style={{
         width: "100%",
         height: "500px",
         margin: "0 auto",
       }}
     >
-      {/* Fallback message while the widget loads */}
       <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
     </div>
   );
 };
 
 export default TradingViewWidget;
+

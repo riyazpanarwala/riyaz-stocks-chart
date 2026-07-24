@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from "react-icons/tb";
 import {
@@ -40,6 +40,30 @@ const Sidebar = ({
   isOpen,
   onToggle,
 }) => {
+  const [watchlistData, setWatchlistData] = useState([]);
+
+  useEffect(() => {
+    const updateList = () => {
+      setWatchlistData(getStorageData());
+    };
+
+    updateList();
+    window.addEventListener("watchlist-updated", updateList);
+    window.addEventListener("storage", updateList);
+
+    return () => {
+      window.removeEventListener("watchlist-updated", updateList);
+      window.removeEventListener("storage", updateList);
+    };
+  }, []);
+
+  const formattedWatchlist = useMemo(() => {
+    return watchlistData.map((item) => ({
+      ...item,
+      isActive: companyObj?.value === item.value,
+    }));
+  }, [watchlistData, companyObj?.value]);
+
   const toggleSidebar = () => onToggle((prev) => !prev);
   const closeSidebar = () => {
     if (window.innerWidth <= 768) {
@@ -86,11 +110,6 @@ const Sidebar = ({
   ];
 
   const patternArr = getPatternArr(patternName);
-
-  const watchlistArray1 = getStorageData();
-  watchlistArray1.forEach((v) => {
-    v.isActive = companyObj.value === v.value;
-  });
 
   return (
     <>
@@ -148,7 +167,7 @@ const Sidebar = ({
 
         <TooltipSubMenu
           styles={styles}
-          tooltipObj={{ name: "WatchList", icon: <CiViewList className={styles.icon} />, subMenu: watchlistArray1 }}
+          tooltipObj={{ name: "WatchList", icon: <CiViewList className={styles.icon} />, subMenu: formattedWatchlist }}
           onClick={(e, id) => { closeSidebar(); handleWatchListClick(id); }}
         />
 

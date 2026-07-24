@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import useParseCsv from "./utils/parseCsv";
 import {
   intraArr,
@@ -13,10 +13,8 @@ import {
   globalIndexArr,
 } from "./utils/data";
 import { getIntradayData } from "./getIntervalData";
-// import isTradingActive from "./utils/isTradingActive";
 import { isMarketOpen } from "./utils/indianstockmarket";
 import { getCandleArr, fetchHistoricData } from "./common";
-import _ from "lodash";
 
 // ETF trades on NSE as an equity — reuse the NSE_EQ entry
 const etfIndexArr = [{ label: "NSE ETF", value: "NSE_EQ" }];
@@ -31,12 +29,12 @@ const useCommonHeader = (isEchart) => {
   const [candleData, setCandleData] = useState([]);
   const [timeData, setTimeData] = useState([]);
   const { companyArr, companyObj, setCompany, isFO } = useParseCsv();
-  let countdownInterval;
+  const timerRef = useRef(null);
 
   const startTimer = () => {
     if (isMarketOpen()) {
-      clearTimeout(countdownInterval);
-      countdownInterval = setTimeout(() => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
         setApiCall((prevState) => prevState + 1);
       }, 1000 * 30);
     }
@@ -177,7 +175,7 @@ const useCommonHeader = (isEchart) => {
   };
 
   useEffect(() => {
-    clearTimeout(countdownInterval);
+    if (timerRef.current) clearTimeout(timerRef.current);
     if (apiCall > 0) {
       setCandleData([]);
       if (isIntraday(intradayObj.value)) {
@@ -187,9 +185,11 @@ const useCommonHeader = (isEchart) => {
       }
       startTimer();
     }
-    // Cleanup function to clear the interval when the component unmounts
-    return () => clearTimeout(countdownInterval);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [apiCall]);
+
 
   useEffect(() => {
     if (

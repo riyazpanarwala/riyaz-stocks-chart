@@ -1,31 +1,24 @@
 "use client";
-import React, { useEffect } from "react";
+import React from "react";
+import TradingViewEmbed from "./TradingViewEmbed";
 
 export default function TopStories({ symbol = "BSE:TCS" }) {
-  useEffect(() => {
-    const container = document.getElementById("tradingview-top-stories");
-    if (!container) return;
+  const config = {
+    feedMode: "symbol",
+    symbol,
+    colorTheme: "light",
+    isTransparent: true,
+    displayMode: "regular",
+    width: "100%",
+    height: "100%",
+    locale: "en",
+  };
 
-    const script = document.createElement("script");
-    script.src =
-      "https://s3.tradingview.com/external-embedding/embed-widget-timeline.js";
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      feedMode: "symbol",
-      symbol,
-      colorTheme: "light",
-      isTransparent: true,
-      displayMode: "regular",
-      width: "100%",
-      height: "100%",
-      locale: "en",
-    });
-    
-    container.appendChild(script);
-    return () => {
-      container.innerHTML = "";
-    };
-  }, [symbol]);
-
-  return <div id="tradingview-top-stories" style={{ height: 425, width: "100%" }} />;
+  return (
+    <TradingViewEmbed
+      scriptSrc="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js"
+      config={config}
+      style={{ height: 425, width: "100%" }}
+    />
+  );
 }

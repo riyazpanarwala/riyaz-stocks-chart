@@ -68,16 +68,27 @@ const useParseCsv = () => {
   const mergeArrays = (arr1, arr2, etfArr) => {
     const merged = [];
 
+    // Map ISIN to BSE items for O(1) lookup
+    const bseMap = new Map();
+    arr2.forEach((item2, j) => {
+      if (j > 0 && item2 && item2.length >= 8) {
+        bseMap.set(item2[7], item2);
+      }
+    });
+
+    const nseIsinSet = new Set();
+
     // Add NSE + BSE equities
     arr1.forEach((item, i) => {
       if (i > 0) {
-        const index = arr2.findIndex((v) => v[7] === item[6]);
+        const isin = item[6];
+        if (isin) nseIsinSet.add(isin);
         merged.push({
           label: item[1],
-          value: item[6],
+          value: isin,
           symbol: item[0],
           nse: true,
-          bse: index !== -1,
+          bse: bseMap.has(isin),
         });
       }
     });
@@ -85,17 +96,18 @@ const useParseCsv = () => {
     arr2.forEach((item2, j) => {
       if (j === 0) return;
       if (!item2 || item2.length < 8) return;
-      const index = arr1.findIndex((v, i) => i > 0 && v[6] === item2[7]);
-      if (index === -1) {
+      const isin = item2[7];
+      if (!nseIsinSet.has(isin)) {
         merged.push({
           label: item2[1],
-          value: item2[7],
+          value: isin,
           symbol: item2[2],
           nse: false,
           bse: true,
         });
       }
     });
+
 
     // Add NSE Indices
     indicesArr.forEach((v) => {
@@ -186,15 +198,9 @@ const useParseCsv = () => {
             return symbol && isin;
           })
           .map((row) => {
-            const symbol = (
-              row["Symbol"] || ""
-            ).trim();
-            const name = (
-              row["SecurityName"]
-            ).trim();
-            const isin = (
-              row["ISINNumber"] || ""
-            ).trim();
+            const symbol = (row["Symbol"] || "").trim();
+            const name = (row["SecurityName"] || row["NAME OF COMPANY"] || row["Symbol"] || "").trim();
+            const isin = (row["ISINNumber"] || "").trim();
 
             return {
               label: name,

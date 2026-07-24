@@ -13,17 +13,8 @@ import {
   getADXIndication,
   getATRIndication,
 } from "./indication";
-// import fs from "fs";
 
-const sleep = (ms) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, ms);
-  });
-};
-
-const isNSEApi = false;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const stockAnalysis = async (
   interval,
@@ -49,7 +40,10 @@ export const stockAnalysis = async (
     companyObj
   );
 
-  console.log(symbol);
+  if (!Array.isArray(candles) || candles.length === 0) {
+    throw new Error(`Insufficient candle history for ${symbol}`);
+  }
+
   const {
     lastClose,
     percentChange,
@@ -110,9 +104,9 @@ export const stockAnalysis = async (
     "longTermMACross(50,200)": longTermMACross,
     "EMA(50)": ema50,
     "EMA(200)": ema200,
-    lastClose: lastClose,
+    lastClose,
     percentChange,
-    supertrend: supertrend,
+    supertrend,
     "Bolinger Band(20,2)": bb,
   };
 };
@@ -120,56 +114,53 @@ export const stockAnalysis = async (
 const watchlistArray1 = watchlistArray("");
 
 const saveFile = (jsonObj) => {
-  const b = new Date().toJSON().split("T");
-  const fileName = `myData-${b[0]}-${b[1]
-    .split(".")[0]
-    .replaceAll(":", "_")}.json`;
-  // Create a blob of the data
-  const fileToSave = new Blob([JSON.stringify(jsonObj)], {
+  const dateStr = new Date().toISOString().split("T")[0];
+  const timeStr = new Date().toTimeString().split(" ")[0].replace(/:/g, "_");
+  const fileName = `stockAnalysis-${dateStr}-${timeStr}.json`;
+  
+  const fileToSave = new Blob([JSON.stringify(jsonObj, null, 2)], {
     type: "application/json",
   });
 
-  // Save the file
   saveAs(fileToSave, fileName);
-
-  /*
-  const fileToSave = JSON.stringify(jsonObj, null, 2);
-
-  fs.writeFile(fileName, fileToSave, "utf8", (err) => {
-    if (err) {
-      console.error("Error writing to file", err);
-    } else {
-      console.log("Data written to file");
-    }
-  });
-  */
 };
 
 const stocksAnalysis = async (arrObj = watchlistArray1) => {
   const jsonObj = [];
 
-  const analyse = async (item, i) => {
-    const data = await stockAnalysis(
-      "days",
-      "1y",
-      item.value,
-      item.indexName,
-      item.symbol,
-      item.nseIndex
-    );
+  const analyse = async (item) => {
+    try {
+      const data = await stockAnalysis(
+        "days",
+        "1y",
+        item.value,
+        item.indexName,
+        item.symbol,
+        item.nseIndex
+      );
 
-    data.name = item.label;
-    jsonObj.push(data);
-
-    if (arrObj.length === jsonObj.length) {
-      saveFile(jsonObj.sort((a, b) => b.percentChange - a.percentChange));
+      data.name = item.label;
+      jsonObj.push(data);
+    } catch (err) {
+      console.error(`Failed analysis for ${item.label}:`, err);
     }
   };
 
-  for (let i = 0; i < arrObj.length; i = i + 5) {
-    arrObj.slice(i, i + 5).forEach(analyse);
+  for (let i = 0; i < arrObj.length; i += 5) {
+    const chunk = arrObj.slice(i, i + 5);
+    await Promise.all(chunk.map((item) => analyse(item)));
     await sleep(2000);
   }
+
+  if (jsonObj.length > 0) {
+    saveFile(jsonObj.sort((a, b) => (b.percentChange || 0) - (a.percentChange || 0)));
+  }
+
+  return {
+    total: arrObj.length,
+    successful: jsonObj.length,
+    failed: arrObj.length - jsonObj.length,
+  };
 };
 
 export default stocksAnalysis;

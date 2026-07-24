@@ -10,6 +10,7 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
   const { readRemoteFile } = usePapaParse();
   const [symbols, setSymbols] = useState([]);
   const [symbolList, setSymbolList] = useState([]);
+  const [symbolSet, setSymbolSet] = useState(new Set());
   const [isFOLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,8 +19,11 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
 
     // If cached, use it immediately
     if (csvCache[csvUrl]) {
-      setSymbols(csvCache[csvUrl]);
-      setSymbolList(csvCache[csvUrl].map((item) => item.symbol));
+      const data = csvCache[csvUrl];
+      setSymbols(data);
+      const list = data.map((item) => item.symbol);
+      setSymbolList(list);
+      setSymbolSet(new Set(list));
       setIsLoading(false);
       return;
     }
@@ -71,8 +75,10 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
             // Save to cache
             csvCache[csvUrl] = foSymbols;
 
+            const list = foSymbols.map((item) => item.symbol);
             setSymbols(foSymbols);
-            setSymbolList(foSymbols.map((item) => item.symbol));
+            setSymbolList(list);
+            setSymbolSet(new Set(list));
             setIsLoading(false);
           },
         });
@@ -88,7 +94,9 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
     parseCSV();
   }, [csvUrl, readRemoteFile]);
 
-  const isFOSymbol = (symbol) => symbolList.includes(symbol);
+  const isFOSymbol = (symbol) => symbolSet.has(symbol);
 
   return { symbols, symbolList, isFOSymbol, isFOLoading, error };
 }
+
+

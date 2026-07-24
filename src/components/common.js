@@ -4,7 +4,6 @@ import {
   getHistoricDataNSE,
   getHistoricData,
   getNSEDataYahooFinance,
-  // getNSEData,
 } from "./getIntervalData";
 import isYFinanceEnable from "./utils/isYFinanceEnable";
 
@@ -33,28 +32,23 @@ export const getDataFromIntraday = (intradayData) => {
 export const getCandleArr = (arr, isEchart) => {
   let timeArr = [];
   let dataArr = [];
-  let candles = arr.data.candles?.reverse();
+  let candles = arr?.data?.candles ? [...arr.data.candles].reverse() : [];
 
   if (isEchart) {
-    candles?.forEach((item) => {
-      dataArr = [...dataArr, [item[1], item[4], item[3], item[2]]];
-      timeArr = [...timeArr, item[0]];
-    });
+    dataArr = candles.map((item) => [item[1], item[4], item[3], item[2]]);
+    timeArr = candles.map((item) => item[0]);
   } else {
-    candles?.forEach((item, i) => {
-      const aa = item[0].split("T");
-      const hhmmss = aa[1].split("+")[0];
-      dataArr = [
-        ...dataArr,
-        {
-          date: `${aa[0]} ${hhmmss}`,
-          open: item[1],
-          high: item[2],
-          low: item[3],
-          close: item[4],
-          volume: item[5],
-        },
-      ];
+    dataArr = candles.map((item) => {
+      const aa = String(item[0] || "").split("T");
+      const hhmmss = aa[1] ? aa[1].split("+")[0] : "";
+      return {
+        date: `${aa[0]} ${hhmmss}`.trim(),
+        open: item[1],
+        high: item[2],
+        low: item[3],
+        close: item[4],
+        volume: item[5],
+      };
     });
   }
 
@@ -79,7 +73,7 @@ export const getIntradayDataForCurrentDay = async (
       );
       const currentHour = nowIst.getHours();
       if (
-	    !cmpnyObj.upstoxOnly &&
+        !cmpnyObj.upstoxOnly &&
         currentHour >= 18 &&
         (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
       ) {
@@ -122,8 +116,6 @@ export const getIntradayDataForCurrentDay = async (
   return candles;
 };
 
-const isCallNSE = false;
-
 export const fetchHistoricData = async (
   isEchart,
   intervalVal,
@@ -133,64 +125,51 @@ export const fetchHistoricData = async (
   companyObj,
   apiInterval = 1,
 ) => {
-  let candleArr = [];
-  let times = [];
+  let arr;
 
   if (
-    isCallNSE &&
-    intervalVal === "days" &&
-    (indexName === "NSE_EQ" || indexName === "NSE_INDEX") &&
-    !companyObj.upstoxOnly
+    isYFinanceEnable &&
+    (companyObj.yahooSymbol || indexName === "NSE_EQ")
   ) {
-    let apiName = "historic";
-    if (companyObj.nseIndex) {
-      apiName = "indexHistoric";
-    }
-    const { candles } = await getHistoricDataNSE(
-      companyObj.symbol,
+    const rawData = await getNSEDataYahooFinance(
+      companyObj.yahooSymbol || companyObj.symbol + ".NS",
+      interval,
       period,
-      apiName,
     );
-    candleArr = candles;
-
-    // getNSEData("F&O", "NIFTY");
-    // getNSEData("corporateInfo", companyObj.symbol);
-    // getNSEData("details", companyObj.symbol);
-    // getNSEData("tradeInfo", companyObj.symbol);
-  } else {
-    if (
-      isYFinanceEnable &&
-      (companyObj.yahooSymbol || indexName === "NSE_EQ")
-    ) {
-      candleArr = await getNSEDataYahooFinance(
-        companyObj.yahooSymbol || companyObj.symbol + ".NS",
-        interval,
-        period,
-      );
+    if (Array.isArray(rawData)) {
+      // Reverse raw quotes array so getCandleArr's reverse() restores chronological order
+      arr = {
+        data: {
+          candles: rawData
+            .map((q) => [q.date, q.open, q.high, q.low, q.close, q.volume])
+            .reverse(),
+        },
+      };
     } else {
-      const arr = await getHistoricData(
-        intervalVal,
-        companyObj.value,
-        indexName,
-        period,
-        apiInterval,
-      );
-      let { dataArr, timeArr } = getCandleArr(arr, isEchart);
-      if (intervalVal === "days" && isMarketOpen() && !isEchart) {
-        dataArr = await getIntradayDataForCurrentDay(
-          dataArr,
-          indexName,
-          companyObj,
-        );
-      }
-
-      candleArr = dataArr;
-      times = timeArr;
+      arr = rawData;
     }
+  } else {
+    arr = await getHistoricData(
+      intervalVal,
+      companyObj.value,
+      indexName,
+      period,
+      apiInterval,
+    );
+  }
+
+  let { dataArr, timeArr } = getCandleArr(arr, isEchart);
+
+  if (intervalVal === "days" && isMarketOpen() && !isEchart && !isYFinanceEnable) {
+    dataArr = await getIntradayDataForCurrentDay(
+      dataArr,
+      indexName,
+      companyObj,
+    );
   }
 
   return {
-    candles: candleArr,
-    timeArr: times,
+    candles: dataArr,
+    timeArr,
   };
 };
