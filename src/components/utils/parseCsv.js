@@ -198,15 +198,9 @@ const useParseCsv = () => {
             return symbol && isin;
           })
           .map((row) => {
-            const symbol = (
-              row["Symbol"] || ""
-            ).trim();
-            const name = (
-              row["SecurityName"]
-            ).trim();
-            const isin = (
-              row["ISINNumber"] || ""
-            ).trim();
+            const symbol = (row["Symbol"] || "").trim();
+            const name = (row["SecurityName"] || row["NAME OF COMPANY"] || row["Symbol"] || "").trim();
+            const isin = (row["ISINNumber"] || "").trim();
 
             return {
               label: name,

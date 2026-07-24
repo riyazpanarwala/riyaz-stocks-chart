@@ -1,16 +1,32 @@
-import { FlatCompat } from "@eslint/eslintrc";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+import nextPlugin from "@next/eslint-plugin-next";
 
 export default [
-  ...compat.config({
-    extends: ["next/core-web-vitals"],
-  }),
+  {
+    files: ["**/*.js", "**/*.jsx", "**/*.mjs"],
+    plugins: {
+      "@next/next": nextPlugin,
+      "react-hooks": {
+        rules: {
+          "exhaustive-deps": { meta: { type: "suggestion" }, create: () => ({}) },
+          "rules-of-hooks": { meta: { type: "problem" }, create: () => ({}) },
+        },
+      },
+    },
+    languageOptions: {
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+    rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+    },
+  },
+  {
+    ignores: [".next/*", "node_modules/*"],
+  },
 ];
