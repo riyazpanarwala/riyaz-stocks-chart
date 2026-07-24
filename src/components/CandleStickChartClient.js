@@ -325,10 +325,11 @@ const CandleStickChart = () => {
               <SeoIntro />
             )}
 
-            {!(companyObj.nseIndex || companyObj.etf) && (
+            {!(companyObj.nseIndex || companyObj.etf || companyObj.global || companyObj.upstoxOnly) && (
               <TrendlyneChecklist
                 key={companyObj.symbol}
                 symbol={companyObj.symbol}
+                isGlobal={companyObj.global}
               />
             )}
           </div>
