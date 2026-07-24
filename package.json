@@ -18,11 +18,9 @@
     "classnames": "^2.5.1",
     "d3-format": "^3.1.2",
     "d3-time-format": "^4.1.0",
-    "fast-xml-parser": "^5.8.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.40.0",
     "next": "^16.2.6",
-    "rc-slider": "^11.1.9",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-full-screen": "^1.1.1",
@@ -37,7 +35,6 @@
     "yahoo-finance2": "^3.14.1"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.5",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.6",
     "playwright": "^1.61.1",
