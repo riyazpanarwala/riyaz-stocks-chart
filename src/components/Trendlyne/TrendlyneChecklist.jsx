@@ -3,14 +3,51 @@
 import { useEffect, useState } from 'react';
 import styles from './TrendlyneTabs.module.css'; // <-- your custom CSS file
 
+const GLOBAL_SYMBOLS = new Set([
+  "SGX NIFTY",
+  "GIFT NIFTY",
+  "^DJI",
+  "DOW JONES",
+  "DOW FUTURES",
+  "US 30",
+  "^GSPC",
+  "S&P 500",
+  "S&P",
+  "IXIX",
+  "US Tech 100",
+  "^FTSE",
+  "FTSE 100",
+  "^GDAXI",
+  "DAX",
+  "^FCHI",
+  "CAC 40",
+  "^HSI",
+  "HANG SENG",
+  "^N225",
+  "NIKKEI 225",
+  "USDINR",
+  "USD/INR",
+  "BZUSD",
+  "Oil (Brent)",
+  "CLUSD",
+  "Oil (WTI)",
+]);
+
 export default function TrendlyneChecklist({
   symbol = 'JPPOWER',
+  isGlobal = false,
   theme = 'light',
   primaryCol = '006AFF',
   posCol = '00A25B',
   negCol = 'EB3B00',
   neuCol = 'F7941E'
 }) {
+  const isGlobalSymbol = isGlobal || GLOBAL_SYMBOLS.has(symbol) || (typeof symbol === 'string' && (symbol.startsWith('^') || symbol.includes('|')));
+
+  if (isGlobalSymbol) {
+    return null;
+  }
+
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
