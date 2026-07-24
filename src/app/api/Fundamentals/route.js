@@ -5,7 +5,16 @@ const nseIndia = new NseIndia();
 
 function calculateMetrics(financialResults, issuedSize, currentPrice) {
   if (!Array.isArray(financialResults) || financialResults.length < 4) {
-    return { epsTTM: 0, marketCap: 0, peRatio: null };
+    const marketCapCrVal =
+      issuedSize && currentPrice
+        ? Number(((issuedSize * currentPrice) / 1e7).toFixed(2)) + " Cr"
+        : "0 Cr";
+    return {
+      currentPrice: currentPrice || 0,
+      epsTTM: 0,
+      marketCapCr: marketCapCrVal,
+      peRatio: null,
+    };
   }
 
   // Take the latest 4 quarters PAT
