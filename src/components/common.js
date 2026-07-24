@@ -160,7 +160,9 @@ export const fetchHistoricData = async (
 
   let { dataArr, timeArr } = getCandleArr(arr, isEchart);
 
-  if (intervalVal === "days" && isMarketOpen() && !isEchart && !isYFinanceEnable) {
+  const shouldFetchLiveCandle = companyObj.global ? true : isMarketOpen();
+
+  if (intervalVal === "days" && shouldFetchLiveCandle && !isEchart && !isYFinanceEnable) {
     dataArr = await getIntradayDataForCurrentDay(
       dataArr,
       indexName,
