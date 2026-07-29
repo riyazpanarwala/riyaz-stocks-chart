@@ -66,7 +66,7 @@ export default function SeoIntro() {
       }}
     >
       {/* Hero heading */}
-      <h2
+      <h1
         style={{
           fontSize: "clamp(20px, 3vw, 28px)",
           fontWeight: 700,
@@ -75,8 +75,8 @@ export default function SeoIntro() {
           lineHeight: 1.3,
         }}
       >
-        Free NSE &amp; BSE Stock Candlestick Charts
-      </h2>
+        Panarwala Stocks – Free NSE &amp; BSE Stock Candlestick Charts
+      </h1>
       <p
         style={{
           fontSize: 15,
@@ -86,7 +86,7 @@ export default function SeoIntro() {
           maxWidth: 720,
         }}
       >
-        Professional-grade interactive charts for Indian equities, indices, and
+        Panarwala Stocks provides professional-grade interactive charts for Indian equities, indices, and
         ETFs. Select any stock above to load live candlestick data with
         real-time technical indicators.
       </p>

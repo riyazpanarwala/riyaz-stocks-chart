@@ -1,111 +1,51 @@
-"use client";
+import TradingViewClient from "./TradingViewClient";
+import { SITE_URL } from "../../lib/siteConfig";
 
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import TickerTape from "../../components/TradingView/TickerTape";
-import SymbolInfo from "../../components/TradingView/SymbolInfo";
-import AdvancedChart from "../../components/TradingView/AdvancedChart";
-import CompanyProfile from "../../components/TradingView/CompanyProfile";
-import FundamentalData from "../../components/TradingView/FundamentalData";
-import TechnicalAnalysis from "../../components/TradingView/TechnicalAnalysis";
-import TopStories from "../../components/TradingView/TopStories";
+export const metadata = {
+  title: "Panarwala TradingView Advanced Stock Charts | Technical Analysis & Fundamentals",
+  description:
+    "Panarwala TradingView charting interface for Indian NSE & BSE stocks. View real-time prices, financial profiles, technical indicators, and market news.",
+  keywords: [
+    "Panarwala TradingView",
+    "Panarwala stock charts",
+    "Panarwala technical analysis",
+    "Panarwala stocks",
+    "Riyaz Panarwala",
+    "TradingView stock charts",
+    "NSE TradingView chart",
+    "BSE TradingView chart",
+    "Indian stock technical analysis",
+    "live equity ticker India",
+    "fundamental data NSE stocks",
+  ],
+  alternates: {
+    canonical: `${SITE_URL}/TradingView`,
+  },
+  openGraph: {
+    title: "Panarwala TradingView Advanced Stock Charts | Indian Equity Analysis",
+    description:
+      "Panarwala TradingView charting interface for Indian NSE & BSE stocks with live ticker, financial profiles, and technical indicators.",
+    url: `${SITE_URL}/TradingView`,
+    siteName: "Panarwala Stocks",
+    type: "website",
+    images: [
+      {
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "Panarwala TradingView Stock Charts - Riyaz Panarwala",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Panarwala TradingView Advanced Stock Charts | Technical Analysis",
+    description:
+      "Panarwala TradingView charting interface for Indian NSE & BSE stocks with real-time technical indicators.",
+    images: [`${SITE_URL}/og-image.png`],
+  },
+};
 
-export default function StocksPage() {
-  const [symbol, setSymbol] = useState("BSE:JPPOWER");
-  const [inputValue, setInputValue] = useState("BSE:JPPOWER");
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSymbol(inputValue);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [inputValue]);
-
-  const panelMotion = {
-    initial: { opacity: 0, y: 14 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, amount: 0.15 },
-    transition: { duration: 0.35 },
-  };
-
-  return (
-    <div style={{ fontFamily: "system-ui, sans-serif", color: "#000" }}>
-      <motion.header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "rgba(0,0,0,0.05)",
-          padding: "16px 32px",
-        }}
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1
-          style={{
-            background: "linear-gradient(90deg,#00bce5,#2962ff)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          TradingView Integration
-        </h1>
-        <input
-          type="search"
-          placeholder="Enter symbol (e.g. BSE:RELIANCE)"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          style={{
-            padding: "8px 16px",
-            width: 300,
-            borderRadius: 20,
-            border: "1px solid #ccc",
-          }}
-        />
-      </motion.header>
-
-      <TickerTape />
-      <main
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 32,
-          maxWidth: 960,
-          margin: "0 auto",
-          padding: 16,
-        }}
-      >
-        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
-          <SymbolInfo symbol={symbol} />
-        </motion.section>
-        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
-          <AdvancedChart symbol={symbol} />
-        </motion.section>
-        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
-          <CompanyProfile symbol={symbol} />
-        </motion.section>
-        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
-          <FundamentalData symbol={symbol} />
-        </motion.section>
-        <motion.section {...panelMotion}>
-          <TechnicalAnalysis symbol={symbol} />
-        </motion.section>
-        <motion.section {...panelMotion}>
-          <TopStories symbol={symbol} />
-        </motion.section>
-      </main>
-      <footer
-        style={{
-          textAlign: "center",
-          borderTop: "1px solid #eee",
-          padding: "16px",
-          marginTop: 32,
-          fontSize: 12,
-          color: "#666",
-        }}
-      >
-        Charts powered by <a href="https://tradingview.com">TradingView</a>.
-      </footer>
-    </div>
-  );
+export default function TradingViewPage() {
+  return <TradingViewClient />;
 }

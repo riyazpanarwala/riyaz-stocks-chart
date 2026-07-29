@@ -3,20 +3,49 @@
 
 import { SITE_URL } from "../lib/siteConfig";
 
-export default function JsonLd() {
+export default function JsonLd({ includeFaq = false }) {
+  const brandSchema = {
+    "@context": "https://schema.org",
+    "@type": "Brand",
+    name: "Panarwala",
+    alternateName: ["Panarwala Stocks", "Riyaz Panarwala Stocks"],
+    url: SITE_URL,
+    logo: `${SITE_URL}/og-image.png`,
+    description:
+      "Panarwala is a premier brand for free financial charting tools, NSE & BSE stock analysis, options chain analytics, and technical market insights.",
+  };
+
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Panarwala Stocks",
+    legalName: "Panarwala Stocks",
+    url: SITE_URL,
+    logo: `${SITE_URL}/og-image.png`,
+    founder: {
+      "@type": "Person",
+      name: "Riyaz Panarwala",
+    },
+  };
+
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Riyaz Panarwala Stocks",
-    alternateName: "NSE BSE Stock Charts",
+    name: "Panarwala Stocks",
+    alternateName: ["Panarwala Stock Charts", "NSE BSE Stock Charts - Panarwala"],
     url: SITE_URL,
     description:
-      "Free interactive candlestick charts for Indian stocks. Analyze NSE/BSE data with RSI, MACD, Bollinger Bands, moving averages, and 15+ technical indicators.",
+      "Panarwala Stocks provides free interactive candlestick charts for Indian stocks. Analyze NSE/BSE data with RSI, MACD, Bollinger Bands, moving averages, and 15+ technical indicators.",
+    publisher: {
+      "@type": "Organization",
+      name: "Panarwala Stocks",
+      url: SITE_URL,
+    },
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${SITE_URL}/?q={search_term_string}`,
+        urlTemplate: `${SITE_URL}/?symbol={search_term_string}`,
       },
       "query-input": "required name=search_term_string",
     },
@@ -25,20 +54,21 @@ export default function JsonLd() {
   const webAppSchema = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "NSE BSE Stock Chart Analyzer",
+    name: "Panarwala NSE BSE Stock Chart Analyzer",
+    alternateName: "Panarwala Stock Charts",
     url: SITE_URL,
     applicationCategory: "FinanceApplication",
     operatingSystem: "Any",
     browserRequirements: "Requires JavaScript",
     description:
-      "Professional-grade candlestick charting tool for Indian equity markets with real-time NSE and BSE data, technical indicators, and pattern detection.",
+      "Panarwala's professional-grade candlestick charting tool for Indian equity markets with real-time NSE and BSE data, technical indicators, and pattern detection.",
     offers: {
       "@type": "Offer",
       price: "0",
       priceCurrency: "INR",
     },
     featureList: [
-      "Live NSE and BSE candlestick charts",
+      "Panarwala Live NSE and BSE candlestick charts",
       "RSI, MACD, Bollinger Bands indicators",
       "Moving average crossovers",
       "Supertrend indicator",
@@ -54,15 +84,26 @@ export default function JsonLd() {
       name: "Riyaz Panarwala",
       url: SITE_URL,
     },
+    provider: {
+      "@type": "Organization",
+      name: "Panarwala Stocks",
+      url: SITE_URL,
+    },
   };
 
-  const organizationSchema = {
+  const personSchema = {
     "@context": "https://schema.org",
     "@type": "Person",
     name: "Riyaz Panarwala",
     url: SITE_URL,
+    jobTitle: "Founder & Developer",
+    worksFor: {
+      "@type": "Organization",
+      name: "Panarwala Stocks",
+    },
     sameAs: [],
     knowsAbout: [
+      "Panarwala Stock Charts",
       "Stock Market Analysis",
       "Technical Analysis",
       "NSE Trading",
@@ -82,18 +123,6 @@ export default function JsonLd() {
         name: "Home",
         item: SITE_URL,
       },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "TradingView Charts",
-        item: `${SITE_URL}/TradingView`,
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: "Option Chain",
-        item: `${SITE_URL}/optionchain`,
-      },
     ],
   };
 
@@ -103,53 +132,55 @@ export default function JsonLd() {
     mainEntity: [
       {
         "@type": "Question",
-        name: "How do I view live NSE stock charts?",
+        name: "How do I view live NSE stock charts on Panarwala Stocks?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Select any NSE stock from the dropdown, choose 'Intraday' mode, and pick your preferred time interval (1min, 5min, 15min, 30min). The chart updates automatically during market hours.",
+          text: "On Panarwala Stocks, select any NSE stock from the search dropdown, choose 'Intraday' mode, and pick your preferred time interval. The candlestick chart updates automatically during market hours.",
         },
       },
       {
         "@type": "Question",
-        name: "Which technical indicators are available?",
+        name: "Which technical indicators are available on Panarwala Stocks?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "The platform supports RSI(14), MACD(12,26,9), Bollinger Bands(20,2), Stochastic(20,3), CCI(20), MFI(14), ADX/DMI, Supertrend, OBV, EMA, SMA crossovers, and Zero-Lag MACD.",
+          text: "Panarwala Stocks supports RSI(14), MACD(12,26,9), Bollinger Bands(20,2), Stochastic(20,3), CCI(20), MFI(14), ADX/DMI, Supertrend, OBV, EMA, SMA crossovers, and Zero-Lag MACD.",
         },
       },
       {
         "@type": "Question",
-        name: "Is this stock chart tool free?",
+        name: "Is Panarwala Stock Charts free to use?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes, the NSE and BSE candlestick chart tool is completely free. You can analyze stocks, view technical indicators, detect patterns, and check fundamental data at no cost.",
+          text: "Yes, Panarwala Stock Charts is 100% free for all users. You can analyze NSE and BSE stocks, view technical indicators, detect candlestick patterns, and check fundamental data at zero cost.",
         },
       },
       {
         "@type": "Question",
-        name: "Can I view BSE stock charts?",
+        name: "Can I view BSE stock charts on Panarwala Stocks?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes. After selecting a company, use the index selector to switch between NSE and BSE. Stocks listed on both exchanges will show both options.",
+          text: "Yes. After selecting a company on Panarwala Stocks, use the index selector to switch between NSE and BSE. Stocks listed on both exchanges will display live data for either exchange.",
         },
       },
       {
         "@type": "Question",
-        name: "How do I use the candlestick pattern scanner?",
+        name: "How do I use the Panarwala candlestick pattern scanner?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Open the Pattern menu in the sidebar and select any pattern such as Hammer, Morning Star, Engulfing, Doji, or Marubozu. The chart will highlight all detected occurrences on the historical data.",
+          text: "Open the Pattern menu in the sidebar on Panarwala Stocks and select any pattern such as Hammer, Morning Star, Engulfing, Doji, or Marubozu. The chart will highlight all detected occurrences on historical data.",
         },
       },
     ],
   };
 
   const schemas = [
+    brandSchema,
+    organizationSchema,
     websiteSchema,
     webAppSchema,
-    organizationSchema,
+    personSchema,
     breadcrumbSchema,
-    faqSchema,
+    ...(includeFaq ? [faqSchema] : []),
   ];
 
   return (

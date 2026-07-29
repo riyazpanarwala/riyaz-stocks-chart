@@ -1,0 +1,123 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import TickerTape from "../../components/TradingView/TickerTape";
+import SymbolInfo from "../../components/TradingView/SymbolInfo";
+import AdvancedChart from "../../components/TradingView/AdvancedChart";
+import CompanyProfile from "../../components/TradingView/CompanyProfile";
+import FundamentalData from "../../components/TradingView/FundamentalData";
+import TechnicalAnalysis from "../../components/TradingView/TechnicalAnalysis";
+import TopStories from "../../components/TradingView/TopStories";
+
+export default function TradingViewClient() {
+  const [symbol, setSymbol] = useState("BSE:JPPOWER");
+  const [inputValue, setInputValue] = useState("BSE:JPPOWER");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSymbol(inputValue);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
+
+  const panelMotion = {
+    initial: { opacity: 0, y: 14 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, amount: 0.15 },
+    transition: { duration: 0.35 },
+  };
+
+  return (
+    <div style={{ fontFamily: "system-ui, sans-serif", color: "#000" }}>
+      <motion.header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: "rgba(0,0,0,0.05)",
+          padding: "16px 32px",
+        }}
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <h1
+          style={{
+            fontSize: "24px",
+            fontWeight: 700,
+            background: "linear-gradient(90deg,#00bce5,#2962ff)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            margin: 0,
+          }}
+        >
+          TradingView Advanced Stock Charts
+        </h1>
+        <input
+          type="search"
+          placeholder="Enter symbol (e.g. BSE:RELIANCE)"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          aria-label="Search stock symbol"
+          style={{
+            padding: "8px 16px",
+            width: 300,
+            borderRadius: 20,
+            border: "1px solid #ccc",
+          }}
+        />
+      </motion.header>
+
+      <TickerTape />
+      <main
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 32,
+          maxWidth: 960,
+          margin: "0 auto",
+          padding: 16,
+        }}
+      >
+        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
+          <SymbolInfo symbol={symbol} />
+        </motion.section>
+        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
+          <AdvancedChart symbol={symbol} />
+        </motion.section>
+        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
+          <CompanyProfile symbol={symbol} />
+        </motion.section>
+        <motion.section style={{ gridColumn: "span 2" }} {...panelMotion}>
+          <FundamentalData symbol={symbol} />
+        </motion.section>
+        <motion.section {...panelMotion}>
+          <TechnicalAnalysis symbol={symbol} />
+        </motion.section>
+        <motion.section {...panelMotion}>
+          <TopStories symbol={symbol} />
+        </motion.section>
+      </main>
+      <footer
+        style={{
+          textAlign: "center",
+          borderTop: "1px solid #eee",
+          padding: "16px",
+          marginTop: 32,
+          fontSize: 12,
+          color: "#666",
+        }}
+      >
+        Charts powered by{" "}
+        <a
+          href="https://tradingview.com"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          TradingView
+        </a>
+        .
+      </footer>
+    </div>
+  );
+}

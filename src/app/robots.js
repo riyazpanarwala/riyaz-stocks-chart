@@ -8,20 +8,19 @@ export default function robots() {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/TradingView", "/optionchain"],
+        allow: ["/", "/TradingView", "/TradingView/forex", "/optionchain"],
         disallow: [
           "/api/",
           "/riyazstock", // internal bulk-analysis tool
-          "/*.json$", // block raw JSON files
           "/api/NSE/",
           "/api/finance/",
           "/api/Fundamentals/",
         ],
       },
-      // Allow Google's image bot to index OG images
+      // Allow Google's image bot to index OG images and favicons
       {
         userAgent: "Googlebot-Image",
-        allow: ["/og-image.png", "/apple-touch-icon.png"],
+        allow: ["/og-image.png", "/apple-touch-icon.png", "/favicon.svg", "/favicon-32x32.png"],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

@@ -20,20 +20,23 @@ export function generateStockMetadata(
 ) {
   if (!stockUrl) throw new Error("stockUrl is required for stock metadata");
 
-  const title = `${name} (${symbol}) Stock Chart | ${exchange} Candlestick & Technical Analysis`;
-  const description = `View live ${exchange} candlestick chart for ${name} (${symbol}). Analyse with RSI, MACD, Bollinger Bands, Supertrend, and 15+ technical indicators. Free intraday and historical data.`;
+  const title = `${name} (${symbol}) Stock Chart – Panarwala Stocks | ${exchange} Technical Analysis`;
+  const description = `View live ${exchange} candlestick chart for ${name} (${symbol}) on Panarwala Stocks. Analyse with RSI, MACD, Bollinger Bands, Supertrend, and 15+ technical indicators. Free intraday and historical data.`;
 
   return {
     title,
     description,
     keywords: [
+      `${symbol} Panarwala`,
+      `Panarwala stock chart`,
       `${symbol} stock chart`,
       `${symbol} ${exchange} chart`,
       `${name} candlestick chart`,
       `${symbol} RSI MACD`,
-      `${symbol} technical analysis`,
+      `Panarwala technical analysis`,
       `${name} share price chart`,
       `${exchange} ${symbol}`,
+      "Panarwala Stocks",
       "NSE BSE stock charts",
       "Indian stock technical analysis",
     ],
@@ -44,13 +47,14 @@ export function generateStockMetadata(
       title,
       description,
       url: stockUrl,
+      siteName: "Panarwala Stocks",
       type: "website",
       images: [
         {
           url: `${SITE_URL}/og-image.png`,
           width: 1200,
           height: 630,
-          alt: `${name} stock chart`,
+          alt: `${name} stock chart - Panarwala Stocks`,
         },
       ],
     },
