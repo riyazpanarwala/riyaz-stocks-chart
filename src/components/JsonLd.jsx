@@ -3,7 +3,7 @@
 
 import { SITE_URL } from "../lib/siteConfig";
 
-export default function JsonLd() {
+export default function JsonLd({ includeFaq = false }) {
   const brandSchema = {
     "@context": "https://schema.org",
     "@type": "Brand",
@@ -180,7 +180,7 @@ export default function JsonLd() {
     webAppSchema,
     personSchema,
     breadcrumbSchema,
-    faqSchema,
+    ...(includeFaq ? [faqSchema] : []),
   ];
 
   return (

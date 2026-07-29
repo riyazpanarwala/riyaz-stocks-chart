@@ -1,5 +1,5 @@
-// src/app/page.js
 import CandleStickChartClient from "../components/CandleStickChartClient";
+import JsonLd from "../components/JsonLd";
 import { SITE_URL } from "../lib/siteConfig";
 
 export const dynamic = "force-static";
@@ -59,6 +59,7 @@ export const metadata = {
 export default function Page() {
   return (
     <main>
+      <JsonLd includeFaq={true} />
       <CandleStickChartClient />
     </main>
   );

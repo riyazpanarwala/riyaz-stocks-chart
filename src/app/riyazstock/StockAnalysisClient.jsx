@@ -55,7 +55,11 @@ export default function StockAnalysisClient() {
       </button>
 
       {statusMsg && (
-        <div style={{ marginTop: 20, padding: 12, borderRadius: 6, background: "#1e293b", fontSize: 14, color: "#38bdf8" }}>
+        <div
+          role="status"
+          aria-atomic="true"
+          style={{ marginTop: 20, padding: 12, borderRadius: 6, background: "#1e293b", fontSize: 14, color: "#38bdf8" }}
+        >
           {statusMsg}
         </div>
       )}

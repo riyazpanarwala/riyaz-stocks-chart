@@ -116,6 +116,7 @@ const useParseCsv = () => {
 
 
     // Add NSE Indices
+    let niftyFallback = null;
     indicesArr.forEach((v) => {
       const niftyObj = {
         label: v.name,
@@ -129,7 +130,7 @@ const useParseCsv = () => {
       };
 
       if (v.symbol === "NIFTY 50") {
-        setCompany(niftyObj);
+        niftyFallback = niftyObj;
       }
 
       merged.push(niftyObj);
@@ -161,6 +162,23 @@ const useParseCsv = () => {
     etfArr.forEach((etf) => {
       merged.push(etf);
     });
+
+    // Check for ?symbol= or ?q= in URL
+    let selectedFromUrl = null;
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const symbolParam = (urlParams.get("symbol") || urlParams.get("q") || "").trim().toUpperCase();
+      if (symbolParam) {
+        selectedFromUrl = merged.find(
+          (item) =>
+            (item.symbol && item.symbol.toUpperCase() === symbolParam) ||
+            (item.label && item.label.toUpperCase() === symbolParam) ||
+            (item.value && item.value.toUpperCase() === symbolParam)
+        );
+      }
+    }
+
+    setCompany(selectedFromUrl || niftyFallback || merged[0]);
 
     return merged;
   };
