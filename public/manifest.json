@@ -1,7 +1,7 @@
 {
-  "name": "NSE BSE Stock Charts – Riyaz Panarwala",
-  "short_name": "Stock Charts",
-  "description": "Free interactive candlestick charts for NSE and BSE stocks with RSI, MACD, Bollinger Bands, Supertrend, and 15+ technical indicators.",
+  "name": "Panarwala Stocks – NSE & BSE Candlestick Charts",
+  "short_name": "Panarwala Stocks",
+  "description": "Panarwala Stocks: Free interactive candlestick charts for NSE and BSE stocks with RSI, MACD, Bollinger Bands, Supertrend, and 15+ technical indicators.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0e17",

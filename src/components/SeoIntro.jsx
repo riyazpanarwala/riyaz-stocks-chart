@@ -75,7 +75,7 @@ export default function SeoIntro() {
           lineHeight: 1.3,
         }}
       >
-        Free NSE &amp; BSE Stock Candlestick Charts
+        Panarwala Stocks – Free NSE &amp; BSE Stock Candlestick Charts
       </h1>
       <p
         style={{
@@ -86,7 +86,7 @@ export default function SeoIntro() {
           maxWidth: 720,
         }}
       >
-        Professional-grade interactive charts for Indian equities, indices, and
+        Panarwala Stocks provides professional-grade interactive charts for Indian equities, indices, and
         ETFs. Select any stock above to load live candlestick data with
         real-time technical indicators.
       </p>

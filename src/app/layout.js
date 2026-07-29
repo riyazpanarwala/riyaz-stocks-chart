@@ -14,12 +14,19 @@ export const metadata = {
 
   title: {
     default:
-      "Free NSE & BSE Stock Charts | Candlestick Charts with Technical Indicators",
-    template: "%s | Riyaz Panarwala Stocks",
+      "Panarwala Stocks | Free NSE & BSE Stock Candlestick Charts & Technical Analysis",
+    template: "%s | Panarwala Stocks",
   },
   description:
-    "Free interactive candlestick charts for NSE and BSE stocks. Analyse NIFTY, BANKNIFTY, and 5000+ Indian equities with RSI, MACD, Bollinger Bands, Supertrend, moving averages, and 15+ technical indicators. Live intraday and historical data.",
+    "Panarwala Stocks: Free interactive candlestick charts for NSE and BSE stocks. Analyse NIFTY, BANKNIFTY, and 5000+ Indian equities with RSI, MACD, Bollinger Bands, Supertrend, moving averages, and 15+ technical indicators. Live intraday and historical data.",
   keywords: [
+    "Panarwala",
+    "Panarwala stocks",
+    "Riyaz Panarwala",
+    "Panarwala stock charts",
+    "Panarwala technical analysis",
+    "Panarwala chart analyzer",
+    "Panarwala NSE BSE",
     "NSE stock charts",
     "BSE stock charts",
     "candlestick charts India",
@@ -46,7 +53,7 @@ export const metadata = {
 
   authors: [{ name: "Riyaz Panarwala", url: SITE_URL }],
   creator: "Riyaz Panarwala",
-  publisher: "Riyaz Panarwala",
+  publisher: "Panarwala",
 
   alternates: {
     canonical: SITE_URL,
@@ -56,16 +63,16 @@ export const metadata = {
     type: "website",
     locale: "en_IN",
     url: SITE_URL,
-    siteName: "Riyaz Panarwala Stocks",
-    title: "Free NSE & BSE Stock Charts with Technical Indicators",
+    siteName: "Panarwala Stocks",
+    title: "Panarwala Stocks | Free NSE & BSE Stock Charts & Technical Analysis",
     description:
-      "Analyse 5000+ Indian stocks with interactive candlestick charts, RSI, MACD, Bollinger Bands, Supertrend, pattern detection, and fundamental data. Completely free.",
+      "Panarwala Stocks: Analyse 5000+ Indian stocks with interactive candlestick charts, RSI, MACD, Bollinger Bands, Supertrend, pattern detection, and fundamental data. Completely free.",
     images: [
       {
         url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "NSE BSE Stock Candlestick Charts – Riyaz Panarwala",
+        alt: "Panarwala NSE BSE Stock Candlestick Charts – Riyaz Panarwala",
         type: "image/png",
       },
     ],
@@ -73,9 +80,9 @@ export const metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Free NSE & BSE Stock Charts | Technical Analysis",
+    title: "Panarwala Stocks | Free NSE & BSE Stock Charts & Technical Analysis",
     description:
-      "Analyse 5000+ Indian stocks with RSI, MACD, Bollinger Bands, Supertrend, and 15+ indicators. Free candlestick charts with intraday & historical data.",
+      "Panarwala Stocks: Analyse 5000+ Indian stocks with RSI, MACD, Bollinger Bands, Supertrend, and 15+ indicators. Free candlestick charts with intraday & historical data.",
     images: [`${SITE_URL}/og-image.png`],
     creator: "@riyazpanarwala",
     site: "@riyazpanarwala",
@@ -105,8 +112,8 @@ export const metadata = {
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "black-translucent",
-    "apple-mobile-web-app-title": "Stock Charts",
-    "application-name": "NSE BSE Charts",
+    "apple-mobile-web-app-title": "Panarwala Stocks",
+    "application-name": "Panarwala Stock Charts",
     "format-detection": "telephone=no",
     "msapplication-TileColor": "#0a0e17",
     "msapplication-config": "/browserconfig.xml",

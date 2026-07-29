@@ -2,10 +2,15 @@ import OptionChainClient from "./OptionChainClient";
 import { SITE_URL } from "../../lib/siteConfig";
 
 export const metadata = {
-  title: "Live NSE Option Chain Analysis | NIFTY & BANKNIFTY Options Data",
+  title: "Panarwala Live NSE Option Chain Analysis | NIFTY & BANKNIFTY Options Data",
   description:
-    "Real-time NSE option chain data for NIFTY, BANKNIFTY, and Indian F&O stocks with Open Interest (OI), ΔOI, Put-Call Ratio (PCR), Max Pain, and Smart Money indicators.",
+    "Panarwala Option Chain: Real-time NSE option chain data for NIFTY, BANKNIFTY, and Indian F&O stocks with Open Interest (OI), ΔOI, Put-Call Ratio (PCR), Max Pain, and Smart Money indicators.",
   keywords: [
+    "Panarwala option chain",
+    "Panarwala NIFTY option chain",
+    "Panarwala options",
+    "Panarwala stocks",
+    "Riyaz Panarwala",
     "NSE option chain",
     "NIFTY option chain live",
     "BANKNIFTY option chain",
@@ -18,25 +23,26 @@ export const metadata = {
     canonical: `${SITE_URL}/optionchain`,
   },
   openGraph: {
-    title: "Live NSE Option Chain Analysis | NIFTY & BANKNIFTY",
+    title: "Panarwala Live NSE Option Chain Analysis | NIFTY & BANKNIFTY",
     description:
-      "Real-time NSE option chain with Open Interest, Delta OI, Put-Call Ratio, and Max Pain analysis for Indian markets.",
+      "Panarwala Option Chain: Real-time NSE option chain with Open Interest, Delta OI, Put-Call Ratio, and Max Pain analysis for Indian markets.",
     url: `${SITE_URL}/optionchain`,
+    siteName: "Panarwala Stocks",
     type: "website",
     images: [
       {
         url: `${SITE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "NSE Option Chain Analysis - Riyaz Panarwala",
+        alt: "Panarwala NSE Option Chain Analysis - Riyaz Panarwala",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Live NSE Option Chain Analysis | Open Interest Data",
+    title: "Panarwala Live NSE Option Chain Analysis | Open Interest Data",
     description:
-      "Real-time option chain for NIFTY, BANKNIFTY, and F&O equities with OI, PCR, and Max Pain tracking.",
+      "Panarwala Option Chain: Real-time option chain for NIFTY, BANKNIFTY, and F&O equities with OI, PCR, and Max Pain tracking.",
     images: [`${SITE_URL}/og-image.png`],
   },
 };
