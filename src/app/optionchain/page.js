@@ -1,11 +1,46 @@
-"use client";
+import OptionChainClient from "./OptionChainClient";
+import { SITE_URL } from "../../lib/siteConfig";
 
-import OptionChain from "../../components/OptionChainNew/index.jsx";
+export const metadata = {
+  title: "Live NSE Option Chain Analysis | NIFTY & BANKNIFTY Options Data",
+  description:
+    "Real-time NSE option chain data for NIFTY, BANKNIFTY, and Indian F&O stocks with Open Interest (OI), ΔOI, Put-Call Ratio (PCR), Max Pain, and Smart Money indicators.",
+  keywords: [
+    "NSE option chain",
+    "NIFTY option chain live",
+    "BANKNIFTY option chain",
+    "open interest analysis",
+    "put call ratio live",
+    "max pain indicator",
+    "F&O stock options India",
+  ],
+  alternates: {
+    canonical: `${SITE_URL}/optionchain`,
+  },
+  openGraph: {
+    title: "Live NSE Option Chain Analysis | NIFTY & BANKNIFTY",
+    description:
+      "Real-time NSE option chain with Open Interest, Delta OI, Put-Call Ratio, and Max Pain analysis for Indian markets.",
+    url: `${SITE_URL}/optionchain`,
+    type: "website",
+    images: [
+      {
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "NSE Option Chain Analysis - Riyaz Panarwala",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Live NSE Option Chain Analysis | Open Interest Data",
+    description:
+      "Real-time option chain for NIFTY, BANKNIFTY, and F&O equities with OI, PCR, and Max Pain tracking.",
+    images: [`${SITE_URL}/og-image.png`],
+  },
+};
 
-export default function Page() {
-  return (
-    <div>
-      <OptionChain />
-    </div>
-  );
+export default function OptionChainPage() {
+  return <OptionChainClient />;
 }

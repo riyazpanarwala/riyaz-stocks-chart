@@ -5,8 +5,7 @@ import { SITE_URL } from "../lib/siteConfig";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title:
-    "Free NSE & BSE Candlestick Charts | Live Stock Technical Analysis",
+  title: "Free NSE & BSE Candlestick Charts | Live Stock Technical Analysis",
   description:
     "View live and historical candlestick charts for 5000+ NSE and BSE stocks. Analyse NIFTY, BANKNIFTY, and Indian equities with RSI, MACD, Bollinger Bands, Supertrend, moving averages, and candlestick pattern scanners. 100% free.",
   keywords: [
@@ -32,7 +31,23 @@ export const metadata = {
     description:
       "Analyse 5000+ Indian stocks with interactive candlestick charts, RSI, MACD, Supertrend, pattern detection, and fundamental data.",
     url: SITE_URL,
+    siteName: "Riyaz Panarwala Stocks",
     type: "website",
+    images: [
+      {
+        url: `${SITE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "Free NSE & BSE Candlestick Charts - Riyaz Panarwala",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Free NSE & BSE Candlestick Charts | Live Technical Analysis",
+    description:
+      "Analyse 5000+ Indian stocks with interactive candlestick charts, RSI, MACD, Supertrend, and pattern detection.",
+    images: [`${SITE_URL}/og-image.png`],
   },
 };
 

@@ -66,7 +66,7 @@ export default function SeoIntro() {
       }}
     >
       {/* Hero heading */}
-      <h2
+      <h1
         style={{
           fontSize: "clamp(20px, 3vw, 28px)",
           fontWeight: 700,
@@ -76,7 +76,7 @@ export default function SeoIntro() {
         }}
       >
         Free NSE &amp; BSE Stock Candlestick Charts
-      </h2>
+      </h1>
       <p
         style={{
           fontSize: 15,

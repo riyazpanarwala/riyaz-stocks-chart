@@ -16,7 +16,7 @@ export default function JsonLd() {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
-        urlTemplate: `${SITE_URL}/?q={search_term_string}`,
+        urlTemplate: `${SITE_URL}/?symbol={search_term_string}`,
       },
       "query-input": "required name=search_term_string",
     },
@@ -56,7 +56,7 @@ export default function JsonLd() {
     },
   };
 
-  const organizationSchema = {
+  const personSchema = {
     "@context": "https://schema.org",
     "@type": "Person",
     name: "Riyaz Panarwala",
@@ -81,18 +81,6 @@ export default function JsonLd() {
         position: 1,
         name: "Home",
         item: SITE_URL,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "TradingView Charts",
-        item: `${SITE_URL}/TradingView`,
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: "Option Chain",
-        item: `${SITE_URL}/optionchain`,
       },
     ],
   };
@@ -147,7 +135,7 @@ export default function JsonLd() {
   const schemas = [
     websiteSchema,
     webAppSchema,
-    organizationSchema,
+    personSchema,
     breadcrumbSchema,
     faqSchema,
   ];
