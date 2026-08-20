@@ -321,9 +321,8 @@ const CandleStickChart = () => {
                 </div>
               </FullScreen>
             ) : (
-              <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--tx-second)" }}>
-                Loading candlestick chart data...
-              </div>
+              /* Show SEO intro while chart data is loading */
+              <SeoIntro headingTag="h2" />
             )}
 
             {!(companyObj.nseIndex || companyObj.etf || companyObj.global || companyObj.upstoxOnly) && (
@@ -333,9 +332,6 @@ const CandleStickChart = () => {
                 isGlobal={companyObj.global}
               />
             )}
-
-            {/* Keyword-rich SEO intro section visible to crawlers and users */}
-            <SeoIntro />
           </div>
         </main>
 
