@@ -3,7 +3,7 @@
 
 import { SITE_URL } from "../lib/siteConfig";
 
-export default function JsonLd({ includeFaq = false }) {
+export default function JsonLd() {
   const brandSchema = {
     "@context": "https://schema.org",
     "@type": "Brand",
@@ -126,53 +126,6 @@ export default function JsonLd({ includeFaq = false }) {
     ],
   };
 
-  const faqSchema = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "How do I view live NSE stock charts on Panarwala Stocks?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "On Panarwala Stocks, select any NSE stock from the search dropdown, choose 'Intraday' mode, and pick your preferred time interval. The candlestick chart updates automatically during market hours.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Which technical indicators are available on Panarwala Stocks?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Panarwala Stocks supports RSI(14), MACD(12,26,9), Bollinger Bands(20,2), Stochastic(20,3), CCI(20), MFI(14), ADX/DMI, Supertrend, OBV, EMA, SMA crossovers, and Zero-Lag MACD.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Is Panarwala Stock Charts free to use?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes, Panarwala Stock Charts is 100% free for all users. You can analyze NSE and BSE stocks, view technical indicators, detect candlestick patterns, and check fundamental data at zero cost.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Can I view BSE stock charts on Panarwala Stocks?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes. After selecting a company on Panarwala Stocks, use the index selector to switch between NSE and BSE. Stocks listed on both exchanges will display live data for either exchange.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "How do I use the Panarwala candlestick pattern scanner?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Open the Pattern menu in the sidebar on Panarwala Stocks and select any pattern such as Hammer, Morning Star, Engulfing, Doji, or Marubozu. The chart will highlight all detected occurrences on historical data.",
-        },
-      },
-    ],
-  };
-
   const schemas = [
     brandSchema,
     organizationSchema,
@@ -180,7 +133,6 @@ export default function JsonLd({ includeFaq = false }) {
     webAppSchema,
     personSchema,
     breadcrumbSchema,
-    ...(includeFaq ? [faqSchema] : []),
   ];
 
   return (

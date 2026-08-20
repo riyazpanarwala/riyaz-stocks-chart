@@ -65,8 +65,8 @@ export default function SeoIntro() {
         fontFamily: "var(--font-ui)",
       }}
     >
-      {/* Hero heading */}
-      <h1
+      {/* Section heading */}
+      <h2
         style={{
           fontSize: "clamp(20px, 3vw, 28px)",
           fontWeight: 700,
@@ -76,7 +76,7 @@ export default function SeoIntro() {
         }}
       >
         Panarwala Stocks – Free NSE &amp; BSE Stock Candlestick Charts
-      </h1>
+      </h2>
       <p
         style={{
           fontSize: 15,
