@@ -457,3 +457,19 @@ header {
 
   .theme-toggle   { bottom: 14px; right: 14px; width: 34px; height: 34px; font-size: 14px; }
 }
+
+/* ─────────────────────────────────────────────
+   ACCESSIBILITY & SEO UTILITY
+   ───────────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+

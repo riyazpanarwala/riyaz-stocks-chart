@@ -176,7 +176,7 @@ const CandleStickChart = () => {
     return (
       <>
         {/* Static SEO section visible before JS hydrates */}
-        <SeoIntro />
+        <SeoIntro headingTag="h1" />
       </>
     );
   }
@@ -242,10 +242,10 @@ const CandleStickChart = () => {
         <main className="mainChart" id="main-content">
           <div>
             <div className="headerContent">
-              {/* Semantic heading for screen readers and crawlers */}
-              <h2 className="company-name" aria-label={`${getCompanyName()} stock chart`}>
+              {/* Primary visible H1 heading for Googlebot and screen readers */}
+              <h1 className="company-name" aria-label={`${getCompanyName()} stock chart`}>
                 {getCompanyName()}
-              </h2>
+              </h1>
               <div className="action-buttons" role="toolbar" aria-label="Chart actions">
                 {(indexObj.value === "NSE_EQ" || indexObj.value === "BSE_EQ") && (
                   <ActionButton
@@ -321,8 +321,9 @@ const CandleStickChart = () => {
                 </div>
               </FullScreen>
             ) : (
-              /* Show SEO intro while chart data is loading */
-              <SeoIntro />
+              <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--tx-second)" }}>
+                Loading candlestick chart data...
+              </div>
             )}
 
             {!(companyObj.nseIndex || companyObj.etf || companyObj.global || companyObj.upstoxOnly) && (
@@ -332,6 +333,9 @@ const CandleStickChart = () => {
                 isGlobal={companyObj.global}
               />
             )}
+
+            {/* Keyword-rich SEO intro section visible to crawlers and users */}
+            <SeoIntro />
           </div>
         </main>
 

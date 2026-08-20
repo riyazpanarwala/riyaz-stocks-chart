@@ -53,7 +53,8 @@ const indicators = [
   "SMA Crossovers (5/20, 20/50, 50/200)",
 ];
 
-export default function SeoIntro() {
+export default function SeoIntro({ headingTag = "h2" }) {
+  const HeadingTag = headingTag;
   return (
     <section
       className="seo-intro"
@@ -65,8 +66,8 @@ export default function SeoIntro() {
         fontFamily: "var(--font-ui)",
       }}
     >
-      {/* Hero heading */}
-      <h1
+      {/* Section heading */}
+      <HeadingTag
         style={{
           fontSize: "clamp(20px, 3vw, 28px)",
           fontWeight: 700,
@@ -76,7 +77,7 @@ export default function SeoIntro() {
         }}
       >
         Panarwala Stocks – Free NSE &amp; BSE Stock Candlestick Charts
-      </h1>
+      </HeadingTag>
       <p
         style={{
           fontSize: 15,
