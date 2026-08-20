@@ -176,7 +176,7 @@ const CandleStickChart = () => {
     return (
       <>
         {/* Static SEO section visible before JS hydrates */}
-        <SeoIntro />
+        <SeoIntro headingTag="h1" />
       </>
     );
   }
