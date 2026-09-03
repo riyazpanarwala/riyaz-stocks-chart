@@ -7,13 +7,16 @@ const symbolArg = args.find((a) => !a.startsWith("-"));
 const isBse = args.includes("--bse");
 const capitalArg = args.find((a) => a.startsWith("--capital="))?.split("=")[1];
 const daysArg = args.find((a) => a.startsWith("--days="))?.split("=")[1];
+const trailingArg = args.find((a) => a.startsWith("--trailing="))?.split("=")[1];
 const initialCapital = capitalArg ? Number(capitalArg) : 50_000;
 const lookbackDays = daysArg ? Number(daysArg) : 730;
+const useBreakevenTrailing = trailingArg !== "none";
 
 if (!symbolArg) {
-  console.log("\nUsage: node scripts/paperTrade.mjs <SYMBOL> [--capital=50000] [--days=730] [--bse]");
+  console.log("\nUsage: node scripts/paperTrade.mjs <SYMBOL> [--capital=50000] [--days=730] [--trailing=breakeven|none] [--bse]");
   console.log("Examples:");
   console.log("  node scripts/paperTrade.mjs INFY");
+  console.log("  node scripts/paperTrade.mjs INFY --trailing=none");
   console.log("  node scripts/paperTrade.mjs TCS --capital=100000");
   console.log("  node scripts/paperTrade.mjs SUNPHARMA --capital=50000");
   console.log("  node scripts/paperTrade.mjs RELIANCE --bse");
@@ -68,12 +71,20 @@ try {
       const hitTarget2 = position.target2 != null && c.high >= position.target2;
       const hitExit = longSig.signal === "EXIT";
 
-      if (c.high >= position.target1) position.target1Hit = true;
+      if (c.high >= position.target1) {
+        position.target1Hit = true;
+        if (useBreakevenTrailing) {
+          position.stopLoss = Math.max(position.stopLoss, position.entryPrice);
+        }
+      }
 
       if (hitStop || hitTarget2 || hitExit || i === candles.length - 1) {
         let exitPrice = c.close;
         let reason = "EXIT_SIGNAL";
-        if (hitStop) { exitPrice = position.stopLoss; reason = "STOP_LOSS"; }
+        if (hitStop) {
+          exitPrice = position.stopLoss;
+          reason = position.target1Hit && position.stopLoss >= position.entryPrice ? "BREAKEVEN_STOP" : "STOP_LOSS";
+        }
         else if (hitTarget2) { exitPrice = position.target2; reason = "TARGET_2"; }
         else if (i === candles.length - 1) { reason = "END_OF_DATA (OPEN)"; }
 

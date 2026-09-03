@@ -108,3 +108,20 @@ test("backtest prefix is unchanged when unrelated future candles are appended", 
 test("invalid negative cost assumptions are rejected", () => {
   assert.throws(() => runBacktest(bars([{ open: 90 }, { open: 100 }]), { costs: { sttSellRate: -0.1 } }), /non-negative/);
 });
+
+test("breakeven trailing stop moves stop loss to entry price when target 1 is touched", () => {
+  const input = bars([
+    { open: 90 },
+    { open: 100, high: 106, low: 99, close: 104 },
+    { open: 101, high: 102, low: 99, close: 100 }
+  ]);
+  const result = runBacktest(input, {
+    signalGenerator: scripted(['BUY']),
+    trailingStop: 'BREAKEVEN_AT_TARGET1',
+    forceCloseAtEnd: false
+  });
+  assert.equal(result.trades[0].target1Hit, true);
+  assert.equal(result.trades[0].exitReason, 'STOP_LOSS');
+  assert.equal(result.trades[0].exitPrice, 100);
+  assert.equal(result.trades[0].netPnl, 0);
+});

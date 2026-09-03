@@ -87,7 +87,12 @@ export function runBacktest(candles, options = {}) {
         else { position.target1Hit = true; closePosition({ candle, index, rawPrice: position.target2, reason: 'TARGET_2' }); }
       } else if (touchesStop) closePosition({ candle, index, rawPrice: position.stopLoss, reason: 'STOP_LOSS' });
       else if (touchesTarget2) { position.target1Hit = true; closePosition({ candle, index, rawPrice: position.target2, reason: 'TARGET_2' }); }
-      else if (candle.high >= position.target1) position.target1Hit = true;
+      else if (candle.high >= position.target1) {
+        position.target1Hit = true;
+        if (config.trailingStop === 'BREAKEVEN_AT_TARGET1') {
+          position.stopLoss = Math.max(position.stopLoss, position.entryPrice);
+        }
+      }
     }
 
     const equity = cash + (position ? position.quantity * candle.close : 0);

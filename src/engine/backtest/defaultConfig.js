@@ -5,6 +5,7 @@ export const DEFAULT_BACKTEST_CONFIG = Object.freeze({
   forceCloseAtEnd: true,
   annualizationFactor: 252,
   sameBarExitPriority: "STOP_FIRST",
+  trailingStop: "NONE",
   costs: {
     brokerageRate: 0,
     brokerageMaxPerOrder: 0,

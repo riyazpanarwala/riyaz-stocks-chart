@@ -76,3 +76,22 @@ test("future candles cannot change a historical signal", () => {
   const after = generateSignalAtIndex([...prefix, ...future], 240);
   assert.deepEqual(after, before);
 });
+
+test("protective gates block BUY signals on overbought RSI, low ADX, or low volume", () => {
+  const bull = candles(300, 1);
+
+  // Gate 1: rsiOverbought blocks BUY
+  const blockedRsi = generateSignal(bull, { config: { thresholds: { rsiOverbought: 50 } } });
+  assert.notEqual(blockedRsi.signal, "BUY");
+  assert.ok(blockedRsi.reasons.some((r) => r.includes("BUY blocked: RSI is overbought")));
+
+  // Gate 2: adxMin blocks BUY
+  const blockedAdx = generateSignal(bull, { config: { thresholds: { adxMin: 99.9 } } });
+  assert.notEqual(blockedAdx.signal, "BUY");
+  assert.ok(blockedAdx.reasons.some((r) => r.includes("BUY blocked: ADX indicates weak trend")));
+
+  // Gate 3: volumeMin blocks BUY
+  const blockedVol = generateSignal(bull, { config: { thresholds: { volumeMin: 5.0 } } });
+  assert.notEqual(blockedVol.signal, "BUY");
+  assert.ok(blockedVol.reasons.some((r) => r.includes("BUY blocked: Volume ratio below minimum")));
+});

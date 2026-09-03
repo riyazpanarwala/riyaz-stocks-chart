@@ -92,8 +92,23 @@ function generateLatest(candles, options = {}) {
   const breakdown = detectBreakdown(candles, i, config.priceAction.breakoutLookback);
   const structure = marketStructure(candles, i, config.priceAction.swingLeft, config.priceAction.swingRight);
   const scores = scoreEvidence({ current, values, structure, breakout, breakdown, regime, config });
-  const { buyScore, exitScore, dominance } = config.thresholds;
-  const buy = regime !== "STRONG_DOWNTREND" && regime !== "SIDEWAYS" && scores.bullishScore >= buyScore && scores.bullishScore - scores.bearishScore >= dominance;
+  const { buyScore, exitScore, dominance, rsiOverbought = 70, adxMin = 20, volumeMin = 0.75 } = config.thresholds;
+  const rsiValue = values.rsi[i];
+  const adxValue = values.adx.adx[i];
+  const volRatioValue = values.volumeRatio[i];
+
+  const notOverbought = rsiOverbought == null || rsiValue == null || rsiValue <= rsiOverbought;
+  const trendStrongEnough = adxMin == null || adxValue == null || adxValue >= adxMin;
+  const volumeConfirmed = volumeMin == null || volRatioValue == null || volRatioValue >= volumeMin;
+
+  const buy = regime !== "STRONG_DOWNTREND" &&
+              regime !== "SIDEWAYS" &&
+              scores.bullishScore >= buyScore &&
+              scores.bullishScore - scores.bearishScore >= dominance &&
+              notOverbought &&
+              trendStrongEnough &&
+              volumeConfirmed;
+
   const bearishExitSetup = scores.bearishScore >= exitScore && scores.bearishScore - scores.bullishScore >= dominance;
   const positionState = options.positionState ?? "FLAT";
   const signal = buy ? "BUY" : positionState === "LONG" && bearishExitSetup ? "EXIT" : positionState === "LONG" ? "HOLD" : "NO_TRADE";
@@ -103,6 +118,9 @@ function generateLatest(candles, options = {}) {
   const decisionChecks = [];
   if (regime === "STRONG_DOWNTREND" && signal !== "EXIT") decisionChecks.push("BUY blocked by strong downtrend regime");
   if (regime === "SIDEWAYS" && signal !== "EXIT") decisionChecks.push("BUY blocked by sideways regime");
+  if (!notOverbought && signal !== "EXIT") decisionChecks.push(`BUY blocked: RSI is overbought (${round(rsiValue)} > ${rsiOverbought})`);
+  if (!trendStrongEnough && signal !== "EXIT") decisionChecks.push(`BUY blocked: ADX indicates weak trend (${round(adxValue)} < ${adxMin})`);
+  if (!volumeConfirmed && signal !== "EXIT") decisionChecks.push(`BUY blocked: Volume ratio below minimum (${round(volRatioValue)} < ${volumeMin}x)`);
   if (!buy && scores.bullishScore < buyScore) decisionChecks.push(`Bullish score ${scores.bullishScore} is below BUY threshold ${buyScore}`);
   if (!buy && scores.bullishScore >= buyScore && scores.bullishScore - scores.bearishScore < dominance) decisionChecks.push(`Bullish lead ${scores.bullishScore - scores.bearishScore} is below dominance threshold ${dominance}`);
   if (positionState === "LONG" && !bearishExitSetup && scores.bearishScore < exitScore) decisionChecks.push(`Bearish score ${scores.bearishScore} is below EXIT threshold ${exitScore}`);
