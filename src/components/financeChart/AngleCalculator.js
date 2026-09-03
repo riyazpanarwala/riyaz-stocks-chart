@@ -30,17 +30,23 @@ const AngleCalculator = ({ enabled }) => {
     ctx.stroke();
 
     const { plotData } = moreProps;
-    const endIdx = end.item.idx.index;
-    const startIdx = start.item.idx.index;
+    const endIdx = end?.item?.idx?.index ?? 0;
+    const startIdx = start?.item?.idx?.index ?? 0;
     const barCount = Math.abs(endIdx - startIdx);
-    const angle = emaAngleIndividual(plotData, startIdx, endIdx, "ema12", "ema26");
+    let angle = emaAngleIndividual(plotData, startIdx, endIdx, "ema12", "ema26");
+
+    if (!Number.isFinite(angle)) {
+      const dx = x2 - x1;
+      const dy = y1 - y2; // Inverted because canvas Y increases downwards
+      angle = dx !== 0 ? Math.atan2(dy, dx) * (180 / Math.PI) : 90;
+    }
 
     ctx.fillStyle = DARK.angleText;
     ctx.font = "13px 'DM Mono', monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(
-      `angle : ${angle.toFixed(2)} (${barCount} bars)`,
+      `angle : ${angle.toFixed(2)}° (${barCount} bars)`,
       (x1 + x2) / 2,
       (y1 + y2 + 30) / 2
     );

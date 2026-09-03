@@ -125,14 +125,22 @@ export const fetchHistoricData = async (
   companyObj,
   apiInterval = 1,
 ) => {
+  if (!companyObj || (!companyObj.symbol && !companyObj.value && !companyObj.yahooSymbol)) {
+    return { candles: [], timeArr: [] };
+  }
+
   let arr;
 
   if (
     isYFinanceEnable &&
     (companyObj.yahooSymbol || indexName === "NSE_EQ")
   ) {
+    const yahooTicker = companyObj.yahooSymbol || (companyObj.symbol ? `${companyObj.symbol}.NS` : null);
+    if (!yahooTicker) {
+      return { candles: [], timeArr: [] };
+    }
     const rawData = await getNSEDataYahooFinance(
-      companyObj.yahooSymbol || companyObj.symbol + ".NS",
+      yahooTicker,
       interval,
       period,
     );

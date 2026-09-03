@@ -7,9 +7,12 @@ const Fundamentals = ({ companyObj, indexObj, onClose }) => {
   const [fundamentals, setFundamentals] = useState([]);
 
   const extractFinancials = async () => {
+    if (!companyObj?.symbol && !companyObj?.yahooSymbol) {
+      return;
+    }
     let symbol =
       companyObj.yahooSymbol ||
-      `${companyObj.symbol}.${indexObj.value === "BSE_EQ" ? "BO" : "NS"}`;
+      `${companyObj.symbol}.${indexObj?.value === "BSE_EQ" ? "BO" : "NS"}`;
 
     try {
       const response = await getFinanceDataAction({

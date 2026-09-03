@@ -1,29 +1,24 @@
 export const sma = (data, period = 50, source = "close") => {
-  // Ensure we have enough data points
+  if (!Array.isArray(data)) return [];
   if (data.length < period) {
-    return [];
+    return Array(data.length).fill(undefined);
   }
 
-  let sma = [];
+  const result = Array(data.length).fill(undefined);
+  let sum = 0;
 
-  for (let i = 0; i <= data.length - period; i++) {
-    // Calculate the sum of the closing prices for the current window
-    let sum = 0;
-    for (let j = 0; j < period; j++) {
-      if (source === "") {
-        sum += data[i + j];
-      } else {
-        sum += data[i + j][source];
-      }
-    }
-    // Calculate the average and add it to the SMA array
-    sma.push(sum / period);
-  }
-
-  let nullValues = [];
   for (let i = 0; i < period; i++) {
-    nullValues.push(undefined);
+    const val = source === "" ? data[i] : data[i]?.[source];
+    sum += typeof val === "number" ? val : 0;
+  }
+  result[period - 1] = sum / period;
+
+  for (let i = period; i < data.length; i++) {
+    const addVal = source === "" ? data[i] : data[i]?.[source];
+    const subVal = source === "" ? data[i - period] : data[i - period]?.[source];
+    sum += (typeof addVal === "number" ? addVal : 0) - (typeof subVal === "number" ? subVal : 0);
+    result[i] = sum / period;
   }
 
-  return [...nullValues, ...sma];
+  return result;
 };
