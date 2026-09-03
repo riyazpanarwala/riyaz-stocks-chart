@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   ema,
   rsi,
@@ -22,9 +22,10 @@ const emaPeriod1 = 50;
 const emaPeriod2 = 200;
 
 const useData = (initialData, indicatorName, isIntraday) => {
-  let ema12, ema26, rsiCalculator, rsiYAccessor;
-  let ema5, ema8, ema13;
-  let calculatedData = initialData;
+  return useMemo(() => {
+    let ema12, ema26, rsiCalculator, rsiYAccessor;
+    let ema5, ema8, ema13;
+    let calculatedData = initialData;
   let angles;
   let macdCalculator;
   let sma20, sma50, sma200;
@@ -288,24 +289,25 @@ const useData = (initialData, indicatorName, isIntraday) => {
     calculatedData = buySell(ma2(ma1(initialData)));
   }
 
-  return {
-    calculatedData,
-    ema12,
-    ema26,
-    rsiCalculator,
-    rsiYAccessor,
-    angles,
-    macdCalculator,
-    sma20,
-    sma50,
-    sma200,
-    bb,
-    ema5,
-    ema8,
-    ema13,
-    ma1,
-    ma2,
-  };
+    return {
+      calculatedData,
+      ema12,
+      ema26,
+      rsiCalculator,
+      rsiYAccessor,
+      angles,
+      macdCalculator,
+      sma20,
+      sma50,
+      sma200,
+      bb,
+      ema5,
+      ema8,
+      ema13,
+      ma1,
+      ma2,
+    };
+  }, [initialData, indicatorName, isIntraday]);
 };
 
 export default useData;
