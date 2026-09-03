@@ -78,13 +78,14 @@ export const getHistoricDataNSE = async (
   };
 
   try {
-    const response = await axios.post(nseBaseUrl, payload, { headers });
+    const data = await getNseEquityAction({ fromDate, toDate, symbol, apiName });
 
     let candles = [];
 
     if (apiName === "historic") {
-      if (Array.isArray(response.data)) {
-        response.data.forEach((v1) => {
+      if (Array.isArray(data)) {
+        data.forEach((v1) => {
+
           v1.data?.slice().reverse().forEach((v) => {
             candles.push({
               high: v.CH_TRADE_HIGH_PRICE,
@@ -98,8 +99,9 @@ export const getHistoricDataNSE = async (
         });
       }
     } else {
-      if (Array.isArray(response.data)) {
-        response.data.forEach((v1) => {
+      if (Array.isArray(data)) {
+        data.forEach((v1) => {
+
           let newArr = getUniqueListBy(
             v1.data?.indexCloseOnlineRecords || [],
             "EOD_TIMESTAMP"
