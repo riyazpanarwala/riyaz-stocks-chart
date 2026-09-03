@@ -16,7 +16,7 @@ const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => 
 
     try {
       const symbol = companyObj.symbol || companyObj.value;
-      const isBse = indexName === "BSE_EQ" || companyObj.bse;
+      const isBse = indexName === "BSE_EQ" || (!companyObj.nse && Boolean(companyObj.bse));
       const exchange = isBse ? "BSE" : "NSE";
 
       const res = await getStockSignalAction({

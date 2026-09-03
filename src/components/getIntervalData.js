@@ -1,9 +1,7 @@
-import axios from "axios";
 import { dateObj } from "./utils/data";
 import { getNseEquityAction } from "../app/actions/nseEquity";
 import { getFinanceDataAction } from "../app/actions/finance";
-
-const baseurl = "https://api.upstox.com/v3/";
+import { getUpstoxCandlesAction } from "../app/actions/upstox";
 
 const logError = (context, error) => {
   const status = error?.response?.status ?? "Server Action Error";
@@ -134,19 +132,21 @@ export const getHistoricData = async (
   isFrom,
   apiInterval = 1
 ) => {
-  const headers = {
-    Accept: "application/json",
-  };
   const instrumentKey = `${indexName}|${companyName}`;
   let currentDate = new Date();
   let toDate = currentDate.toISOString().split("T")[0];
   let fromDate = resolveFromDate(isFrom).toISOString().split("T")[0];
 
-  const newUrl = `${baseurl}historical-candle/${instrumentKey}/${interval}/${apiInterval}/${toDate}/${fromDate}`;
-
   try {
-    const response = await axios.get(newUrl, { headers });
-    return response.data;
+    const data = await getUpstoxCandlesAction({
+      type: "historical",
+      instrumentKey,
+      interval,
+      apiInterval,
+      toDate,
+      fromDate,
+    });
+    return data;
   } catch (error) {
     logError("getHistoricData", error);
     return { error: true, data: { candles: [] } };
@@ -159,16 +159,16 @@ export const getIntradayData = async (
   indexName,
   apiInterval = 1
 ) => {
-  const headers = {
-    Accept: "application/json",
-  };
-
   const instrumentKey = `${indexName}|${companyName}`;
-  const newUrl = `${baseurl}historical-candle/intraday/${instrumentKey}/${interval}/${apiInterval}`;
 
   try {
-    const response = await axios.get(newUrl, { headers });
-    return response.data;
+    const data = await getUpstoxCandlesAction({
+      type: "intraday",
+      instrumentKey,
+      interval,
+      apiInterval,
+    });
+    return data;
   } catch (error) {
     logError("getIntradayData", error);
     return { error: true, data: { candles: [] } };
@@ -176,16 +176,14 @@ export const getIntradayData = async (
 };
 
 export const getMarketTimings = async () => {
-  const headers = {
-    Accept: "application/json",
-  };
-
   const todayDate = new Date().toISOString().split("T")[0];
-  const newUrl = `${baseurl}market/timings/${todayDate}`;
 
   try {
-    const response = await axios.get(newUrl, { headers });
-    return response.data;
+    const data = await getUpstoxCandlesAction({
+      type: "marketTimings",
+      toDate: todayDate,
+    });
+    return data;
   } catch (error) {
     logError("getMarketTimings", error);
     return { error: true, data: { candles: [] } };

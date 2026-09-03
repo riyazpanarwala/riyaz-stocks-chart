@@ -40,8 +40,13 @@ export const stockAnalysis = async (
     companyObj
   );
 
-  if (!Array.isArray(candles) || candles.length === 0) {
+  if (!Array.isArray(candles) || candles.length < 2) {
     throw new Error(`Insufficient candle history for ${symbol}`);
+  }
+
+  const analysis = getStockAnalysis(candles);
+  if (!analysis) {
+    throw new Error(`Insufficient candle data to calculate indicators for ${symbol}`);
   }
 
   const {

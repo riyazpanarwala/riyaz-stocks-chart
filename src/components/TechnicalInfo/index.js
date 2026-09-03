@@ -24,52 +24,67 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
   const [movingAverages, setMovingAvg] = useState([]);
   const [maCrossOvers, setMACrossOvers] = useState([]);
   const [activeTab, setActiveTab] = useState(tabs[0]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const summaryData = [];
 
   const fetchData = async () => {
-    let unitName = "days";
-    let period = "1y";
-    if (activeTab === "Weeks") {
-      unitName = "weeks";
-      period = "5y";
-    } else if (activeTab === "Months") {
-      unitName = "months";
-      period = "Max";
-    }
-    const { candles } = await fetchHistoricData(
-      false,
-      unitName,
-      "1d",
-      indexName || companyObj.indexName,
-      period,
-      companyObj
-    );
+    setLoading(true);
+    setError(null);
 
-    const {
-      lastClose,
-      rsi,
-      mfi,
-      cci,
-      willR,
-      sto,
-      adx,
-      macdLine,
-      signalLine,
-      atr,
-      atrSma,
-      roc20,
-      roc125,
-      sma5,
-      sma10,
-      sma20,
-      sma50,
-      sma100,
-      sma200,
-      bb,
-      shortTermMACross,
-      mediumTermMACross,
-      longTermMACross,
-    } = getStockAnalysis(candles);
+    try {
+      let unitName = "days";
+      let period = "1y";
+      if (activeTab === "Weeks") {
+        unitName = "weeks";
+        period = "5y";
+      } else if (activeTab === "Months") {
+        unitName = "months";
+        period = "Max";
+      }
+      const { candles } = await fetchHistoricData(
+        false,
+        unitName,
+        "1d",
+        indexName || companyObj.indexName,
+        period,
+        companyObj
+      );
+
+      const analysis = getStockAnalysis(candles);
+      if (!analysis) {
+        setError("Insufficient historical data available for this timeframe.");
+        setTechnicalIndicators([]);
+        setMovingAvg([]);
+        setMACrossOvers([]);
+        return;
+      }
+
+      const {
+        lastClose,
+        rsi,
+        mfi,
+        cci,
+        willR,
+        sto,
+        adx,
+        macdLine,
+        signalLine,
+        atr,
+        atrSma,
+        roc20,
+        roc125,
+        sma5,
+        sma10,
+        sma20,
+        sma50,
+        sma100,
+        sma200,
+        bb,
+        shortTermMACross,
+        mediumTermMACross,
+        longTermMACross,
+      } = analysis;
 
     setTechnicalIndicators([
       {
@@ -175,6 +190,15 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
         Indication: longTermMACross,
       },
     ]);
+    } catch (err) {
+      console.error("[TechnicalInfo] Error fetching data:", err);
+      setError(err?.message || "Failed to load technical analysis data.");
+      setTechnicalIndicators([]);
+      setMovingAvg([]);
+      setMACrossOvers([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleTabClick = (tab) => {
@@ -194,36 +218,61 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
               key={tab}
               className={`modal-tab-btn${activeTab === tab ? " active" : ""}`}
               onClick={() => handleTabClick(tab)}
+              disabled={loading}
             >
               {tab}
             </button>
           ))}
         </div>
-        <div className="summary-grid">
-          {summaryData.map((item, index) => (
-            <SummaryCard
-              key={index}
-              title={item.title}
-              value={item.value}
-              status={item.status}
+        {loading && (
+          <div style={{ padding: "32px", textAlign: "center", color: "#94a3b8" }}>
+            Loading technical indicators...
+          </div>
+        )}
+        {error && !loading && (
+          <div
+            style={{
+              margin: "16px",
+              padding: "12px 16px",
+              borderRadius: "8px",
+              background: "rgba(239, 68, 68, 0.15)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+              color: "#f87171",
+              fontSize: "14px",
+            }}
+          >
+            {error}
+          </div>
+        )}
+        {!loading && !error && (
+          <>
+            <div className="summary-grid">
+              {summaryData.map((item, index) => (
+                <SummaryCard
+                  key={index}
+                  title={item.title}
+                  value={item.value}
+                  status={item.status}
+                />
+              ))}
+            </div>
+            <Table
+              title="Moving Averages"
+              columns={["Period", "SMA", "Indication"]}
+              data={movingAverages}
             />
-          ))}
-        </div>
-        <Table
-          title="Moving Averages"
-          columns={["Period", "SMA", "Indication"]}
-          data={movingAverages}
-        />
-        <Table
-          title="Technical Indicators"
-          columns={["Indicator", "Level", "Indication"]}
-          data={technicalIndicators}
-        />
-        <Table
-          title="Moving Averages Crossovers"
-          columns={["Period", "Moving Average Crossover", "Indication"]}
-          data={maCrossOvers}
-        />
+            <Table
+              title="Technical Indicators"
+              columns={["Indicator", "Level", "Indication"]}
+              data={technicalIndicators}
+            />
+            <Table
+              title="Moving Averages Crossovers"
+              columns={["Period", "Moving Average Crossover", "Indication"]}
+              data={maCrossOvers}
+            />
+          </>
+        )}
       </Modal>
     </div>
   );
