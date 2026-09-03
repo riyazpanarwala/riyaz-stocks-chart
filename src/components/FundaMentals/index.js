@@ -1,36 +1,38 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import Modal from "../TechnicalInfo/Modal";
+import { getFinanceDataAction } from "../../app/actions/finance";
 import "./Fundamentals.css";
 
 const Fundamentals = ({ companyObj, indexObj, onClose }) => {
   const [fundamentals, setFundamentals] = useState([]);
 
   const extractFinancials = async () => {
-    const headers = { Accept: "application/json" };
     let symbol =
       companyObj.yahooSymbol ||
       `${companyObj.symbol}.${indexObj.value === "BSE_EQ" ? "BO" : "NS"}`;
 
     try {
-      const response = await axios.get(
-        `/api/finance?symbol=${symbol}&isQuote=true`,
-        { headers }
-      );
+      const response = await getFinanceDataAction({
+        symbol,
+        isQuote: true,
+      });
 
       const data = [];
-      for (const prop in response.data) {
-        data.push({ name: prop, value: response.data[prop] });
+      for (const prop in response) {
+        if (prop !== "error") {
+          data.push({ name: prop, value: response[prop] });
+        }
       }
 
       setFundamentals(data);
     } catch (error) {
       console.error(
-        `Error: ${error.response?.status} - ${error.response?.data}`
+        `Error extracting financials:`, error
       );
       setFundamentals([]);
     }
   };
+
 
   useEffect(() => {
     setFundamentals([]);

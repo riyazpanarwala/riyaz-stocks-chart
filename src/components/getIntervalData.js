@@ -1,11 +1,12 @@
 import axios from "axios";
 import { dateObj } from "./utils/data";
+import { getNseEquityAction } from "../app/actions/nseEquity";
+import { getFinanceDataAction } from "../app/actions/finance";
 
 const baseurl = "https://api.upstox.com/v3/";
-const nseBaseUrl = `/api/NSE/Equity`;
 
 const logError = (context, error) => {
-  const status = error?.response?.status ?? "Network Error";
+  const status = error?.response?.status ?? "Server Action Error";
   const details = error?.response?.data ?? error?.message ?? "Unknown error";
   console.error(`[${context}] Error ${status}:`, details);
 };
@@ -25,18 +26,15 @@ const resolveFromDate = (isFrom) => {
 };
 
 export const getNSEDataYahooFinance = async (symbol, interval, isFrom) => {
-  const headers = {
-    Accept: "application/json",
-  };
-
   let fromDate = resolveFromDate(isFrom).toISOString().split("T")[0];
 
   try {
-    const response = await axios.get(
-      `/api/finance?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&fromDate=${encodeURIComponent(fromDate)}`,
-      { headers }
-    );
-    return response.data;
+    const data = await getFinanceDataAction({
+      symbol,
+      interval,
+      fromDate,
+    });
+    return data;
   } catch (error) {
     logError("getNSEDataYahooFinance", error);
     return { error: true, data: { candles: [] } };
@@ -44,23 +42,15 @@ export const getNSEDataYahooFinance = async (symbol, interval, isFrom) => {
 };
 
 export const getNSEData = async (apiName, symbol) => {
-  const headers = {
-    Accept: "application/json",
-  };
-
-  const payload = {
-    symbol,
-    apiName,
-  };
-
   try {
-    const response = await axios.post(nseBaseUrl, payload, { headers });
-    return response.data;
+    const data = await getNseEquityAction({ symbol, apiName });
+    return data;
   } catch (error) {
     logError("getNSEData", error);
     return { error: true, data: { candles: [] } };
   }
 };
+
 
 export const getUniqueListBy = (arr, key) => {
   if (!Array.isArray(arr)) return [];

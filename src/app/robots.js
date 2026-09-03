@@ -10,12 +10,9 @@ export default function robots() {
         userAgent: "*",
         allow: ["/", "/TradingView", "/TradingView/forex", "/optionchain"],
         disallow: [
-          "/api/",
           "/riyazstock", // internal bulk-analysis tool
-          "/api/NSE/",
-          "/api/finance/",
-          "/api/Fundamentals/",
         ],
+
       },
       // Allow Google's image bot to index OG images and favicons
       {

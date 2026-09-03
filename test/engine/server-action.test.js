@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { getStockSignalAction } from "../../src/app/actions/stockSignal.js";
+import { getFinanceDataAction } from "../../src/app/actions/finance.js";
+import { getNseEquityAction } from "../../src/app/actions/nseEquity.js";
 
 test("Server Action rejects empty or invalid symbols", async () => {
   const emptyRes = await getStockSignalAction({ symbol: "" });
@@ -24,4 +26,20 @@ test("Server Action resolves stock, caches response, and returns signal", async 
   assert.equal(res2.success, true);
   assert.equal(res2.cached, true);
   assert.equal(res2.data.instrument.symbol, "TCS");
+});
+
+test("Finance Server Action validates symbols", async () => {
+  const emptyRes = await getFinanceDataAction({ symbol: "" });
+  assert.equal(emptyRes.error, "Invalid or missing symbol.");
+
+  const invalidRes = await getFinanceDataAction({ symbol: "DROP TABLE;--" });
+  assert.equal(invalidRes.error, "Invalid or missing symbol.");
+});
+
+test("NSE Equity Server Action validates symbol and apiName", async () => {
+  const emptyRes = await getNseEquityAction({ symbol: "" });
+  assert.equal(emptyRes.error, "Invalid or missing symbol parameter.");
+
+  const invalidApiRes = await getNseEquityAction({ symbol: "TCS", apiName: "unsupportedApi" });
+  assert.match(invalidApiRes.error, /Invalid apiName parameter/);
 });
