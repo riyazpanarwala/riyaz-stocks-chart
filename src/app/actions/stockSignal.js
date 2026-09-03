@@ -109,9 +109,13 @@ export async function getStockSignalAction({
       range: result.range,
       candleStatus: result.candleStatus,
       signal: result.signal,
+      signalPerformance: result.signalPerformance,
       liveCandle: result.liveCandle,
       formattedAnalysis: formatCompactAnalysis(result),
       formattedTimestamp: formatIstTimestamp(result.signal.timestamp),
+      formattedTriggerTimestamp: result.signalPerformance?.triggerTimestamp
+        ? formatIstTimestamp(result.signalPerformance.triggerTimestamp)
+        : null,
     };
 
     setCachedSignal(cacheKey, responseData);

@@ -2,7 +2,7 @@ import { QUICK_ANALYSIS_DEFAULTS, resolveInstrument } from "../config/quickAnaly
 import { downloadHistoricalDataset } from "../data/downloader.js";
 import { getIntradayCandles } from "../api/upstox.js";
 import { constructDailyCandleFromIntraday, mergeLiveDailyCandle } from "../data/liveCandle.js";
-import { generateSignal } from "../strategy/signalEngine.js";
+import { generateSignal, trackSignalPerformance } from "../strategy/signalEngine.js";
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
@@ -64,10 +64,14 @@ export async function analyzeStock(symbolOrKey, options = {}) {
     positionState: settings.positionState,
     config: options.strategyConfig
   });
+  const signalPerformance = trackSignalPerformance(analysisCandles, {
+    positionState: settings.positionState,
+    config: options.strategyConfig
+  });
   const candleStatus = liveCandle
     ? liveCandle.isPartial ? "LIVE_PARTIAL" : "INTRADAY_SESSION_COMPLETE"
     : "HISTORICAL_ONLY";
-  return { instrument, timeframe: settings.timeframe, range, datasetMetadata: dataset.metadata, liveCandle, liveMerge, liveError, candleStatus, signal };
+  return { instrument, timeframe: settings.timeframe, range, datasetMetadata: dataset.metadata, liveCandle, liveMerge, liveError, candleStatus, signal, signalPerformance };
 }
 
 const value = (number, digits = 2) => number == null ? "N/A" : Number(number).toFixed(digits);
@@ -115,6 +119,28 @@ export function formatCompactAnalysis(result) {
     if (evidence.decisionChecks?.length) lines.push(`Decision checks: ${evidence.decisionChecks.join("; ")}`);
   } else if (signal.reasons?.length) {
     lines.push(`Reasons: ${signal.reasons.join("; ")}`);
+  }
+  if (result.signalPerformance?.found) {
+    const sp = result.signalPerformance;
+    const isExit = sp.signalType === "EXIT";
+    const formattedChange = sp.priceChange >= 0 ? `+₹${value(sp.priceChange)}` : `-₹${value(Math.abs(sp.priceChange))}`;
+    const formattedPercent = sp.percentChange >= 0 ? `+${value(sp.percentChange)}%` : `${value(sp.percentChange)}%`;
+    const elapsedLabel = sp.candlesElapsed === 0 ? "Today (current candle)" : `${sp.candlesElapsed} candle${sp.candlesElapsed > 1 ? "s" : ""} ago`;
+    const triggerLabel = isExit ? "Latest EXIT / Close Trigger" : "Latest BUY Trigger";
+    const moveLabel = isExit ? "Move since EXIT" : "Move since BUY";
+
+    lines.push(`${triggerLabel}: ${formatIstTimestamp(sp.triggerTimestamp)} (${elapsedLabel}) @ ₹${value(sp.signalPrice)}`);
+    if (isExit) {
+      lines.push(`${moveLabel}: ${formattedChange} (${formattedPercent}) | Low reached: ₹${value(sp.lowestPriceSince)}`);
+    } else {
+      lines.push(`${moveLabel}: ${formattedChange} (${formattedPercent}) | Peak: ₹${value(sp.highestPriceSince)} (+${value(sp.maxGainPercent)}%) | Low: ₹${value(sp.lowestPriceSince)} (${value(sp.maxDrawdownPercent)}%)`);
+    }
+    lines.push(`Trigger Status: [${sp.statusLabel}] ${sp.guidance}`);
+    if (sp.closedTrade) {
+      lines.push(`Prior Trade: BUY ${formatIstTimestamp(sp.closedTrade.buyTimestamp)} @ ₹${value(sp.closedTrade.buyPrice)} → Closed on ${formatIstTimestamp(sp.closedTrade.exitTimestamp)} @ ₹${value(sp.closedTrade.exitPrice)} (${sp.closedTrade.returnPercent >= 0 ? "+" : ""}${value(sp.closedTrade.returnPercent)}%, ${sp.closedTrade.reason})`);
+    }
+  } else if (result.signalPerformance && !result.signalPerformance.found) {
+    lines.push(`Latest Signal Trigger: None within last ${result.signalPerformance.lookbackCandles} candles`);
   }
   return lines.join("\n");
 }

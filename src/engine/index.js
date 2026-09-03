@@ -1,4 +1,4 @@
-export { generateSignal, generateSignalAtIndex, generateSignals } from "./strategy/signalEngine.js";
+export { generateSignal, generateSignalAtIndex, generateSignals, trackSignalPerformance } from "./strategy/signalEngine.js";
 export { getHistoricalCandles, getIntradayCandles, createUpstoxClient } from "./api/upstox.js";
 export { downloadHistoricalDataset } from "./data/downloader.js";
 export { normalizeCandles, validateCandles } from "./data/candleValidator.js";

@@ -259,6 +259,239 @@
   background: linear-gradient(90deg, var(--accent, #0284c7), #6366f1);
 }
 
+/* Signal Genesis & Movement Tracker Card */
+.signal-tracker-card {
+  background: var(--surface-2, #f8fafc);
+  border: 1px solid var(--bd-dim, rgba(0, 0, 0, 0.1));
+  border-radius: var(--radius-md, 10px);
+  padding: 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.tracker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bd-dim, rgba(0, 0, 0, 0.08));
+  flex-wrap: wrap;
+}
+
+.tracker-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tracker-icon {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.tracker-title h4 {
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--tx-primary, #0f172a);
+}
+
+.tracker-time {
+  font-size: 0.8rem;
+  color: var(--tx-second, #64748b);
+}
+
+.tracker-time strong {
+  color: var(--tx-primary, #0f172a);
+}
+
+.tracker-status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.tracker-status-badge.status-fresh-signal {
+  background: rgba(14, 165, 233, 0.15);
+  color: #0284c7;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.tracker-status-badge.status-in-zone {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.tracker-status-badge.status-target-1-hit,
+.tracker-status-badge.status-target-2-hit {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.tracker-status-badge.status-extended {
+  background: rgba(249, 115, 22, 0.15);
+  color: #ea580c;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.tracker-status-badge.status-stop-loss-hit,
+.tracker-status-badge.status-stop-loss-closed,
+.tracker-status-badge.status-fresh-exit,
+.tracker-status-badge.status-exit-triggered,
+.tracker-status-badge.status-exit-active {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.tracker-status-badge.status-capital-protected {
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.tracker-closed-trade-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-1, #ffffff);
+  border: 1px dashed var(--bd-dim, rgba(0, 0, 0, 0.15));
+  border-radius: var(--radius-sm, 6px);
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  color: var(--tx-second, #475569);
+  margin-bottom: 12px;
+}
+
+.tracker-closed-trade-banner .closed-trade-icon {
+  font-size: 1rem;
+}
+
+.tracker-closed-trade-banner strong {
+  color: var(--tx-primary, #0f172a);
+}
+
+.tracker-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tracker-metric-item {
+  background: var(--surface-1, #ffffff);
+  border: 1px solid var(--bd-dim, rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-sm, 6px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tracker-metric-item .metric-lbl {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--tx-second, #64748b);
+  font-weight: 600;
+}
+
+.tracker-metric-item .metric-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--tx-primary, #0f172a);
+}
+
+.tracker-metric-item .metric-val-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pill-movement {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.pill-movement.bullish {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.pill-movement.bearish {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.sub-metric-gain {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #059669;
+}
+
+.sub-metric-dip {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.tracker-guidance-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.tracker-guidance-box .guidance-icon {
+  font-size: 1rem;
+}
+
+.tracker-guidance-box p {
+  margin: 0;
+}
+
+.tracker-guidance-box.guidance-fresh-signal,
+.tracker-guidance-box.guidance-in-zone,
+.tracker-guidance-box.guidance-capital-protected {
+  background: rgba(16, 185, 129, 0.08);
+  border-left: 3px solid #059669;
+  color: var(--tx-primary, #0f172a);
+}
+
+.tracker-guidance-box.guidance-target-1-hit,
+.tracker-guidance-box.guidance-target-2-hit,
+.tracker-guidance-box.guidance-extended {
+  background: rgba(245, 158, 11, 0.08);
+  border-left: 3px solid #d97706;
+  color: var(--tx-primary, #0f172a);
+}
+
+.tracker-guidance-box.guidance-stop-loss-hit,
+.tracker-guidance-box.guidance-stop-loss-closed,
+.tracker-guidance-box.guidance-fresh-exit,
+.tracker-guidance-box.guidance-exit-triggered,
+.tracker-guidance-box.guidance-exit-active {
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #dc2626;
+  color: var(--tx-primary, #0f172a);
+}
+
 /* Risk Targets Card */
 .risk-card {
   background: var(--bull-soft, rgba(5, 150, 105, 0.08));

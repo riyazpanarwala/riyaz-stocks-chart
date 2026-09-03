@@ -139,3 +139,253 @@ export function generateSignals(candles, options = {}) {
 export function generateSignal(candles, options = {}) {
   return generateSignalAtIndex(candles, candles.length - 1, options);
 }
+
+export function trackSignalPerformance(candles, options = {}) {
+  if (!Array.isArray(candles) || candles.length === 0) return null;
+  const config = mergeStrategyConfig(options.config), p = config.periods;
+  const minimum = Math.max(p.emaSlow, config.priceAction.breakoutLookback + 1, p.adx * 2);
+  const currIdx = candles.length - 1;
+  if (candles.length < minimum) return null;
+
+  const lookbackLimit = options.lookbackLimit ?? 90;
+  const minIdx = Math.max(minimum - 1, currIdx - lookbackLimit);
+
+  // Simulate alternating trade state machine across the lookback window
+  let currentTrade = null;
+  let lastClosedTrade = null;
+  let lastExitSignal = null;
+
+  for (let i = minIdx; i <= currIdx; i++) {
+    if (!currentTrade) {
+      // FLAT: Look for BUY setup
+      const flatSig = generateSignalAtIndex(candles, i, { ...options, positionState: "FLAT" });
+      if (flatSig.signal === "BUY") {
+        currentTrade = {
+          buyIndex: i,
+          buyCandle: candles[i],
+          buyPrice: candles[i].close,
+          buySignal: flatSig
+        };
+      } else if (flatSig.action === "AVOID") {
+        if (!lastExitSignal) {
+          lastExitSignal = {
+            exitIndex: i,
+            exitCandle: candles[i],
+            exitPrice: candles[i].close,
+            reason: "AVOID"
+          };
+        }
+      }
+    } else {
+      // LONG: Monitor active position for stop loss or exit setup
+      const longSig = generateSignalAtIndex(candles, i, { ...options, positionState: "LONG" });
+      const sl = currentTrade.buySignal.risk?.stopLoss;
+      const hitStop = sl != null && candles[i].low <= sl;
+      const hitExit = longSig.signal === "EXIT";
+
+      if (hitStop || hitExit) {
+        const exitPrice = hitStop ? sl : candles[i].close;
+        const returnPercent = round(((exitPrice - currentTrade.buyPrice) / currentTrade.buyPrice) * 100);
+        lastClosedTrade = {
+          buyIndex: currentTrade.buyIndex,
+          buyTimestamp: currentTrade.buyCandle.timestamp,
+          buyPrice: round(currentTrade.buyPrice),
+          exitIndex: i,
+          exitTimestamp: candles[i].timestamp,
+          exitPrice: round(exitPrice),
+          candlesHeld: i - currentTrade.buyIndex,
+          returnPercent,
+          reason: hitStop ? "STOP_LOSS" : "EXIT_SIGNAL"
+        };
+        lastExitSignal = {
+          exitIndex: i,
+          exitCandle: candles[i],
+          exitPrice: round(exitPrice),
+          reason: hitStop ? "STOP_LOSS" : "EXIT_SIGNAL"
+        };
+        currentTrade = null;
+      }
+    }
+  }
+
+  const currentCandle = candles[currIdx];
+  const currentPrice = round(currentCandle.close);
+
+  // CASE 1: Active BUY trade is currently open
+  if (currentTrade) {
+    const genesisCandle = currentTrade.buyCandle;
+    const signalPrice = round(currentTrade.buyPrice);
+    const priceChange = round(currentPrice - signalPrice);
+    const percentChange = round(((currentPrice - signalPrice) / signalPrice) * 100);
+    const candlesElapsed = currIdx - currentTrade.buyIndex;
+
+    let highestPriceSince = genesisCandle.high;
+    let lowestPriceSince = genesisCandle.low;
+    let highestTimestamp = genesisCandle.timestamp;
+    let lowestTimestamp = genesisCandle.timestamp;
+
+    for (let i = currentTrade.buyIndex; i <= currIdx; i++) {
+      const c = candles[i];
+      if (c.high > highestPriceSince) {
+        highestPriceSince = c.high;
+        highestTimestamp = c.timestamp;
+      }
+      if (c.low < lowestPriceSince) {
+        lowestPriceSince = c.low;
+        lowestTimestamp = c.timestamp;
+      }
+    }
+
+    highestPriceSince = round(highestPriceSince);
+    lowestPriceSince = round(lowestPriceSince);
+    const maxGainPercent = round(((highestPriceSince - signalPrice) / signalPrice) * 100);
+    const maxDrawdownPercent = round(((lowestPriceSince - signalPrice) / signalPrice) * 100);
+
+    const risk = currentTrade.buySignal.risk || {};
+    const { stopLoss, target1, target2, entry } = risk;
+
+    const currentSignal = generateSignalAtIndex(candles, currIdx, options);
+    let status = "IN_ZONE";
+    let statusLabel = "In Active Zone";
+    let guidance = "";
+
+    if (candlesElapsed === 0) {
+      status = "FRESH_SIGNAL";
+      statusLabel = "Fresh Signal";
+      guidance = "BUY signal generated on latest candle. Fresh entry window.";
+    } else if (target2 != null && highestPriceSince >= target2) {
+      status = "TARGET_2_HIT";
+      statusLabel = "Target 2 Reached";
+      guidance = `Price reached Target 2 (₹${target2}) with +${maxGainPercent}% peak gain. Rally has unfolded; avoid fresh entry.`;
+    } else if (target1 != null && highestPriceSince >= target1) {
+      status = "TARGET_1_HIT";
+      statusLabel = "Target 1 Reached";
+      guidance = `Price reached Target 1 (₹${target1}) with +${maxGainPercent}% peak gain. Reduced risk/reward for new positions.`;
+    } else if (percentChange >= 4.0) {
+      status = "EXTENDED";
+      statusLabel = "Overextended";
+      guidance = `Price is already up +${percentChange}% from entry. High risk of pullback; wait for a retest.`;
+    } else {
+      status = "IN_ZONE";
+      statusLabel = "In Entry Zone";
+      guidance = `Price is hovering near entry (${percentChange >= 0 ? "+" : ""}${percentChange}%). Trade setup remains valid.`;
+    }
+
+    return {
+      found: true,
+      signalType: "BUY",
+      status,
+      statusLabel,
+      candlesElapsed,
+      triggerIndex: currentTrade.buyIndex,
+      triggerTimestamp: genesisCandle.timestamp,
+      triggerCandle: {
+        open: round(genesisCandle.open),
+        high: round(genesisCandle.high),
+        low: round(genesisCandle.low),
+        close: round(genesisCandle.close),
+        volume: genesisCandle.volume
+      },
+      signalPrice,
+      currentPrice,
+      priceChange,
+      percentChange,
+      highestPriceSince,
+      highestTimestamp,
+      maxGainPercent,
+      lowestPriceSince,
+      lowestTimestamp,
+      maxDrawdownPercent,
+      riskLevels: {
+        entry: entry ?? signalPrice,
+        stopLoss,
+        target1,
+        target2
+      },
+      currentSignal: currentSignal.signal,
+      currentAction: currentSignal.action,
+      guidance
+    };
+  }
+
+  // CASE 2: Position was closed by Stop Loss or EXIT
+  if (lastClosedTrade) {
+    const exitIndex = lastClosedTrade.exitIndex;
+    const exitCandle = candles[exitIndex];
+    const signalPrice = round(lastClosedTrade.exitPrice);
+    const priceChange = round(currentPrice - signalPrice);
+    const percentChange = round(((currentPrice - signalPrice) / signalPrice) * 100);
+    const candlesElapsed = currIdx - exitIndex;
+
+    let highestPriceSince = exitCandle.high;
+    let lowestPriceSince = exitCandle.low;
+    let highestTimestamp = exitCandle.timestamp;
+    let lowestTimestamp = exitCandle.timestamp;
+
+    for (let i = exitIndex; i <= currIdx; i++) {
+      const c = candles[i];
+      if (c.high > highestPriceSince) {
+        highestPriceSince = c.high;
+        highestTimestamp = c.timestamp;
+      }
+      if (c.low < lowestPriceSince) {
+        lowestPriceSince = c.low;
+        lowestTimestamp = c.timestamp;
+      }
+    }
+
+    highestPriceSince = round(highestPriceSince);
+    lowestPriceSince = round(lowestPriceSince);
+
+    const isStopped = lastClosedTrade?.reason === "STOP_LOSS";
+    const status = isStopped ? "STOP_LOSS_CLOSED" : candlesElapsed === 0 ? "FRESH_EXIT" : priceChange < 0 ? "CAPITAL_PROTECTED" : "EXIT_ACTIVE";
+    const statusLabel = isStopped
+      ? "Closed by Stop Loss"
+      : candlesElapsed === 0
+        ? "Fresh Exit Signal"
+        : priceChange < 0
+          ? `Capital Protected (-${Math.abs(percentChange)}%)`
+          : "Exit / Inactive";
+
+    const guidance = isStopped
+      ? `Trade was closed at stop loss (₹${signalPrice}). Price has since moved to ₹${currentPrice} (${percentChange >= 0 ? "+" : ""}${percentChange}%). Avoid re-entry without a fresh confirmed BUY signal.`
+      : priceChange < 0
+        ? `Price has dropped ${Math.abs(percentChange)}% since EXIT (₹${signalPrice} → ₹${currentPrice}). Exiting protected capital.`
+        : `Price has moved ${percentChange >= 0 ? "+" : ""}${percentChange}% since EXIT. Wait for a new confirmed BUY setup.`;
+
+    return {
+      found: true,
+      signalType: "EXIT",
+      status,
+      statusLabel,
+      candlesElapsed,
+      triggerIndex: exitIndex,
+      triggerTimestamp: exitCandle.timestamp,
+      triggerCandle: {
+        open: round(exitCandle.open),
+        high: round(exitCandle.high),
+        low: round(exitCandle.low),
+        close: round(exitCandle.close),
+        volume: exitCandle.volume
+      },
+      signalPrice,
+      currentPrice,
+      priceChange,
+      percentChange,
+      highestPriceSince,
+      highestTimestamp,
+      lowestPriceSince,
+      lowestTimestamp,
+      closedTrade: lastClosedTrade,
+      currentSignal: "EXIT",
+      currentAction: "AVOID",
+      guidance
+    };
+  }
+
+  return {
+    found: false,
+    lookbackCandles: currIdx - minIdx,
+    message: `No BUY or EXIT signals found within the last ${currIdx - minIdx} candles.`
+  };
+}

@@ -53,6 +53,7 @@ const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => 
 
   const signal = data?.signal;
   const instrument = data?.instrument;
+  const performance = data?.signalPerformance;
   const indicators = signal?.indicators || {};
   const risk = signal?.risk;
   const evidence = signal?.evidence || {};
@@ -200,6 +201,95 @@ const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => 
                 </div>
               </div>
             </div>
+
+            {/* Signal Genesis & Movement Tracker Card */}
+            {performance?.found && (
+              <div className={`signal-tracker-card type-${(performance.signalType || "buy").toLowerCase()}`}>
+                <div className="tracker-header">
+                  <div className="tracker-title">
+                    <span className="tracker-icon">{performance.signalType === "EXIT" ? "🛑" : "📍"}</span>
+                    <div>
+                      <h4>
+                        {performance.signalType === "EXIT"
+                          ? "EXIT / Position Status & Downside Protection"
+                          : "BUY Signal Origin & Price Movement"}
+                      </h4>
+                      <span className="tracker-time">
+                        {performance.signalType === "EXIT" ? "Exited / Triggered: " : "Triggered: "}
+                        <strong>{data.formattedTriggerTimestamp || performance.triggerTimestamp}</strong> (
+                        {performance.candlesElapsed === 0
+                          ? "Today / Latest candle"
+                          : `${performance.candlesElapsed} candle${performance.candlesElapsed > 1 ? "s" : ""} ago`}
+                        )
+                      </span>
+                    </div>
+                  </div>
+                  <div className={`tracker-status-badge status-${(performance.status || "in_zone").toLowerCase().replace(/_/g, "-")}`}>
+                    {performance.statusLabel}
+                  </div>
+                </div>
+
+                <div className="tracker-metrics-grid">
+                  <div className="tracker-metric-item">
+                    <span className="metric-lbl">
+                      {performance.signalType === "EXIT" ? "Exit Trigger Price" : "Signal Entry Price"}
+                    </span>
+                    <span className="metric-val">₹{Number(performance.signalPrice).toFixed(2)}</span>
+                  </div>
+
+                  <div className="tracker-metric-item">
+                    <span className="metric-lbl">Current Price</span>
+                    <div className="metric-val-group">
+                      <span className="metric-val">₹{Number(performance.currentPrice).toFixed(2)}</span>
+                      <span className={`pill-movement ${performance.priceChange >= 0 ? "bullish" : "bearish"}`}>
+                        {performance.priceChange >= 0 ? "▲ +" : "▼ "}
+                        ₹{Math.abs(performance.priceChange).toFixed(2)} ({performance.percentChange >= 0 ? "+" : ""}{Number(performance.percentChange).toFixed(2)}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="tracker-metric-item">
+                    <span className="metric-lbl">
+                      {performance.signalType === "EXIT" ? "Peak Since Exit" : "Peak High Reached"}
+                    </span>
+                    <div className="metric-val-group">
+                      <span className="metric-val">₹{Number(performance.highestPriceSince).toFixed(2)}</span>
+                      {performance.maxGainPercent != null && (
+                        <span className="sub-metric-gain bullish">+{Number(performance.maxGainPercent).toFixed(2)}% Max</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="tracker-metric-item">
+                    <span className="metric-lbl">
+                      {performance.signalType === "EXIT" ? "Low Since Exit" : "Lowest Dip Reached"}
+                    </span>
+                    <div className="metric-val-group">
+                      <span className="metric-val">₹{Number(performance.lowestPriceSince).toFixed(2)}</span>
+                      {performance.maxDrawdownPercent != null && (
+                        <span className="sub-metric-dip bearish">{Number(performance.maxDrawdownPercent).toFixed(2)}% Max</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {performance.closedTrade && (
+                  <div className="tracker-closed-trade-banner">
+                    <span className="closed-trade-icon">📜</span>
+                    <span className="closed-trade-text">
+                      <strong>Prior Trade:</strong> Entered on {performance.closedTrade.buyTimestamp?.slice(0, 10)} @ ₹{Number(performance.closedTrade.buyPrice).toFixed(2)} → Closed on {performance.closedTrade.exitTimestamp?.slice(0, 10)} @ ₹{Number(performance.closedTrade.exitPrice).toFixed(2)} ({performance.closedTrade.returnPercent >= 0 ? "+" : ""}{Number(performance.closedTrade.returnPercent).toFixed(2)}% via {performance.closedTrade.reason?.replace(/_/g, " ")})
+                    </span>
+                  </div>
+                )}
+
+                {performance.guidance && (
+                  <div className={`tracker-guidance-box guidance-${(performance.status || "in_zone").toLowerCase().replace(/_/g, "-")}`}>
+                    <span className="guidance-icon">💡</span>
+                    <p>{performance.guidance}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Risk & Targets Card (only shown for BUY or when risk values exist) */}
             {risk?.entry != null && (
