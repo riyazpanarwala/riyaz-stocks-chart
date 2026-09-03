@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
 import Modal from "../TechnicalInfo/Modal";
+import { getStockSignalAction } from "../../app/actions/stockSignal";
 import "./StockSignalModal.scss";
 
 const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => {
@@ -18,24 +18,27 @@ const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => 
       const symbol = companyObj.symbol || companyObj.value;
       const isBse = indexName === "BSE_EQ" || companyObj.bse;
       const exchange = isBse ? "BSE" : "NSE";
-      const holdingParam = holdingState ? "true" : "false";
 
-      const res = await axios.get(
-        `/api/signal?symbol=${encodeURIComponent(symbol)}&exchange=${exchange}&holding=${holdingParam}`
-      );
+      const res = await getStockSignalAction({
+        symbol,
+        exchange,
+        holding: Boolean(holdingState),
+        timeframe: "1d",
+      });
 
-      if (res.data?.success) {
-        setData(res.data.data);
+      if (res?.success) {
+        setData(res.data);
       } else {
-        setError(res.data?.error || "Failed to retrieve signal");
+        setError(res?.error || "Failed to retrieve signal");
       }
     } catch (err) {
-      const msg = err.response?.data?.error || err.message || "An error occurred while fetching signal";
+      const msg = err.message || "An error occurred while fetching signal";
       setError(msg);
     } finally {
       setLoading(false);
     }
   }, [companyObj, indexName]);
+
 
   useEffect(() => {
     if (isOpen && companyObj) {
