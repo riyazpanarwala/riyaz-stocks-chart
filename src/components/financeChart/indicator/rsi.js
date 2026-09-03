@@ -1,7 +1,11 @@
 export const rsi = (data, period = 14) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    return [];
+  }
+
   // Ensure we have enough data points
   if (data.length < period) {
-    return [];
+    return Array(data.length).fill(null);
   }
 
   let gains = [];
@@ -36,8 +40,13 @@ export const rsi = (data, period = 14) => {
         avgLoss = (avgLoss * (period - 1) + Math.abs(change)) / period;
       }
 
-      let rs = avgGain / avgLoss;
-      let currentRSI = 100 - 100 / (1 + rs);
+      let currentRSI;
+      if (avgLoss === 0) {
+        currentRSI = avgGain === 0 ? 50 : 100;
+      } else {
+        let rs = avgGain / avgLoss;
+        currentRSI = 100 - 100 / (1 + rs);
+      }
       rsi.push(currentRSI);
     }
   }

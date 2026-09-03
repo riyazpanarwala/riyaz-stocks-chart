@@ -1,7 +1,11 @@
-const cciCalc = require("technicalindicators").cci;
+import { cci as cciCalc } from "technicalindicators";
 
 export const cci = (arr, period = 20) => {
-  let input = {
+  if (!Array.isArray(arr) || arr.length === 0) {
+    return [];
+  }
+
+  const input = {
     high: arr.map((v) => v.high),
     low: arr.map((v) => v.low),
     close: arr.map((v) => v.close),
@@ -9,16 +13,13 @@ export const cci = (arr, period = 20) => {
     period: period,
   };
 
-  const data = cciCalc(input);
+  const data = cciCalc(input) || [];
+  const offset = arr.length - data.length;
 
-  let newArr = [];
-  arr.forEach((v, i) => {
-    if (i < arr.length - data.length) {
-      newArr = [...newArr, { ...v, cci: "" }];
-    } else {
-      newArr = [...newArr, { ...v, cci: data[i - arr.length + data.length] }];
+  return arr.map((v, i) => {
+    if (i < offset) {
+      return { ...v, cci: "" };
     }
+    return { ...v, cci: data[i - offset] };
   });
-
-  return newArr;
 };

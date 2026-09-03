@@ -32,10 +32,15 @@ const calculateATR = (high, low, close, period) => {
 
 export const supertrenddirection = (arr) => {
   // Return true for up arrow (bullish), false for down arrow (bearish)
-  return arr[arr.length - 1].direction < 0;
+  if (!Array.isArray(arr) || !arr.length) return false;
+  return (arr[arr.length - 1]?.direction ?? 0) < 0;
 };
 
 export const supertrend = (klines, isResultArr, atrPeriod = 10, factor = 3) => {
+  if (!Array.isArray(klines) || !klines.length) {
+    return isResultArr ? [] : false;
+  }
+
   const high = klines.map((k) => k.high);
   const low = klines.map((k) => k.low);
   const close = klines.map((k) => k.close);
