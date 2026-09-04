@@ -46,6 +46,10 @@ export const metadata = {
   },
 };
 
+/**
+ * Real-Time Screener Page component rendering the client-side stock screener.
+ * @returns {JSX.Element} The rendered ScreenerClient component.
+ */
 export default function ScreenerPage() {
   return <ScreenerClient />;
 }

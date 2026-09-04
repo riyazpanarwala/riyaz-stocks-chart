@@ -62,7 +62,13 @@ for (const symbol of symbolsToScan) {
         : isExit
           ? "🛑 EXIT / TAKE PROFIT / CUT LOSS"
           : sig?.freshEntryBlocked
-            ? `Wait (${sig.maturedSignalStatus === "TARGET_2_HIT" ? "Target 2 Reached" : "Rally Extended"})`
+            ? `Wait (${
+                sig.maturedSignalStatus === "TARGET_2_HIT"
+                  ? "Target 2 Reached"
+                  : sig.maturedSignalStatus === "TARGET_1_HIT"
+                    ? "Target 1 Reached"
+                    : "Rally Extended"
+              })`
             : sig?.action === "AVOID"
               ? "Avoid (Bearish/Downtrend)"
               : sig?.status === "INSUFFICIENT_DATA"

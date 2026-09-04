@@ -272,12 +272,13 @@ const CandleStickChart = () => {
                 >
                   ⚡ Signal Engine
                 </ActionButton>
-                <Link href="/screener" style={{ textDecoration: "none" }}>
-                  <ActionButton
-                    aria-label="Open Real-Time NSE Stock Signals Screener"
-                  >
-                    🔍 Screener
-                  </ActionButton>
+                <Link
+                  href="/screener"
+                  className="custom-button"
+                  aria-label="Open Real-Time NSE Stock Signals Screener"
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                >
+                  🔍 Screener
                 </Link>
                 {isCompanyExist ? (
 

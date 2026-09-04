@@ -134,6 +134,7 @@ test("analyzeStock blocks fresh BUY on matured / overextended rally when positio
   assert.equal(result.signal.freshEntryBlocked, true);
   assert.equal(result.signal.risk.entry, null);
   assert.ok(result.signal.freshEntryBlockReason);
+  assert.ok(["TARGET_2_HIT", "TARGET_1_HIT", "EXTENDED"].includes(result.signal.maturedSignalStatus));
   assert.match(result.signal.evidence.decisionChecks[0], /BUY blocked:/);
   assert.match(formatCompactAnalysis(result), /NO_TRADE \/ WAIT/);
 });

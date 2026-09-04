@@ -714,7 +714,7 @@
   align-items: center;
   gap: 6px;
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--warn, #d97706);
   border: 1px solid rgba(245, 158, 11, 0.35);
   padding: 4px 10px;
   border-radius: var(--radius-sm, 6px);
@@ -724,7 +724,7 @@
 }
 
 .matured-risk-card {
-  border-left: 4px solid #f59e0b !important;
+  border-left: 4px solid var(--warn, #f59e0b) !important;
   background: var(--surface-2, #161d2a);
 }
 
@@ -734,7 +734,7 @@
   border-radius: 6px;
   background: rgba(245, 158, 11, 0.1);
   border: 1px solid rgba(245, 158, 11, 0.25);
-  color: #fbbf24;
+  color: var(--tx-primary, #f0f6fc);
   font-size: 0.82rem;
   line-height: 1.5;
 }

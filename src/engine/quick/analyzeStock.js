@@ -6,6 +6,12 @@ import { generateSignal, trackSignalPerformance } from "../strategy/signalEngine
 
 const formatDate = (date) => date.toISOString().slice(0, 10);
 
+/**
+ * Calculates the default historical date range in IST ending yesterday.
+ * @param {Date} [now=new Date()] Current timestamp
+ * @param {number} [lookbackCalendarDays] Calendar days to look back
+ * @returns {{ fromDate: string, toDate: string }}
+ */
 export function defaultDateRange(now = new Date(), lookbackCalendarDays = QUICK_ANALYSIS_DEFAULTS.lookbackCalendarDays) {
   const parts = istParts(now);
   const today = new Date(`${parts.year}-${parts.month}-${parts.day}T00:00:00.000Z`);
@@ -14,6 +20,11 @@ export function defaultDateRange(now = new Date(), lookbackCalendarDays = QUICK_
   return { fromDate: formatDate(from), toDate: formatDate(to) };
 }
 
+/**
+ * Parses date parts formatted in Asia/Kolkata (IST) timezone.
+ * @param {Date} date
+ * @returns {Record<string, string>}
+ */
 function istParts(date) {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Kolkata", weekday: "short", year: "numeric", month: "2-digit", day: "2-digit",

@@ -255,6 +255,11 @@ const PRESETS = {
 
 const BATCH_CONCURRENCY = 4;
 
+/**
+ * Interactive client-side real-time stock screener component.
+ * Allows screening NSE universe tickers with concurrent analysis, metrics, and risk lifecycle guards.
+ * @returns {JSX.Element}
+ */
 export default function ScreenerClient() {
   const [activePreset, setActivePreset] = useState("LEADERS");
   const [customInput, setCustomInput] = useState("BEL, TCS, HAL, RELIANCE, INFY, SBIN, ZOMATO");
@@ -275,17 +280,29 @@ export default function ScreenerClient() {
 
   useEffect(() => {
     let mounted = true;
-    checkScreenerAccessAction().then((res) => {
-      if (mounted) {
-        setIsAuthenticated(Boolean(res?.authenticated));
-        setIsCheckingAuth(false);
-      }
-    });
+    checkScreenerAccessAction()
+      .then((res) => {
+        if (mounted) {
+          setIsAuthenticated(Boolean(res?.authenticated));
+          setIsCheckingAuth(false);
+        }
+      })
+      .catch((err) => {
+        console.error("[checkScreenerAccessAction] failed:", err);
+        if (mounted) {
+          setIsAuthenticated(false);
+          setIsCheckingAuth(false);
+        }
+      });
     return () => {
       mounted = false;
     };
   }, []);
 
+  /**
+   * Submits the entered passcode to verify access and unlock the screener session.
+   * @param {React.FormEvent} [e] - Optional form submission event.
+   */
   const handleUnlock = async (e) => {
     if (e) e.preventDefault();
     if (!passcode.trim() || isSubmittingAuth) return;
@@ -306,30 +323,47 @@ export default function ScreenerClient() {
     }
   };
 
+  /**
+   * Terminates the current screener session and locks access upon confirmed server action.
+   */
   const handleLock = async () => {
-    await lockScreenerAccessAction();
-    setIsAuthenticated(false);
+    try {
+      const res = await lockScreenerAccessAction();
+      if (res?.success) {
+        setIsAuthenticated(false);
+      }
+    } catch (err) {
+      console.error("[handleLock] failed:", err);
+    }
   };
 
-  const isCancelledRef = useRef(false);
+  const scanRunIdRef = useRef(0);
 
-  // Active symbols based on selected preset
+  // Active symbols based on selected preset with duplicate removal
   const targetSymbols = useMemo(() => {
     if (activePreset === "CUSTOM") {
-      return customInput
-        .split(/[,\s]+/)
-        .map((s) => s.trim().toUpperCase())
-        .filter(Boolean);
+      return [
+        ...new Set(
+          customInput
+            .split(/[,\s]+/)
+            .map((s) => s.trim().toUpperCase())
+            .filter(Boolean)
+        ),
+      ];
     }
     return PRESETS[activePreset]?.symbols || [];
   }, [activePreset, customInput]);
 
-  // Handle Scan Run
+  /**
+   * Starts concurrent scanning across target symbols and streams real-time analysis results.
+   */
   const handleStartScan = useCallback(async () => {
     if (!targetSymbols.length || isScanning) return;
 
+    const runId = ++scanRunIdRef.current;
+    const isStale = () => scanRunIdRef.current !== runId;
+
     setIsScanning(true);
-    isCancelledRef.current = false;
     setResults([]);
     setScanProgress({ current: 0, total: targetSymbols.length });
 
@@ -339,7 +373,7 @@ export default function ScreenerClient() {
     // Concurrency queue processor
     const queue = [...targetSymbols];
     const workers = Array.from({ length: Math.min(BATCH_CONCURRENCY, total) }, async () => {
-      while (queue.length > 0 && !isCancelledRef.current) {
+      while (queue.length > 0 && !isStale()) {
         const symbol = queue.shift();
         if (!symbol) break;
 
@@ -350,7 +384,7 @@ export default function ScreenerClient() {
             timeframe: "1d",
           });
 
-          if (isCancelledRef.current) break;
+          if (isStale()) break;
 
           if (res?.success && res?.data?.signal) {
             const sig = res.data.signal;
@@ -377,7 +411,13 @@ export default function ScreenerClient() {
                 : isExit
                   ? "EXIT / TAKE PROFIT / CUT LOSS"
                   : sig.freshEntryBlocked
-                    ? `Wait (${sig.maturedSignalStatus === "TARGET_2_HIT" ? "Target 2 Reached" : "Rally Extended"})`
+                    ? `Wait (${
+                        sig.maturedSignalStatus === "TARGET_2_HIT"
+                          ? "Target 2 Reached"
+                          : sig.maturedSignalStatus === "TARGET_1_HIT"
+                            ? "Target 1 Reached"
+                            : "Rally Extended"
+                      })`
                     : sig.action === "AVOID"
                       ? "Downtrend / Below 200 EMA"
                       : sig.status === "INSUFFICIENT_DATA"
@@ -387,29 +427,33 @@ export default function ScreenerClient() {
               timestamp: sig.timestamp,
             };
 
-            setResults((prev) => [...prev, item]);
+            if (!isStale()) {
+              setResults((prev) => [...prev, item]);
+            }
           } else {
             // Placeholder for failed stock fetch
-            setResults((prev) => [
-              ...prev,
-              {
-                symbol,
-                name: symbol,
-                price: null,
-                regime: "UNKNOWN",
-                signal: "NO_TRADE",
-                action: "WAIT",
-                bullishScore: null,
-                bearishScore: null,
-                adx: null,
-                rsi: null,
-                status: "ERROR",
-                reason: res?.error || "Data unavailable",
-              },
-            ]);
+            if (!isStale()) {
+              setResults((prev) => [
+                ...prev,
+                {
+                  symbol,
+                  name: symbol,
+                  price: null,
+                  regime: "UNKNOWN",
+                  signal: "NO_TRADE",
+                  action: "WAIT",
+                  bullishScore: null,
+                  bearishScore: null,
+                  adx: null,
+                  rsi: null,
+                  status: "ERROR",
+                  reason: res?.error || "Data unavailable",
+                },
+              ]);
+            }
           }
         } catch (err) {
-          if (!isCancelledRef.current) {
+          if (!isStale()) {
             setResults((prev) => [
               ...prev,
               {
@@ -429,18 +473,25 @@ export default function ScreenerClient() {
             ]);
           }
         } finally {
-          completed++;
-          setScanProgress({ current: completed, total });
+          if (!isStale()) {
+            completed++;
+            setScanProgress({ current: completed, total });
+          }
         }
       }
     });
 
     await Promise.all(workers);
-    setIsScanning(false);
+    if (!isStale()) {
+      setIsScanning(false);
+    }
   }, [targetSymbols, isScanning]);
 
+  /**
+   * Cancels the active scan run and prevents stale worker writes.
+   */
   const handleStopScan = useCallback(() => {
-    isCancelledRef.current = true;
+    scanRunIdRef.current++;
     setIsScanning(false);
   }, []);
 

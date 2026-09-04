@@ -3,6 +3,10 @@
 
 import { SITE_URL } from "../lib/siteConfig";
 
+/**
+ * Generates the sitemap.xml entries for search engine indexation.
+ * @returns {import("next").MetadataRoute.Sitemap} Sitemap entries list.
+ */
 export default function sitemap() {
   const now = new Date();
 
