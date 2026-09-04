@@ -590,6 +590,61 @@ const PRESETS = {
   },
 };
 
+const WATCHLIST_CATEGORIES = [
+  {
+    id: "INDICES",
+    label: "Indices",
+    icon: "🏛️",
+    presetIds: ["LEADERS", "NIFTY50", "NIFTY_NEXT_50", "NIFTY_MIDCAP_50"],
+  },
+  {
+    id: "SECTORS",
+    label: "Core Sectors",
+    icon: "🏭",
+    presetIds: [
+      "BANKING",
+      "IT",
+      "AUTO",
+      "PHARMA",
+      "ENERGY_POWER",
+      "METALS",
+      "FMCG",
+      "CHEMICALS",
+    ],
+  },
+  {
+    id: "THEMATIC",
+    label: "Thematic & Infra",
+    icon: "🚀",
+    presetIds: [
+      "REALTY",
+      "PSU_BANKS",
+      "DEFENSE_PSU",
+      "RAILWAYS_INFRA",
+      "CAPITAL_GOODS",
+      "GREEN_ENERGY",
+      "CEMENT_BUILDING",
+    ],
+  },
+  {
+    id: "MOMENTUM",
+    label: "Momentum & Tech",
+    icon: "⚡",
+    presetIds: [
+      "FNO_MOMENTUM",
+      "MIDCAP_GROWTH",
+      "NEW_AGE_TECH",
+      "EXCHANGES_MARKET_INFRA",
+    ],
+  },
+  {
+    id: "CUSTOM",
+    label: "Custom",
+    icon: "✏️",
+    presetIds: ["CUSTOM"],
+  },
+];
+
 const BATCH_CONCURRENCY = 4;
 
 /**
@@ -598,6 +653,7 @@ const BATCH_CONCURRENCY = 4;
  * @returns {JSX.Element}
  */
 export default function ScreenerClient() {
+  const [activeCategory, setActiveCategory] = useState("INDICES");
   const [activePreset, setActivePreset] = useState("LEADERS");
   const [customInput, setCustomInput] = useState("BEL, TCS, HAL, RELIANCE, INFY, SBIN, ZOMATO");
   const [isScanning, setIsScanning] = useState(false);
@@ -690,6 +746,22 @@ export default function ScreenerClient() {
     }
     return PRESETS[activePreset]?.symbols || [];
   }, [activePreset, customInput]);
+
+  const handleSelectCategory = (catId) => {
+    if (isScanning) return;
+    setActiveCategory(catId);
+    const cat = WATCHLIST_CATEGORIES.find((c) => c.id === catId);
+    if (cat && !cat.presetIds.includes(activePreset)) {
+      setActivePreset(cat.presetIds[0]);
+    }
+  };
+
+  // Presets belonging to the selected category
+  const currentCategoryPresets = useMemo(() => {
+    const cat = WATCHLIST_CATEGORIES.find((c) => c.id === activeCategory);
+    if (!cat) return Object.values(PRESETS);
+    return cat.presetIds.map((id) => PRESETS[id]).filter(Boolean);
+  }, [activeCategory]);
 
   /**
    * Starts concurrent scanning across target symbols and streams real-time analysis results.
@@ -1013,10 +1085,33 @@ export default function ScreenerClient() {
             </div>
           </div>
 
-          {/* Preset Buttons */}
-          <div className="presets-row" role="group" aria-label="Watchlist presets">
-            <span className="preset-label">Universe:</span>
-            {Object.values(PRESETS).map((preset) => (
+          {/* Watchlist Category Tabs */}
+          <div className="preset-categories-tabs" role="tablist" aria-label="Watchlist universe categories">
+            {WATCHLIST_CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`category-tab-btn ${isActive ? "active" : ""}`}
+                  onClick={() => handleSelectCategory(cat.id)}
+                  disabled={isScanning}
+                >
+                  <span className="cat-icon">{cat.icon}</span>
+                  <span className="cat-name">{cat.label}</span>
+                  {cat.id !== "CUSTOM" && (
+                    <span className="cat-count">{cat.presetIds.length}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Preset Buttons for Active Category */}
+          <div className="presets-row" role="group" aria-label="Watchlist presets in selected category">
+            {currentCategoryPresets.map((preset) => (
               <button
                 key={preset.id}
                 type="button"
@@ -1024,7 +1119,12 @@ export default function ScreenerClient() {
                 onClick={() => setActivePreset(preset.id)}
                 disabled={isScanning}
               >
-                {preset.name}
+                <span>{preset.name}</span>
+                {preset.id !== "CUSTOM" && (
+                  <span className="preset-pill-count">
+                    {preset.symbols.length}
+                  </span>
+                )}
               </button>
             ))}
           </div>
