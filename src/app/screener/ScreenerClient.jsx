@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   FiPlay,
@@ -12,8 +12,18 @@ import {
   FiAlertTriangle,
   FiExternalLink,
   FiZap,
+  FiLock,
+  FiKey,
+  FiEye,
+  FiEyeOff,
+  FiShield,
 } from "react-icons/fi";
 import { getStockSignalAction } from "../actions/stockSignal";
+import {
+  checkScreenerAccessAction,
+  verifyScreenerAccessAction,
+  lockScreenerAccessAction,
+} from "../actions/screenerAuth";
 import StockSignalModal from "../../components/StockSignalModal";
 import "./Screener.scss";
 
@@ -255,6 +265,52 @@ export default function ScreenerClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedModalStock, setSelectedModalStock] = useState(null);
 
+  // Authentication State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [passcode, setPasscode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    checkScreenerAccessAction().then((res) => {
+      if (mounted) {
+        setIsAuthenticated(Boolean(res?.authenticated));
+        setIsCheckingAuth(false);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleUnlock = async (e) => {
+    if (e) e.preventDefault();
+    if (!passcode.trim() || isSubmittingAuth) return;
+    setAuthError("");
+    setIsSubmittingAuth(true);
+    try {
+      const res = await verifyScreenerAccessAction(passcode);
+      if (res?.success) {
+        setIsAuthenticated(true);
+        setPasscode("");
+      } else {
+        setAuthError(res?.error || "Invalid passcode. Please try again.");
+      }
+    } catch {
+      setAuthError("Failed to verify passcode. Please try again.");
+    } finally {
+      setIsSubmittingAuth(false);
+    }
+  };
+
+  const handleLock = async () => {
+    await lockScreenerAccessAction();
+    setIsAuthenticated(false);
+  };
+
   const isCancelledRef = useRef(false);
 
   // Active symbols based on selected preset
@@ -456,13 +512,88 @@ export default function ScreenerClient() {
           <Link href="/TradingView" className="nav-pill-link">
             ⚡ TradingView
           </Link>
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={handleLock}
+              className="nav-lock-btn"
+              title="Lock Screener Session"
+            >
+              <FiLock size={12} /> Lock
+            </button>
+          )}
         </div>
       </nav>
 
       {/* ── Main Container ── */}
       <div className="screener-container">
-        {/* ── Control Hero ── */}
-        <section className="screener-hero" aria-labelledby="screener-heading">
+        {isCheckingAuth ? (
+          <div className="screener-auth-loading">
+            <div className="signal-spinner" />
+            <p>Verifying screener access permissions...</p>
+          </div>
+        ) : !isAuthenticated ? (
+          <div className="screener-lock-wrapper">
+            <div className="lock-card">
+              <div className="lock-icon-circle">
+                <FiShield size={34} />
+              </div>
+              <h2>Restricted Access: Market Screener</h2>
+              <p className="lock-subtitle">
+                Real-time algorithmic NSE stock scanning is reserved for authorized traders.
+                Please enter your passcode to unlock.
+              </p>
+
+              <form onSubmit={handleUnlock} className="lock-form">
+                <div className="lock-input-group">
+                  <span className="lock-input-icon"><FiKey size={16} /></span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter access passcode..."
+                    value={passcode}
+                    onChange={(e) => {
+                      setPasscode(e.target.value);
+                      if (authError) setAuthError("");
+                    }}
+                    autoFocus
+                    disabled={isSubmittingAuth}
+                  />
+                  <button
+                    type="button"
+                    className="btn-toggle-eye"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    title={showPassword ? "Hide passcode" : "Show passcode"}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                  </button>
+                </div>
+
+                {authError && (
+                  <div className="auth-error-banner" role="alert">
+                    <FiAlertTriangle size={14} />
+                    <span>{authError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn-unlock"
+                  disabled={isSubmittingAuth || !passcode.trim()}
+                >
+                  {isSubmittingAuth ? "Verifying..." : "🔓 Unlock Screener"}
+                </button>
+              </form>
+
+              <div className="lock-footer-hint">
+                🔒 Protected by secure 30-day session authentication.
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* ── Control Hero ── */}
+            <section className="screener-hero" aria-labelledby="screener-heading">
           <div className="screener-hero-header">
             <div className="screener-title-block">
               <h2 id="screener-heading">NSE Real-Time Algorithmic Signal Screener</h2>
@@ -819,6 +950,8 @@ export default function ScreenerClient() {
             </table>
           )}
         </div>
+          </>
+        )}
       </div>
 
       {/* ── Modal Dialog for Deep Signal Evidence Inspection ── */}
