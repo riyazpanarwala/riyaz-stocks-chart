@@ -89,7 +89,7 @@ export async function getStockSignalAction({
       };
     }
 
-    if (!/^[A-Za-z0-9\-_|.:]{1,40}$/.test(target)) {
+    if (!/^[A-Za-z0-9\-_|.:&]{1,40}$/.test(target)) {
       return {
         success: false,
         error: "Invalid symbol format.",

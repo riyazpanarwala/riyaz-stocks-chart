@@ -14,6 +14,14 @@ test("Server Action rejects empty or invalid symbols", async () => {
   const invalidRes = await getStockSignalAction({ symbol: "INVALID$<SCRIPT>" });
   assert.equal(invalidRes.success, false);
   assert.match(invalidRes.error, /format/);
+
+  // Valid symbols with ampersand (e.g. M&M, ARE&M) must not fail format validation
+  const ampRes = await getStockSignalAction({
+    symbol: "M&M",
+    downloader: async () => ({ metadata: { candleCount: 200 }, gaps: [], candles: candles(200, 1) }),
+    intradayFetcher: async () => ({ data: { candles: [] } })
+  });
+  assert.equal(ampRes.success, true);
 });
 
 test("Server Action resolves stock, caches response, and returns signal", async () => {

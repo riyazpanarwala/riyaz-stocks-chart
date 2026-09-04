@@ -245,6 +245,343 @@ const PRESETS = {
       "MOTHERSON",
     ],
   },
+  PHARMA: {
+    id: "PHARMA",
+    name: "Pharma & Health",
+    description: "Top pharmaceutical, healthcare, and biotech leaders",
+    symbols: [
+      "SUNPHARMA",
+      "DRREDDY",
+      "CIPLA",
+      "DIVISLAB",
+      "APOLLOHOSP",
+      "MAXHEALTH",
+      "TORNTPHARM",
+      "LUPIN",
+      "AUROPHARMA",
+      "MANKIND",
+      "ZYDUSLIFE",
+      "ALKEM",
+      "BIOCON",
+      "GLENMARK",
+      "IPCALAB",
+    ],
+  },
+  ENERGY_POWER: {
+    id: "ENERGY_POWER",
+    name: "Energy & Power",
+    description: "Clean energy, power generation, utilities, and oil & gas majors",
+    symbols: [
+      "TATAPOWER",
+      "NTPC",
+      "POWERGRID",
+      "SUZLON",
+      "IREDA",
+      "NHPC",
+      "SJVN",
+      "ADANIGREEN",
+      "ADANIPOWER",
+      "IOC",
+      "BPCL",
+      "GAIL",
+      "PETRONET",
+      "ONGC",
+      "RELIANCE",
+    ],
+  },
+  METALS: {
+    id: "METALS",
+    name: "Metals & Mining",
+    description: "High-beta steel, aluminum, copper, and mining producers",
+    symbols: [
+      "TATASTEEL",
+      "JSWSTEEL",
+      "HINDALCO",
+      "JINDALSTEL",
+      "VEDL",
+      "COALINDIA",
+      "NMDC",
+      "SAIL",
+      "NATIONALUM",
+      "HINDCOPPER",
+    ],
+  },
+  RAILWAYS_INFRA: {
+    id: "RAILWAYS_INFRA",
+    name: "Railways & Infra",
+    description: "High-momentum railway engineering, public capex, and infrastructure leaders",
+    symbols: [
+      "IRFC",
+      "RVNL",
+      "IRCTC",
+      "RAILTEL",
+      "RITES",
+      "IRCON",
+      "TITAGARH",
+      "JWL",
+      "CONCOR",
+      "LT",
+      "NBCC",
+    ],
+  },
+  FMCG: {
+    id: "FMCG",
+    name: "FMCG & Consumer",
+    description: "Fast-moving consumer goods, beverages, and consumption bellwethers",
+    symbols: [
+      "HINDUNILVR",
+      "ITC",
+      "NESTLEIND",
+      "BRITANNIA",
+      "TATACONSUM",
+      "VBL",
+      "DABUR",
+      "MARICO",
+      "GODREJCP",
+      "COLPAL",
+      "UNITDSPR",
+      "RADICO",
+      "JUBLFOOD",
+    ],
+  },
+  MIDCAP_GROWTH: {
+    id: "MIDCAP_GROWTH",
+    name: "Midcap Momentum & EMS",
+    description: "High-growth electronics manufacturing (EMS), cable/wire, and fintech breakouts",
+    symbols: [
+      "DIXON",
+      "POLYCAB",
+      "KAYNES",
+      "CDSL",
+      "MCX",
+      "ANGELONE",
+      "BSE",
+      "FEDERALBNK",
+      "PERSISTENT",
+      "TRENT",
+      "AMBER",
+      "SYRMA",
+    ],
+  },
+  NIFTY_MIDCAP_50: {
+    id: "NIFTY_MIDCAP_50",
+    name: "Nifty Midcap 50",
+    description: "Benchmark 50 mid-sized high-growth market leaders",
+    symbols: [
+      "ALKEM",
+      "ASHOKLEY",
+      "ASTRAL",
+      "AUROPHARMA",
+      "BALKRISIND",
+      "BANDHANBNK",
+      "BHARATFORG",
+      "BSE",
+      "CDSL",
+      "CGPOWER",
+      "COCHINSHIP",
+      "COFORGE",
+      "CONCOR",
+      "CUMMINSIND",
+      "DALBHARAT",
+      "DEEPAKNTR",
+      "DIXON",
+      "ESCORTS",
+      "FEDERALBNK",
+      "GODREJPROP",
+      "HINDPETRO",
+      "IDFCFIRSTB",
+      "INDHOTEL",
+      "INDIANB",
+      "INDUSTOWER",
+      "JUBLFOOD",
+      "KPITTECH",
+      "LUPIN",
+      "MAZDOCK",
+      "MPHASIS",
+      "MRF",
+      "MUTHOOTFIN",
+      "OBEROIRLTY",
+      "OFSS",
+      "PERSISTENT",
+      "PETRONET",
+      "PHOENIXLTD",
+      "PIIND",
+      "POLYCAB",
+      "PRESTIGE",
+      "RVNL",
+      "SAIL",
+      "SUPREMEIND",
+      "SUZLON",
+      "TATACOMM",
+      "TATAELXSI",
+      "TATATECH",
+      "UBL",
+      "VOLTAS",
+      "YESBANK",
+    ],
+  },
+  EXCHANGES_MARKET_INFRA: {
+    id: "EXCHANGES_MARKET_INFRA",
+    name: "Exchanges & Depositories",
+    description: "Stock exchanges, depositories (CDSL & NSDL), market tech, AMCs & broking houses",
+    symbols: [
+      "BSE",
+      "CDSL",
+      "NSDL",
+      "MCX",
+      "CAMS",
+      "KFINTECH",
+      "ANGELONE",
+      "MOTILALOFS",
+      "ANANDRATHI",
+      "HDFCAMC",
+      "NAM-INDIA",
+      "UTIAMC",
+      "GEOJITFSL",
+      "5PAISA",
+    ],
+  },
+  REALTY: {
+    id: "REALTY",
+    name: "Realty & Real Estate",
+    description: "Top real estate developers, commercial REIT sponsors, and property leaders",
+    symbols: [
+      "BRIGADE",
+      "DLF",
+      "GODREJPROP",
+      "LODHA",
+      "OBEROIRLTY",
+      "PHOENIXLTD",
+      "PRESTIGE",
+      "SIGNATURE",
+      "SOBHA",
+    ],
+  },
+  CHEMICALS: {
+    id: "CHEMICALS",
+    name: "Chemicals & Agri",
+    description: "Specialty chemicals, agrochemicals, and industrial chemical exporters",
+    symbols: [
+      "AARTIIND",
+      "ATUL",
+      "CHAMBLFERT",
+      "COROMANDEL",
+      "DEEPAKNTR",
+      "FLUOROCHEM",
+      "NAVINFLUOR",
+      "PIIND",
+      "SRF",
+      "TATACHEM",
+      "UPL",
+    ],
+  },
+  PSU_BANKS: {
+    id: "PSU_BANKS",
+    name: "PSU Banks",
+    description: "State-owned commercial banks and public sector lending institutions",
+    symbols: [
+      "BANKBARODA",
+      "BANKINDIA",
+      "CANBK",
+      "CENTRALBK",
+      "INDIANB",
+      "IOB",
+      "MAHABANK",
+      "PNB",
+      "SBIN",
+      "UCOBANK",
+      "UNIONBANK",
+    ],
+  },
+  CAPITAL_GOODS: {
+    id: "CAPITAL_GOODS",
+    name: "Capital Goods & Engg",
+    description: "Heavy electricals, power equipment, cables, and industrial engineering",
+    symbols: [
+      "ABB",
+      "AIAENG",
+      "BHEL",
+      "BHARATFORG",
+      "CGPOWER",
+      "CUMMINSIND",
+      "DIXON",
+      "KAYNES",
+      "KEI",
+      "POLYCAB",
+      "SIEMENS",
+      "THERMAX",
+    ],
+  },
+  NEW_AGE_TECH: {
+    id: "NEW_AGE_TECH",
+    name: "New-Age Tech",
+    description: "Consumer internet platforms, fintech, and digital marketplace leaders",
+    symbols: [
+      "CARTRADE",
+      "DELHIVERY",
+      "MAPMYINDIA",
+      "NAUKRI",
+      "NYKAA",
+      "PAYTM",
+      "POLICYBZR",
+      "ZOMATO",
+    ],
+  },
+  CEMENT_BUILDING: {
+    id: "CEMENT_BUILDING",
+    name: "Cement & Building",
+    description: "Cement manufacturers, building products, pipes, and ceramics",
+    symbols: [
+      "ACC",
+      "AMBUJACEM",
+      "ASTRAL",
+      "DALBHARAT",
+      "JKCEMENT",
+      "KAJARIACER",
+      "RAMCOCEM",
+      "SHREECEM",
+      "SUPREMEIND",
+      "ULTRACEMCO",
+    ],
+  },
+  GREEN_ENERGY: {
+    id: "GREEN_ENERGY",
+    name: "Green Energy & EV",
+    description: "Renewable energy, solar, wind, and EV battery & mobility ecosystem",
+    symbols: [
+      "ADANIGREEN",
+      "ARE&M",
+      "BORORENEW",
+      "EXIDEIND",
+      "INOXWIND",
+      "IREDA",
+      "JBMA",
+      "OLECTRA",
+      "SUZLON",
+      "TATAPOWER",
+    ],
+  },
+  FNO_MOMENTUM: {
+    id: "FNO_MOMENTUM",
+    name: "F&O Momentum",
+    description: "High-beta breakout stocks and liquid movers in the derivative segment",
+    symbols: [
+      "BEL",
+      "BHEL",
+      "BSE",
+      "CANBK",
+      "COCHINSHIP",
+      "COFORGE",
+      "DIXON",
+      "HAL",
+      "MCX",
+      "POLYCAB",
+      "RVNL",
+      "TRENT",
+      "VEDL",
+      "VOLTAS",
+    ],
+  },
   CUSTOM: {
     id: "CUSTOM",
     name: "Custom Symbols",
@@ -252,6 +589,61 @@ const PRESETS = {
     symbols: [],
   },
 };
+
+const WATCHLIST_CATEGORIES = [
+  {
+    id: "INDICES",
+    label: "Indices",
+    icon: "🏛️",
+    presetIds: ["LEADERS", "NIFTY50", "NIFTY_NEXT_50", "NIFTY_MIDCAP_50"],
+  },
+  {
+    id: "SECTORS",
+    label: "Core Sectors",
+    icon: "🏭",
+    presetIds: [
+      "BANKING",
+      "IT",
+      "AUTO",
+      "PHARMA",
+      "ENERGY_POWER",
+      "METALS",
+      "FMCG",
+      "CHEMICALS",
+    ],
+  },
+  {
+    id: "THEMATIC",
+    label: "Thematic & Infra",
+    icon: "🚀",
+    presetIds: [
+      "REALTY",
+      "PSU_BANKS",
+      "DEFENSE_PSU",
+      "RAILWAYS_INFRA",
+      "CAPITAL_GOODS",
+      "GREEN_ENERGY",
+      "CEMENT_BUILDING",
+    ],
+  },
+  {
+    id: "MOMENTUM",
+    label: "Momentum & Tech",
+    icon: "⚡",
+    presetIds: [
+      "FNO_MOMENTUM",
+      "MIDCAP_GROWTH",
+      "NEW_AGE_TECH",
+      "EXCHANGES_MARKET_INFRA",
+    ],
+  },
+  {
+    id: "CUSTOM",
+    label: "Custom",
+    icon: "✏️",
+    presetIds: ["CUSTOM"],
+  },
+];
 
 const BATCH_CONCURRENCY = 4;
 
@@ -261,6 +653,7 @@ const BATCH_CONCURRENCY = 4;
  * @returns {JSX.Element}
  */
 export default function ScreenerClient() {
+  const [activeCategory, setActiveCategory] = useState("INDICES");
   const [activePreset, setActivePreset] = useState("LEADERS");
   const [customInput, setCustomInput] = useState("BEL, TCS, HAL, RELIANCE, INFY, SBIN, ZOMATO");
   const [isScanning, setIsScanning] = useState(false);
@@ -353,6 +746,31 @@ export default function ScreenerClient() {
     }
     return PRESETS[activePreset]?.symbols || [];
   }, [activePreset, customInput]);
+
+  const handleSelectPreset = (presetId) => {
+    if (isScanning || presetId === activePreset) return;
+    setActivePreset(presetId);
+    setResults([]);
+    setScanProgress({ current: 0, total: 0 });
+  };
+
+  const handleSelectCategory = (catId) => {
+    if (isScanning || catId === activeCategory) return;
+    setActiveCategory(catId);
+    const cat = WATCHLIST_CATEGORIES.find((c) => c.id === catId);
+    if (cat && !cat.presetIds.includes(activePreset)) {
+      setActivePreset(cat.presetIds[0]);
+      setResults([]);
+      setScanProgress({ current: 0, total: 0 });
+    }
+  };
+
+  // Presets belonging to the selected category
+  const currentCategoryPresets = useMemo(() => {
+    const cat = WATCHLIST_CATEGORIES.find((c) => c.id === activeCategory);
+    if (!cat) return Object.values(PRESETS);
+    return cat.presetIds.map((id) => PRESETS[id]).filter(Boolean);
+  }, [activeCategory]);
 
   /**
    * Starts concurrent scanning across target symbols and streams real-time analysis results.
@@ -676,21 +1094,61 @@ export default function ScreenerClient() {
             </div>
           </div>
 
-          {/* Preset Buttons */}
-          <div className="presets-row" role="group" aria-label="Watchlist presets">
-            <span className="preset-label">Universe:</span>
-            {Object.values(PRESETS).map((preset) => (
+          {/* Watchlist Category Tabs */}
+          <div className="preset-categories-tabs" role="tablist" aria-label="Watchlist universe categories">
+            {WATCHLIST_CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`category-tab-btn ${isActive ? "active" : ""}`}
+                  onClick={() => handleSelectCategory(cat.id)}
+                  disabled={isScanning}
+                >
+                  <span className="cat-icon">{cat.icon}</span>
+                  <span className="cat-name">{cat.label}</span>
+                  {cat.id !== "CUSTOM" && (
+                    <span className="cat-count">{cat.presetIds.length}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Preset Buttons for Active Category */}
+          <div className="presets-row" role="group" aria-label="Watchlist presets in selected category">
+            {currentCategoryPresets.map((preset) => (
               <button
                 key={preset.id}
                 type="button"
                 className={`preset-btn ${activePreset === preset.id ? "active" : ""}`}
-                onClick={() => setActivePreset(preset.id)}
+                onClick={() => handleSelectPreset(preset.id)}
                 disabled={isScanning}
               >
-                {preset.name}
+                <span>{preset.name}</span>
+                {preset.id !== "CUSTOM" && (
+                  <span className="preset-pill-count">
+                    {preset.symbols.length}
+                  </span>
+                )}
               </button>
             ))}
           </div>
+
+          {/* Active Preset Description & Stats */}
+          {PRESETS[activePreset]?.description && (
+            <div className="preset-meta-info">
+              <span className="preset-desc">{PRESETS[activePreset].description}</span>
+              {activePreset !== "CUSTOM" && (
+                <span className="preset-count-badge">
+                  {targetSymbols.length} {targetSymbols.length === 1 ? "Stock" : "Stocks"}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Custom Input when active */}
           {activePreset === "CUSTOM" && (

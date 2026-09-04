@@ -6,7 +6,17 @@ const DEFAULT_ALIASES = Object.freeze({
   "UTI NIFTY NEXT 50 ETF": "NEXT50BETA",
   UTINEXT50: "NEXT50BETA",
   ZOMATO: "ETERNAL",
-  TATAMOTORS: "TMPV"
+  TATAMOTORS: "TMPV",
+  LTIM: "LTM",
+  LTIMINDTREE: "LTM",
+  GMRINFRA: "GMRAIRPORT",
+  MACROTECH: "LODHA",
+  AMARAJABAT: "ARE&M",
+  "L&TFH": "LTF"
+});
+
+const NAME_OVERRIDES = Object.freeze({
+  LTM: "LTIMindtree Limited"
 });
 
 
@@ -186,7 +196,11 @@ export function resolveUniverseInstrument(symbolOrKey, options = {}) {
   // If explicit NSE requested or default search order: NSE first
   if (requestedExchange !== "BSE") {
     if (universe.nseBySymbol.has(normalizedSymbol)) {
-      return universe.nseBySymbol.get(normalizedSymbol);
+      const item = universe.nseBySymbol.get(normalizedSymbol);
+      if (NAME_OVERRIDES[normalizedSymbol]) {
+        return { ...item, name: NAME_OVERRIDES[normalizedSymbol] };
+      }
+      return item;
     }
   }
 
