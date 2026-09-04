@@ -48,6 +48,19 @@ test("Server Action resolves stock, caches response, and returns signal", async 
   assert.equal(res2.success, true);
   assert.equal(res2.cached, true);
   assert.equal(res2.data.instrument.symbol, "TCS");
+
+  // Call with different option (e.g. fromDate/toDate) must yield separate cache entry
+  const res3 = await getStockSignalAction({
+    symbol: "TCS",
+    exchange: "NSE",
+    holding: false,
+    fromDate: "2024-01-01",
+    toDate: "2024-12-31",
+    downloader: mockDownloader,
+    intradayFetcher: mockIntradayFetcher,
+  });
+  assert.equal(res3.success, true);
+  assert.equal(res3.cached, false);
 });
 
 test("Finance Server Action validates symbols", async () => {

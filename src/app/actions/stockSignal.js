@@ -69,7 +69,15 @@ export async function getStockSignalAction({
   exchange: rawExchange,
   holding = false,
   timeframe = "1d",
-  ...analyzeOverrides
+  downloader,
+  intradayFetcher,
+  strategyConfig,
+  fromDate,
+  toDate,
+  lookbackCalendarDays,
+  includeLiveCandle,
+  liveIntervalMinutes,
+  now,
 } = {}) {
   try {
     // 1. Input Validation
@@ -91,8 +99,24 @@ export async function getStockSignalAction({
     const positionState = holding ? "LONG" : "FLAT";
     const exchange = rawExchange ? (rawExchange.toUpperCase().startsWith("BSE") ? "BSE" : "NSE") : undefined;
 
-    // 2. Cache Lookup (returns in < 1ms if analyzed within 5 mins during market hours)
-    const cacheKey = `${target.toUpperCase()}:${exchange || "DEFAULT"}:${positionState}:${timeframe}`;
+    // 2. Cache Lookup (incorporates all result-affecting analysis options)
+    const cacheKeyParts = [
+      target.toUpperCase(),
+      exchange || "DEFAULT",
+      positionState,
+      timeframe,
+      fromDate || "",
+      toDate || "",
+      lookbackCalendarDays != null ? String(lookbackCalendarDays) : "",
+      includeLiveCandle != null ? String(includeLiveCandle) : "",
+      liveIntervalMinutes != null ? String(liveIntervalMinutes) : "",
+      strategyConfig ? JSON.stringify(strategyConfig) : "",
+      now ? (now instanceof Date ? now.toISOString() : String(now)) : "",
+      downloader ? "custom-downloader" : "",
+      intradayFetcher ? "custom-intraday" : "",
+    ];
+    const cacheKey = cacheKeyParts.join(":");
+
     const cachedResponse = getCachedSignal(cacheKey);
     if (cachedResponse) {
       return {
@@ -102,14 +126,25 @@ export async function getStockSignalAction({
       };
     }
 
-    // 3. Deduplicated Execution (Prevents multiple simultaneous Upstox hits for same stock)
+    // 3. Forward whitelisted options with normalized fields strictly overriding
+    const analysisOptions = {
+      ...(fromDate ? { fromDate } : {}),
+      ...(toDate ? { toDate } : {}),
+      ...(lookbackCalendarDays != null ? { lookbackCalendarDays } : {}),
+      ...(includeLiveCandle != null ? { includeLiveCandle } : {}),
+      ...(liveIntervalMinutes != null ? { liveIntervalMinutes } : {}),
+      ...(strategyConfig ? { strategyConfig } : {}),
+      ...(downloader ? { downloader } : {}),
+      ...(intradayFetcher ? { intradayFetcher } : {}),
+      ...(now ? { now } : {}),
+      positionState,
+      exchange,
+      timeframe,
+    };
+
+    // 4. Deduplicated Execution (Prevents multiple simultaneous Upstox hits for same stock)
     const result = await deduplicateRequest(cacheKey, async () => {
-      return await analyzeStock(target, {
-        positionState,
-        exchange,
-        timeframe,
-        ...analyzeOverrides,
-      });
+      return await analyzeStock(target, analysisOptions);
     });
 
     const responseData = {
