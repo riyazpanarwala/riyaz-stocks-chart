@@ -4,36 +4,27 @@ import { cookies } from "next/headers";
 import crypto from "node:crypto";
 
 const COOKIE_NAME = "screener_access_token";
-const DEFAULT_SALT = "panarwala-screener-salt-2026-v1";
-const DEFAULT_PASSCODES = ["trader2026"];
 
 /**
  * Returns the secret salt configured in the environment for HMAC token signing.
- * Falls back to DEFAULT_SALT if SCREENER_SECRET_SALT is not configured.
+ * Returns an empty string when not configured, preventing hardcoded fallback vulnerability.
  * @returns {string} Secret salt string.
  */
 function getSecretSalt() {
-  return (process.env.SCREENER_SECRET_SALT || "").trim() || DEFAULT_SALT;
+  return (process.env.SCREENER_SECRET_SALT || "").trim();
 }
 
 /**
  * Returns the list of authorized passcodes configured in the environment.
- * If SCREENER_PASSWORDS is provided in environment variables, it merges them with
- * DEFAULT_PASSCODES so both custom passwords and trader2026 work smoothly.
- * Falls back to DEFAULT_PASSCODES if not configured.
+ * Denies access by returning an empty list when SCREENER_PASSWORDS is not configured.
  * @returns {string[]} List of authorized passcodes.
  */
 function getAuthorizedPasscodes() {
   const envPass = process.env.SCREENER_PASSWORDS || "";
-  const configured = envPass
+  return envPass
     .split(",")
     .map((p) => p.trim())
     .filter(Boolean);
-
-  if (configured.length > 0) {
-    return Array.from(new Set([...configured, ...DEFAULT_PASSCODES]));
-  }
-  return DEFAULT_PASSCODES;
 }
 
 /**
