@@ -37,6 +37,21 @@ if (!symbolArg) {
   process.exit(1);
 }
 
+if (!["all-in", "risk"].includes(sizingArg)) {
+  console.error(`✖ Error: --sizing must be 'all-in' or 'risk' (received '${sizingArg}')`);
+  process.exit(1);
+}
+
+if (sizingArg === "risk" && (!Number.isFinite(riskPercent) || riskPercent <= 0)) {
+  console.error(`✖ Error: --risk must be a positive number (received '${riskArg}')`);
+  process.exit(1);
+}
+
+if (!Number.isFinite(initialCapital) || initialCapital <= 0) {
+  console.error(`✖ Error: --capital must be a positive number (received '${capitalArg}')`);
+  process.exit(1);
+}
+
 const exchange = isBse ? "BSE" : undefined;
 
 try {

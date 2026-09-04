@@ -39,26 +39,33 @@ for (const symbol of symbolsToScan) {
   try {
     const res = await analyzeStock(symbol, { lookbackCalendarDays: 365, timeframe: "1d" });
     const sig = res.signal;
-    const isBuy = sig.signal === "BUY";
-    const isExit = sig.signal === "EXIT";
+    const isBuy = sig?.signal === "BUY";
+    const isExit = sig?.signal === "EXIT";
 
     const price = res.signal?.price != null ? `₹${res.signal.price.toFixed(2)}` : "N/A";
+    const adxStr = sig?.indicators?.adx != null ? Number(sig.indicators.adx).toFixed(1) : "N/A";
+    const rsiStr = sig?.indicators?.rsi != null ? Number(sig.indicators.rsi).toFixed(1) : "N/A";
+    const bullScore = sig?.bullishScore != null ? sig.bullishScore : "-";
+    const bearScore = sig?.bearishScore != null ? sig.bearishScore : "-";
+
     const item = {
       Symbol: symbol,
       Price: price,
-      Regime: sig.marketRegime,
-      Signal: sig.signal,
-      Action: sig.action,
-      "Bull/Bear": `${sig.bullishScore}/${sig.bearishScore}`,
-      ADX: sig.indicators.adx.toFixed(1),
-      RSI: sig.indicators.rsi.toFixed(1),
+      Regime: sig?.marketRegime ?? "UNKNOWN",
+      Signal: sig?.signal ?? "NO_TRADE",
+      Action: sig?.action ?? "WAIT",
+      "Bull/Bear": `${bullScore}/${bearScore}`,
+      ADX: adxStr,
+      RSI: rsiStr,
       Reason: isBuy
         ? "✅ HIGH CONFLUENCE BUY SETUP"
         : isExit
           ? "🛑 EXIT / TAKE PROFIT / CUT LOSS"
-          : sig.action === "AVOID"
+          : sig?.action === "AVOID"
             ? "Avoid (Bearish/Downtrend)"
-            : "Wait (Choppy / Low momentum)",
+            : sig?.status === "INSUFFICIENT_DATA"
+              ? "Insufficient Data"
+              : "Wait (Choppy / Low momentum)",
     };
 
     results.push(item);

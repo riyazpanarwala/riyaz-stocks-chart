@@ -70,11 +70,24 @@ function scoreEvidence({ current, values, structure, breakout, breakdown, regime
   return { bullishScore: Math.min(100, bull), bearishScore: Math.min(100, bear), components };
 }
 
+/**
+ * Constructs an insufficient-data placeholder signal result.
+ * @param {Object} candle Latest candle object
+ * @param {number} index Candle index in series
+ * @param {number} minimum Required candle warm-up count
+ * @returns {Object} Signal placeholder result with INSUFFICIENT_DATA status
+ */
 function insufficient(candle, index, minimum) {
   const decisionChecks = [`Requires at least ${minimum} candles through this index`];
   return { timestamp: candle.timestamp, index, signal: "NO_TRADE", action: "WAIT", price: candle.close, status: "INSUFFICIENT_DATA", bullishScore: null, bearishScore: null, signalStrength: null, marketRegime: "UNKNOWN", indicators: {}, risk: {}, components: [], evidence: { bullish: [], bearish: [], decisionChecks }, reasons: decisionChecks };
 }
 
+/**
+ * Computes the latest strategy signal and risk parameters for the given candle series.
+ * @param {Array<Object>} candles Chronological array of valid candle objects
+ * @param {Object} [options={}] Additional strategy options and position state
+ * @returns {Object} Strategy signal analysis result
+ */
 function generateLatest(candles, options = {}) {
   const config = mergeStrategyConfig(options.config), p = config.periods;
   validateCandles(candles);
