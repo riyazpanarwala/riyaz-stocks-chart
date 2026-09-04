@@ -152,6 +152,11 @@ const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => 
                 <div className="hero-regime-tag">
                   Regime: <strong>{signal.marketRegime}</strong>
                 </div>
+                {signal.freshEntryBlocked && (
+                  <div className="hero-matured-tag">
+                    ⚠️ Rally Matured — Avoid Fresh Entry
+                  </div>
+                )}
               </div>
 
               <div className="hero-meta">
@@ -332,6 +337,42 @@ const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => 
                     </div>
                   </div>
 
+                </div>
+              </div>
+            )}
+
+            {/* Original Trade Levels when Fresh Entry is Blocked */}
+            {signal.freshEntryBlocked && performance?.riskLevels && (
+              <div className="risk-card matured-risk-card">
+                <div className="risk-title">
+                  <span>🎯 Original Breakout Levels (Triggered {performance.candlesElapsed} candles ago @ ₹{Number(performance.signalPrice).toFixed(2)})</span>
+                </div>
+                <div className="risk-grid">
+                  <div className="risk-item">
+                    <div className="risk-label">Original Entry</div>
+                    <div className="risk-val">₹{Number(performance.signalPrice).toFixed(2)}</div>
+                  </div>
+                  <div className="risk-item">
+                    <div className="risk-label">Original Stop Loss</div>
+                    <div className="risk-val" style={{ color: "var(--bear, #dc2626)" }}>
+                      {performance.riskLevels.stopLoss != null ? `₹${Number(performance.riskLevels.stopLoss).toFixed(2)}` : "N/A"}
+                    </div>
+                  </div>
+                  <div className="risk-item">
+                    <div className="risk-label">Target 1 (1.5R)</div>
+                    <div className="risk-val" style={{ color: "var(--bull, #059669)" }}>
+                      {performance.riskLevels.target1 != null ? `₹${Number(performance.riskLevels.target1).toFixed(2)}` : "N/A"}
+                    </div>
+                  </div>
+                  <div className="risk-item">
+                    <div className="risk-label">Target 2 (3.0R)</div>
+                    <div className="risk-val" style={{ color: "var(--bull, #059669)" }}>
+                      {performance.riskLevels.target2 != null ? `₹${Number(performance.riskLevels.target2).toFixed(2)}` : "N/A"}
+                    </div>
+                  </div>
+                </div>
+                <div className="risk-matured-note">
+                  ⚠️ <strong>Fresh Entry Blocked:</strong> Price has already gained {performance.percentChange >= 0 ? `+${Number(performance.percentChange).toFixed(1)}%` : `${Number(performance.percentChange).toFixed(1)}%`} from entry and achieved trade targets. Do not chase at the peak; wait for a fresh pullback or new consolidation base.
                 </div>
               </div>
             )}

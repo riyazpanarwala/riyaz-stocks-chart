@@ -1,6 +1,7 @@
 // src/components/CandleStickChartClient.js
 "use client";
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { FullScreen, useFullScreenHandle } from "react-full-screen";
 import Sidebar from "./Sidebar/Sidebar.js";
 import HeaderWithDropdowns from "./selectDropdown";
@@ -271,6 +272,13 @@ const CandleStickChart = () => {
                 >
                   ⚡ Signal Engine
                 </ActionButton>
+                <Link href="/screener" style={{ textDecoration: "none" }}>
+                  <ActionButton
+                    aria-label="Open Real-Time NSE Stock Signals Screener"
+                  >
+                    🔍 Screener
+                  </ActionButton>
+                </Link>
                 {isCompanyExist ? (
 
                   <ActionButton

@@ -79,6 +79,51 @@ export async function analyzeStock(symbolOrKey, options = {}) {
     positionState: settings.positionState,
     config: options.strategyConfig
   });
+
+  // ── Trade Lifecycle & Overextension Gate ─────────────────────────
+  // If a FLAT trader is evaluating a stock that previously triggered a BUY signal,
+  // do not recommend entering long at the peak if the rally has already matured,
+  // reached Target 1/2, or is overextended (>4% from entry).
+  if (
+    settings.positionState === "FLAT" &&
+    signal.signal === "BUY" &&
+    signalPerformance?.found &&
+    signalPerformance.signalType === "BUY" &&
+    signalPerformance.candlesElapsed > 0
+  ) {
+    const isMaturedOrExtended =
+      signalPerformance.status === "TARGET_2_HIT" ||
+      signalPerformance.status === "TARGET_1_HIT" ||
+      signalPerformance.status === "EXTENDED";
+
+    if (isMaturedOrExtended) {
+      signal.signal = "NO_TRADE";
+      signal.action = "WAIT";
+      signal.statusReason = signalPerformance.guidance;
+      signal.freshEntryBlocked = true;
+      signal.freshEntryBlockReason = signalPerformance.guidance;
+      signal.maturedSignalStatus = signalPerformance.status;
+
+      const blockMsg = `BUY blocked: ${signalPerformance.guidance}`;
+      if (signal.evidence?.decisionChecks) {
+        signal.evidence.decisionChecks.unshift(blockMsg);
+      }
+      signal.reasons = [blockMsg, ...(signal.reasons || [])];
+
+      // Suppress misleading current-price fresh entry risk levels
+      signal.risk = {
+        entry: null,
+        stopLoss: null,
+        target1: null,
+        target2: null,
+        riskPerShare: null,
+        rewardRisk1: null,
+        rewardRisk2: null,
+        genesisRisk: signalPerformance.riskLevels || null,
+      };
+    }
+  }
+
   const candleStatus = liveCandle
     ? liveCandle.isPartial ? "LIVE_PARTIAL" : "INTRADAY_SESSION_COMPLETE"
     : "HISTORICAL_ONLY";

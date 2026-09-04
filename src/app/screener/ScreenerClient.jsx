@@ -1,0 +1,835 @@
+"use client";
+
+import React, { useState, useRef, useMemo, useCallback } from "react";
+import Link from "next/link";
+import {
+  FiPlay,
+  FiSquare,
+  FiSearch,
+  FiTrendingUp,
+  FiTrendingDown,
+  FiClock,
+  FiAlertTriangle,
+  FiExternalLink,
+  FiZap,
+} from "react-icons/fi";
+import { getStockSignalAction } from "../actions/stockSignal";
+import StockSignalModal from "../../components/StockSignalModal";
+import "./Screener.scss";
+
+// ── Watchlist Presets ────────────────────────────────────────────────────────
+const PRESETS = {
+  LEADERS: {
+    id: "LEADERS",
+    name: "Liquid Leaders",
+    description: "Top 20 high-volume NSE liquid leaders & index ETFs",
+    symbols: [
+      "RELIANCE",
+      "TCS",
+      "INFY",
+      "HDFCBANK",
+      "ICICIBANK",
+      "BHARTIARTL",
+      "SBIN",
+      "ITC",
+      "LT",
+      "SUNPHARMA",
+      "TITAN",
+      "BAJFINANCE",
+      "MARUTI",
+      "BEL",
+      "NTPC",
+      "POWERGRID",
+      "TATASTEEL",
+      "SUZLON",
+      "NIFTYBEES",
+      "BANKBEES",
+    ],
+  },
+  NIFTY50: {
+    id: "NIFTY50",
+    name: "Nifty 50",
+    description: "Benchmark 50 index constituents",
+    symbols: [
+      "ADANIENT",
+      "ADANIPORTS",
+      "APOLLOHOSP",
+      "ASIANPAINT",
+      "AXISBANK",
+      "BAJAJ-AUTO",
+      "BAJFINANCE",
+      "BAJAJFINSV",
+      "BEL",
+      "BPCL",
+      "BHARTIARTL",
+      "BRITANNIA",
+      "CIPLA",
+      "COALINDIA",
+      "DRREDDY",
+      "EICHERMOT",
+      "GRASIM",
+      "HCLTECH",
+      "HDFCBANK",
+      "HDFCLIFE",
+      "HEROMOTOCO",
+      "HINDALCO",
+      "HINDUNILVR",
+      "ICICIBANK",
+      "ITC",
+      "INDUSINDBK",
+      "INFY",
+      "JSWSTEEL",
+      "KOTAKBANK",
+      "LT",
+      "M&M",
+      "MARUTI",
+      "NTPC",
+      "NESTLEIND",
+      "ONGC",
+      "POWERGRID",
+      "RELIANCE",
+      "SBILIFE",
+      "SHRIRAMFIN",
+      "SBIN",
+      "SUNPHARMA",
+      "TCS",
+      "TATACONSUM",
+      "TATAMOTORS",
+      "TATASTEEL",
+      "TECHM",
+      "TITAN",
+      "TRENT",
+      "ULTRACEMCO",
+      "WIPRO",
+    ],
+  },
+  NIFTY_NEXT_50: {
+    id: "NIFTY_NEXT_50",
+    name: "Nifty Next 50",
+    description: "Junior Nifty high-growth large-cap constituents",
+    symbols: [
+      "ABB",
+      "ACC",
+      "AMBUJACEM",
+      "ATGL",
+      "BANKBARODA",
+      "BERGEPAINT",
+      "BHEL",
+      "BOSCHLTD",
+      "CANBK",
+      "CHOLAFIN",
+      "COLPAL",
+      "CONCOR",
+      "DABUR",
+      "DIVISLAB",
+      "DLF",
+      "DMART",
+      "ETERNAL",
+      "GAIL",
+      "GODREJCP",
+      "HAL",
+      "HAVELLS",
+      "HDFCAMC",
+      "ICICIGI",
+      "ICICIPRULI",
+      "INDIGO",
+      "IOC",
+      "IRCTC",
+      "IRFC",
+      "JINDALSTEL",
+      "JIOFIN",
+      "LICI",
+      "MARICO",
+      "MAXHEALTH",
+      "MOTHERSON",
+      "MUTHOOTFIN",
+      "NAUKRI",
+      "PAGEIND",
+      "PFC",
+      "PIDILITIND",
+      "PNB",
+      "RECLTD",
+      "SBICARD",
+      "SHREECEM",
+      "SIEMENS",
+      "SOLARINDS",
+      "SRF",
+      "TATAPOWER",
+      "TORNTPHARM",
+      "TVSMOTOR",
+      "VBL",
+    ],
+  },
+  BANKING: {
+    id: "BANKING",
+    name: "Banking & Finance",
+    description: "Leading private & PSU lenders and NBFCs",
+    symbols: [
+      "HDFCBANK",
+      "ICICIBANK",
+      "SBIN",
+      "KOTAKBANK",
+      "AXISBANK",
+      "INDUSINDBK",
+      "BANKBARODA",
+      "PNB",
+      "BAJFINANCE",
+      "BAJAJFINSV",
+      "CHOLAFIN",
+      "MUTHOOTFIN",
+      "SHRIRAMFIN",
+    ],
+  },
+  IT: {
+    id: "IT",
+    name: "IT & Tech",
+    description: "Top software exporters and IT leaders",
+    symbols: [
+      "TCS",
+      "INFY",
+      "HCLTECH",
+      "WIPRO",
+      "TECHM",
+      "LTIM",
+      "PERSISTENT",
+      "COFORGE",
+      "MPHASIS",
+      "TATAELXSI",
+      "KPITTECH",
+    ],
+  },
+  DEFENSE_PSU: {
+    id: "DEFENSE_PSU",
+    name: "Defense & PSU",
+    description: "Aerospace, defense, and public sector heavyweights",
+    symbols: [
+      "BEL",
+      "HAL",
+      "BDL",
+      "MAZDOCK",
+      "COCHINSHIP",
+      "BHEL",
+      "NTPC",
+      "POWERGRID",
+      "COALINDIA",
+      "ONGC",
+      "IOC",
+      "GAIL",
+      "SAIL",
+    ],
+  },
+  AUTO: {
+    id: "AUTO",
+    name: "Auto & Mobility",
+    description: "Automakers and EV supply-chain leaders",
+    symbols: [
+      "MARUTI",
+      "TATAMOTORS",
+      "M&M",
+      "BAJAJ-AUTO",
+      "HEROMOTOCO",
+      "EICHERMOT",
+      "TVSMOTOR",
+      "BHARATFORG",
+      "SONACOMS",
+      "MOTHERSON",
+    ],
+  },
+  CUSTOM: {
+    id: "CUSTOM",
+    name: "Custom Symbols",
+    description: "Enter your own comma-separated list of NSE stocks",
+    symbols: [],
+  },
+};
+
+const BATCH_CONCURRENCY = 4;
+
+export default function ScreenerClient() {
+  const [activePreset, setActivePreset] = useState("LEADERS");
+  const [customInput, setCustomInput] = useState("BEL, TCS, HAL, RELIANCE, INFY, SBIN, ZOMATO");
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
+  const [results, setResults] = useState([]);
+  const [activeFilter, setActiveFilter] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedModalStock, setSelectedModalStock] = useState(null);
+
+  const isCancelledRef = useRef(false);
+
+  // Active symbols based on selected preset
+  const targetSymbols = useMemo(() => {
+    if (activePreset === "CUSTOM") {
+      return customInput
+        .split(/[,\s]+/)
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean);
+    }
+    return PRESETS[activePreset]?.symbols || [];
+  }, [activePreset, customInput]);
+
+  // Handle Scan Run
+  const handleStartScan = useCallback(async () => {
+    if (!targetSymbols.length || isScanning) return;
+
+    setIsScanning(true);
+    isCancelledRef.current = false;
+    setResults([]);
+    setScanProgress({ current: 0, total: targetSymbols.length });
+
+    const total = targetSymbols.length;
+    let completed = 0;
+
+    // Concurrency queue processor
+    const queue = [...targetSymbols];
+    const workers = Array.from({ length: Math.min(BATCH_CONCURRENCY, total) }, async () => {
+      while (queue.length > 0 && !isCancelledRef.current) {
+        const symbol = queue.shift();
+        if (!symbol) break;
+
+        try {
+          const res = await getStockSignalAction({
+            symbol,
+            exchange: "NSE",
+            timeframe: "1d",
+          });
+
+          if (isCancelledRef.current) break;
+
+          if (res?.success && res?.data?.signal) {
+            const sig = res.data.signal;
+            const inst = res.data.instrument;
+            const perf = res.data.signalPerformance;
+
+            const isBuy = sig.signal === "BUY";
+            const isExit = sig.signal === "EXIT";
+
+            const item = {
+              symbol,
+              name: inst?.name || symbol,
+              price: sig.price != null ? sig.price : null,
+              regime: sig.marketRegime || "UNKNOWN",
+              signal: sig.signal || "NO_TRADE",
+              action: sig.action || "WAIT",
+              bullishScore: sig.bullishScore ?? null,
+              bearishScore: sig.bearishScore ?? null,
+              adx: sig.indicators?.adx != null ? Number(sig.indicators.adx) : null,
+              rsi: sig.indicators?.rsi != null ? Number(sig.indicators.rsi) : null,
+              status: sig.status || "OK",
+              reason: isBuy
+                ? "HIGH CONFLUENCE BUY SETUP"
+                : isExit
+                  ? "EXIT / TAKE PROFIT / CUT LOSS"
+                  : sig.freshEntryBlocked
+                    ? `Wait (${sig.maturedSignalStatus === "TARGET_2_HIT" ? "Target 2 Reached" : "Rally Extended"})`
+                    : sig.action === "AVOID"
+                      ? "Downtrend / Below 200 EMA"
+                      : sig.status === "INSUFFICIENT_DATA"
+                        ? "Insufficient Data"
+                        : "Consolidation / Low Trend Momentum",
+              performance: perf,
+              timestamp: sig.timestamp,
+            };
+
+            setResults((prev) => [...prev, item]);
+          } else {
+            // Placeholder for failed stock fetch
+            setResults((prev) => [
+              ...prev,
+              {
+                symbol,
+                name: symbol,
+                price: null,
+                regime: "UNKNOWN",
+                signal: "NO_TRADE",
+                action: "WAIT",
+                bullishScore: null,
+                bearishScore: null,
+                adx: null,
+                rsi: null,
+                status: "ERROR",
+                reason: res?.error || "Data unavailable",
+              },
+            ]);
+          }
+        } catch (err) {
+          if (!isCancelledRef.current) {
+            setResults((prev) => [
+              ...prev,
+              {
+                symbol,
+                name: symbol,
+                price: null,
+                regime: "UNKNOWN",
+                signal: "NO_TRADE",
+                action: "WAIT",
+                bullishScore: null,
+                bearishScore: null,
+                adx: null,
+                rsi: null,
+                status: "ERROR",
+                reason: err.message || "Failed to scan",
+              },
+            ]);
+          }
+        } finally {
+          completed++;
+          setScanProgress({ current: completed, total });
+        }
+      }
+    });
+
+    await Promise.all(workers);
+    setIsScanning(false);
+  }, [targetSymbols, isScanning]);
+
+  const handleStopScan = useCallback(() => {
+    isCancelledRef.current = true;
+    setIsScanning(false);
+  }, []);
+
+  // Summary Metrics Counts
+  const metrics = useMemo(() => {
+    let buy = 0;
+    let exit = 0;
+    let wait = 0;
+    let avoid = 0;
+
+    for (const r of results) {
+      if (r.signal === "BUY") buy++;
+      else if (r.signal === "EXIT") exit++;
+      else if (r.action === "AVOID") avoid++;
+      else wait++;
+    }
+
+    return {
+      total: results.length,
+      buy,
+      exit,
+      wait,
+      avoid,
+    };
+  }, [results]);
+
+  // Filtered Results
+  const filteredResults = useMemo(() => {
+    return results.filter((item) => {
+      // 1. Filter Tab
+      if (activeFilter === "BUY" && item.signal !== "BUY") return false;
+      if (activeFilter === "EXIT" && item.signal !== "EXIT") return false;
+      if (activeFilter === "WAIT" && (item.signal === "BUY" || item.signal === "EXIT" || item.action === "AVOID")) return false;
+      if (activeFilter === "AVOID" && item.action !== "AVOID") return false;
+
+      // 2. Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toUpperCase();
+        const matchesSymbol = item.symbol.toUpperCase().includes(q);
+        const matchesName = (item.name || "").toUpperCase().includes(q);
+        if (!matchesSymbol && !matchesName) return false;
+      }
+
+      return true;
+    });
+  }, [results, activeFilter, searchQuery]);
+
+  const progressPercent = scanProgress.total > 0
+    ? Math.round((scanProgress.current / scanProgress.total) * 100)
+    : 0;
+
+  return (
+    <div className="screener-page">
+      {/* ── Top Navigation Bar ── */}
+      <nav className="screener-nav" aria-label="Main Navigation">
+        <Link href="/" className="screener-brand">
+          <h1>⚡ Panarwala Market Screener</h1>
+        </Link>
+        <div className="screener-nav-links">
+          <Link href="/" className="nav-pill-link">
+            📈 Interactive Chart
+          </Link>
+          <Link href="/screener" className="nav-pill-link active">
+            🔍 Signals Screener
+          </Link>
+          <Link href="/optionchain" className="nav-pill-link">
+            📊 Option Chain
+          </Link>
+          <Link href="/TradingView" className="nav-pill-link">
+            ⚡ TradingView
+          </Link>
+        </div>
+      </nav>
+
+      {/* ── Main Container ── */}
+      <div className="screener-container">
+        {/* ── Control Hero ── */}
+        <section className="screener-hero" aria-labelledby="screener-heading">
+          <div className="screener-hero-header">
+            <div className="screener-title-block">
+              <h2 id="screener-heading">NSE Real-Time Algorithmic Signal Screener</h2>
+              <p>
+                Scan watchlist stocks across 200 EMA trend gates, 52-week high momentum, ADX strength, and RSI confluence.
+              </p>
+            </div>
+            <div className="screener-actions-block">
+              {isScanning ? (
+                <button
+                  type="button"
+                  onClick={handleStopScan}
+                  className="btn-scan-stop"
+                  aria-label="Stop current scan"
+                >
+                  <FiSquare size={16} /> Stop Scan
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleStartScan}
+                  disabled={targetSymbols.length === 0}
+                  className="btn-scan-primary"
+                  aria-label="Start market scan"
+                >
+                  <FiPlay size={16} /> Run Screener ({targetSymbols.length} Stocks)
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Preset Buttons */}
+          <div className="presets-row" role="group" aria-label="Watchlist presets">
+            <span className="preset-label">Universe:</span>
+            {Object.values(PRESETS).map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                className={`preset-btn ${activePreset === preset.id ? "active" : ""}`}
+                onClick={() => setActivePreset(preset.id)}
+                disabled={isScanning}
+              >
+                {preset.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Input when active */}
+          {activePreset === "CUSTOM" && (
+            <div className="custom-input-box">
+              <input
+                type="text"
+                placeholder="Enter stock symbols separated by commas (e.g. BEL, TCS, HAL, RELIANCE, INFY)"
+                value={customInput}
+                onChange={(e) => setCustomInput(e.target.value)}
+                disabled={isScanning}
+                aria-label="Custom stock symbols"
+              />
+              <div className="custom-hint">
+                Enter any valid NSE tickers or ETFs. Comma or space separated.
+              </div>
+            </div>
+          )}
+
+          {/* Progress Bar when scanning */}
+          {(isScanning || scanProgress.current > 0) && (
+            <div className="scan-progress-bar-container" role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100}>
+              <div className="scan-progress-header">
+                <span>
+                  {isScanning
+                    ? `Scanning ${scanProgress.current} of ${scanProgress.total} stocks...`
+                    : `Completed scan: ${scanProgress.current} stocks analyzed`}
+                </span>
+                <span>{progressPercent}%</span>
+              </div>
+              <div className="progress-track">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ── Summary Metric Cards ── */}
+        <section className="screener-metrics-grid" aria-label="Signal Summary Metrics">
+          <div className="metric-card card-scanned">
+            <span className="metric-label">Scanned</span>
+            <span className="metric-value">{metrics.total}</span>
+            <span className="metric-sub">of {targetSymbols.length} total</span>
+          </div>
+
+          <div className="metric-card card-buy">
+            <span className="metric-label">🟢 BUY Signals</span>
+            <span className="metric-value">{metrics.buy}</span>
+            <span className="metric-sub">High Confluence Entry</span>
+          </div>
+
+          <div className="metric-card card-exit">
+            <span className="metric-label">🛑 EXIT Signals</span>
+            <span className="metric-value">{metrics.exit}</span>
+            <span className="metric-sub">Take Profit / Stop Loss</span>
+          </div>
+
+          <div className="metric-card card-wait">
+            <span className="metric-label">🟡 WAIT / Neutral</span>
+            <span className="metric-value">{metrics.wait}</span>
+            <span className="metric-sub">Choppy / Low ADX</span>
+          </div>
+
+          <div className="metric-card card-avoid">
+            <span className="metric-label">🔴 AVOID (Traps)</span>
+            <span className="metric-value">{metrics.avoid}</span>
+            <span className="metric-sub">Downtrend / Below 200 EMA</span>
+          </div>
+        </section>
+
+        {/* ── Filter & Search Toolbar ── */}
+        <section className="screener-filter-bar" aria-label="Table filters">
+          <div className="filter-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeFilter === "ALL"}
+              className={`filter-tab-btn ${activeFilter === "ALL" ? "active" : ""}`}
+              onClick={() => setActiveFilter("ALL")}
+            >
+              All ({results.length})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeFilter === "BUY"}
+              className={`filter-tab-btn ${activeFilter === "BUY" ? "active" : ""}`}
+              onClick={() => setActiveFilter("BUY")}
+            >
+              🟢 BUY ({metrics.buy})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeFilter === "EXIT"}
+              className={`filter-tab-btn ${activeFilter === "EXIT" ? "active" : ""}`}
+              onClick={() => setActiveFilter("EXIT")}
+            >
+              🛑 EXIT ({metrics.exit})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeFilter === "WAIT"}
+              className={`filter-tab-btn ${activeFilter === "WAIT" ? "active" : ""}`}
+              onClick={() => setActiveFilter("WAIT")}
+            >
+              🟡 WAIT ({metrics.wait})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeFilter === "AVOID"}
+              className={`filter-tab-btn ${activeFilter === "AVOID" ? "active" : ""}`}
+              onClick={() => setActiveFilter("AVOID")}
+            >
+              🔴 AVOID ({metrics.avoid})
+            </button>
+          </div>
+
+          <div className="search-box">
+            <FiSearch size={14} color="#8b949e" />
+            <input
+              type="search"
+              placeholder="Search symbol or name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Filter scanned results"
+            />
+          </div>
+        </section>
+
+        {/* ── Interactive Results Table ── */}
+        <div className="table-wrapper">
+          {filteredResults.length === 0 ? (
+            <div className="table-empty-state">
+              <div className="empty-icon">📊</div>
+              {results.length === 0 ? (
+                <>
+                  <p>No stocks scanned yet.</p>
+                  <button
+                    type="button"
+                    onClick={handleStartScan}
+                    className="btn-scan-primary"
+                  >
+                    <FiPlay size={14} /> Start Screener Now
+                  </button>
+                </>
+              ) : (
+                <p>No stocks match your filter criteria.</p>
+              )}
+            </div>
+          ) : (
+            <table className="screener-table" aria-label="Stock signals table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Price</th>
+                  <th>Regime</th>
+                  <th>Signal</th>
+                  <th>Action</th>
+                  <th>Bull/Bear</th>
+                  <th>ADX (Trend)</th>
+                  <th>RSI (14)</th>
+                  <th>Status &amp; Reason</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredResults.map((row) => {
+                  const isBuy = row.signal === "BUY";
+                  const isExit = row.signal === "EXIT";
+                  const isHold = row.signal === "HOLD";
+                  const isAvoid = row.action === "AVOID";
+
+                  const signalClass = isBuy
+                    ? "signal-buy"
+                    : isExit
+                      ? "signal-exit"
+                      : isHold
+                        ? "signal-hold"
+                        : "signal-no-trade";
+
+                  const actionClass = isBuy
+                    ? "action-enter"
+                    : isExit
+                      ? "action-exit"
+                      : isAvoid
+                        ? "action-avoid"
+                        : "action-wait";
+
+                  const regimeClass =
+                    row.regime?.includes("BULL")
+                      ? "regime-bull"
+                      : row.regime?.includes("BEAR")
+                        ? "regime-bear"
+                        : "regime-side";
+
+                  return (
+                    <tr key={row.symbol}>
+                      <td>
+                        <div className="stock-symbol-cell">
+                          <span className="symbol-name">{row.symbol}</span>
+                          <span className="company-name" title={row.name}>
+                            {row.name}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="price-cell">
+                        {row.price != null ? `₹${row.price.toFixed(2)}` : "N/A"}
+                      </td>
+
+                      <td>
+                        <span className={`badge-regime ${regimeClass}`}>
+                          {row.regime}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span className={`badge-signal ${signalClass}`}>
+                          {isBuy && <FiTrendingUp size={12} />}
+                          {isExit && <FiAlertTriangle size={12} />}
+                          {isHold && <FiClock size={12} />}
+                          {row.signal}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span className={`badge-action ${actionClass}`}>
+                          {row.action}
+                        </span>
+                      </td>
+
+                      <td className="score-cell">
+                        <span className="bull-score">
+                          {row.bullishScore != null ? row.bullishScore : "-"}
+                        </span>
+                        <span className="score-slash">/</span>
+                        <span className="bear-score">
+                          {row.bearishScore != null ? row.bearishScore : "-"}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="adx-cell">
+                          <span className={row.adx && row.adx >= 25 ? "adx-strong" : "adx-weak"}>
+                            {row.adx != null ? row.adx.toFixed(1) : "N/A"}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td>
+                        <span className="rsi-val">
+                          {row.rsi != null ? row.rsi.toFixed(1) : "N/A"}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div
+                          className={`reason-cell ${
+                            isBuy
+                              ? "reason-buy"
+                              : isExit
+                                ? "reason-exit"
+                                : isAvoid
+                                  ? "reason-avoid"
+                                  : ""
+                          }`}
+                        >
+                          {row.reason}
+                        </div>
+                      </td>
+
+                      <td>
+                        <div className="table-actions-cell">
+                          <Link
+                            href={`/?symbol=${encodeURIComponent(row.symbol)}`}
+                            className="btn-table-action btn-chart"
+                            title={`Open ${row.symbol} in Interactive Candlestick Chart`}
+                          >
+                            <FiExternalLink size={12} /> Chart
+                          </Link>
+                          <button
+                            type="button"
+                            className="btn-table-action btn-details"
+                            onClick={() =>
+                              setSelectedModalStock({
+                                symbol: row.symbol,
+                                label: row.name || row.symbol,
+                                name: row.name || row.symbol,
+                                value: row.symbol,
+                                nse: true,
+                              })
+                            }
+                            title={`Inspect algorithmic signal evidence for ${row.symbol}`}
+                          >
+                            <FiZap size={12} /> Details
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* ── Modal Dialog for Deep Signal Evidence Inspection ── */}
+      {selectedModalStock && (
+        <StockSignalModal
+          companyObj={selectedModalStock}
+          indexName="NSE_EQ"
+          isOpen={Boolean(selectedModalStock)}
+          onClose={() => setSelectedModalStock(null)}
+        />
+      )}
+    </div>
+  );
+}
