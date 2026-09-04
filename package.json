@@ -8,8 +8,15 @@
     "start": "next start",
     "stockAnalysis": "node --experimental-specifier-resolution=node src/components/StockAnalysis/index.js",
     "updateMarketData": "node scripts/updateMarketData.mjs",
-    "updateBseEquity": "node scripts/updateBseEquity.mjs"
+    "updateBseEquity": "node scripts/updateBseEquity.mjs",
+    "analyze": "node scripts/analyze.mjs",
+    "backtest": "node scripts/backtest.mjs",
+    "paperTrade": "node scripts/paperTrade.mjs",
+    "signal": "node scripts/generateSignal.mjs",
+    "fetchData": "node scripts/fetchData.mjs",
+    "test:engine": "node --test test/engine/*.test.js"
   },
+
   "dependencies": {
     "@riyazpanarwala/react-financial-charts": "^2.0.10",
     "@vercel/analytics": "^2.0.1",

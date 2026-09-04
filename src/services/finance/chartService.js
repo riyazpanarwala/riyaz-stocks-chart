@@ -1,7 +1,7 @@
 import YahooFinance from "yahoo-finance2";
-const yahooFinance = new YahooFinance()
+const yahooFinance = new YahooFinance();
 
-export async function getChartData(symbol, { interval, fromDate, toDate }) {
+export async function getChartData(symbol, { interval, fromDate, toDate } = {}) {
   const queryObj = { interval, period1: fromDate };
 
   if (toDate) {
@@ -13,11 +13,11 @@ export async function getChartData(symbol, { interval, fromDate, toDate }) {
 }
 
 export async function getOptionData(symbol) {
-  const result = await yahooFinance.options('' + symbol);
+  const result = await yahooFinance.options("" + symbol);
   return result;
 }
 
-export async function getHistoricalData(symbol, { interval, fromDate, toDate }) {
+export async function getHistoricalData(symbol, { interval, fromDate, toDate } = {}) {
   const queryObj = { interval, period1: fromDate };
 
   if (toDate) {

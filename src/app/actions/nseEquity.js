@@ -1,5 +1,6 @@
+"use server";
+
 import { NseIndia } from "stock-nse-india";
-import { NextResponse } from "next/server";
 
 const nseIndia = new NseIndia();
 
@@ -16,31 +17,28 @@ const VALID_API_NAMES = new Set([
   "indicators",
 ]);
 
-export async function POST(req) {
+/**
+ * Server Action: getNseEquityAction
+ * Replaces public /api/NSE/Equity endpoint.
+ * Protected by Next.js Server Action CSRF and execution semantics.
+ */
+export async function getNseEquityAction({
+  symbol: rawSymbol,
+  apiName,
+  fromDate,
+  toDate,
+} = {}) {
   try {
-    const body = await req.json().catch(() => null);
-    if (!body) {
-      return NextResponse.json(
-        { error: "Invalid JSON request body." },
-        { status: 400 }
-      );
-    }
-
-    const { symbol: rawSymbol, apiName, fromDate, toDate } = body;
     const symbol = typeof rawSymbol === "string" ? rawSymbol.trim() : "";
 
     if (!symbol || !/^[A-Za-z0-9\-\.\s&%]+$/.test(symbol)) {
-      return NextResponse.json(
-        { error: "Invalid or missing symbol parameter." },
-        { status: 400 }
-      );
+      return { error: "Invalid or missing symbol parameter." };
     }
 
     if (!apiName || !VALID_API_NAMES.has(apiName)) {
-      return NextResponse.json(
-        { error: `Invalid apiName parameter. Must be one of: ${Array.from(VALID_API_NAMES).join(", ")}` },
-        { status: 400 }
-      );
+      return {
+        error: `Invalid apiName parameter. Must be one of: ${Array.from(VALID_API_NAMES).join(", ")}`,
+      };
     }
 
     let data = {};
@@ -68,12 +66,9 @@ export async function POST(req) {
       data = await nseIndia.getTechnicalIndicators(symbol);
     }
 
-    return NextResponse.json(data ?? {}, { status: 200 });
+    return data ?? {};
   } catch (error) {
-    console.error("Error processing NSE request:", error);
-    return NextResponse.json(
-      { error: "Failed to process request" },
-      { status: 500 }
-    );
+    console.error("[getNseEquityAction] Error processing NSE request:", error);
+    return { error: error.message || "Failed to process NSE request" };
   }
 }

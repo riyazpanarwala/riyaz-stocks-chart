@@ -21,11 +21,15 @@ export const calculateTrueRange = (data) => {
 
 // Function to calculate the ATR
 export const atr = (data, period = 14) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    return [];
+  }
+
   const trueRange = calculateTrueRange(data);
 
   // Ensure we have enough data points
   if (trueRange.length < period) {
-    throw new Error("Not enough data points");
+    return Array(data.length).fill(undefined);
   }
 
   let atr = [];

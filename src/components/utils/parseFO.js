@@ -6,6 +6,18 @@ import { usePapaParse } from "react-papaparse";
 // Global cache (persists across hook calls)
 const csvCache = {};
 
+const FO_MONTHS = {
+  JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+  JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+};
+
+function parseFoMonthKey(key) {
+  const parts = String(key || "").trim().toUpperCase().split("-");
+  const month = FO_MONTHS[parts[0]] ?? 0;
+  const year = 2000 + Number(parts[1] || 0);
+  return year * 12 + month;
+}
+
 export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
   const { readRemoteFile } = usePapaParse();
   const [symbols, setSymbols] = useState([]);
@@ -60,7 +72,7 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
                   )
                 );
                 const lastMonth = monthKeys
-                  .sort((a, b) => a.localeCompare(b))
+                  .sort((a, b) => parseFoMonthKey(a) - parseFoMonthKey(b))
                   .pop();
                 const lotSize =
                   Number(

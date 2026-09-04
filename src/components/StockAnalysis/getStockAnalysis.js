@@ -23,42 +23,87 @@ const round2Decimal = (value) => {
 };
 
 const getStockAnalysis = (candles) => {
-  const lastClose = candles[candles.length - 1].close;
-  const prevlastClose = candles[candles.length - 2].close;
+  if (!Array.isArray(candles) || candles.length < 2) {
+    return null;
+  }
+
+  const lastClose = candles[candles.length - 1]?.close;
+  const prevlastClose = candles[candles.length - 2]?.close;
+  if (lastClose == null || prevlastClose == null || prevlastClose === 0) {
+    return null;
+  }
   const percentChange = ((lastClose - prevlastClose) * 100) / prevlastClose;
 
-  const rsiValues = rsi(candles, 14);
-  const { plusDI, minusDI, adx } = dmi(candles, 14);
-  const { macdLine, signalLine } = macd(candles);
-  const atrValues = atr(candles);
-  const roc20 = roc(candles, 20);
-  const roc125 = roc(candles, 125);
-  const sma5 = sma(candles, 5, "close");
-  const sma10 = sma(candles, 10, "close");
-  const sma20 = sma(candles, 20, "close");
-  const sma50 = sma(candles, 50, "close");
-  const sma100 = sma(candles, 100, "close");
-  const sma200 = sma(candles, 200, "close");
-  const ema50 = ema(candles, 50, true);
-  const ema200 = ema(candles, 200, true);
-  const mfiValues = mfi(candles, 14);
-  const trend = supertrend(candles);
-  const bolingerData = bb(candles);
-  const bbband = bolingerData[bolingerData.length - 1].bb;
-  const cciValues = cci(candles, 20);
-  const stoVal = calculateStochastic(candles, 20, 3);
-  const williamson14 = williamson(candles, 14);
-  const shortTermMACross = crossover(sma5, sma20);
-  const mediumTermMACross = crossover(sma20, sma50);
-  const longTermMACross = crossover(sma50, sma200);
-  const atrSma = sma(atrValues, 9, "");
+  let rsiValues = [];
+  let plusDI = [];
+  let minusDI = [];
+  let adx = [];
+  let macdLine = [];
+  let signalLine = [];
+  let atrValues = [];
+  let atrSma = [];
+  let roc20 = [];
+  let roc125 = [];
+  let sma5 = [];
+  let sma10 = [];
+  let sma20 = [];
+  let sma50 = [];
+  let sma100 = [];
+  let sma200 = [];
+  let ema50 = [];
+  let ema200 = [];
+  let mfiValues = [];
+  let trend = false;
+  let bolingerData = [];
+  let bbband = {};
+  let cciValues = [];
+  let stoVal = { fastKValues: [] };
+  let williamson14 = [];
+  let shortTermMACross = [];
+  let mediumTermMACross = [];
+  let longTermMACross = [];
+
+  try {
+    rsiValues = rsi(candles, 14) || [];
+    const dmiRes = dmi(candles, 14) || {};
+    plusDI = dmiRes.plusDI || [];
+    minusDI = dmiRes.minusDI || [];
+    adx = dmiRes.adx || [];
+    const macdRes = macd(candles) || {};
+    macdLine = macdRes.macdLine || [];
+    signalLine = macdRes.signalLine || [];
+    atrValues = atr(candles) || [];
+    roc20 = roc(candles, 20) || [];
+    roc125 = roc(candles, 125) || [];
+    sma5 = sma(candles, 5, "close") || [];
+    sma10 = sma(candles, 10, "close") || [];
+    sma20 = sma(candles, 20, "close") || [];
+    sma50 = sma(candles, 50, "close") || [];
+    sma100 = sma(candles, 100, "close") || [];
+    sma200 = sma(candles, 200, "close") || [];
+    ema50 = ema(candles, 50, true) || [];
+    ema200 = ema(candles, 200, true) || [];
+    mfiValues = mfi(candles, 14) || [];
+    trend = supertrend(candles);
+    bolingerData = bb(candles) || [];
+    bbband = bolingerData[bolingerData.length - 1]?.bb || {};
+    cciValues = cci(candles, 20) || [];
+    stoVal = calculateStochastic(candles, 20, 3) || { fastKValues: [] };
+    williamson14 = williamson(candles, 14) || [];
+    shortTermMACross = crossover(sma5, sma20) || [];
+    mediumTermMACross = crossover(sma20, sma50) || [];
+    longTermMACross = crossover(sma50, sma200) || [];
+    atrSma = sma(atrValues, 9, "") || [];
+  } catch (err) {
+    console.error("[getStockAnalysis] Error calculating indicators:", err);
+  }
 
   return {
     rsi: round2Decimal(rsiValues[rsiValues.length - 1]),
-    mfi: round2Decimal(mfiValues[mfiValues.length - 1].mfi),
-    cci: round2Decimal(cciValues[cciValues.length - 1].cci),
-    willR: round2Decimal(williamson14[williamson14.length - 1].will),
-    sto: round2Decimal(stoVal.fastKValues[stoVal.fastKValues.length - 1]),
+    mfi: round2Decimal(mfiValues[mfiValues.length - 1]?.mfi),
+    cci: round2Decimal(cciValues[cciValues.length - 1]?.cci),
+    willR: round2Decimal(williamson14[williamson14.length - 1]?.will),
+    sto: round2Decimal(stoVal.fastKValues?.[stoVal.fastKValues.length - 1]),
     adx: round2Decimal(adx[adx.length - 1]),
     plusDI: plusDI[plusDI.length - 1],
     minusDI: minusDI[minusDI.length - 1],
@@ -83,9 +128,9 @@ const getStockAnalysis = (candles) => {
     percentChange,
     supertrend: trend,
     bb: {
-      UB: round2Decimal(bbband.top),
-      LB: round2Decimal(bbband.bottom),
-      SMA20: round2Decimal(bbband.middle),
+      UB: round2Decimal(bbband?.top),
+      LB: round2Decimal(bbband?.bottom),
+      SMA20: round2Decimal(bbband?.middle),
     },
   };
 };

@@ -1,7 +1,11 @@
 export const roc = (prices, period = 21) => {
+  if (!Array.isArray(prices) || prices.length === 0) {
+    return [];
+  }
+
   // Ensure we have enough data points
   if (prices.length < period) {
-    return [];
+    return Array(prices.length).fill(undefined);
   }
 
   let roc = [];
@@ -10,9 +14,11 @@ export const roc = (prices, period = 21) => {
     if (i < period) {
       roc.push(undefined);
     } else {
-      const currentPrice = prices[i].close;
-      const previousPrice = prices[i - period].close;
-      const rocValue = ((currentPrice - previousPrice) / previousPrice) * 100;
+      const currentPrice = prices[i]?.close ?? 0;
+      const previousPrice = prices[i - period]?.close ?? 0;
+      const rocValue = previousPrice
+        ? ((currentPrice - previousPrice) / previousPrice) * 100
+        : 0;
       roc.push(rocValue);
     }
   }

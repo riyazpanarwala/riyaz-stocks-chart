@@ -26,6 +26,8 @@ import {
 import Fundamentals from "./FundaMentals/index.js";
 import ActionButton from "./ActionButton.js";
 import TrendlyneChecklist from "./Trendlyne/TrendlyneChecklist.jsx";
+import StockSignalModal from "./StockSignalModal";
+
 
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
@@ -39,7 +41,9 @@ const CandleStickChart = () => {
   const [patternName, setPatternName] = useState("");
   const [modal, setModalOpen] = useState(false);
   const [modal1, setModalOpen1] = useState(false);
+  const [signalModalOpen, setSignalModalOpen] = useState(false);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+
   const {
     intervalObj,
     intradayObj,
@@ -261,7 +265,14 @@ const CandleStickChart = () => {
                 >
                   Technical Analysis
                 </ActionButton>
+                <ActionButton
+                  onClick={() => setSignalModalOpen(true)}
+                  aria-label={`View algorithmic trading signals for ${getCompanyName()}`}
+                >
+                  ⚡ Signal Engine
+                </ActionButton>
                 {isCompanyExist ? (
+
                   <ActionButton
                     onClick={removeFrmWatchList}
                     aria-label={`Remove ${getCompanyName()} from watchlist`}
@@ -350,7 +361,17 @@ const CandleStickChart = () => {
             onClose={() => setModalOpen1(false)}
           />
         )}
+
+        {signalModalOpen && (
+          <StockSignalModal
+            companyObj={companyObj}
+            indexName={indexObj.value}
+            isOpen={signalModalOpen}
+            onClose={() => setSignalModalOpen(false)}
+          />
+        )}
       </div>
+
     </div>
   );
 };

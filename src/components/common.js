@@ -8,24 +8,33 @@ import {
 import isYFinanceEnable from "./utils/isYFinanceEnable";
 
 export const getDataFromIntraday = (intradayData) => {
-  const total = intradayData.reduce((sum, candle) => sum + candle[5], 0);
+  if (!Array.isArray(intradayData) || intradayData.length === 0) {
+    return null;
+  }
 
-  const maxValue = Math.max.apply(
-    Math,
-    intradayData.map((d) => d[2]),
-  );
-  const minValue = Math.min.apply(
-    Math,
-    intradayData.map((d) => d[3]),
-  );
+  let totalVolume = 0;
+  let maxHigh = -Infinity;
+  let minLow = Infinity;
+  const len = intradayData.length;
+
+  for (let i = 0; i < len; i++) {
+    const candle = intradayData[i];
+    const high = candle[2];
+    const low = candle[3];
+    const volume = candle[5] || 0;
+
+    totalVolume += volume;
+    if (high > maxHigh) maxHigh = high;
+    if (low < minLow) minLow = low;
+  }
 
   return {
     date: intradayData[0][0],
     open: intradayData[0][1],
-    close: intradayData[intradayData.length - 1][4],
-    high: maxValue,
-    low: minValue,
-    volume: total,
+    close: intradayData[len - 1][4],
+    high: maxHigh !== -Infinity ? maxHigh : intradayData[0][2],
+    low: minLow !== Infinity ? minLow : intradayData[0][3],
+    volume: totalVolume,
   };
 };
 
@@ -125,14 +134,22 @@ export const fetchHistoricData = async (
   companyObj,
   apiInterval = 1,
 ) => {
+  if (!companyObj || (!companyObj.symbol && !companyObj.value && !companyObj.yahooSymbol)) {
+    return { candles: [], timeArr: [] };
+  }
+
   let arr;
 
   if (
     isYFinanceEnable &&
     (companyObj.yahooSymbol || indexName === "NSE_EQ")
   ) {
+    const yahooTicker = companyObj.yahooSymbol || (companyObj.symbol ? `${companyObj.symbol}.NS` : null);
+    if (!yahooTicker) {
+      return { candles: [], timeArr: [] };
+    }
     const rawData = await getNSEDataYahooFinance(
-      companyObj.yahooSymbol || companyObj.symbol + ".NS",
+      yahooTicker,
       interval,
       period,
     );

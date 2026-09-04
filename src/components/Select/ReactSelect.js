@@ -27,13 +27,11 @@ const ReactSelect = ({
   };
 
   const customFilter = (option, searchText) => {
-    if (
-      option.data.label?.toLowerCase().includes(searchText.toLowerCase()) ||
-      option.data.symbol?.toLowerCase().includes(searchText.toLowerCase())
-    ) {
-      return true;
-    }
-    return false;
+    if (!searchText) return true;
+    const query = searchText.toLowerCase();
+    const label = option.data._lowerLabel || option.data.label?.toLowerCase() || "";
+    const symbol = option.data._lowerSymbol || option.data.symbol?.toLowerCase() || "";
+    return label.includes(query) || symbol.includes(query);
   };
 
   return (

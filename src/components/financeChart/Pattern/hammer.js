@@ -46,7 +46,7 @@ export const detectNextBullishTrend = (
 ) => {
   // Check for bullish trend after the hammer
   if (index + minBullishCandles >= candles.length) {
-    return "Not enough data to check for a bullish trend";
+    return false;
   }
 
   let isBullishTrend = true;
@@ -78,7 +78,7 @@ export const detectHammerWithTrend = (
     return false;
   }
 
-  return detectNextBullishTrend(candles, index, minBullishCandles);
+  return Boolean(detectNextBullishTrend(candles, index, minBullishCandles));
 };
 
 export const detectHammerWithAfterBullishTrend = (
@@ -91,7 +91,7 @@ export const detectHammerWithAfterBullishTrend = (
     return false;
   }
 
-  return detectNextBullishTrend(candles, index, minBullishCandles);
+  return Boolean(detectNextBullishTrend(candles, index, minBullishCandles));
 };
 
 export const detectHammerWithPrevDownTrend = (
@@ -104,7 +104,7 @@ export const detectHammerWithPrevDownTrend = (
     return false;
   }
 
-  return detectHammer(candles[index], shadowRatio);
+  return Boolean(detectHammer(candles[index], shadowRatio));
 };
 
 export const hammer = (
@@ -114,7 +114,7 @@ export const hammer = (
   minDowntrendCandles = 1,
   minBullishCandles = 1
 ) => {
-  let hammerArr = [];
+  const hammerArr = [];
   if (type === 1) {
     candles.forEach((candle, i) => {
       if (
@@ -126,7 +126,7 @@ export const hammer = (
           minBullishCandles
         )
       ) {
-        hammerArr = [...hammerArr, candle];
+        hammerArr.push(candle);
       }
     });
   } else if (type === 2) {
@@ -139,7 +139,7 @@ export const hammer = (
           minDowntrendCandles
         )
       ) {
-        hammerArr = [...hammerArr, candle];
+        hammerArr.push(candle);
       }
     });
   } else if (type === 3) {
@@ -152,13 +152,13 @@ export const hammer = (
           minBullishCandles
         )
       ) {
-        hammerArr = [...hammerArr, candle];
+        hammerArr.push(candle);
       }
     });
   } else {
     candles.forEach((candle, i) => {
       if (detectHammer(candles[i], shadowRatio)) {
-        hammerArr = [...hammerArr, candle];
+        hammerArr.push(candle);
       }
     });
   }

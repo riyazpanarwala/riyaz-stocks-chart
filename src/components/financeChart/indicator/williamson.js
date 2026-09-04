@@ -1,7 +1,11 @@
-const williamsr = require("technicalindicators").williamsr;
+import { williamsr } from "technicalindicators";
 
 export const williamson = (arr, period = 14) => {
-  let input = {
+  if (!Array.isArray(arr) || arr.length === 0) {
+    return [];
+  }
+
+  const input = {
     high: arr.map((v) => v.high),
     low: arr.map((v) => v.low),
     close: arr.map((v) => v.close),
@@ -9,18 +13,15 @@ export const williamson = (arr, period = 14) => {
     period: period,
   };
 
-  const data = williamsr(input);
+  const data = williamsr(input) || [];
+  const offset = arr.length - data.length;
 
-  let newArr = [];
-  arr.forEach((v, i) => {
-    if (i < arr.length - data.length) {
-      newArr = [...newArr, { ...v, will: "" }];
-    } else {
-      newArr = [...newArr, { ...v, will: data[i - arr.length + data.length] }];
+  return arr.map((v, i) => {
+    if (i < offset) {
+      return { ...v, will: "" };
     }
+    return { ...v, will: data[i - offset] };
   });
-
-  return newArr;
 };
 
 /**

@@ -9,14 +9,25 @@ import { pushSnapshot } from "../utils/breakoutDetector.js";
 import { detectBreakouts } from "../utils/breakoutDetector.js";
 
 /**
- * Build a stable string key that identifies a unique data snapshot.
- * Used to guard against identical consecutive pushes.
+ * Fast 32-bit integer checksum across option chain snapshot metrics and rows.
+ * Eliminates all string allocations and string joining during polling ticks.
  */
-function snapshotKey(rows, spot, pcr) {
-  const rowPart = rows
-    .map((r) => `${r.strikePrice}:${r.CE.openInterest}:${r.PE.openInterest}:${r.CE.changeinOpenInterest}:${r.PE.changeinOpenInterest}`)
-    .join(";");
-  return `${spot}|${Number(pcr).toFixed(4)}|${rowPart}`;
+function snapshotChecksum(rows, spot, pcr) {
+  let hash = 17;
+  hash = (hash * 31 + Math.round((spot || 0) * 100)) | 0;
+  hash = (hash * 31 + Math.round((pcr || 0) * 10000)) | 0;
+  hash = (hash * 31 + rows.length) | 0;
+
+  const len = rows.length;
+  for (let i = 0; i < len; i++) {
+    const r = rows[i];
+    hash = (hash * 31 + (r.strikePrice || 0)) | 0;
+    hash = (hash * 31 + (r.CE?.openInterest || 0)) | 0;
+    hash = (hash * 31 + (r.PE?.openInterest || 0)) | 0;
+    hash = (hash * 31 + (r.CE?.changeinOpenInterest || 0)) | 0;
+    hash = (hash * 31 + (r.PE?.changeinOpenInterest || 0)) | 0;
+  }
+  return hash;
 }
 
 /**
@@ -39,7 +50,7 @@ export function useSnapshotHistory({
   instrument, activeExpiry,
 }) {
   const historyRef      = useRef([]);
-  const lastKeyRef      = useRef(null);
+  const lastChecksumRef = useRef(null);
   const contractKeyRef  = useRef(null);
 
   const contractKey = `${instrument.symbol}:${activeExpiry ?? "index"}`;
@@ -47,9 +58,9 @@ export function useSnapshotHistory({
   // ── Reset on instrument / expiry change ───────────────────
   useEffect(() => {
     if (contractKeyRef.current !== contractKey) {
-      historyRef.current   = [];
-      lastKeyRef.current   = null;
-      contractKeyRef.current = contractKey;
+      historyRef.current      = [];
+      lastChecksumRef.current = null;
+      contractKeyRef.current  = contractKey;
     }
   }, [contractKey]);
 
@@ -57,11 +68,31 @@ export function useSnapshotHistory({
   useEffect(() => {
     if (!rows?.length || !underlyingValue) return;
 
-    const key = snapshotKey(rows, underlyingValue, pcr);
-    if (key === lastKeyRef.current) return;      // skip duplicate
+    const checksum = snapshotChecksum(rows, underlyingValue, pcr);
+    if (checksum === lastChecksumRef.current) {
+      // Checksum match: perform exact comparison against last snapshot to guard against hash collisions
+      const last = historyRef.current[historyRef.current.length - 1];
+      if (last) {
+        const spotSame = Math.abs(last.spot - underlyingValue) < 0.01;
+        const pcrSame = Math.abs(last.pcr - pcr) < 0.001;
+        const rowsSame =
+          last.rows.length === rows.length &&
+          last.rows.every((row, i) => {
+            const next = rows[i];
+            return (
+              row.strikePrice === next?.strikePrice &&
+              row.CE?.openInterest === next?.CE?.openInterest &&
+              row.PE?.openInterest === next?.PE?.openInterest &&
+              row.CE?.changeinOpenInterest === next?.CE?.changeinOpenInterest &&
+              row.PE?.changeinOpenInterest === next?.PE?.changeinOpenInterest
+            );
+          });
+        if (spotSame && pcrSame && rowsSame) return; // confirmed duplicate
+      }
+    }
 
-    lastKeyRef.current  = key;
-    historyRef.current  = pushSnapshot(historyRef.current, {
+    lastChecksumRef.current = checksum;
+    historyRef.current      = pushSnapshot(historyRef.current, {
       rows, spot: underlyingValue, atm, pcr,
       ts: Date.now(), contractKey,
     });
@@ -83,7 +114,6 @@ export function useSnapshotHistory({
       maxPain,
       snapshots: history,
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayRows, underlyingValue, pcr, maxPain, prevDisplayRows]);
   // NOTE: historyRef is intentionally omitted — it's a mutable ref, not reactive state.
 

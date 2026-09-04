@@ -1,28 +1,41 @@
 export const crossover = (sma1, sma2) => {
-  let crossoverPoints = [];
-
-  for (let i = 1; i < sma1.length && i < sma2.length; i++) {
-    let prev5 = sma1[i - 1];
-    let prev20 = sma2[i - 1];
-    let curr5 = sma1[i];
-    let curr20 = sma2[i];
-
-    if (prev5 < prev20 && curr5 > curr20) {
-      crossoverPoints.push({ type: "Bullish" });
-    } else if (prev5 > prev20 && curr5 < curr20) {
-      crossoverPoints.push({ type: "Bearish" });
-    }
+  if (!Array.isArray(sma1) || !Array.isArray(sma2) || !sma1.length || !sma2.length) {
+    return [{ type: "Neutral" }];
   }
 
-  if (!crossoverPoints.length) {
-    if (sma1[sma1.length - 1] > sma2[sma2.length - 1]) {
-      crossoverPoints.push({ type: "Bullish" });
-    } else if (sma1[sma1.length - 1] < sma2[sma2.length - 1]) {
-      crossoverPoints.push({ type: "Bearish" });
-    } else {
-      crossoverPoints.push({ type: "Neutral" });
+  const len = Math.min(sma1.length, sma2.length);
+  const result = [];
+
+  for (let i = 0; i < len; i++) {
+    const curr1 = sma1[i];
+    const curr2 = sma2[i];
+
+    if (curr1 == null || curr2 == null || isNaN(curr1) || isNaN(curr2)) {
+      result.push({ type: "Neutral" });
+      continue;
     }
+
+    if (i === 0) {
+      result.push({ type: curr1 > curr2 ? "Bullish" : curr1 < curr2 ? "Bearish" : "Neutral" });
+      continue;
+    }
+
+    const prev1 = sma1[i - 1];
+    const prev2 = sma2[i - 1];
+
+    if (prev1 != null && prev2 != null && !isNaN(prev1) && !isNaN(prev2)) {
+      if (prev1 <= prev2 && curr1 > curr2) {
+        result.push({ type: "Bullish (Cross)", isCross: true });
+        continue;
+      }
+      if (prev1 >= prev2 && curr1 < curr2) {
+        result.push({ type: "Bearish (Cross)", isCross: true });
+        continue;
+      }
+    }
+
+    result.push({ type: curr1 > curr2 ? "Bullish" : curr1 < curr2 ? "Bearish" : "Neutral" });
   }
 
-  return crossoverPoints;
+  return result.length ? result : [{ type: "Neutral" }];
 };

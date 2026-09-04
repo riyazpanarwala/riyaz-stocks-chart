@@ -30,6 +30,7 @@ const useCommonHeader = (isEchart) => {
   const [timeData, setTimeData] = useState([]);
   const { companyArr, companyObj, setCompany, isFO } = useParseCsv();
   const timerRef = useRef(null);
+  const lastLoadedSymbolRef = useRef(null);
 
   const startTimer = () => {
     const isTrading = companyObj.global ? true : isMarketOpen();
@@ -178,7 +179,11 @@ const useCommonHeader = (isEchart) => {
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (apiCall > 0) {
-      setCandleData([]);
+      const currentSymbol = companyObj?.value || companyObj?.symbol;
+      if (lastLoadedSymbolRef.current !== currentSymbol) {
+        setCandleData([]);
+        lastLoadedSymbolRef.current = currentSymbol;
+      }
       if (isIntraday(intradayObj.value)) {
         callIntradayApi();
       } else {

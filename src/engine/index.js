@@ -1,0 +1,14 @@
+export { generateSignal, generateSignalAtIndex, generateSignals, trackSignalPerformance } from "./strategy/signalEngine.js";
+export { getHistoricalCandles, getIntradayCandles, createUpstoxClient } from "./api/upstox.js";
+export { downloadHistoricalDataset } from "./data/downloader.js";
+export { normalizeCandles, validateCandles } from "./data/candleValidator.js";
+export { detectGaps } from "./data/gapDetector.js";
+export { DEFAULT_STRATEGY_CONFIG, mergeStrategyConfig } from "./strategy/defaultConfig.js";
+export { runBacktest } from "./backtest/backtestEngine.js";
+export { calculateBacktestMetrics } from "./backtest/metrics.js";
+export { calculateTransactionCosts, applySlippage } from "./backtest/costs.js";
+export { DEFAULT_BACKTEST_CONFIG, mergeBacktestConfig } from "./backtest/defaultConfig.js";
+export { analyzeStock, formatCompactAnalysis, formatIstTimestamp, defaultDateRange, isLikelyNseMarketOpen } from "./quick/analyzeStock.js";
+export { constructDailyCandleFromIntraday, mergeLiveDailyCandle } from "./data/liveCandle.js";
+export { QUICK_ANALYSIS_DEFAULTS, DEFAULT_INSTRUMENTS, DEFAULT_INSTRUMENT_ALIASES, resolveInstrument } from "./config/quickAnalysis.js";
+export { getUniverse, resolveUniverseInstrument } from "./config/stocksUniverse.js";
