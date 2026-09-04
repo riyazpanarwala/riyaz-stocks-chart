@@ -92,14 +92,25 @@ function generateLatest(candles, options = {}) {
   const breakdown = detectBreakdown(candles, i, config.priceAction.breakoutLookback);
   const structure = marketStructure(candles, i, config.priceAction.swingLeft, config.priceAction.swingRight);
   const scores = scoreEvidence({ current, values, structure, breakout, breakdown, regime, config });
-  const { buyScore, exitScore, dominance, rsiOverbought, adxMin, volumeMin } = config.thresholds;
+  const { buyScore, exitScore, dominance, rsiOverbought, adxMin, volumeMin, min52WeekHighRatio, requireAboveEma200 } = config.thresholds;
   const rsiValue = values.rsi[i];
   const adxValue = values.adx.adx[i];
   const volRatioValue = values.volumeRatio[i];
+  const ema200Value = values.ema200[i];
+
+  // 52-week rolling high (up to 252 trading days)
+  const lookback52w = Math.min(252, i + 1);
+  let high52w = candles[i].high;
+  for (let k = Math.max(0, i - lookback52w + 1); k <= i; k++) {
+    if (candles[k].high > high52w) high52w = candles[k].high;
+  }
+  const ratio52w = high52w > 0 ? current.close / high52w : 1;
 
   const notOverbought = rsiOverbought == null || rsiValue == null || rsiValue <= rsiOverbought;
   const trendStrongEnough = adxMin == null || adxValue == null || adxValue >= adxMin;
   const volumeConfirmed = volumeMin == null || volRatioValue == null || volRatioValue >= volumeMin;
+  const near52wHigh = min52WeekHighRatio == null || ratio52w >= min52WeekHighRatio;
+  const aboveEma200 = !requireAboveEma200 || ema200Value == null || current.close >= ema200Value;
 
   const buy = regime !== "STRONG_DOWNTREND" &&
               regime !== "SIDEWAYS" &&
@@ -107,7 +118,9 @@ function generateLatest(candles, options = {}) {
               scores.bullishScore - scores.bearishScore >= dominance &&
               notOverbought &&
               trendStrongEnough &&
-              volumeConfirmed;
+              volumeConfirmed &&
+              near52wHigh &&
+              aboveEma200;
 
   const bearishExitSetup = scores.bearishScore >= exitScore && scores.bearishScore - scores.bullishScore >= dominance;
   const positionState = options.positionState ?? "FLAT";
@@ -121,6 +134,8 @@ function generateLatest(candles, options = {}) {
   if (!notOverbought && signal !== "EXIT") decisionChecks.push(`BUY blocked: RSI is overbought (${round(rsiValue)} > ${rsiOverbought})`);
   if (!trendStrongEnough && signal !== "EXIT") decisionChecks.push(`BUY blocked: ADX indicates weak trend (${round(adxValue)} < ${adxMin})`);
   if (!volumeConfirmed && signal !== "EXIT") decisionChecks.push(`BUY blocked: Volume ratio below minimum (${round(volRatioValue)} < ${volumeMin}x)`);
+  if (!near52wHigh && signal !== "EXIT") decisionChecks.push(`BUY blocked: Price too far from 52-week high (${round(ratio52w * 100)}% < ${round(min52WeekHighRatio * 100)}%)`);
+  if (!aboveEma200 && signal !== "EXIT") decisionChecks.push("BUY blocked: Price below 200-day EMA (long-term downtrend)");
   if (!buy && scores.bullishScore < buyScore) decisionChecks.push(`Bullish score ${scores.bullishScore} is below BUY threshold ${buyScore}`);
   if (!buy && scores.bullishScore >= buyScore && scores.bullishScore - scores.bearishScore < dominance) decisionChecks.push(`Bullish lead ${scores.bullishScore - scores.bearishScore} is below dominance threshold ${dominance}`);
   if (positionState === "LONG" && !bearishExitSetup && scores.bearishScore < exitScore) decisionChecks.push(`Bearish score ${scores.bearishScore} is below EXIT threshold ${exitScore}`);

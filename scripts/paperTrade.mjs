@@ -8,25 +8,39 @@ const isBse = args.includes("--bse");
 const capitalArg = args.find((a) => a.startsWith("--capital="))?.split("=")[1];
 const daysArg = args.find((a) => a.startsWith("--days="))?.split("=")[1];
 const trailingArg = args.find((a) => a.startsWith("--trailing="))?.split("=")[1];
+const sizingArg = args.find((a) => a.startsWith("--sizing="))?.split("=")[1] ?? "all-in";
+const riskArg = args.find((a) => a.startsWith("--risk="))?.split("=")[1];
+const near52wArg = args.find((a) => a.startsWith("--near52w="))?.split("=")[1];
+const ema200Arg = args.includes("--ema200");
+
 const initialCapital = capitalArg ? Number(capitalArg) : 50_000;
 const lookbackDays = daysArg ? Number(daysArg) : 730;
 const useBreakevenTrailing = trailingArg !== "none";
+const riskPercent = riskArg ? Number(riskArg) : 1;
+const min52wRatio = near52wArg ? Number(near52wArg) : null;
 
 if (!symbolArg) {
-  console.log("\nUsage: node scripts/paperTrade.mjs <SYMBOL> [--capital=50000] [--days=730] [--trailing=breakeven|none] [--bse]");
-  console.log("Examples:");
+  console.log("\nUsage: node scripts/paperTrade.mjs <SYMBOL> [options]");
+  console.log("Options:");
+  console.log("  --capital=50000            Initial capital (default 50,000)");
+  console.log("  --sizing=all-in|risk       Position sizing: all-in (100% cash) or risk (default all-in)");
+  console.log("  --risk=1                   % of portfolio risked per trade (for --sizing=risk, default 1%)");
+  console.log("  --trailing=breakeven|none  Trailing stop mode (default breakeven)");
+  console.log("  --near52w=0.82             Filter: Must be within 18% of 52-week high");
+  console.log("  --ema200                   Filter: Must be above 200 EMA");
+  console.log("  --days=730                 Lookback calendar days (default 730)");
+  console.log("  --bse                      Use BSE exchange");
+  console.log("\nExamples:");
   console.log("  node scripts/paperTrade.mjs INFY");
-  console.log("  node scripts/paperTrade.mjs INFY --trailing=none");
-  console.log("  node scripts/paperTrade.mjs TCS --capital=100000");
-  console.log("  node scripts/paperTrade.mjs SUNPHARMA --capital=50000");
-  console.log("  node scripts/paperTrade.mjs RELIANCE --bse");
+  console.log("  node scripts/paperTrade.mjs INFY --sizing=risk --risk=1");
+  console.log("  node scripts/paperTrade.mjs BEL --near52w=0.82 --ema200");
   process.exit(1);
 }
 
 const exchange = isBse ? "BSE" : undefined;
 
 try {
-  console.log(`\n⏳ Fetching data and simulating paper trading for ${symbolArg.toUpperCase()} with ₹${initialCapital.toLocaleString("en-IN")} capital...`);
+  console.log(`\n⏳ Fetching data and simulating paper trading for ${symbolArg.toUpperCase()} with ₹${initialCapital.toLocaleString("en-IN")} capital (${sizingArg === "risk" ? `Risk-based ${riskPercent}% per trade` : "100% Cash Sizing"})...`);
 
   const result = await analyzeStock(symbolArg, {
     exchange,
@@ -43,12 +57,30 @@ try {
   let position = null;
   const trades = [];
 
+  const configOverride = {
+    thresholds: {
+      min52WeekHighRatio: min52wRatio,
+      requireAboveEma200: ema200Arg
+    }
+  };
+
   for (let i = 200; i < candles.length; i++) {
     const c = candles[i];
     if (!position) {
-      const sig = generateSignalAtIndex(candles, i, { positionState: "FLAT" });
+      const sig = generateSignalAtIndex(candles, i, { positionState: "FLAT", config: configOverride });
       if (sig.signal === "BUY") {
-        const qty = Math.floor(cash / c.close);
+        let qty = 0;
+        if (sizingArg === "risk") {
+          const riskBudget = cash * (riskPercent / 100);
+          const stopDist = Math.max(0.1, c.close - (sig.risk.stopLoss ?? (c.close * 0.97)));
+          const targetQtyByRisk = Math.floor(riskBudget / stopDist);
+          const maxCapitalQty = Math.floor((cash * 0.4) / c.close); // max 40% allocation
+          qty = Math.min(targetQtyByRisk, maxCapitalQty);
+          if (qty <= 0 && cash >= c.close) qty = 1;
+        } else {
+          qty = Math.floor(cash / c.close);
+        }
+
         if (qty > 0) {
           const cost = qty * c.close;
           cash -= cost;
@@ -66,7 +98,7 @@ try {
         }
       }
     } else {
-      const longSig = generateSignalAtIndex(candles, i, { positionState: "LONG" });
+      const longSig = generateSignalAtIndex(candles, i, { positionState: "LONG", config: configOverride });
 
       if (c.high >= position.target1) {
         position.target1Hit = true;

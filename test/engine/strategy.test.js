@@ -95,21 +95,36 @@ test("protective gates block BUY signals on overbought RSI, low ADX, or low volu
   const blockedVol = generateSignal(bull, { config: { thresholds: { volumeMin: 5.0 } } });
   assert.notEqual(blockedVol.signal, "BUY");
   assert.ok(blockedVol.reasons.some((r) => r.includes("BUY blocked: Volume ratio below minimum")));
+
+  // Gate 4: min52WeekHighRatio blocks BUY when price is far below high
+  const blocked52w = generateSignal(bull, { config: { thresholds: { min52WeekHighRatio: 1.5 } } });
+  assert.notEqual(blocked52w.signal, "BUY");
+  assert.ok(blocked52w.reasons.some((r) => r.includes("BUY blocked: Price too far from 52-week high")));
+
+  // Gate 5: requireAboveEma200 blocks BUY when price is below 200 EMA
+  const bear = candles(300, -1);
+  const blockedEma200 = generateSignal(bear, { config: { thresholds: { requireAboveEma200: true } } });
+  assert.notEqual(blockedEma200.signal, "BUY");
+  assert.ok(blockedEma200.reasons.some((r) => r.includes("BUY blocked: Price below 200-day EMA")));
 });
 
 test("default strategy config includes active protective gates that remain active after merge", () => {
-  assert.equal(DEFAULT_STRATEGY_CONFIG.thresholds.rsiOverbought, 70);
+  assert.equal(DEFAULT_STRATEGY_CONFIG.thresholds.rsiOverbought, null);
   assert.equal(DEFAULT_STRATEGY_CONFIG.thresholds.adxMin, 20);
-  assert.equal(DEFAULT_STRATEGY_CONFIG.thresholds.volumeMin, 0.75);
+  assert.equal(DEFAULT_STRATEGY_CONFIG.thresholds.volumeMin, null);
+  assert.equal(DEFAULT_STRATEGY_CONFIG.thresholds.min52WeekHighRatio, null);
+  assert.equal(DEFAULT_STRATEGY_CONFIG.thresholds.requireAboveEma200, false);
 
   const merged = mergeStrategyConfig();
-  assert.equal(merged.thresholds.rsiOverbought, 70);
+  assert.equal(merged.thresholds.rsiOverbought, null);
   assert.equal(merged.thresholds.adxMin, 20);
-  assert.equal(merged.thresholds.volumeMin, 0.75);
+  assert.equal(merged.thresholds.volumeMin, null);
 
   // Overrides still take precedence
-  const overridden = mergeStrategyConfig({ thresholds: { rsiOverbought: 75, volumeMin: 1.0 } });
-  assert.equal(overridden.thresholds.rsiOverbought, 75);
-  assert.equal(overridden.thresholds.volumeMin, 1.0);
+  const overridden = mergeStrategyConfig({ thresholds: { rsiOverbought: 70, volumeMin: 0.75, min52WeekHighRatio: 0.82, requireAboveEma200: true } });
+  assert.equal(overridden.thresholds.rsiOverbought, 70);
+  assert.equal(overridden.thresholds.volumeMin, 0.75);
   assert.equal(overridden.thresholds.adxMin, 20);
+  assert.equal(overridden.thresholds.min52WeekHighRatio, 0.82);
+  assert.equal(overridden.thresholds.requireAboveEma200, true);
 });
