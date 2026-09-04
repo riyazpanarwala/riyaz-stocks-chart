@@ -61,11 +61,19 @@ for (const symbol of symbolsToScan) {
         ? "✅ HIGH CONFLUENCE BUY SETUP"
         : isExit
           ? "🛑 EXIT / TAKE PROFIT / CUT LOSS"
-          : sig?.action === "AVOID"
-            ? "Avoid (Bearish/Downtrend)"
-            : sig?.status === "INSUFFICIENT_DATA"
-              ? "Insufficient Data"
-              : "Wait (Choppy / Low momentum)",
+          : sig?.freshEntryBlocked
+            ? `Wait (${
+                sig.maturedSignalStatus === "TARGET_2_HIT"
+                  ? "Target 2 Reached"
+                  : sig.maturedSignalStatus === "TARGET_1_HIT"
+                    ? "Target 1 Reached"
+                    : "Rally Extended"
+              })`
+            : sig?.action === "AVOID"
+              ? "Avoid (Bearish/Downtrend)"
+              : sig?.status === "INSUFFICIENT_DATA"
+                ? "Insufficient Data"
+                : "Wait (Choppy / Low momentum)",
     };
 
     results.push(item);

@@ -3,6 +3,10 @@
 
 import { SITE_URL } from "../lib/siteConfig";
 
+/**
+ * Generates the sitemap.xml entries for search engine indexation.
+ * @returns {import("next").MetadataRoute.Sitemap} Sitemap entries list.
+ */
 export default function sitemap() {
   const now = new Date();
 
@@ -15,6 +19,12 @@ export default function sitemap() {
     },
     {
       url: `${SITE_URL}/optionchain`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/screener`,
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.9,

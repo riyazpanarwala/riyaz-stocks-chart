@@ -707,3 +707,35 @@
   margin-bottom: 16px;
   font-size: 0.95rem;
 }
+
+/* Matured Rally Warning & Original Levels */
+.hero-matured-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warn, #d97706);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.matured-risk-card {
+  border-left: 4px solid var(--warn, #f59e0b) !important;
+  background: var(--surface-2, #161d2a);
+}
+
+.risk-matured-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: var(--tx-primary, #f0f6fc);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+

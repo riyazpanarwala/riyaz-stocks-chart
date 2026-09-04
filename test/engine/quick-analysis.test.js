@@ -99,3 +99,43 @@ test("compact HOLD output shows evidence on both sides and the decision checks",
   assert.match(output, /Decision checks: Bearish score 36 is below EXIT threshold 55/);
   assert.doesNotMatch(output, /Reasons:/);
 });
+
+test("analyzeStock blocks fresh BUY on matured / overextended rally when positionState is FLAT", async () => {
+  const series = candles(250, 1);
+  let prev = series[series.length - 1].close;
+  // Consolidation phase
+  for (let i = 0; i < 25; i++) {
+    const close = prev + (i % 2 === 0 ? -0.4 : 0.2);
+    series.push({
+      timestamp: new Date(Date.UTC(2025, 0, i + 1)).toISOString(),
+      open: prev, high: Math.max(prev, close) + 0.5, low: Math.min(prev, close) - 0.5, close, volume: 1200
+    });
+    prev = close;
+  }
+  // Strong breakout phase
+  for (let i = 0; i < 15; i++) {
+    const close = prev + 1.2;
+    series.push({
+      timestamp: new Date(Date.UTC(2025, 1, i + 1)).toISOString(),
+      open: prev, high: close + 0.5, low: prev - 0.2, close, volume: 2500
+    });
+    prev = close;
+  }
+
+  const result = await analyzeStock("BEL", {
+    downloader: async () => ({ metadata: { candleCount: series.length }, gaps: [], candles: series }),
+    includeLiveCandle: false,
+    positionState: "FLAT"
+  });
+
+  // Verify that fresh entry is blocked because rally has already unfolded
+  assert.equal(result.signal.signal, "NO_TRADE");
+  assert.equal(result.signal.action, "WAIT");
+  assert.equal(result.signal.freshEntryBlocked, true);
+  assert.equal(result.signal.risk.entry, null);
+  assert.ok(result.signal.freshEntryBlockReason);
+  assert.ok(["TARGET_2_HIT", "TARGET_1_HIT", "EXTENDED"].includes(result.signal.maturedSignalStatus));
+  assert.match(result.signal.evidence.decisionChecks[0], /BUY blocked:/);
+  assert.match(formatCompactAnalysis(result), /NO_TRADE \/ WAIT/);
+});
+

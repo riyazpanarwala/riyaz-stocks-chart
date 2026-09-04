@@ -3,12 +3,16 @@
 
 import { SITE_URL } from "../lib/siteConfig";
 
+/**
+ * Generates the robots.txt metadata configuration for search engine crawlers.
+ * @returns {import("next").MetadataRoute.Robots} Robots configuration object.
+ */
 export default function robots() {
   return {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/TradingView", "/TradingView/forex", "/optionchain"],
+        allow: ["/", "/screener", "/TradingView", "/TradingView/forex", "/optionchain"],
         disallow: [
           "/riyazstock", // internal bulk-analysis tool
         ],
