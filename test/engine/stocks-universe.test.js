@@ -23,6 +23,14 @@ test("Resolves ZOMATO alias to ETERNAL", () => {
   assert.equal(resolved.instrumentKey, "NSE_EQ|INE758T01015");
 });
 
+test("Resolves LTIM alias to LTM (LTIMindtree)", () => {
+  const resolved = resolveInstrument("LTIM");
+  assert.equal(resolved.symbol, "LTM");
+  assert.equal(resolved.name, "LTIMindtree Limited");
+  assert.equal(resolved.exchange, "NSE");
+  assert.equal(resolved.instrumentKey, "NSE_EQ|INE214T01019");
+});
+
 
 test("Resolves arbitrary BSE stock by numeric scrip code (500325 Reliance)", () => {
   const resolved = resolveInstrument("500325");
