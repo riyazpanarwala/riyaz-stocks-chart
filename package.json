@@ -12,6 +12,7 @@
     "analyze": "node scripts/analyze.mjs",
     "backtest": "node scripts/backtest.mjs",
     "paperTrade": "node scripts/paperTrade.mjs",
+    "scan": "node scripts/scan.mjs",
     "signal": "node scripts/generateSignal.mjs",
     "fetchData": "node scripts/fetchData.mjs",
     "test:engine": "node --test test/engine/*.test.js"
