@@ -747,12 +747,21 @@ export default function ScreenerClient() {
     return PRESETS[activePreset]?.symbols || [];
   }, [activePreset, customInput]);
 
+  const handleSelectPreset = (presetId) => {
+    if (isScanning || presetId === activePreset) return;
+    setActivePreset(presetId);
+    setResults([]);
+    setScanProgress({ current: 0, total: 0 });
+  };
+
   const handleSelectCategory = (catId) => {
-    if (isScanning) return;
+    if (isScanning || catId === activeCategory) return;
     setActiveCategory(catId);
     const cat = WATCHLIST_CATEGORIES.find((c) => c.id === catId);
     if (cat && !cat.presetIds.includes(activePreset)) {
       setActivePreset(cat.presetIds[0]);
+      setResults([]);
+      setScanProgress({ current: 0, total: 0 });
     }
   };
 
@@ -1116,7 +1125,7 @@ export default function ScreenerClient() {
                 key={preset.id}
                 type="button"
                 className={`preset-btn ${activePreset === preset.id ? "active" : ""}`}
-                onClick={() => setActivePreset(preset.id)}
+                onClick={() => handleSelectPreset(preset.id)}
                 disabled={isScanning}
               >
                 <span>{preset.name}</span>
