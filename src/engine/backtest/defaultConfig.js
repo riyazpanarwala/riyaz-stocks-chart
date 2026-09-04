@@ -19,12 +19,17 @@ export const DEFAULT_BACKTEST_CONFIG = Object.freeze({
   }
 });
 
+/**
+ * Merges user-provided backtest config overrides with DEFAULT_BACKTEST_CONFIG and validates ranges.
+ * @param {Object} [overrides={}] Backtest configuration overrides
+ * @returns {Object} Validated merged backtest configuration
+ */
 export function mergeBacktestConfig(overrides = {}) {
   const merged = { ...DEFAULT_BACKTEST_CONFIG, ...overrides, costs: { ...DEFAULT_BACKTEST_CONFIG.costs, ...overrides.costs } };
-  if (!(merged.initialCapital > 0)) throw new Error("initialCapital must be positive");
+  if (!Number.isFinite(merged.initialCapital) || merged.initialCapital <= 0) throw new Error("initialCapital must be a positive finite number");
   if (!Number.isInteger(merged.quantity) || merged.quantity <= 0) throw new Error("quantity must be a positive integer");
-  if (merged.slippageBps < 0) throw new Error("slippageBps cannot be negative");
-  if (!(merged.annualizationFactor > 0)) throw new Error("annualizationFactor must be positive");
+  if (!Number.isFinite(merged.slippageBps) || merged.slippageBps < 0) throw new Error("slippageBps must be a non-negative finite number");
+  if (!Number.isFinite(merged.annualizationFactor) || merged.annualizationFactor <= 0) throw new Error("annualizationFactor must be a positive finite number");
   for (const [name, value] of Object.entries(merged.costs)) {
     if (!Number.isFinite(value) || value < 0) throw new Error(`costs.${name} must be a non-negative number`);
   }

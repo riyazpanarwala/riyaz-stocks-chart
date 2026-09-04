@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { runBacktest } from "../../src/engine/backtest/backtestEngine.js";
+import { mergeBacktestConfig } from "../../src/engine/backtest/defaultConfig.js";
 import { applySlippage, calculateTransactionCosts } from "../../src/engine/backtest/costs.js";
 import { calculateBacktestMetrics } from "../../src/engine/backtest/metrics.js";
 
@@ -124,4 +125,31 @@ test("breakeven trailing stop moves stop loss to entry price when target 1 is to
   assert.equal(result.trades[0].exitReason, 'STOP_LOSS');
   assert.equal(result.trades[0].exitPrice, 100);
   assert.equal(result.trades[0].netPnl, 0);
+});
+
+test("non-finite numeric configuration values are rejected", () => {
+  assert.throws(() => mergeBacktestConfig({ initialCapital: Infinity }), /positive finite number/);
+  assert.throws(() => mergeBacktestConfig({ initialCapital: NaN }), /positive finite number/);
+  assert.throws(() => mergeBacktestConfig({ quantity: 1.5 }), /positive integer/);
+  assert.throws(() => mergeBacktestConfig({ slippageBps: NaN }), /non-negative finite number/);
+  assert.throws(() => mergeBacktestConfig({ annualizationFactor: Infinity }), /positive finite number/);
+});
+
+test("breakeven trailing stop exits on same bar when sameBarExitPriority is TARGET_FIRST", () => {
+  const input = bars([
+    { open: 90 },
+    { open: 100, high: 102, low: 98, close: 100 },
+    { open: 101, high: 106, low: 99, close: 101 }
+  ]);
+  const result = runBacktest(input, {
+    signalGenerator: scripted(['BUY']),
+    trailingStop: 'BREAKEVEN_AT_TARGET1',
+    sameBarExitPriority: 'TARGET_FIRST',
+    forceCloseAtEnd: false
+  });
+  assert.equal(result.trades.length, 1);
+  assert.equal(result.trades[0].target1Hit, true);
+  assert.equal(result.trades[0].exitReason, 'STOP_LOSS');
+  assert.equal(result.trades[0].exitPrice, 100);
+  assert.equal(result.trades[0].exitIndex, 2);
 });

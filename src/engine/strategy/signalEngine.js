@@ -92,7 +92,7 @@ function generateLatest(candles, options = {}) {
   const breakdown = detectBreakdown(candles, i, config.priceAction.breakoutLookback);
   const structure = marketStructure(candles, i, config.priceAction.swingLeft, config.priceAction.swingRight);
   const scores = scoreEvidence({ current, values, structure, breakout, breakdown, regime, config });
-  const { buyScore, exitScore, dominance, rsiOverbought = 70, adxMin = 20, volumeMin = 0.75 } = config.thresholds;
+  const { buyScore, exitScore, dominance, rsiOverbought, adxMin, volumeMin } = config.thresholds;
   const rsiValue = values.rsi[i];
   const adxValue = values.adx.adx[i];
   const volRatioValue = values.volumeRatio[i];
@@ -145,19 +145,44 @@ function generateLatest(candles, options = {}) {
   };
 }
 
+/**
+ * Generates trading signal and risk parameters for candles up to a specific index.
+ * @param {Array<Object>} candles Chronological array of candle objects
+ * @param {number} index Target candle index
+ * @param {Object} [options={}] Additional configuration and position state options
+ * @returns {Object} Signal analysis result
+ */
 export function generateSignalAtIndex(candles, index, options = {}) {
   if (!Number.isInteger(index) || index < 0 || index >= candles.length) throw new RangeError("index is outside candle range");
   return generateLatest(candles.slice(0, index + 1), { ...options, originalIndex: index });
 }
 
+/**
+ * Generates trading signals for every candle in the provided series.
+ * @param {Array<Object>} candles Chronological array of candle objects
+ * @param {Object} [options={}] Strategy options
+ * @returns {Array<Object>} Array of signal results for each candle
+ */
 export function generateSignals(candles, options = {}) {
   return candles.map((_, index) => generateSignalAtIndex(candles, index, options));
 }
 
+/**
+ * Generates trading signal for the latest candle in the series.
+ * @param {Array<Object>} candles Chronological array of candle objects
+ * @param {Object} [options={}] Strategy options
+ * @returns {Object} Signal analysis result
+ */
 export function generateSignal(candles, options = {}) {
   return generateSignalAtIndex(candles, candles.length - 1, options);
 }
 
+/**
+ * Tracks the trade lifecycle, genesis signal, price excursion (MFE/MAE), and current performance.
+ * @param {Array<Object>} candles Chronological array of candle objects
+ * @param {Object} [options={}] Options including config and lookback limit
+ * @returns {Object|null} Signal performance tracking object or null if insufficient history
+ */
 export function trackSignalPerformance(candles, options = {}) {
   if (!Array.isArray(candles) || candles.length === 0) return null;
   const config = mergeStrategyConfig(options.config), p = config.periods;
@@ -262,7 +287,7 @@ export function trackSignalPerformance(candles, options = {}) {
     const risk = currentTrade.buySignal.risk || {};
     const { stopLoss, target1, target2, entry } = risk;
 
-    const currentSignal = generateSignalAtIndex(candles, currIdx, options);
+    const currentSignal = generateSignalAtIndex(candles, currIdx, { ...options, positionState: "LONG" });
     let status = "IN_ZONE";
     let statusLabel = "In Active Zone";
     let guidance = "";

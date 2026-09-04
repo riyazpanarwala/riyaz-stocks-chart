@@ -69,7 +69,27 @@ export function useSnapshotHistory({
     if (!rows?.length || !underlyingValue) return;
 
     const checksum = snapshotChecksum(rows, underlyingValue, pcr);
-    if (checksum === lastChecksumRef.current) return; // skip duplicate
+    if (checksum === lastChecksumRef.current) {
+      // Checksum match: perform exact comparison against last snapshot to guard against hash collisions
+      const last = historyRef.current[historyRef.current.length - 1];
+      if (last) {
+        const spotSame = Math.abs(last.spot - underlyingValue) < 0.01;
+        const pcrSame = Math.abs(last.pcr - pcr) < 0.001;
+        const rowsSame =
+          last.rows.length === rows.length &&
+          last.rows.every((row, i) => {
+            const next = rows[i];
+            return (
+              row.strikePrice === next?.strikePrice &&
+              row.CE?.openInterest === next?.CE?.openInterest &&
+              row.PE?.openInterest === next?.PE?.openInterest &&
+              row.CE?.changeinOpenInterest === next?.CE?.changeinOpenInterest &&
+              row.PE?.changeinOpenInterest === next?.PE?.changeinOpenInterest
+            );
+          });
+        if (spotSame && pcrSame && rowsSame) return; // confirmed duplicate
+      }
+    }
 
     lastChecksumRef.current = checksum;
     historyRef.current      = pushSnapshot(historyRef.current, {

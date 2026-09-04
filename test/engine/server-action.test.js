@@ -4,6 +4,8 @@ import { getStockSignalAction } from "../../src/app/actions/stockSignal.js";
 import { getFinanceDataAction } from "../../src/app/actions/finance.js";
 import { getNseEquityAction } from "../../src/app/actions/nseEquity.js";
 
+import { candles } from "./helpers.js";
+
 test("Server Action rejects empty or invalid symbols", async () => {
   const emptyRes = await getStockSignalAction({ symbol: "" });
   assert.equal(emptyRes.success, false);
@@ -15,14 +17,34 @@ test("Server Action rejects empty or invalid symbols", async () => {
 });
 
 test("Server Action resolves stock, caches response, and returns signal", async () => {
-  const res1 = await getStockSignalAction({ symbol: "TCS", exchange: "NSE", holding: false });
+  const history = candles(250, 1);
+  const mockDownloader = async () => ({
+    metadata: { candleCount: history.length },
+    gaps: [],
+    candles: history,
+  });
+  const mockIntradayFetcher = async () => ({ data: { candles: [] } });
+
+  const res1 = await getStockSignalAction({
+    symbol: "TCS",
+    exchange: "NSE",
+    holding: false,
+    downloader: mockDownloader,
+    intradayFetcher: mockIntradayFetcher,
+  });
   assert.equal(res1.success, true);
   assert.equal(res1.data.instrument.symbol, "TCS");
   assert.ok(res1.data.signal.signal);
   assert.equal(res1.cached, false);
 
   // Second call must hit the in-memory cache instantly
-  const res2 = await getStockSignalAction({ symbol: "TCS", exchange: "NSE", holding: false });
+  const res2 = await getStockSignalAction({
+    symbol: "TCS",
+    exchange: "NSE",
+    holding: false,
+    downloader: mockDownloader,
+    intradayFetcher: mockIntradayFetcher,
+  });
   assert.equal(res2.success, true);
   assert.equal(res2.cached, true);
   assert.equal(res2.data.instrument.symbol, "TCS");

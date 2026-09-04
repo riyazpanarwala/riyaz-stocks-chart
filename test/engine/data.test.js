@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { normalizeCandles, validateCandles } from "../../src/engine/data/candleValidator.js";
 import { detectGaps } from "../../src/engine/data/gapDetector.js";
 import { createDateWindows } from "../../src/engine/data/dateWindows.js";
+import { mapUpstoxCandles } from "../../src/engine/data/candleMapper.js";
 import { downloadHistoricalDataset } from "../../src/engine/data/downloader.js";
 
 const row = (date, close = 10) => [date, close, close + 1, close - 1, close, 100, 0];
@@ -33,4 +34,24 @@ test("downloader integrates chunk pages, normalization and metadata", async () =
   const fetchPage = async ({ fromDate }) => { calls++; return { data: { candles: [row(`${fromDate}T00:00:00Z`), row(`${fromDate}T00:00:00Z`)] } }; };
   const result = await downloadHistoricalDataset({ instrumentKey: "NSE_EQ|TEST", timeframe: "1m", fromDate: "2024-01-01", toDate: "2024-02-01", requestsPerSecond: 10000, fetchPage });
   assert.equal(calls, 2); assert.equal(result.metadata.duplicatesRemoved, 2); assert.equal(result.candles.length, 2);
+});
+
+test("dateWindows rejects invalid calendar dates and non-positive maxWindowDays", () => {
+  assert.throws(() => createDateWindows("2024-02-31", "2024-03-05", 30), /Invalid calendar date/);
+  assert.throws(() => createDateWindows("not-a-date", "2024-03-05", 30), /Invalid date format/);
+  assert.throws(() => createDateWindows("2024-01-01", "2024-03-05", 0), /positive integer/);
+  assert.throws(() => createDateWindows("2024-01-01", "2024-03-05", -5), /positive integer/);
+  assert.throws(() => createDateWindows("2024-01-01", "2024-03-05", NaN), /positive integer/);
+});
+
+test("mapUpstoxCandles rejects blank or non-finite numeric values", () => {
+  assert.throws(() => mapUpstoxCandles([["2024-01-01T00:00:00Z", null, 105, 95, 100, 1000, 0]]), /must not be blank/);
+  assert.throws(() => mapUpstoxCandles([["2024-01-01T00:00:00Z", "", 105, 95, 100, 1000, 0]]), /must not be blank/);
+  assert.throws(() => mapUpstoxCandles([["2024-01-01T00:00:00Z", 100, "NaN", 95, 100, 1000, 0]]), /finite number/);
+  assert.throws(() => mapUpstoxCandles([["2024-01-01T00:00:00Z", 100, 105, 95, 100, Infinity, 0]]), /finite number/);
+
+  // Valid rows map correctly
+  const mapped = mapUpstoxCandles([["2024-01-01T00:00:00Z", "100.5", 105, 95, 100, 1000, null]]);
+  assert.equal(mapped[0].open, 100.5);
+  assert.equal(mapped[0].openInterest, null);
 });

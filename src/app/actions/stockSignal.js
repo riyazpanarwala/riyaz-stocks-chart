@@ -56,12 +56,20 @@ async function deduplicateRequest(cacheKey, fetchFn) {
 /**
  * Next.js Server Action: getStockSignalAction
  * Invoked securely by the frontend component without exposing an open public REST URL.
+ * @param {Object} params Action parameters
+ * @param {string} params.symbol Stock symbol or instrument key
+ * @param {string} [params.exchange] Exchange name ("NSE" or "BSE")
+ * @param {boolean} [params.holding=false] Whether position is currently held
+ * @param {string} [params.timeframe="1d"] Analysis timeframe
+ * @param {Object} [params.analyzeOverrides] Optional analysis overrides (mock downloader, etc.)
+ * @returns {Promise<Object>} Formatted signal and performance response
  */
 export async function getStockSignalAction({
   symbol: rawSymbol,
   exchange: rawExchange,
   holding = false,
   timeframe = "1d",
+  ...analyzeOverrides
 } = {}) {
   try {
     // 1. Input Validation
@@ -100,6 +108,7 @@ export async function getStockSignalAction({
         positionState,
         exchange,
         timeframe,
+        ...analyzeOverrides,
       });
     });
 

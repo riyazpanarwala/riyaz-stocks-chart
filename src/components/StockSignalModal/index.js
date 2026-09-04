@@ -1,16 +1,22 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Modal from "../TechnicalInfo/Modal";
 import { getStockSignalAction } from "../../app/actions/stockSignal";
 import "./StockSignalModal.scss";
 
+/**
+ * Modal dialog presenting algorithmic technical analysis, signal engine recommendations,
+ * and trade lifecycle genesis performance for a selected stock.
+ */
 const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isHolding, setIsHolding] = useState(false);
+  const activeRequestIdRef = useRef(0);
 
   const fetchSignal = useCallback(async (holdingState) => {
     if (!companyObj) return;
+    const requestId = ++activeRequestIdRef.current;
     setLoading(true);
     setError(null);
 
@@ -26,16 +32,21 @@ const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => 
         timeframe: "1d",
       });
 
+      if (activeRequestIdRef.current !== requestId) return;
+
       if (res?.success) {
         setData(res.data);
       } else {
         setError(res?.error || "Failed to retrieve signal");
       }
     } catch (err) {
+      if (activeRequestIdRef.current !== requestId) return;
       const msg = err.message || "An error occurred while fetching signal";
       setError(msg);
     } finally {
-      setLoading(false);
+      if (activeRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, [companyObj, indexName]);
 

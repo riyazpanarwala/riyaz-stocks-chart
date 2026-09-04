@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { detectBreakout, detectBreakdown, confirmedSwings, marketStructure } from "../../src/engine/strategy/priceAction.js";
 import { classifyMarketRegime } from "../../src/engine/strategy/marketRegime.js";
 import { calculateAtrRisk } from "../../src/engine/risk/atrRisk.js";
+import { DEFAULT_STRATEGY_CONFIG, mergeStrategyConfig } from "../../src/engine/strategy/defaultConfig.js";
 import { generateSignal, generateSignalAtIndex, generateSignals } from "../../src/engine/strategy/signalEngine.js";
 import { candles } from "./helpers.js";
 
@@ -94,4 +95,21 @@ test("protective gates block BUY signals on overbought RSI, low ADX, or low volu
   const blockedVol = generateSignal(bull, { config: { thresholds: { volumeMin: 5.0 } } });
   assert.notEqual(blockedVol.signal, "BUY");
   assert.ok(blockedVol.reasons.some((r) => r.includes("BUY blocked: Volume ratio below minimum")));
+});
+
+test("default strategy config includes active protective gates that remain active after merge", () => {
+  assert.equal(DEFAULT_STRATEGY_CONFIG.thresholds.rsiOverbought, 70);
+  assert.equal(DEFAULT_STRATEGY_CONFIG.thresholds.adxMin, 20);
+  assert.equal(DEFAULT_STRATEGY_CONFIG.thresholds.volumeMin, 0.75);
+
+  const merged = mergeStrategyConfig();
+  assert.equal(merged.thresholds.rsiOverbought, 70);
+  assert.equal(merged.thresholds.adxMin, 20);
+  assert.equal(merged.thresholds.volumeMin, 0.75);
+
+  // Overrides still take precedence
+  const overridden = mergeStrategyConfig({ thresholds: { rsiOverbought: 75, volumeMin: 1.0 } });
+  assert.equal(overridden.thresholds.rsiOverbought, 75);
+  assert.equal(overridden.thresholds.volumeMin, 1.0);
+  assert.equal(overridden.thresholds.adxMin, 20);
 });

@@ -34,7 +34,7 @@ try {
     timeframe: "1d",
   });
 
-  const candles = result.liveMerge ? result.liveMerge.candles : result.datasetMetadata?.candles;
+  const candles = result.candles || (result.liveMerge ? result.liveMerge.candles : result.datasetMetadata?.candles);
   if (!candles || candles.length < 200) {
     throw new Error(`Insufficient historical candles (${candles?.length ?? 0}). Minimum 200 daily candles required.`);
   }
@@ -67,9 +67,6 @@ try {
       }
     } else {
       const longSig = generateSignalAtIndex(candles, i, { positionState: "LONG" });
-      const hitStop = position.stopLoss != null && c.low <= position.stopLoss;
-      const hitTarget2 = position.target2 != null && c.high >= position.target2;
-      const hitExit = longSig.signal === "EXIT";
 
       if (c.high >= position.target1) {
         position.target1Hit = true;
@@ -77,6 +74,10 @@ try {
           position.stopLoss = Math.max(position.stopLoss, position.entryPrice);
         }
       }
+
+      const hitStop = position.stopLoss != null && c.low <= position.stopLoss;
+      const hitTarget2 = position.target2 != null && c.high >= position.target2;
+      const hitExit = longSig.signal === "EXIT";
 
       if (hitStop || hitTarget2 || hitExit || i === candles.length - 1) {
         let exitPrice = c.close;

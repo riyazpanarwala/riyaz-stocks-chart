@@ -17,8 +17,42 @@ test("trackSignalPerformance reports found: false when pure downtrend has no tra
   assert.match(result.message, /No BUY or EXIT signals found/);
 });
 
+function createBullBreakoutCandles() {
+  const series = candles(250, 1);
+  let prev = series[series.length - 1].close;
+  // Consolidation phase to bring RSI into normal range (around 50-60)
+  for (let i = 0; i < 25; i++) {
+    const close = prev + (i % 2 === 0 ? -0.4 : 0.2);
+    series.push({
+      timestamp: new Date(Date.UTC(2025, 0, i + 1)).toISOString(),
+      open: prev,
+      high: Math.max(prev, close) + 0.5,
+      low: Math.min(prev, close) - 0.5,
+      close,
+      volume: 1200,
+      openInterest: null
+    });
+    prev = close;
+  }
+  // Strong breakout phase with volume confirmation
+  for (let i = 0; i < 15; i++) {
+    const close = prev + 1.2;
+    series.push({
+      timestamp: new Date(Date.UTC(2025, 1, i + 1)).toISOString(),
+      open: prev,
+      high: close + 0.5,
+      low: prev - 0.2,
+      close,
+      volume: 2500,
+      openInterest: null
+    });
+    prev = close;
+  }
+  return series;
+}
+
 test("trackSignalPerformance identifies BUY trigger candle, price movement, and peak excursion", () => {
-  const bullCandles = candles(320, 1);
+  const bullCandles = createBullBreakoutCandles();
   const result = trackSignalPerformance(bullCandles);
 
   assert.equal(result.found, true);
@@ -49,17 +83,15 @@ test("trackSignalPerformance identifies BUY trigger candle, price movement, and 
 });
 
 test("trackSignalPerformance identifies fresh signal on 0 candles elapsed", () => {
-  // Use a bull series and evaluate at the exact index where BUY was triggered
-  const bullCandles = candles(250, 1);
+  const bullCandles = createBullBreakoutCandles();
   const fullResult = trackSignalPerformance(bullCandles);
-  if (fullResult.found) {
-    const atTriggerCandles = bullCandles.slice(0, fullResult.triggerIndex + 1);
-    const triggerPerf = trackSignalPerformance(atTriggerCandles);
-    assert.equal(triggerPerf.candlesElapsed, 0);
-    assert.equal(triggerPerf.status, "FRESH_SIGNAL");
-    assert.equal(triggerPerf.statusLabel, "Fresh Signal");
-    assert.match(triggerPerf.guidance, /Fresh entry window/i);
-  }
+  assert.equal(fullResult.found, true);
+  const atTriggerCandles = bullCandles.slice(0, fullResult.triggerIndex + 1);
+  const triggerPerf = trackSignalPerformance(atTriggerCandles);
+  assert.equal(triggerPerf.candlesElapsed, 0);
+  assert.equal(triggerPerf.status, "FRESH_SIGNAL");
+  assert.equal(triggerPerf.statusLabel, "Fresh Signal");
+  assert.match(triggerPerf.guidance, /Fresh entry window/i);
 });
 
 test("formatCompactAnalysis includes signal performance summary when available", () => {

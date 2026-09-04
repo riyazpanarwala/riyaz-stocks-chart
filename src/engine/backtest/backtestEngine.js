@@ -9,6 +9,12 @@ import { calculateBacktestMetrics } from "./metrics.js";
 const daysBetween = (from, to) => Math.max(0, (Date.parse(to) - Date.parse(from)) / 86_400_000);
 const round = (value) => Number(value.toFixed(6));
 
+/**
+ * Runs a deterministic candle-by-candle backtest simulation of the strategy.
+ * @param {Array<Object>} candles Chronological array of valid candle objects
+ * @param {Object} [options={}] Backtest and strategy configuration overrides
+ * @returns {Object} Full backtest result including metrics, trades, equity curve, signals, and orders
+ */
 export function runBacktest(candles, options = {}) {
   validateCandles(candles);
   if (candles.length < 2) throw new Error("Backtest requires at least two candles");
@@ -91,6 +97,9 @@ export function runBacktest(candles, options = {}) {
         position.target1Hit = true;
         if (config.trailingStop === 'BREAKEVEN_AT_TARGET1') {
           position.stopLoss = Math.max(position.stopLoss, position.entryPrice);
+          if (config.sameBarExitPriority === 'TARGET_FIRST' && candle.low <= position.stopLoss) {
+            closePosition({ candle, index, rawPrice: position.stopLoss, reason: 'STOP_LOSS' });
+          }
         }
       }
     }

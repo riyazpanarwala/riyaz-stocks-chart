@@ -22,6 +22,11 @@ function istParts(date) {
   return Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
 }
 
+/**
+ * Determines whether the NSE market is currently open based on IST time.
+ * @param {Date} [now=new Date()] Current timestamp
+ * @returns {boolean} True if market is within trading hours on a weekday
+ */
 export function isLikelyNseMarketOpen(now = new Date()) {
   const parts = istParts(now);
   if (["Sat", "Sun"].includes(parts.weekday)) return false;
@@ -29,9 +34,15 @@ export function isLikelyNseMarketOpen(now = new Date()) {
   return minutes >= 9 * 60 + 15 && minutes < 15 * 60 + 30;
 }
 
+/**
+ * Downloads historical and optional live intraday data for an instrument and generates strategy signals.
+ * @param {string} symbolOrKey Stock symbol or Upstox instrument key
+ * @param {Object} [options={}] Analysis settings (timeframe, exchange, lookback, etc.)
+ * @returns {Promise<Object>} Full analysis result including resolved instrument, candles, signal, and performance
+ */
 export async function analyzeStock(symbolOrKey, options = {}) {
   const settings = { ...QUICK_ANALYSIS_DEFAULTS, ...options };
-  const instrument = resolveInstrument(symbolOrKey, options.instruments);
+  const instrument = resolveInstrument(symbolOrKey, options.instruments, { exchange: options.exchange });
   const range = options.fromDate && options.toDate
     ? { fromDate: options.fromDate, toDate: options.toDate }
     : defaultDateRange(options.now, settings.lookbackCalendarDays);
@@ -71,7 +82,7 @@ export async function analyzeStock(symbolOrKey, options = {}) {
   const candleStatus = liveCandle
     ? liveCandle.isPartial ? "LIVE_PARTIAL" : "INTRADAY_SESSION_COMPLETE"
     : "HISTORICAL_ONLY";
-  return { instrument, timeframe: settings.timeframe, range, datasetMetadata: dataset.metadata, liveCandle, liveMerge, liveError, candleStatus, signal, signalPerformance };
+  return { instrument, timeframe: settings.timeframe, range, datasetMetadata: dataset.metadata, candles: analysisCandles, liveCandle, liveMerge, liveError, candleStatus, signal, signalPerformance };
 }
 
 const value = (number, digits = 2) => number == null ? "N/A" : Number(number).toFixed(digits);
