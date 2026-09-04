@@ -441,6 +441,147 @@ const PRESETS = {
       "5PAISA",
     ],
   },
+  REALTY: {
+    id: "REALTY",
+    name: "Realty & Real Estate",
+    description: "Top real estate developers, commercial REIT sponsors, and property leaders",
+    symbols: [
+      "BRIGADE",
+      "DLF",
+      "GODREJPROP",
+      "LODHA",
+      "OBEROIRLTY",
+      "PHOENIXLTD",
+      "PRESTIGE",
+      "SIGNATURE",
+      "SOBHA",
+    ],
+  },
+  CHEMICALS: {
+    id: "CHEMICALS",
+    name: "Chemicals & Agri",
+    description: "Specialty chemicals, agrochemicals, and industrial chemical exporters",
+    symbols: [
+      "AARTIIND",
+      "ATUL",
+      "CHAMBLFERT",
+      "COROMANDEL",
+      "DEEPAKNTR",
+      "FLUOROCHEM",
+      "NAVINFLUOR",
+      "PIIND",
+      "SRF",
+      "TATACHEM",
+      "UPL",
+    ],
+  },
+  PSU_BANKS: {
+    id: "PSU_BANKS",
+    name: "PSU Banks",
+    description: "State-owned commercial banks and public sector lending institutions",
+    symbols: [
+      "BANKBARODA",
+      "BANKINDIA",
+      "CANBK",
+      "CENTRALBK",
+      "INDIANB",
+      "IOB",
+      "MAHABANK",
+      "PNB",
+      "SBIN",
+      "UCOBANK",
+      "UNIONBANK",
+    ],
+  },
+  CAPITAL_GOODS: {
+    id: "CAPITAL_GOODS",
+    name: "Capital Goods & Engg",
+    description: "Heavy electricals, power equipment, cables, and industrial engineering",
+    symbols: [
+      "ABB",
+      "AIAENG",
+      "BHEL",
+      "BHARATFORG",
+      "CGPOWER",
+      "CUMMINSIND",
+      "DIXON",
+      "KAYNES",
+      "KEI",
+      "POLYCAB",
+      "SIEMENS",
+      "THERMAX",
+    ],
+  },
+  NEW_AGE_TECH: {
+    id: "NEW_AGE_TECH",
+    name: "New-Age Tech",
+    description: "Consumer internet platforms, fintech, and digital marketplace leaders",
+    symbols: [
+      "CARTRADE",
+      "DELHIVERY",
+      "MAPMYINDIA",
+      "NAUKRI",
+      "NYKAA",
+      "PAYTM",
+      "POLICYBZR",
+      "ZOMATO",
+    ],
+  },
+  CEMENT_BUILDING: {
+    id: "CEMENT_BUILDING",
+    name: "Cement & Building",
+    description: "Cement manufacturers, building products, pipes, and ceramics",
+    symbols: [
+      "ACC",
+      "AMBUJACEM",
+      "ASTRAL",
+      "DALBHARAT",
+      "JKCEMENT",
+      "KAJARIACER",
+      "RAMCOCEM",
+      "SHREECEM",
+      "SUPREMEIND",
+      "ULTRACEMCO",
+    ],
+  },
+  GREEN_ENERGY: {
+    id: "GREEN_ENERGY",
+    name: "Green Energy & EV",
+    description: "Renewable energy, solar, wind, and EV battery & mobility ecosystem",
+    symbols: [
+      "ADANIGREEN",
+      "ARE&M",
+      "BORORENEW",
+      "EXIDEIND",
+      "INOXWIND",
+      "IREDA",
+      "JBMA",
+      "OLECTRA",
+      "SUZLON",
+      "TATAPOWER",
+    ],
+  },
+  FNO_MOMENTUM: {
+    id: "FNO_MOMENTUM",
+    name: "F&O Momentum",
+    description: "High-beta breakout stocks and liquid movers in the derivative segment",
+    symbols: [
+      "BEL",
+      "BHEL",
+      "BSE",
+      "CANBK",
+      "COCHINSHIP",
+      "COFORGE",
+      "DIXON",
+      "HAL",
+      "MCX",
+      "POLYCAB",
+      "RVNL",
+      "TRENT",
+      "VEDL",
+      "VOLTAS",
+    ],
+  },
   CUSTOM: {
     id: "CUSTOM",
     name: "Custom Symbols",
@@ -887,6 +1028,18 @@ export default function ScreenerClient() {
               </button>
             ))}
           </div>
+
+          {/* Active Preset Description & Stats */}
+          {PRESETS[activePreset]?.description && (
+            <div className="preset-meta-info">
+              <span className="preset-desc">{PRESETS[activePreset].description}</span>
+              {activePreset !== "CUSTOM" && (
+                <span className="preset-count-badge">
+                  {targetSymbols.length} {targetSymbols.length === 1 ? "Stock" : "Stocks"}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Custom Input when active */}
           {activePreset === "CUSTOM" && (

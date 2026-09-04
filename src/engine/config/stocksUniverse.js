@@ -9,7 +9,10 @@ const DEFAULT_ALIASES = Object.freeze({
   TATAMOTORS: "TMPV",
   LTIM: "LTM",
   LTIMINDTREE: "LTM",
-  GMRINFRA: "GMRAIRPORT"
+  GMRINFRA: "GMRAIRPORT",
+  MACROTECH: "LODHA",
+  AMARAJABAT: "ARE&M",
+  "L&TFH": "LTF"
 });
 
 const NAME_OVERRIDES = Object.freeze({
