@@ -15,10 +15,14 @@
     "scan": "node scripts/scan.mjs",
     "signal": "node scripts/generateSignal.mjs",
     "fetchData": "node scripts/fetchData.mjs",
-    "test:engine": "node --test test/engine/*.test.js"
+    "lint": "eslint src/",
+    "test": "node --test test/engine/*.test.js",
+    "test:engine": "node --test test/engine/*.test.js",
+    "test:gemini": "node --env-file=.env scripts/testGemini.mjs",
+    "briefing": "node --env-file=.env scripts/marketBriefing.mjs"
   },
-
   "dependencies": {
+    "@google/genai": "^2.21.0",
     "@riyazpanarwala/react-financial-charts": "^2.0.10",
     "@vercel/analytics": "^2.0.1",
     "@zero65tech/indian-stock-market": "^4.5.3",

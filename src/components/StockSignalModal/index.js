@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Modal from "../TechnicalInfo/Modal";
 import { getStockSignalAction } from "../../app/actions/stockSignal";
+import StockSignalAiCard from "./StockSignalAiCard";
 import "./StockSignalModal.scss";
 
 /**
@@ -376,6 +377,14 @@ const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => 
                 </div>
               </div>
             )}
+
+            {/* Gemini AI Second Opinion */}
+            <StockSignalAiCard
+              companyObj={companyObj}
+              instrument={instrument}
+              signal={signal}
+              performance={performance}
+            />
 
             {/* Technical Indicators */}
             <div className="indicators-row">

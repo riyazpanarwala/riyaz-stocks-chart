@@ -132,6 +132,126 @@ The application is optimized for hosting on **Vercel** or any Node.js hosting en
 
 ---
 
+## 🤖 Google Gemini AI Integration
+
+This repository includes a **generic, reusable, domain-agnostic Google Gemini AI integration** built on the official Google Gen AI SDK (`@google/genai`).
+
+It is designed as a foundational AI infrastructure layer for the entire application, with **strictly server-side API key handling** and **internal-only consumption** guards to prevent exposure to external callers.
+
+### 1. Setup
+
+1. Obtain a Gemini API key from [Google AI Studio](https://aistudio.google.com/).
+2. Add the key to your `.env` file (copy from `.env.example`):
+   ```env
+   GEMINI_API_KEY=your_actual_gemini_api_key_here
+   GEMINI_MODEL=gemini-3.6-flash
+   ```
+3. Start the application (`npm run dev`).
+
+### 2. Available Integration Layers
+
+The integration exposes two strictly internal consumption patterns:
+
+| Layer | File Path | Usage Scenario |
+|---|---|---|
+| **Core Service** | `src/services/ai/geminiService.js` (also re-exported at `src/lib/ai/gemini.js`) | Direct server-side service calls within server actions, background services, and batch scripts. |
+| **Server Action** | `src/app/actions/gemini.js` | Direct invocations from React components within this application using Next.js native RPC. |
+| **Client Helper** | `src/lib/ai/geminiClient.js` | Browser-side utility (`askGemini(prompt, options)`) invoking the Server Action. |
+
+> [!NOTE]
+> **No Public REST API Route**: In accordance with Option B, no public `/api/ai/gemini` HTTP route is exposed to the internet. Attempting to call the endpoint from Postman, curl, or directly via browser address bar returns `404 Not Found`.
+
+### 3. Server Action Example
+
+#### Invocation: `askGeminiAction({ prompt, options })`
+
+```javascript
+import { askGeminiAction } from "@/app/actions/gemini.js";
+
+// Basic Text Generation
+const result = await askGeminiAction({
+  prompt: "Explain recursion in JavaScript in simple terms."
+});
+
+if (result.success) {
+  console.log(result.response);
+}
+```
+
+#### Structured JSON Output Example
+
+Pass `responseFormat: "json"` (and optionally `responseSchema`) to receive parsed JSON:
+
+```javascript
+const jsonResult = await askGeminiAction({
+  prompt: "Return a JSON object containing title, summary, and keywords for a React article.",
+  options: { responseFormat: "json" }
+});
+
+if (jsonResult.success) {
+  console.log(jsonResult.response.title);
+  console.log(jsonResult.response.keywords);
+}
+```
+
+### 4. Client-Side Code Example
+
+```javascript
+import { askGemini } from "@/lib/ai/geminiClient.js";
+
+// Text response
+const result = await askGemini("Explain how WebSockets work in simple terms.");
+if (result.success) {
+  console.log(result.response);
+}
+
+// Structured JSON response
+const jsonResult = await askGemini("Generate sample user profile", {
+  responseFormat: "json"
+});
+```
+
+Or using the Next.js Server Action:
+
+```javascript
+import { askGeminiAction } from "@/app/actions/gemini.js";
+
+const result = await askGeminiAction({
+  prompt: "Explain event loop in Node.js"
+});
+```
+
+### 5. Security & Internal-Only Protection
+
+- **Server-Side Exclusivity**: `GEMINI_API_KEY` is loaded strictly via server environment variables (`process.env.GEMINI_API_KEY`). It is never prefixed with `NEXT_PUBLIC_` and never reaches the browser.
+- **Credential Redaction**: Error logs and API responses are automatically sanitized with key redaction filters to ensure credentials are never leaked.
+- **Internal-Only Access**: Gemini is reachable only through the Next.js Server Action `askGeminiAction`. No public HTTP route is exposed, and Next.js action-ID and origin validation block cross-site requests.
+- **Input Validation**: Prompts are constrained to a configurable maximum character length (50,000 chars) to prevent uncontrolled token consumption.
+
+### 6. Generic Capabilities & Future Uses
+
+Because the service contains **no domain-specific logic**, it is ready to power any future capability in the project:
+- Document summarization and analysis
+- Content generation and rewriting
+- Natural language classification and intent detection
+- Conversational chat / assistant features
+- Code explanation and debugging assistance
+- Data interpretation and report synthesis
+- Multimodal document/image analysis where supported
+
+### 7. Running Tests
+
+Run all unit and integration tests (including Gemini test suite):
+
+```bash
+npm test
+# or
+npm run test:engine
+```
+
+---
+
 ## 📄 License & Notes
 
 This repository is private and maintained for Indian stock market analysis, charting, and trading research.
+
