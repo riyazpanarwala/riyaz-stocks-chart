@@ -18,7 +18,8 @@
     "lint": "eslint src/",
     "test": "node --test test/engine/*.test.js",
     "test:engine": "node --test test/engine/*.test.js",
-    "test:gemini": "node --env-file=.env scripts/testGemini.mjs"
+    "test:gemini": "node --env-file=.env scripts/testGemini.mjs",
+    "briefing": "node --env-file=.env scripts/marketBriefing.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
