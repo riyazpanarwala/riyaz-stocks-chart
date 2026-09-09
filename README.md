@@ -225,7 +225,7 @@ const result = await askGeminiAction({
 
 - **Server-Side Exclusivity**: `GEMINI_API_KEY` is loaded strictly via server environment variables (`process.env.GEMINI_API_KEY`). It is never prefixed with `NEXT_PUBLIC_` and never reaches the browser.
 - **Credential Redaction**: Error logs and API responses are automatically sanitized with key redaction filters to ensure credentials are never leaked.
-- **Internal-Only Access**: `POST /api/ai/gemini` validates request origins and standard `Sec-Fetch-Site` headers, blocking cross-site and unauthorized third-party requests.
+- **Internal-Only Access**: Gemini is reachable only through the Next.js Server Action `askGeminiAction`. No public HTTP route is exposed, and Next.js action-ID and origin validation block cross-site requests.
 - **Input Validation**: Prompts are constrained to a configurable maximum character length (50,000 chars) to prevent uncontrolled token consumption.
 
 ### 6. Generic Capabilities & Future Uses

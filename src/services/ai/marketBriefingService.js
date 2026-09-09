@@ -262,6 +262,7 @@ export async function generateMarketBriefing(options = {}) {
     symbols = DEFAULT_BRIEFING_WATCHLIST,
     dateStr = new Date().toISOString().slice(0, 10),
     client,
+    analyzer = analyzeStock,
     onProgress,
   } = options;
 
@@ -272,7 +273,7 @@ export async function generateMarketBriefing(options = {}) {
     if (onProgress) onProgress({ current: i + 1, total: symbols.length, symbol });
 
     try {
-      const res = await analyzeStock(symbol, {
+      const res = await analyzer(symbol, {
         lookbackCalendarDays: 365,
         timeframe: "1d",
       });
@@ -294,6 +295,9 @@ export async function generateMarketBriefing(options = {}) {
   });
 
   const briefing = geminiRes.data;
+  if (!briefing || typeof briefing !== "object" || Array.isArray(briefing)) {
+    throw new Error("Gemini returned an unexpected briefing payload shape.");
+  }
   const markdown = formatBriefingMarkdown(briefing, aggregated, dateStr);
 
   return {

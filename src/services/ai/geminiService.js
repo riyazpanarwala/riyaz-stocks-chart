@@ -132,7 +132,8 @@ export async function generateGeminiResponse(prompt, options = {}) {
     }
   }
 
-  if (typeof temperature === "number") {
+  // Gemini 3.6 Flash does not accept deprecated temperature parameter
+  if (typeof temperature === "number" && !model.includes("3.6")) {
     config.temperature = temperature;
   }
 
@@ -218,3 +219,39 @@ export async function generateGeminiResponse(prompt, options = {}) {
     throw error;
   }
 }
+
+/**
+ * Validates and sanitizes options forwarded to generateGeminiResponse.
+ * Excludes apiKey, client, timeoutMs, and model to ensure server control.
+ * Bounds temperature and maxOutputTokens.
+ * @param {object} rawOptions
+ * @returns {object} Sanitized options
+ */
+export function sanitizeActionOptions(rawOptions = {}) {
+  if (!rawOptions || typeof rawOptions !== "object" || Array.isArray(rawOptions)) {
+    return { responseFormat: "text" };
+  }
+
+  const safe = {};
+
+  // responseFormat: strictly "text" or "json"
+  safe.responseFormat = rawOptions.responseFormat === "json" ? "json" : "text";
+
+  // systemInstruction: string bounded to 2000 characters
+  if (typeof rawOptions.systemInstruction === "string") {
+    safe.systemInstruction = rawOptions.systemInstruction.slice(0, 2000).trim();
+  }
+
+  // temperature: bounded between 0.0 and 2.0
+  if (typeof rawOptions.temperature === "number" && !isNaN(rawOptions.temperature)) {
+    safe.temperature = Math.max(0.0, Math.min(2.0, rawOptions.temperature));
+  }
+
+  // maxOutputTokens: bounded between 1 and 8192
+  if (typeof rawOptions.maxOutputTokens === "number" && !isNaN(rawOptions.maxOutputTokens)) {
+    safe.maxOutputTokens = Math.max(1, Math.min(8192, Math.floor(rawOptions.maxOutputTokens)));
+  }
+
+  return safe;
+}
+

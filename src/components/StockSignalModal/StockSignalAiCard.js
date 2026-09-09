@@ -51,7 +51,18 @@ const StockSignalAiCard = ({
       });
 
       if (res?.success && res?.response) {
-        setAnalysis(res.response);
+        const payload = res.response;
+        if (
+          !payload ||
+          typeof payload !== "object" ||
+          Array.isArray(payload) ||
+          !payload.verdict ||
+          !payload.thesis
+        ) {
+          setError("AI response was incomplete or malformed. Please retry.");
+          return;
+        }
+        setAnalysis(payload);
         setCachedKey(cacheKey);
       } else {
         setError(res?.error || "Unable to generate AI analysis.");

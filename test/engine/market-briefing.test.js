@@ -174,13 +174,48 @@ test("Market Briefing: generateMarketBriefing integrates with mocked Gemini clie
     },
   };
 
+  const mockAnalyzer = async (sym) => ({
+    symbol: sym,
+    instrument: { name: "Tata Consultancy Services", symbol: "TCS" },
+    signal: {
+      signal: "BUY",
+      action: "BUY",
+      marketRegime: "BULLISH_TREND",
+      signalStrength: 80,
+      price: 3900,
+      indicators: { rsi: 60, adx: 25, volumeRatio: 1.2 },
+      risk: { entry: 3900, stopLoss: 3850, target1: 4020 },
+      evidence: { bullish: ["Test signal"] },
+    },
+  });
+
   const result = await generateMarketBriefing({
     symbols: ["TCS"],
     dateStr: "2026-09-09",
     client: mockClient,
+    analyzer: mockAnalyzer,
   });
 
   assert.ok(result.aggregated);
   assert.equal(result.briefing.marketSentiment, "BULLISH");
   assert.ok(result.markdown.includes("Broad Market Breakout"));
+});
+
+test("Market Briefing: generateMarketBriefing rejects malformed non-object Gemini payloads", async () => {
+  const mockArrayClient = {
+    models: {
+      generateContent: async () => ({
+        text: JSON.stringify(["not", "an", "object"]),
+      }),
+    },
+  };
+
+  await assert.rejects(
+    generateMarketBriefing({
+      symbols: ["TCS"],
+      client: mockArrayClient,
+      analyzer: async (sym) => ({ symbol: sym, signal: { signal: "BUY" } }),
+    }),
+    /Gemini returned an unexpected briefing payload shape/
+  );
 });
