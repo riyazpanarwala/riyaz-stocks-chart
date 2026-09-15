@@ -1,7 +1,5 @@
-import { isMarketOpen } from "./utils/indianstockmarket";
 import {
   getIntradayData,
-  getHistoricDataNSE,
   getHistoricData,
   getNSEDataYahooFinance,
 } from "./getIntervalData";
@@ -28,8 +26,10 @@ export const getDataFromIntraday = (intradayData) => {
     if (low < minLow) minLow = low;
   }
 
+  const dateStr = String(intradayData[0][0] || "").split("T")[0];
+
   return {
-    date: intradayData[0][0],
+    date: `${dateStr} 00:00:00`,
     open: intradayData[0][1],
     close: intradayData[len - 1][4],
     high: maxHigh !== -Infinity ? maxHigh : intradayData[0][2],
@@ -69,53 +69,42 @@ export const getIntradayDataForCurrentDay = async (
   indexName,
   cmpnyObj,
 ) => {
-  const lastCandleDate = candles[candles.length - 1]?.date?.split(" ")[0];
+  candles = Array.isArray(candles) ? candles : [];
+
   const currentDateIst = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
   }).format(new Date());
 
-  try {
-    if (lastCandleDate !== currentDateIst) {
-      let currentObj;
-      const nowIst = new Date(
-        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }),
-      );
-      const currentHour = nowIst.getHours();
-      if (
-        !cmpnyObj.upstoxOnly &&
-        currentHour >= 18 &&
-        (indexName === "NSE_EQ" || indexName === "NSE_INDEX")
-      ) {
-        let apiName = "historic";
-        if (cmpnyObj.nseIndex) {
-          apiName = "indexHistoric";
-        }
-        const arr1 = await getHistoricDataNSE(cmpnyObj.symbol, "0d", apiName);
-        const candlesNSE = arr1?.candles ?? [];
-        if (candlesNSE.length) {
-          currentObj = candlesNSE[candlesNSE.length - 1];
-        }
-      } else {
-        const arr1 = await getIntradayData(
-          "minutes",
-          cmpnyObj.value,
-          indexName,
-          1,
-        );
-        let candleData = (arr1?.data?.candles ?? []).reverse();
-        if (candleData.length) {
-          currentObj = getDataFromIntraday(candleData);
-        }
-      }
+  const lastCandleDate = candles[candles.length - 1]?.date?.split(" ")[0];
 
-      if (currentObj) {
-        const currentObjDate = String(currentObj.date).slice(0, 10);
-        if (
-          currentObjDate === currentDateIst &&
-          currentObjDate !== lastCandleDate
-        ) {
-          candles = [...candles, currentObj];
-        }
+  try {
+    const arr1 = await getIntradayData(
+      "minutes",
+      cmpnyObj.value,
+      indexName,
+      1,
+    );
+    const candleData = (arr1?.data?.candles ?? []).slice().reverse();
+    if (!candleData.length) return candles;
+
+    // Filter to ensure candles belong to today's session in IST
+    const todayCandles = candleData.filter(
+      (c) => String(c[0] || "").split("T")[0] === currentDateIst
+    );
+    if (!todayCandles.length) return candles;
+
+    const currentObj = getDataFromIntraday(todayCandles);
+    if (!currentObj) return candles;
+
+    const currentObjDate = String(currentObj.date).split(" ")[0];
+
+    if (currentObjDate === currentDateIst) {
+      if (lastCandleDate === currentDateIst) {
+        // Today's candle already exists in array; update it with latest intraday data
+        candles = [...candles.slice(0, -1), currentObj];
+      } else {
+        // Append today's candle to historical candles
+        candles = [...candles, currentObj];
       }
     }
   } catch (e) {
@@ -177,9 +166,7 @@ export const fetchHistoricData = async (
 
   let { dataArr, timeArr } = getCandleArr(arr, isEchart);
 
-  const shouldFetchLiveCandle = companyObj.global ? true : isMarketOpen();
-
-  if (intervalVal === "days" && shouldFetchLiveCandle && !isEchart && !isYFinanceEnable) {
+  if (intervalVal === "days" && !isEchart && !isYFinanceEnable) {
     dataArr = await getIntradayDataForCurrentDay(
       dataArr,
       indexName,
