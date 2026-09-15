@@ -69,7 +69,7 @@ export const getIntradayDataForCurrentDay = async (
   indexName,
   cmpnyObj,
 ) => {
-  if (!candles || !candles.length) return candles;
+  candles = Array.isArray(candles) ? candles : [];
 
   const currentDateIst = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
