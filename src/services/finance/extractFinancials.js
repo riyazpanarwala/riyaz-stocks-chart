@@ -25,7 +25,7 @@ export function extractFinancials(data) {
 
   // Recalculate Book Value (if debt + D/E available)
   let recalculatedBookValue = null;
-  if (sharesOutstanding && totalDebt && debtToEquity) {
+  if (sharesOutstanding && totalDebt && debtToEquity && debtToEquity !== 0) {
     const equityFromDE = totalDebt / debtToEquity;
     recalculatedBookValue = (equityFromDE * 100) / sharesOutstanding;
   }
@@ -50,7 +50,13 @@ export function extractFinancials(data) {
   let rangeDisplay = "N/A";
   let rangePercentages = "N/A";
 
-  if (fiftyTwoWeekLow && fiftyTwoWeekHigh && regularMarketPrice) {
+  if (
+    Number.isFinite(fiftyTwoWeekLow) &&
+    Number.isFinite(fiftyTwoWeekHigh) &&
+    Number.isFinite(regularMarketPrice) &&
+    fiftyTwoWeekLow > 0 &&
+    fiftyTwoWeekHigh > 0
+  ) {
     rangeDisplay = `${fiftyTwoWeekLow.toFixed(2)} / ${fiftyTwoWeekHigh.toFixed(
       2
     )}`;
@@ -75,8 +81,13 @@ export function extractFinancials(data) {
     }
   }
 
-  const format = (val, suffix = "") =>
-    val !== null && val !== undefined ? `${val.toFixed(2)}${suffix}` : "N/A";
+  const format = (val, suffix = "") => {
+    if (val == null || val === "") {
+      return "N/A";
+    }
+    const num = typeof val === "number" ? val : Number(val);
+    return Number.isFinite(num) ? `${num.toFixed(2)}${suffix}` : "N/A";
+  };
 
   return {
     "Current Price (₹)": format(regularMarketPrice),

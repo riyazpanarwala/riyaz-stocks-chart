@@ -2,8 +2,8 @@ import {
   getIntradayData,
   getHistoricData,
   getNSEDataYahooFinance,
-} from "./getIntervalData";
-import isYFinanceEnable from "./utils/isYFinanceEnable";
+} from "./getIntervalData.js";
+import isYFinanceEnable from "./utils/isYFinanceEnable.js";
 
 export const getDataFromIntraday = (intradayData) => {
   if (!Array.isArray(intradayData) || intradayData.length === 0) {

@@ -41,7 +41,7 @@ export default function TradingViewEmbed({
         container.innerHTML = "";
       }
     };
-  }, [scriptSrc, configString, validConfig]);
+  }, [scriptSrc, configString]);
 
   if (isSymbolWidget && (!validConfig || !resolvedSymbol)) {
     return null; // Cleanly hide widget if no symbol match exists

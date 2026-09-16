@@ -1,7 +1,7 @@
-import { dateObj } from "./utils/data";
-import { getNseEquityAction } from "../app/actions/nseEquity";
-import { getFinanceDataAction } from "../app/actions/finance";
-import { getUpstoxCandlesAction } from "../app/actions/upstox";
+import { dateObj } from "./utils/data.js";
+import { getNseEquityAction } from "../app/actions/nseEquity.js";
+import { getFinanceDataAction } from "../app/actions/finance.js";
+import { getUpstoxCandlesAction } from "../app/actions/upstox.js";
 
 const logError = (context, error) => {
   const status = error?.response?.status ?? "Server Action Error";
@@ -60,20 +60,9 @@ export const getHistoricDataNSE = async (
   isFrom,
   apiName = "historic"
 ) => {
-  const headers = {
-    Accept: "application/json",
-  };
-
-  let currentDate = new Date();
-  let toDate = currentDate.toISOString().split("T")[0];
-  let fromDate = resolveFromDate(isFrom).toISOString().split("T")[0];
-
-  const payload = {
-    fromDate,
-    toDate,
-    symbol,
-    apiName,
-  };
+  const currentDate = new Date();
+  const toDate = currentDate.toISOString().split("T")[0];
+  const fromDate = resolveFromDate(isFrom).toISOString().split("T")[0];
 
   try {
     const data = await getNseEquityAction({ fromDate, toDate, symbol, apiName });

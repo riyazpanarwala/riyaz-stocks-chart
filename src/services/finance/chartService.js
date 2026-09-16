@@ -9,7 +9,7 @@ export async function getChartData(symbol, { interval, fromDate, toDate } = {}) 
   }
 
   const result = await yahooFinance.chart(symbol, queryObj);
-  return result.quotes.filter((v) => v.close !== null);
+  return (result?.quotes ?? []).filter((v) => v.close !== null);
 }
 
 export async function getOptionData(symbol) {

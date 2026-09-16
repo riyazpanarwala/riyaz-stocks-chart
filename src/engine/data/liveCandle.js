@@ -16,13 +16,23 @@ export function constructDailyCandleFromIntraday(rows = []) {
   const session = candles.filter((candle) => datePartsInIst(candle.timestamp) === latestSessionDate);
   if (!session.length) return null;
   const first = session[0], last = session.at(-1);
+  let high = -Infinity;
+  let low = Infinity;
+  let volume = 0;
+  for (let i = 0; i < session.length; i++) {
+    const c = session[i];
+    if (c.high > high) high = c.high;
+    if (c.low < low) low = c.low;
+    volume += c.volume || 0;
+  }
+
   return {
     timestamp: new Date(`${latestSessionDate}T00:00:00+05:30`).toISOString(),
     open: first.open,
-    high: Math.max(...session.map((candle) => candle.high)),
-    low: Math.min(...session.map((candle) => candle.low)),
+    high,
+    low,
     close: last.close,
-    volume: session.reduce((sum, candle) => sum + candle.volume, 0),
+    volume,
     openInterest: last.openInterest,
     source: "UPSTOX_INTRADAY_1MIN_AGGREGATE",
     isPartial: true,

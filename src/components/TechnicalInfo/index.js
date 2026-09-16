@@ -140,36 +140,48 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
       },
     ]);
 
+    const getSmaIndication = (close, smaVal) => {
+      if (smaVal == null || smaVal === "") return "N/A";
+      const num = Number(smaVal);
+      if (!Number.isFinite(num)) return "N/A";
+      return close < num ? "Bearish" : "Bullish";
+    };
+
+    const getSmaDisplay = (smaVal) => {
+      if (smaVal == null || smaVal === "") return "N/A";
+      return Number.isFinite(Number(smaVal)) ? smaVal : "N/A";
+    };
+
     setMovingAvg([
       {
         Period: 5,
-        SMA: sma5,
-        Indication: lastClose < sma5 ? "Bearish" : "Bullish",
+        SMA: getSmaDisplay(sma5),
+        Indication: getSmaIndication(lastClose, sma5),
       },
       {
         Period: 10,
-        SMA: sma10,
-        Indication: lastClose < sma10 ? "Bearish" : "Bullish",
+        SMA: getSmaDisplay(sma10),
+        Indication: getSmaIndication(lastClose, sma10),
       },
       {
         Period: 20,
-        SMA: sma20,
-        Indication: lastClose < sma20 ? "Bearish" : "Bullish",
+        SMA: getSmaDisplay(sma20),
+        Indication: getSmaIndication(lastClose, sma20),
       },
       {
         Period: 50,
-        SMA: sma50,
-        Indication: lastClose < sma50 ? "Bearish" : "Bullish",
+        SMA: getSmaDisplay(sma50),
+        Indication: getSmaIndication(lastClose, sma50),
       },
       {
         Period: 100,
-        SMA: sma100,
-        Indication: lastClose < sma100 ? "Bearish" : "Bullish",
+        SMA: getSmaDisplay(sma100),
+        Indication: getSmaIndication(lastClose, sma100),
       },
       {
         Period: 200,
-        SMA: sma200,
-        Indication: lastClose < sma200 ? "Bearish" : "Bullish",
+        SMA: getSmaDisplay(sma200),
+        Indication: getSmaIndication(lastClose, sma200),
       },
     ]);
 
@@ -246,16 +258,18 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
         )}
         {!loading && !error && (
           <>
-            <div className="summary-grid">
-              {summaryData.map((item, index) => (
-                <SummaryCard
-                  key={index}
-                  title={item.title}
-                  value={item.value}
-                  status={item.status}
-                />
-              ))}
-            </div>
+            {summaryData.length > 0 && (
+              <div className="summary-grid">
+                {summaryData.map((item, index) => (
+                  <SummaryCard
+                    key={index}
+                    title={item.title}
+                    value={item.value}
+                    status={item.status}
+                  />
+                ))}
+              </div>
+            )}
             <Table
               title="Moving Averages"
               columns={["Period", "SMA", "Indication"]}

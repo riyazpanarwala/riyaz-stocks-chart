@@ -1,5 +1,5 @@
 import { stochasticOscillator } from "@riyazpanarwala/indicators";
-const Stochastic = require("technicalindicators").Stochastic;
+import { Stochastic } from "technicalindicators";
 
 export const sto1 = (dataArr, period = 14, signalPeriod = 3) => {
   const input = {

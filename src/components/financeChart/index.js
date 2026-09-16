@@ -57,6 +57,17 @@ import technicalAnalysis from "../technical-analysis/index.js";
 import { useThemeColors } from "./useThemeColors";
 const { analyzeMarketStructure } = technicalAnalysis;
 
+const SUBCHART_INDICATORS = new Set([
+  "rsi",
+  "macd",
+  "zerolagmacd",
+  "dmi",
+  "sto",
+  "mfi",
+  "cci",
+  "obv",
+]);
+
 const indicatorYExtentsObj = {
   sma: (d) => [d.high, d.low],
   ema: (d) => [d.high, d.low],
@@ -242,8 +253,7 @@ const FinanceChart = ({
 
   useEffect(() => {
     if (breakoutName && Array.isArray(initialData) && initialData.length > 0) {
-      const d = analyzeMarketStructure(initialData);
-      console.log(d);
+      analyzeMarketStructure(initialData);
     }
   }, [initialData, breakoutName]);
 
@@ -546,7 +556,7 @@ const FinanceChart = ({
       </Chart>
 
       {/* ── Sub-chart (indicator panel) ── */}
-      {indicatorName ? (
+      {SUBCHART_INDICATORS.has(indicatorName) ? (
         <Chart
           id={4}
           yExtents={
