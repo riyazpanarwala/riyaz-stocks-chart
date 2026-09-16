@@ -21,7 +21,7 @@ const etfIndexArr = [{ label: "NSE ETF", value: "NSE_EQ" }];
 
 const useCommonHeader = (isEchart) => {
   const [period, setPeriod] = useState(periodDays[1]);
-  const [intervalObj, setInterval] = useState([]);
+  const [intervalObj, setIntervalObj] = useState(intervalArr1[6]);
   const [intradayObj, setIntradayOrHistoric] = useState(intraArr[1]);
   const [indexObj, setIndex] = useState({});
   const [newIndexArr, setNewIndexArr] = useState([]);
@@ -89,7 +89,7 @@ const useCommonHeader = (isEchart) => {
   };
 
   const handleIntervalChange = (obj) => {
-    setInterval(obj);
+    setIntervalObj(obj);
     if (intervalObj.apiUnit !== obj.apiUnit) {
       setPeriodOnIntervalChange(obj);
     }
@@ -154,9 +154,9 @@ const useCommonHeader = (isEchart) => {
 
   const setIntervalData = ({ value }) => {
     if (isIntraday(value)) {
-      setInterval(intervalArr[0]);
+      setIntervalObj(intervalArr[0]);
     } else {
-      setInterval(intervalArr1[6]);
+      setIntervalObj(intervalArr1[6]);
       setPeriod(periodDays[1]);
     }
   };

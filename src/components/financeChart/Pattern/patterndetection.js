@@ -1,4 +1,4 @@
-const indicators = require("technicalindicators");
+import * as indicators from "technicalindicators";
 
 export const patterndetection = (dataArr, key) => {
   let patternArr = [];

@@ -1,4 +1,4 @@
-import { ema } from "./ema";
+import { ema } from "./ema.js";
 
 export function calculateZeroLagEMA(data, period) {
   const ema1 = ema(data, period, true);

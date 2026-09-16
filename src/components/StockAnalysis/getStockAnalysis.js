@@ -13,10 +13,10 @@ import {
   calculateStochastic,
   williamson,
   crossover,
-} from "../financeChart/indicator";
+} from "../financeChart/indicator/index.js";
 
 const round2Decimal = (value) => {
-  if (value) {
+  if (typeof value === "number" && !Number.isNaN(value)) {
     return (Math.round(value * 100) / 100).toFixed(2);
   }
   return "";

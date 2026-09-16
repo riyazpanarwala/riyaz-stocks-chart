@@ -2,11 +2,12 @@
   "name": "upstocks-api",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "stockAnalysis": "node --experimental-specifier-resolution=node src/components/StockAnalysis/index.js",
+    "stockAnalysis": "node scripts/analyze.mjs",
     "updateMarketData": "node scripts/updateMarketData.mjs",
     "updateBseEquity": "node scripts/updateBseEquity.mjs",
     "analyze": "node scripts/analyze.mjs",

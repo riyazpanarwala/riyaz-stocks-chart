@@ -1,7 +1,6 @@
-import { saveAs } from "file-saver";
-import watchlistArray from "../utils/watchListArr";
-import { fetchHistoricData } from "../common";
-import getStockAnalysis from "./getStockAnalysis";
+import watchlistArray from "../utils/watchListArr.js";
+import { fetchHistoricData } from "../common.js";
+import getStockAnalysis from "./getStockAnalysis.js";
 import {
   getRSIIndication,
   getMACDIndication,
@@ -12,7 +11,7 @@ import {
   getMFIIndication,
   getADXIndication,
   getATRIndication,
-} from "./indication";
+} from "./indication.js";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -79,7 +78,7 @@ export const stockAnalysis = async (
     shortTermMACross,
     mediumTermMACross,
     longTermMACross,
-  } = getStockAnalysis(candles);
+  } = analysis;
 
   return {
     "RSI(14)": `${rsi} (${getRSIIndication(rsi)})`,
@@ -118,16 +117,23 @@ export const stockAnalysis = async (
 
 const watchlistArray1 = watchlistArray("");
 
-const saveFile = (jsonObj) => {
+const saveFile = async (jsonObj) => {
   const dateStr = new Date().toISOString().split("T")[0];
   const timeStr = new Date().toTimeString().split(" ")[0].replace(/:/g, "_");
   const fileName = `stockAnalysis-${dateStr}-${timeStr}.json`;
-  
-  const fileToSave = new Blob([JSON.stringify(jsonObj, null, 2)], {
-    type: "application/json",
-  });
+  const jsonContent = JSON.stringify(jsonObj, null, 2);
 
-  saveAs(fileToSave, fileName);
+  if (typeof window !== "undefined") {
+    const { saveAs } = await import("file-saver");
+    const fileToSave = new Blob([jsonContent], {
+      type: "application/json",
+    });
+    saveAs(fileToSave, fileName);
+  } else {
+    const fs = await import("node:fs/promises");
+    await fs.writeFile(fileName, jsonContent, "utf8");
+    console.log(`Saved analysis results to ${fileName}`);
+  }
 };
 
 const stocksAnalysis = async (arrObj = watchlistArray1) => {
@@ -158,7 +164,7 @@ const stocksAnalysis = async (arrObj = watchlistArray1) => {
   }
 
   if (jsonObj.length > 0) {
-    saveFile(jsonObj.sort((a, b) => (b.percentChange || 0) - (a.percentChange || 0)));
+    await saveFile(jsonObj.sort((a, b) => (b.percentChange || 0) - (a.percentChange || 0)));
   }
 
   return {

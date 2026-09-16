@@ -24,11 +24,13 @@ const StockSignalAiCard = ({
   const [cachedKey, setCachedKey] = useState(null);
 
   // Clear analysis if the stock symbol/signal changed
-  if (cachedKey !== cacheKey && analysis !== null) {
-    setAnalysis(null);
-    setError(null);
-    setCachedKey(cacheKey);
-  }
+  useEffect(() => {
+    if (cachedKey !== cacheKey) {
+      setAnalysis(null);
+      setError(null);
+      setCachedKey(cacheKey);
+    }
+  }, [cacheKey, cachedKey]);
 
   const handleRequestAi = useCallback(async () => {
     if (!signal) return;

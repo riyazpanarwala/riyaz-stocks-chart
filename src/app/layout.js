@@ -107,7 +107,6 @@ export const metadata = {
   // Additional meta tags via `other`
   other: {
     "google-adsense-account": "", // add your AdSense ID if needed
-    "theme-color": "#0a0e17",
     "color-scheme": "dark light",
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
