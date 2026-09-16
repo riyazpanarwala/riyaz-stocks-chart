@@ -82,6 +82,9 @@ export function extractFinancials(data) {
   }
 
   const format = (val, suffix = "") => {
+    if (val == null || val === "") {
+      return "N/A";
+    }
     const num = typeof val === "number" ? val : Number(val);
     return Number.isFinite(num) ? `${num.toFixed(2)}${suffix}` : "N/A";
   };

@@ -147,35 +147,40 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
       return close < num ? "Bearish" : "Bullish";
     };
 
+    const getSmaDisplay = (smaVal) => {
+      if (smaVal == null || smaVal === "") return "N/A";
+      return Number.isFinite(Number(smaVal)) ? smaVal : "N/A";
+    };
+
     setMovingAvg([
       {
         Period: 5,
-        SMA: sma5 || "N/A",
+        SMA: getSmaDisplay(sma5),
         Indication: getSmaIndication(lastClose, sma5),
       },
       {
         Period: 10,
-        SMA: sma10 || "N/A",
+        SMA: getSmaDisplay(sma10),
         Indication: getSmaIndication(lastClose, sma10),
       },
       {
         Period: 20,
-        SMA: sma20 || "N/A",
+        SMA: getSmaDisplay(sma20),
         Indication: getSmaIndication(lastClose, sma20),
       },
       {
         Period: 50,
-        SMA: sma50 || "N/A",
+        SMA: getSmaDisplay(sma50),
         Indication: getSmaIndication(lastClose, sma50),
       },
       {
         Period: 100,
-        SMA: sma100 || "N/A",
+        SMA: getSmaDisplay(sma100),
         Indication: getSmaIndication(lastClose, sma100),
       },
       {
         Period: 200,
-        SMA: sma200 || "N/A",
+        SMA: getSmaDisplay(sma200),
         Indication: getSmaIndication(lastClose, sma200),
       },
     ]);
