@@ -37,8 +37,13 @@ async function fetchCsv(url, outFile, { minBytes = 1000 } = {}) {
 
   const expected = EXPECTED_HEADERS[outFile];
   if (expected) {
+    const trimmed = text.trimStart();
     const expectedList = Array.isArray(expected) ? expected : [expected];
-    const matches = expectedList.some((h) => text.trimStart().startsWith(h));
+    const matches = expectedList.some((h) => {
+      if (!trimmed.startsWith(h)) return false;
+      const rest = trimmed.slice(h.length);
+      return /^[ \t]*(?:,|\r|\n|$)/.test(rest);
+    });
     if (!matches) {
       throw new Error(
         `Unexpected CSV header for ${outFile} — got "${text.slice(0, 60)}..." expected to start with "${expectedList.join('" or "')}"`
