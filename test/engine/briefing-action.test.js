@@ -59,11 +59,20 @@ test("generateFallbackBriefing: generates valid structured briefing conforming t
   assert.ok(briefing.tacticalGameplan.length >= 2);
 });
 
-test("generateFallbackBriefing: accurately classifies bearish distribution regime", () => {
+test("generateFallbackBriefing: accurately classifies bearish distribution regime and suppresses swing setups", () => {
   const aggregated = {
     total: 4,
     breadth: { bullishPct: 0, neutralPct: 25, bearishPct: 75 },
-    buyCandidates: [],
+    buyCandidates: [
+      {
+        symbol: "ISOLATED_LONG",
+        name: "Outlier Stock",
+        price: 500,
+        regime: "BULLISH_TREND",
+        strength: 70,
+        risk: { entry: 500, stopLoss: 485, target1: 530 },
+      },
+    ],
     exitCandidates: [
       { symbol: "SBIN", risks: ["Breakdown below 200 SMA"] },
       { symbol: "HDFCBANK", risks: ["RSI Bearish Divergence"] },
@@ -73,6 +82,7 @@ test("generateFallbackBriefing: accurately classifies bearish distribution regim
   const briefing = generateFallbackBriefing(aggregated);
   assert.equal(briefing.marketSentiment, "BEARISH_CORRECTION");
   assert.equal(briefing.topSwingSetups.length, 0);
+  assert.ok(briefing.executiveSummary.includes("under bearish or distribution conditions"));
   assert.equal(briefing.riskWatchlist.length, 2);
 });
 

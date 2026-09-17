@@ -471,7 +471,7 @@ export default function BriefingClient() {
                   <span className="defensive-tag">Strict Risk Filters Active</span>
                 </div>
                 <p className="defensive-body">
-                  Zero fresh swing breakout setups passed institutional criteria today. With {breadth.bearishPct}% of liquid leaders in confirmed downtrends, risk of false breakouts and bull traps on morning bounces is elevated.
+                  Zero fresh swing breakout setups passed institutional criteria today. With {breadth.bearishPct}% of liquid leaders under bearish or exit conditions, risk of false breakouts and bull traps on morning bounces is elevated.
                 </p>
                 <div className="defensive-rules">
                   <div>

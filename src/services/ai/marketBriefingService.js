@@ -277,7 +277,7 @@ export function generateFallbackBriefing(aggregated, dateStr = new Date().toISOS
   if (breadth.bearishPct >= 40 || strongDowntrends >= Math.max(1, Math.round(total * 0.4))) {
     marketSentiment = "BEARISH_CORRECTION";
     sentimentHeadline = "Broad Distribution & Downside Trend Domination";
-    executiveSummary = `Markets are facing persistent distribution pressure with ${breadth.bearishPct}% of liquid leaders in confirmed downtrends. Defensive positioning and strict capital preservation are advised over fresh long exposure.`;
+    executiveSummary = `Markets are facing persistent distribution pressure with ${breadth.bearishPct}% of liquid leaders under bearish or distribution conditions. Defensive positioning and strict capital preservation are advised over fresh long exposure.`;
   } else if (breadth.bullishPct >= 60) {
     marketSentiment = "BULLISH";
     sentimentHeadline = "Broad Bullish Expansion & Upward Momentum";
@@ -288,20 +288,23 @@ export function generateFallbackBriefing(aggregated, dateStr = new Date().toISOS
     executiveSummary = `Market breadth shows selective strength with ${breadth.bullishPct}% bullish participation. Traders should favor high-relative-strength leaders while keeping position sizing prudent.`;
   }
 
-  const topSwingSetups = buyCandidates.slice(0, 3).map((b) => {
-    const entryLow = b.risk?.entry ? (b.risk.entry * 0.995).toFixed(1) : b.price;
-    const entryHigh = b.risk?.entry ? (b.risk.entry * 1.005).toFixed(1) : (b.price * 1.01).toFixed(1);
-    return {
-      symbol: b.symbol,
-      setupType: b.regime === "BULLISH_TREND" ? "Trend Continuation Breakout" : "Pullback Retest",
-      entryZone: `₹${entryLow} - ₹${entryHigh}`,
-      stopLoss: b.risk?.stopLoss ? `₹${Number(b.risk.stopLoss).toFixed(1)}` : `₹${(b.price * 0.97).toFixed(1)}`,
-      target: b.risk?.target1 ? `₹${Number(b.risk.target1).toFixed(1)}` : `₹${(b.price * 1.05).toFixed(1)}`,
-      rationale: b.evidence && b.evidence.length > 0
-        ? `Confirmed by ${b.evidence.slice(0, 2).join(" and ")} with strength score ${b.strength}/100.`
-        : `Strong technical momentum with RSI at ${b.rsi ? Number(b.rsi).toFixed(1) : "N/A"} and ADX trend strength.`,
-    };
-  });
+  const topSwingSetups =
+    marketSentiment === "BEARISH_CORRECTION"
+      ? []
+      : buyCandidates.slice(0, 3).map((b) => {
+          const entryLow = b.risk?.entry ? (b.risk.entry * 0.995).toFixed(1) : b.price;
+          const entryHigh = b.risk?.entry ? (b.risk.entry * 1.005).toFixed(1) : (b.price * 1.01).toFixed(1);
+          return {
+            symbol: b.symbol,
+            setupType: b.regime === "BULLISH_TREND" ? "Trend Continuation Breakout" : "Pullback Retest",
+            entryZone: `₹${entryLow} - ₹${entryHigh}`,
+            stopLoss: b.risk?.stopLoss ? `₹${Number(b.risk.stopLoss).toFixed(1)}` : `₹${(b.price * 0.97).toFixed(1)}`,
+            target: b.risk?.target1 ? `₹${Number(b.risk.target1).toFixed(1)}` : `₹${(b.price * 1.05).toFixed(1)}`,
+            rationale: b.evidence && b.evidence.length > 0
+              ? `Confirmed by ${b.evidence.slice(0, 2).join(" and ")} with strength score ${b.strength}/100.`
+              : `Strong technical momentum with RSI at ${b.rsi ? Number(b.rsi).toFixed(1) : "N/A"} and ADX trend strength.`,
+          };
+        });
 
   const riskWatchlist = exitCandidates.slice(0, 6).map((e) => ({
     symbol: e.symbol,
