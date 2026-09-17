@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import TickerTape from "../../components/TradingView/TickerTape";
 import SymbolInfo from "../../components/TradingView/SymbolInfo";
@@ -10,30 +10,53 @@ import FundamentalData from "../../components/TradingView/FundamentalData";
 import TechnicalAnalysis from "../../components/TradingView/TechnicalAnalysis";
 import TopStories from "../../components/TradingView/TopStories";
 
-export default function TradingViewClient() {
-  const [symbol, setSymbol] = useState(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const urlSymbol = params.get("symbol") || params.get("q");
-      if (urlSymbol) return urlSymbol;
-    }
-    return "BSE:JPPOWER";
-  });
-  const [inputValue, setInputValue] = useState(symbol);
+const DEFAULT_SYMBOL = "BSE:JPPOWER";
 
+/**
+ * TradingView client component featuring real-time charts and financial widgets.
+ * @returns {React.ReactElement} The TradingView dashboard layout.
+ */
+export default function TradingViewClient() {
+  const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
+  const [inputValue, setInputValue] = useState(DEFAULT_SYMBOL);
+  const isInitializedRef = useRef(false);
+
+  // Resolve URL state after client mount to prevent SSR hydration mismatches
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const urlSymbol = (params.get("symbol") || params.get("q") || "").trim();
+    if (urlSymbol) {
+      setSymbol(urlSymbol);
+      setInputValue(urlSymbol);
+    }
+    isInitializedRef.current = true;
+  }, []);
+
+  // Sync input value to symbol state and URL with debouncing
+  useEffect(() => {
+    if (!isInitializedRef.current) return;
+
     const timer = setTimeout(() => {
-      setSymbol(inputValue);
-      if (typeof window !== "undefined" && inputValue) {
+      const trimmed = inputValue.trim();
+      const nextSymbol = trimmed || DEFAULT_SYMBOL;
+      setSymbol(nextSymbol);
+
+      if (typeof window !== "undefined") {
         try {
           const url = new URL(window.location.href);
-          if (url.searchParams.get("symbol") !== inputValue) {
-            url.searchParams.set("symbol", inputValue);
-            window.history.replaceState(window.history.state, "", `${url.pathname}?${url.searchParams.toString()}`);
+          if (trimmed) {
+            url.searchParams.set("symbol", trimmed);
+          } else {
+            url.searchParams.delete("symbol");
           }
+          const nextSearch = url.searchParams.toString();
+          const nextUrl = nextSearch ? `${url.pathname}?${nextSearch}` : url.pathname;
+          window.history.replaceState(window.history.state, "", nextUrl);
         } catch (e) {}
       }
     }, 500);
+
     return () => clearTimeout(timer);
   }, [inputValue]);
 

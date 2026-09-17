@@ -63,6 +63,10 @@ const bseIndicesArr = [
 
 let cachedMergedArr = null;
 
+/**
+ * Updates the browser address bar with the selected symbol query parameter.
+ * @param {string} symbol - The stock or instrument symbol to reflect in the URL.
+ */
 const updateUrlSymbol = (symbol) => {
   if (typeof window === "undefined" || !symbol) return;
   try {
@@ -76,6 +80,11 @@ const updateUrlSymbol = (symbol) => {
   }
 };
 
+/**
+ * Resolves the initial company from URL search parameters or falls back to NIFTY 50.
+ * @param {Array<Object>} merged - The merged list of stocks, ETFs, and indices.
+ * @returns {Object} The resolved company object.
+ */
 const resolveInitialCompany = (merged) => {
   if (!merged || !merged.length) return {};
   let selectedFromUrl = null;
