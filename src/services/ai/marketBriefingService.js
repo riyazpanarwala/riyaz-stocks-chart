@@ -249,13 +249,78 @@ export function formatBriefingMarkdown(briefingData, aggregated = {}, dateStr = 
 }
 
 /**
+ * Generates a structured fallback briefing using rule-based quantitative metrics
+ * when Gemini AI is unreachable or API key is not configured.
+ * @param {object} aggregated
+ * @param {string} [dateStr]
+ * @returns {object} Structured briefing payload
+ */
+export function generateFallbackBriefing(aggregated, dateStr = new Date().toISOString().slice(0, 10)) {
+  const { breadth = { bullishPct: 0, bearishPct: 0, neutralPct: 0 }, buyCandidates = [], exitCandidates = [] } = aggregated;
+
+  let marketSentiment = "RANGEBOUND_CONSOLIDATION";
+  let sentimentHeadline = "Equilibrium Market With Selective Opportunities";
+  let executiveSummary = "Markets are currently oscillating within key moving average bands with balanced participation between buyers and sellers. Stock-specific action prevails over broad-based index momentum.";
+
+  if (breadth.bullishPct >= 60) {
+    marketSentiment = "BULLISH";
+    sentimentHeadline = "Broad Bullish Expansion & Upward Momentum";
+    executiveSummary = `Bullish breadth dominates at ${breadth.bullishPct}% of liquid leaders. Institutional accumulation is evident in trend continuation breakouts with healthy volume expansion.`;
+  } else if (breadth.bullishPct >= 40) {
+    marketSentiment = "CAUTIOUS_BULLISH";
+    sentimentHeadline = "Selective Stock-Picking Market with Sector Divergence";
+    executiveSummary = `Market breadth shows selective strength with ${breadth.bullishPct}% bullish participation. Traders should favor high-relative-strength leaders while keeping position sizing prudent.`;
+  } else if (breadth.bearishPct >= 50) {
+    marketSentiment = "BEARISH_CORRECTION";
+    sentimentHeadline = "Distribution Pressure & Caution on Weakness";
+    executiveSummary = `Bearish distribution pressure is elevated with ${breadth.bearishPct}% of scanned leaders flashing sell signals or downtrends. Capital preservation and tight stops are warranted.`;
+  }
+
+  const topSwingSetups = buyCandidates.slice(0, 3).map((b) => {
+    const entryLow = b.risk?.entry ? (b.risk.entry * 0.995).toFixed(1) : b.price;
+    const entryHigh = b.risk?.entry ? (b.risk.entry * 1.005).toFixed(1) : (b.price * 1.01).toFixed(1);
+    return {
+      symbol: b.symbol,
+      setupType: b.regime === "BULLISH_TREND" ? "Trend Continuation Breakout" : "Pullback Retest",
+      entryZone: `₹${entryLow} - ₹${entryHigh}`,
+      stopLoss: b.risk?.stopLoss ? `₹${Number(b.risk.stopLoss).toFixed(1)}` : `₹${(b.price * 0.97).toFixed(1)}`,
+      target: b.risk?.target1 ? `₹${Number(b.risk.target1).toFixed(1)}` : `₹${(b.price * 1.05).toFixed(1)}`,
+      rationale: b.evidence && b.evidence.length > 0
+        ? `Confirmed by ${b.evidence.slice(0, 2).join(" and ")} with strength score ${b.strength}/100.`
+        : `Strong technical momentum with RSI at ${b.rsi ? Number(b.rsi).toFixed(1) : "N/A"} and ADX trend strength.`,
+    };
+  });
+
+  const riskWatchlist = exitCandidates.slice(0, 4).map((e) => ({
+    symbol: e.symbol,
+    warning: e.risks && e.risks.length > 0 ? e.risks[0] : "Loss of primary moving average support; avoid fresh long entry.",
+  }));
+
+  const tacticalGameplan = [
+    "Focus on high-conviction breakout setups displaying volume confirmation at market open.",
+    "Strictly honor stop-loss levels and trail stops to entry once the 1R target is reached.",
+    "Avoid chasing overextended stocks that have moved more than 5% away from their 20 EMA.",
+  ];
+
+  return {
+    marketSentiment,
+    sentimentHeadline,
+    executiveSummary,
+    topSwingSetups,
+    riskWatchlist,
+    tacticalGameplan,
+  };
+}
+
+/**
  * Executes a full market scan and produces a Gemini AI market briefing.
  * @param {object} [options]
  * @param {Array<string>} [options.symbols] - Custom symbols list (defaults to DEFAULT_BRIEFING_WATCHLIST)
  * @param {string} [options.dateStr]
  * @param {object} [options.client] - Injected client for testing / mocking
+ * @param {boolean} [options.allowFallback=false] - Whether to fall back to rule-based briefing on Gemini failure
  * @param {Function} [options.onProgress] - Optional callback for scan progress
- * @returns {Promise<{ aggregated: object, briefing: object, markdown: string }>}
+ * @returns {Promise<{ aggregated: object, briefing: object, markdown: string, source: string }>}
  */
 export async function generateMarketBriefing(options = {}) {
   const {
@@ -263,46 +328,67 @@ export async function generateMarketBriefing(options = {}) {
     dateStr = new Date().toISOString().slice(0, 10),
     client,
     analyzer = analyzeStock,
+    allowFallback = false,
     onProgress,
   } = options;
 
   const scanResults = [];
+  const CONCURRENCY = 4;
 
-  for (let i = 0; i < symbols.length; i++) {
-    const symbol = symbols[i];
-    if (onProgress) onProgress({ current: i + 1, total: symbols.length, symbol });
-
-    try {
-      const res = await analyzer(symbol, {
-        lookbackCalendarDays: 365,
-        timeframe: "1d",
-      });
-      scanResults.push({ symbol, ...res });
-    } catch (err) {
-      scanResults.push({ symbol, error: err.message, signal: null });
-    }
+  for (let i = 0; i < symbols.length; i += CONCURRENCY) {
+    const chunk = symbols.slice(i, i + CONCURRENCY);
+    const chunkResults = await Promise.all(
+      chunk.map(async (symbol, chunkIdx) => {
+        const overallIdx = i + chunkIdx;
+        if (onProgress) onProgress({ current: overallIdx + 1, total: symbols.length, symbol });
+        try {
+          const res = await analyzer(symbol, {
+            lookbackCalendarDays: 365,
+            timeframe: "1d",
+          });
+          return { symbol, ...res };
+        } catch (err) {
+          return { symbol, error: err.message, signal: null };
+        }
+      })
+    );
+    scanResults.push(...chunkResults);
   }
 
   const aggregated = aggregateMarketData(scanResults);
   const prompt = buildMarketBriefingPrompt(aggregated, dateStr);
 
-  const geminiRes = await generateGeminiResponse(prompt, {
-    systemInstruction:
-      "You are a professional SEBI-aligned technical market analyst. Provide concise, disciplined, risk-first trade analysis for Indian markets.",
-    responseFormat: "json",
-    temperature: 0.3,
-    client,
-  });
+  let briefing = null;
+  let source = "gemini";
 
-  const briefing = geminiRes.data;
-  if (!briefing || typeof briefing !== "object" || Array.isArray(briefing)) {
-    throw new Error("Gemini returned an unexpected briefing payload shape.");
+  try {
+    const geminiRes = await generateGeminiResponse(prompt, {
+      systemInstruction:
+        "You are a professional SEBI-aligned technical market analyst. Provide concise, disciplined, risk-first trade analysis for Indian markets.",
+      responseFormat: "json",
+      temperature: 0.3,
+      client,
+    });
+
+    briefing = geminiRes.data;
+    if (!briefing || typeof briefing !== "object" || Array.isArray(briefing)) {
+      throw new Error("Gemini returned an unexpected briefing payload shape.");
+    }
+  } catch (err) {
+    if (allowFallback) {
+      briefing = generateFallbackBriefing(aggregated, dateStr);
+      source = "fallback";
+    } else {
+      throw err;
+    }
   }
+
   const markdown = formatBriefingMarkdown(briefing, aggregated, dateStr);
 
   return {
     aggregated,
     briefing,
     markdown,
+    source,
   };
 }

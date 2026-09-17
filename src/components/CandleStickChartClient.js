@@ -280,6 +280,14 @@ const CandleStickChart = () => {
                 >
                   🔍 Screener
                 </Link>
+                <Link
+                  href="/briefing"
+                  className="custom-button"
+                  aria-label="Open AI Pre-Market & Daily Briefing"
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                >
+                  🤖 AI Briefing
+                </Link>
                 {isCompanyExist ? (
 
                   <ActionButton

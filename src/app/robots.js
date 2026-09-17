@@ -12,7 +12,7 @@ export default function robots() {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/screener", "/TradingView", "/TradingView/forex", "/optionchain"],
+        allow: ["/", "/screener", "/briefing", "/TradingView", "/TradingView/forex", "/optionchain"],
         disallow: [
           "/riyazstock", // internal bulk-analysis tool
         ],
