@@ -462,10 +462,30 @@ export default function BriefingClient() {
                   </motion.div>
                 ))}
               </div>
+            ) : briefing.marketSentiment === "BEARISH_CORRECTION" ? (
+              <div className="defensive-stance-card">
+                <div className="defensive-header">
+                  <div className="defensive-badge">
+                    <FiShield size={18} /> Capital Preservation Mode (Downtrend Defense)
+                  </div>
+                  <span className="defensive-tag">Strict Risk Filters Active</span>
+                </div>
+                <p className="defensive-body">
+                  Zero fresh swing breakout setups passed institutional criteria today. With {breadth.bearishPct}% of liquid leaders under bearish or exit conditions, risk of false breakouts and bull traps on morning bounces is elevated.
+                </p>
+                <div className="defensive-rules">
+                  <div>
+                    <b>🛡️ Tactical Stance:</b> Hold elevated cash reserves and refrain from aggressive dip-buying into distribution.
+                  </div>
+                  <div>
+                    <b>🎯 Reversal Trigger:</b> Wait for index leaders to establish a confirmed higher-low pivot structure and reclaim the 20-day EMA with volume expansion before deploying swing capital.
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="gameplan-card">
                 <p style={{ margin: 0, color: "var(--tx-second, #8b949e)" }}>
-                  ⚪ No fresh high-conviction breakout setups met strict risk filters today. Focus on capital preservation or wait for morning range confirmation.
+                  ⚪ No fresh high-conviction breakout setups met strict risk filters today. Focus on protecting existing positions or await clear structural confirmations.
                 </p>
               </div>
             )}

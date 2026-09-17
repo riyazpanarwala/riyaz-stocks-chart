@@ -63,6 +63,12 @@ export function aggregateMarketData(scanResults = []) {
     const regime = sig.marketRegime || "UNKNOWN";
     regimes[regime] = (regimes[regime] || 0) + 1;
 
+    const isBearish =
+      sig.signal === "EXIT" ||
+      sig.action === "AVOID" ||
+      regime.includes("DOWNTREND") ||
+      (sig.bearishScore >= 45 && sig.bearishScore > (sig.bullishScore || 0));
+
     if (sig.signal === "BUY") {
       bullishCount++;
       buyCandidates.push({
@@ -79,18 +85,21 @@ export function aggregateMarketData(scanResults = []) {
         risk: sig.risk,
         evidence: sig.evidence?.bullish || [],
       });
-    } else if (sig.signal === "EXIT" || sig.action === "AVOID") {
+    } else if (isBearish) {
       bearishCount++;
-      if (sig.signal === "EXIT") {
-        exitCandidates.push({
-          symbol,
-          name: item.instrument?.name || symbol,
-          price: sig.price,
-          reason: sig.action,
-          bearishScore: sig.bearishScore || 0,
-          risks: sig.evidence?.bearish || [],
-        });
-      }
+      const riskReasons = [
+        ...(sig.evidence?.bearish || []),
+        ...(sig.reasons?.filter((r) => r.toLowerCase().includes("down") || r.toLowerCase().includes("blocked") || r.toLowerCase().includes("below") || r.toLowerCase().includes("ema")) || []),
+      ];
+      exitCandidates.push({
+        symbol,
+        name: item.instrument?.name || symbol,
+        price: sig.price,
+        regime,
+        reason: sig.action === "AVOID" ? "Bearish Structure" : sig.action,
+        bearishScore: sig.bearishScore || 0,
+        risks: riskReasons.length > 0 ? [...new Set(riskReasons)] : [`Active ${regime.replace(/_/g, " ").toLowerCase()} structure`],
+      });
     } else {
       neutralCount++;
       if (sig.freshEntryBlocked) {
@@ -104,8 +113,9 @@ export function aggregateMarketData(scanResults = []) {
     }
   }
 
-  // Sort buy candidates by strength descending
+  // Sort buy candidates by strength descending, exit candidates by bearishScore descending
   buyCandidates.sort((a, b) => b.strength - a.strength);
+  exitCandidates.sort((a, b) => b.bearishScore - a.bearishScore);
 
   return {
     total,
@@ -256,51 +266,62 @@ export function formatBriefingMarkdown(briefingData, aggregated = {}, dateStr = 
  * @returns {object} Structured briefing payload
  */
 export function generateFallbackBriefing(aggregated, dateStr = new Date().toISOString().slice(0, 10)) {
-  const { breadth = { bullishPct: 0, bearishPct: 0, neutralPct: 0 }, buyCandidates = [], exitCandidates = [] } = aggregated;
+  const { breadth = { bullishPct: 0, bearishPct: 0, neutralPct: 0 }, buyCandidates = [], exitCandidates = [], regimes = {}, total = 0 } = aggregated;
 
   let marketSentiment = "RANGEBOUND_CONSOLIDATION";
   let sentimentHeadline = "Equilibrium Market With Selective Opportunities";
   let executiveSummary = "Markets are currently oscillating within key moving average bands with balanced participation between buyers and sellers. Stock-specific action prevails over broad-based index momentum.";
 
-  if (breadth.bullishPct >= 60) {
+  const strongDowntrends = (regimes["STRONG_DOWNTREND"] || 0) + (regimes["DOWNTREND"] || 0);
+
+  if (breadth.bearishPct >= 40 || strongDowntrends >= Math.max(1, Math.round(total * 0.4))) {
+    marketSentiment = "BEARISH_CORRECTION";
+    sentimentHeadline = "Broad Distribution & Downside Trend Domination";
+    executiveSummary = `Markets are facing persistent distribution pressure with ${breadth.bearishPct}% of liquid leaders under bearish or distribution conditions. Defensive positioning and strict capital preservation are advised over fresh long exposure.`;
+  } else if (breadth.bullishPct >= 60) {
     marketSentiment = "BULLISH";
     sentimentHeadline = "Broad Bullish Expansion & Upward Momentum";
     executiveSummary = `Bullish breadth dominates at ${breadth.bullishPct}% of liquid leaders. Institutional accumulation is evident in trend continuation breakouts with healthy volume expansion.`;
-  } else if (breadth.bullishPct >= 40) {
+  } else if (breadth.bullishPct >= 35) {
     marketSentiment = "CAUTIOUS_BULLISH";
     sentimentHeadline = "Selective Stock-Picking Market with Sector Divergence";
     executiveSummary = `Market breadth shows selective strength with ${breadth.bullishPct}% bullish participation. Traders should favor high-relative-strength leaders while keeping position sizing prudent.`;
-  } else if (breadth.bearishPct >= 50) {
-    marketSentiment = "BEARISH_CORRECTION";
-    sentimentHeadline = "Distribution Pressure & Caution on Weakness";
-    executiveSummary = `Bearish distribution pressure is elevated with ${breadth.bearishPct}% of scanned leaders flashing sell signals or downtrends. Capital preservation and tight stops are warranted.`;
   }
 
-  const topSwingSetups = buyCandidates.slice(0, 3).map((b) => {
-    const entryLow = b.risk?.entry ? (b.risk.entry * 0.995).toFixed(1) : b.price;
-    const entryHigh = b.risk?.entry ? (b.risk.entry * 1.005).toFixed(1) : (b.price * 1.01).toFixed(1);
-    return {
-      symbol: b.symbol,
-      setupType: b.regime === "BULLISH_TREND" ? "Trend Continuation Breakout" : "Pullback Retest",
-      entryZone: `₹${entryLow} - ₹${entryHigh}`,
-      stopLoss: b.risk?.stopLoss ? `₹${Number(b.risk.stopLoss).toFixed(1)}` : `₹${(b.price * 0.97).toFixed(1)}`,
-      target: b.risk?.target1 ? `₹${Number(b.risk.target1).toFixed(1)}` : `₹${(b.price * 1.05).toFixed(1)}`,
-      rationale: b.evidence && b.evidence.length > 0
-        ? `Confirmed by ${b.evidence.slice(0, 2).join(" and ")} with strength score ${b.strength}/100.`
-        : `Strong technical momentum with RSI at ${b.rsi ? Number(b.rsi).toFixed(1) : "N/A"} and ADX trend strength.`,
-    };
-  });
+  const topSwingSetups =
+    marketSentiment === "BEARISH_CORRECTION"
+      ? []
+      : buyCandidates.slice(0, 3).map((b) => {
+          const entryLow = b.risk?.entry ? (b.risk.entry * 0.995).toFixed(1) : b.price;
+          const entryHigh = b.risk?.entry ? (b.risk.entry * 1.005).toFixed(1) : (b.price * 1.01).toFixed(1);
+          return {
+            symbol: b.symbol,
+            setupType: b.regime === "BULLISH_TREND" ? "Trend Continuation Breakout" : "Pullback Retest",
+            entryZone: `₹${entryLow} - ₹${entryHigh}`,
+            stopLoss: b.risk?.stopLoss ? `₹${Number(b.risk.stopLoss).toFixed(1)}` : `₹${(b.price * 0.97).toFixed(1)}`,
+            target: b.risk?.target1 ? `₹${Number(b.risk.target1).toFixed(1)}` : `₹${(b.price * 1.05).toFixed(1)}`,
+            rationale: b.evidence && b.evidence.length > 0
+              ? `Confirmed by ${b.evidence.slice(0, 2).join(" and ")} with strength score ${b.strength}/100.`
+              : `Strong technical momentum with RSI at ${b.rsi ? Number(b.rsi).toFixed(1) : "N/A"} and ADX trend strength.`,
+          };
+        });
 
-  const riskWatchlist = exitCandidates.slice(0, 4).map((e) => ({
+  const riskWatchlist = exitCandidates.slice(0, 6).map((e) => ({
     symbol: e.symbol,
-    warning: e.risks && e.risks.length > 0 ? e.risks[0] : "Loss of primary moving average support; avoid fresh long entry.",
+    warning: e.risks && e.risks.length > 0 ? e.risks.slice(0, 2).join("; ") : "Loss of primary moving average support; avoid fresh long entry.",
   }));
 
-  const tacticalGameplan = [
-    "Focus on high-conviction breakout setups displaying volume confirmation at market open.",
-    "Strictly honor stop-loss levels and trail stops to entry once the 1R target is reached.",
-    "Avoid chasing overextended stocks that have moved more than 5% away from their 20 EMA.",
-  ];
+  const tacticalGameplan = marketSentiment === "BEARISH_CORRECTION"
+    ? [
+        "Adopt a defensive posture: preserve cash and avoid aggressive dip-buying until a higher-low pivot forms.",
+        "Strictly honor stop-loss levels without hesitation on any remaining long inventory.",
+        "Watch key index support zones; wait for price to reclaim the 20-day EMA before deploying fresh swing capital.",
+      ]
+    : [
+        "Focus on high-conviction breakout setups displaying volume confirmation at market open.",
+        "Strictly honor stop-loss levels and trail stops to entry once the 1R target is reached.",
+        "Avoid chasing overextended stocks that have moved more than 5% away from their 20 EMA.",
+      ];
 
   return {
     marketSentiment,

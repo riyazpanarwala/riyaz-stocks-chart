@@ -288,7 +288,7 @@
   gap: 5px;
   font-size: 0.78rem;
   font-weight: 600;
-  padding: 3px 10px;
+  padding: 4px 10px;
   border-radius: 20px;
 
   &.gemini {
@@ -326,7 +326,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px;
+  padding: 5px 14px;
   border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 700;
@@ -421,7 +421,7 @@
 
 .regime-badge {
   font-size: 0.78rem;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 4px;
   background: var(--surface-2, #182232);
   border: 1px solid var(--bd-dim, rgba(255, 255, 255, 0.08));
@@ -432,7 +432,7 @@
   }
 }
 
-/* ── Top Swing Setups Grid ── */
+/* ── Section Title ── */
 .section-title {
   display: flex;
   align-items: center;
@@ -446,9 +446,69 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    color: var(--tx-primary, #f0f6fc);
   }
 }
 
+/* ── Defensive Stance Card (when 0 setups) ── */
+.defensive-stance-card {
+  background: var(--surface-1, #111824);
+  border: 1px solid var(--bd-dim, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.defensive-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.defensive-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.defensive-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  color: #ff7a8a;
+}
+
+.defensive-body {
+  font-size: 0.92rem;
+  color: var(--tx-second, #8b949e);
+  line-height: 1.55;
+  margin: 0 0 14px 0;
+}
+
+.defensive-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--tx-second, #8b949e);
+  border-top: 1px solid var(--bd-dim, rgba(255, 255, 255, 0.08));
+  padding-top: 12px;
+
+  b {
+    color: var(--tx-primary, #f0f6fc);
+  }
+}
+
+/* ── Top Swing Setups Grid ── */
 .setups-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -644,6 +704,166 @@
 
   tr:hover td {
     background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   LIGHT THEME ADAPTATION
+   ═════════════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  .briefing-page {
+    background-color: var(--bg, #f4f6fa);
+    color: var(--tx-primary, #0f172a);
+  }
+
+  .briefing-nav {
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .nav-pill-link {
+    color: #475569;
+    &:hover {
+      color: #0f172a;
+      background: #f1f5f9;
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+    &.active {
+      color: #0284c7;
+      background: rgba(2, 132, 199, 0.1);
+      border-color: rgba(2, 132, 199, 0.25);
+    }
+  }
+
+  .briefing-toolbar,
+  .sentiment-hero,
+  .setup-card,
+  .gameplan-card,
+  .table-card,
+  .defensive-stance-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.09);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  }
+
+  .sentiment-headline {
+    color: #0f172a;
+  }
+
+  .sentiment-summary {
+    color: #334155;
+  }
+
+  .breadth-labels {
+    color: #475569;
+  }
+
+  .breadth-track {
+    background: #e2e8f0;
+  }
+
+  .regime-badge {
+    background: #f1f5f9;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #475569;
+    b {
+      color: #0f172a;
+    }
+  }
+
+  .sentiment-pill {
+    &.bullish {
+      background: #dcfce7;
+      border-color: #86efac;
+      color: #15803d;
+    }
+    &.cautious_bullish {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #047857;
+    }
+    &.rangebound_consolidation {
+      background: #fef3c7;
+      border-color: #fcd34d;
+      color: #b45309;
+    }
+    &.bearish_correction {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #b91c1c;
+    }
+  }
+
+  .source-badge {
+    &.gemini {
+      background: #f3e8ff;
+      border-color: #d8b4fe;
+      color: #7e22ce;
+    }
+    &.fallback {
+      background: #fef3c7;
+      border-color: #fde68a;
+      color: #b45309;
+    }
+  }
+
+  .setup-levels {
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .level-col.entry span:last-child {
+    color: #0f172a;
+  }
+
+  .setup-rationale {
+    color: #475569;
+  }
+
+  .gameplan-list li {
+    color: #334155;
+    .rule-num {
+      background: #e2e8f0;
+      color: #0284c7;
+    }
+  }
+
+  .risk-card {
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    .risk-symbol {
+      color: #b91c1c;
+    }
+    .risk-warning {
+      color: #334155;
+    }
+  }
+
+  .defensive-body {
+    color: #334155;
+  }
+
+  .defensive-rules {
+    color: #475569;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    b {
+      color: #0f172a;
+    }
+  }
+
+  .snapshot-table {
+    th {
+      background: #f1f5f9;
+      color: #475569;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    td {
+      color: #0f172a;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    tr:hover td {
+      background: #f8fafc;
+    }
   }
 }
 
