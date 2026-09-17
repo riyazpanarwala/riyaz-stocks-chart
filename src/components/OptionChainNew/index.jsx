@@ -21,6 +21,7 @@ import { StrikeTable }        from "./ui/StrikeTable.jsx";
 import { InstitutionalPanel } from "./ui/InstitutionalPanel.jsx";
 import { BreakoutPanel }      from "./ui/BreakoutPanel.jsx";
 import { ExpiryCards }        from "./ui/ExpiryCards.jsx";
+import { MaxPainPcrTracker }  from "./ui/MaxPainPcrTracker.jsx";
 
 // ─── Tab definition ───────────────────────────────────────────
 
@@ -254,6 +255,7 @@ export default function App({ initialSymbol = null }) {
             <div style={{ display: "flex", gap: 3, marginBottom: 10, borderBottom: `1px solid ${C.border}`, paddingBottom: 4, flexWrap: "wrap" }}>
               <Tab id="oi"       label="OI Chart"          activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="doi"      label="ΔOI Activity"      activeTab={activeTab} setActiveTab={setActiveTab} />
+              <Tab id="trend"    label="🎯 Max Pain & PCR" activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="table"    label="Strike Table"       activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="inst"     label="🧠 Smart Money"    activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="breakout" label={`⚡ Breakouts${breakoutSignals.length ? ` (${breakoutSignals.length})` : ""}`} activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -286,6 +288,20 @@ export default function App({ initialSymbol = null }) {
                 >
                   {activeTab === "oi"      && <OIChart chartData={chartData} atm={atm} maxPain={maxPain} sig={sig} />}
                   {activeTab === "doi"     && <DeltaOIChart chartData={chartData} atm={atm} />}
+                  {activeTab === "trend"   && (
+                    <MaxPainPcrTracker
+                      instrument={instrument}
+                      activeExpiry={activeExpiry}
+                      rows={rows}
+                      fullOI={rawData?.fullOI}
+                      isIndex={isIndex}
+                      underlyingValue={underlyingValue}
+                      atm={atm}
+                      pcr={pcr}
+                      maxPain={maxPain}
+                      fetchedAt={fetchedAt}
+                    />
+                  )}
                   {activeTab === "table"   && sig && <StrikeTable displayRows={displayRows} atm={atm} sig={sig} />}
                   {activeTab === "inst"    && (
                     <InstitutionalPanel
