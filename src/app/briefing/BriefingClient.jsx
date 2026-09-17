@@ -462,7 +462,7 @@ export default function BriefingClient() {
                   </motion.div>
                 ))}
               </div>
-            ) : (
+            ) : briefing.marketSentiment === "BEARISH_CORRECTION" ? (
               <div className="defensive-stance-card">
                 <div className="defensive-header">
                   <div className="defensive-badge">
@@ -481,6 +481,12 @@ export default function BriefingClient() {
                     <b>🎯 Reversal Trigger:</b> Wait for index leaders to establish a confirmed higher-low pivot structure and reclaim the 20-day EMA with volume expansion before deploying swing capital.
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="gameplan-card">
+                <p style={{ margin: 0, color: "var(--tx-second, #8b949e)" }}>
+                  ⚪ No fresh high-conviction breakout setups met strict risk filters today. Focus on protecting existing positions or await clear structural confirmations.
+                </p>
               </div>
             )}
 
