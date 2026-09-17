@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies } from "next/headers.js";
 import crypto from "node:crypto";
 
 const COOKIE_NAME = "screener_access_token";

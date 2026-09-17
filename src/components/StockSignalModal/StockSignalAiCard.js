@@ -1,5 +1,10 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { askGemini } from "../../lib/ai/geminiClient.js";
+import {
+  checkScreenerAccessAction,
+  verifyScreenerAccessAction,
+} from "../../app/actions/screenerAuth.js";
+import { FiLock, FiEye, FiEyeOff, FiAlertTriangle } from "react-icons/fi";
 import {
   buildSignalAiPrompt,
   getVerdictTheme,
@@ -14,6 +19,36 @@ const StockSignalAiCard = ({
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Authentication State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [passcode, setPasscode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
+
+  // Check auth session on mount
+  useEffect(() => {
+    let mounted = true;
+    checkScreenerAccessAction()
+      .then((res) => {
+        if (mounted) {
+          setIsAuthenticated(Boolean(res?.authenticated));
+          setIsCheckingAuth(false);
+        }
+      })
+      .catch((err) => {
+        console.error("[StockSignalAiCard] auth check failed:", err);
+        if (mounted) {
+          setIsAuthenticated(false);
+          setIsCheckingAuth(false);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Cache key to remember analysis for this specific symbol and price/signal
   const cacheKey = useMemo(() => {
@@ -31,6 +66,26 @@ const StockSignalAiCard = ({
       setCachedKey(cacheKey);
     }
   }, [cacheKey, cachedKey]);
+
+  const handleUnlockAi = async (e) => {
+    if (e) e.preventDefault();
+    if (!passcode.trim() || isSubmittingAuth) return;
+    setAuthError("");
+    setIsSubmittingAuth(true);
+    try {
+      const res = await verifyScreenerAccessAction(passcode);
+      if (res?.success) {
+        setIsAuthenticated(true);
+        setPasscode("");
+      } else {
+        setAuthError(res?.error || "Invalid passcode. Please try again.");
+      }
+    } catch {
+      setAuthError("Failed to verify passcode. Please try again.");
+    } finally {
+      setIsSubmittingAuth(false);
+    }
+  };
 
   const handleRequestAi = useCallback(async () => {
     if (!signal) return;
@@ -51,6 +106,12 @@ const StockSignalAiCard = ({
         responseFormat: "json",
         temperature: 0.3,
       });
+
+      if (res?.code === "UNAUTHORIZED") {
+        setIsAuthenticated(false);
+        setAuthError("Your session has expired or is unauthorized. Please unlock again.");
+        return;
+      }
 
       if (res?.success && res?.response) {
         const payload = res.response;
@@ -82,14 +143,21 @@ const StockSignalAiCard = ({
         <div className="ai-title-group">
           <span className="ai-sparkle-icon">✨</span>
           <div>
-            <h4 className="ai-title">Gemini AI Second Opinion</h4>
+            <h4 className="ai-title">
+              Gemini AI Second Opinion
+              {isAuthenticated ? (
+                <span className="ai-badge-authorized">✓ Unlocked</span>
+              ) : (
+                <span className="ai-badge-protected">🔒 Protected</span>
+              )}
+            </h4>
             <span className="ai-subtitle">
               Generative AI validation & tactical risk assessment
             </span>
           </div>
         </div>
 
-        {!analysis && !loading && (
+        {isAuthenticated && !analysis && !loading && (
           <button
             className="btn-ai-trigger"
             onClick={handleRequestAi}
@@ -99,7 +167,7 @@ const StockSignalAiCard = ({
           </button>
         )}
 
-        {analysis && !loading && (
+        {isAuthenticated && analysis && !loading && (
           <button
             className="btn-ai-reanalyze"
             onClick={handleRequestAi}
@@ -110,15 +178,75 @@ const StockSignalAiCard = ({
         )}
       </div>
 
-      {loading && (
+      {isCheckingAuth ? (
         <div className="ai-loading-container">
-          <div className="ai-shimmer-pulse" />
           <div className="ai-loading-text">
             <span className="ai-loading-spinner" />
-            <span>Consulting Gemini AI on market structure & momentum...</span>
+            <span>Verifying Gemini AI access permissions...</span>
           </div>
         </div>
-      )}
+      ) : !isAuthenticated ? (
+        <div className="ai-auth-locked-box">
+          <div className="ai-lock-icon">
+            <FiLock size={20} />
+          </div>
+          <div className="ai-lock-content">
+            <h5 className="ai-lock-title">Restricted Access: Gemini AI</h5>
+            <p className="ai-lock-desc">
+              Algorithmic technical evaluation and tactical AI second opinions are reserved for authorized users. Enter your passcode to unlock.
+            </p>
+            <form onSubmit={handleUnlockAi} className="ai-lock-form">
+              <div className="ai-lock-input-wrap">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter access passcode..."
+                  value={passcode}
+                  onChange={(e) => {
+                    setPasscode(e.target.value);
+                    if (authError) setAuthError("");
+                  }}
+                  disabled={isSubmittingAuth}
+                />
+                <button
+                  type="button"
+                  className="ai-lock-eye"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  title={showPassword ? "Hide passcode" : "Show passcode"}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <FiEyeOff size={14} /> : <FiEye size={14} />}
+                </button>
+              </div>
+              <button
+                type="submit"
+                className="btn-ai-unlock"
+                disabled={isSubmittingAuth || !passcode.trim()}
+              >
+                {isSubmittingAuth ? "Verifying..." : "🔓 Unlock AI"}
+              </button>
+            </form>
+            {authError && (
+              <div className="ai-auth-error" role="alert">
+                <FiAlertTriangle size={13} />
+                <span>{authError}</span>
+              </div>
+            )}
+            <div className="ai-lock-hint">
+              🔒 Unlocking enables access across both Gemini AI and the Screener for 30 days.
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {loading && (
+            <div className="ai-loading-container">
+              <div className="ai-shimmer-pulse" />
+              <div className="ai-loading-text">
+                <span className="ai-loading-spinner" />
+                <span>Consulting Gemini AI on market structure & momentum...</span>
+              </div>
+            </div>
+          )}
 
       {!loading && error && (
         <div className="ai-error-box">
@@ -182,7 +310,9 @@ const StockSignalAiCard = ({
           )}
         </div>
       )}
-    </div>
+    </>
+  )}
+</div>
   );
 };
 
