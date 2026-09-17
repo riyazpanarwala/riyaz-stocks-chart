@@ -43,16 +43,43 @@ function Tab({ id, label, activeTab, setActiveTab }) {
   );
 }
 
+const resolveInitialInstrument = (initialSymbol) => {
+  if (initialSymbol) return initialSymbol;
+  if (typeof window !== "undefined") {
+    const urlParams = new URLSearchParams(window.location.search);
+    const param = (urlParams.get("symbol") || urlParams.get("q") || "").trim().toUpperCase();
+    if (param) {
+      const found = FO_LIST.find(
+        (item) =>
+          item.symbol.toUpperCase() === param ||
+          item.name.toUpperCase() === param
+      );
+      if (found) return found;
+    }
+  }
+  return FO_LIST[0];
+};
+
 // ═══════════════════════════════════════════════════════════════
 // APP
 // ═══════════════════════════════════════════════════════════════
 export default function App({ initialSymbol = null }) {
-  const defaultInstrument = initialSymbol ?? FO_LIST[0];
-
-  const [instrument,     setInstrument]     = useState(defaultInstrument);
+  const [instrument,     setInstrument]     = useState(() => resolveInitialInstrument(initialSymbol));
   const [scalpMode,      setScalpMode]      = useState(false);
   const [activeTab,      setActiveTab]      = useState("oi");
   const [selectedExpiry, setSelectedExpiry] = useState(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && instrument?.symbol) {
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("symbol") !== instrument.symbol) {
+          url.searchParams.set("symbol", instrument.symbol);
+          window.history.replaceState(window.history.state, "", `${url.pathname}?${url.searchParams.toString()}`);
+        }
+      } catch (e) {}
+    }
+  }, [instrument]);
 
   const isIndex = instrument.type === "index";
 

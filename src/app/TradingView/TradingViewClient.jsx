@@ -11,12 +11,28 @@ import TechnicalAnalysis from "../../components/TradingView/TechnicalAnalysis";
 import TopStories from "../../components/TradingView/TopStories";
 
 export default function TradingViewClient() {
-  const [symbol, setSymbol] = useState("BSE:JPPOWER");
-  const [inputValue, setInputValue] = useState("BSE:JPPOWER");
+  const [symbol, setSymbol] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlSymbol = params.get("symbol") || params.get("q");
+      if (urlSymbol) return urlSymbol;
+    }
+    return "BSE:JPPOWER";
+  });
+  const [inputValue, setInputValue] = useState(symbol);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setSymbol(inputValue);
+      if (typeof window !== "undefined" && inputValue) {
+        try {
+          const url = new URL(window.location.href);
+          if (url.searchParams.get("symbol") !== inputValue) {
+            url.searchParams.set("symbol", inputValue);
+            window.history.replaceState(window.history.state, "", `${url.pathname}?${url.searchParams.toString()}`);
+          }
+        } catch (e) {}
+      }
     }, 500);
     return () => clearTimeout(timer);
   }, [inputValue]);
