@@ -5,6 +5,7 @@ import {
   sanitizeActionOptions,
   MAX_PROMPT_LENGTH,
 } from "../../services/ai/geminiService.js";
+import { checkScreenerAccessAction } from "./screenerAuth.js";
 
 // Sliding-window rate limiter per client identifier
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -105,10 +106,23 @@ export async function askGeminiAction({ prompt, options = {} } = {}) {
       };
     }
 
-    // 3. Sanitize options to strict allowlist
+    // 3. Server-side session authorization check
+    const isUnitTest = process.env.NODE_ENV === "test";
+    if (!isUnitTest || process.env.TEST_ENFORCE_AUTH === "true") {
+      const auth = await checkScreenerAccessAction();
+      if (!auth?.authenticated) {
+        return {
+          success: false,
+          error: "Unauthorized: Access to Gemini AI requires authentication.",
+          code: "UNAUTHORIZED",
+        };
+      }
+    }
+
+    // 4. Sanitize options to strict allowlist
     const sanitizedOptions = sanitizeActionOptions(options);
 
-    // 4. Generate response
+    // 5. Generate response
     const result = await generateGeminiResponse(trimmedPrompt, sanitizedOptions);
 
     return {

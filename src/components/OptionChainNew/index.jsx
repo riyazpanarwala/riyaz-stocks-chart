@@ -2,7 +2,7 @@
 // MAIN APP COMPONENT
 // Thin orchestrator — all logic lives in hooks & utilities.
 // ═══════════════════════════════════════════════════════════════
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { C } from "./constants.js";
 import FO_LIST from "./FOlist.js";
@@ -43,16 +43,66 @@ function Tab({ id, label, activeTab, setActiveTab }) {
   );
 }
 
+/**
+ * Finds a matching instrument in FO_LIST by symbol or name.
+ * @param {string} query - The symbol or instrument name to match.
+ * @returns {Object|null} The matching instrument object, or null.
+ */
+const findInstrument = (query) => {
+  if (!query) return null;
+  const param = query.trim().toUpperCase();
+  return (
+    FO_LIST.find(
+      (item) =>
+        item.symbol.toUpperCase() === param ||
+        item.name.toUpperCase() === param
+    ) || null
+  );
+};
+
 // ═══════════════════════════════════════════════════════════════
 // APP
 // ═══════════════════════════════════════════════════════════════
+/**
+ * Option Chain client application component.
+ * @param {Object} props - Component properties.
+ * @param {Object|null} props.initialSymbol - Explicit initial instrument, if provided.
+ * @returns {React.ReactElement} The Option Chain dashboard.
+ */
 export default function App({ initialSymbol = null }) {
-  const defaultInstrument = initialSymbol ?? FO_LIST[0];
-
-  const [instrument,     setInstrument]     = useState(defaultInstrument);
+  const [instrument,     setInstrument]     = useState(() => initialSymbol ?? FO_LIST[0]);
   const [scalpMode,      setScalpMode]      = useState(false);
   const [activeTab,      setActiveTab]      = useState("oi");
   const [selectedExpiry, setSelectedExpiry] = useState(null);
+  const isInitializedRef = useRef(false);
+
+  // Resolve URL parameter after client mount to prevent SSR hydration mismatch
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!initialSymbol) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const param = urlParams.get("symbol") || urlParams.get("q");
+      if (param) {
+        const found = findInstrument(param);
+        if (found && found.symbol !== instrument.symbol) {
+          setInstrument(found);
+        }
+      }
+    }
+    isInitializedRef.current = true;
+  }, [initialSymbol]);
+
+  // Synchronize selected instrument back to URL query parameter
+  useEffect(() => {
+    if (!isInitializedRef.current || typeof window === "undefined" || !instrument?.symbol) return;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("symbol") !== instrument.symbol) {
+        url.searchParams.set("symbol", instrument.symbol);
+        window.history.replaceState(window.history.state, "", `${url.pathname}?${url.searchParams.toString()}`);
+      }
+    } catch (e) {}
+  }, [instrument]);
 
   const isIndex = instrument.type === "index";
 

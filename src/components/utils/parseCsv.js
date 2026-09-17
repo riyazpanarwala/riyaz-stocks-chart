@@ -63,10 +63,33 @@ const bseIndicesArr = [
 
 let cachedMergedArr = null;
 
+/**
+ * Updates the browser address bar with the selected symbol query parameter.
+ * @param {string} symbol - The stock or instrument symbol to reflect in the URL.
+ */
+const updateUrlSymbol = (symbol) => {
+  if (typeof window === "undefined" || !symbol) return;
+  try {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("symbol") !== symbol) {
+      url.searchParams.set("symbol", symbol);
+      window.history.replaceState(window.history.state, "", `${url.pathname}?${url.searchParams.toString()}`);
+    }
+  } catch (err) {
+    console.error("Failed to update URL symbol:", err);
+  }
+};
+
+/**
+ * Resolves the initial company from URL search parameters or falls back to NIFTY 50.
+ * @param {Array<Object>} merged - The merged list of stocks, ETFs, and indices.
+ * @returns {Object} The resolved company object.
+ */
 const resolveInitialCompany = (merged) => {
   if (!merged || !merged.length) return {};
   let selectedFromUrl = null;
   let niftyFallback = null;
+
   if (typeof window !== "undefined") {
     const urlParams = new URLSearchParams(window.location.search);
     const symbolParam = (urlParams.get("symbol") || urlParams.get("q") || "").trim().toUpperCase();
@@ -79,6 +102,7 @@ const resolveInitialCompany = (merged) => {
       );
     }
   }
+
   niftyFallback = merged.find((item) => item.symbol === "NIFTY 50");
   return selectedFromUrl || niftyFallback || merged[0];
 };
@@ -284,6 +308,38 @@ const useParseCsv = () => {
       setFO(isFOSymbol(symbol));
     }
   }, [companyObj.symbol, isFOLoading]);
+
+  // Keep URL query param in sync with currently selected stock
+  useEffect(() => {
+    if (companyObj && companyObj.symbol && typeof window !== "undefined") {
+      updateUrlSymbol(companyObj.symbol);
+    }
+  }, [companyObj]);
+
+  // Sync state if user navigates with browser back / forward buttons
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePopState = () => {
+      if (!companyArr.length) return;
+      const urlParams = new URLSearchParams(window.location.search);
+      const symbolParam = (urlParams.get("symbol") || urlParams.get("q") || "").trim().toUpperCase();
+      if (symbolParam) {
+        const found = companyArr.find(
+          (item) =>
+            (item.symbol && item.symbol.toUpperCase() === symbolParam) ||
+            (item.label && item.label.toUpperCase() === symbolParam) ||
+            (item.value && item.value.toUpperCase() === symbolParam)
+        );
+        if (found && found.symbol !== companyObj?.symbol) {
+          setCompany(found);
+        }
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [companyArr, companyObj]);
 
   return {
     isFO,

@@ -1,3 +1,5 @@
+process.env.NODE_ENV = "test";
+
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -269,4 +271,17 @@ test("Client Helper: askGemini delegates to Server Action cleanly", async () => 
   assert.equal(res.success, false);
   assert.match(res.error, /Prompt cannot be empty/);
 });
+
+test("Server Action: askGeminiAction enforces session authorization when required", async () => {
+  process.env.TEST_ENFORCE_AUTH = "true";
+  try {
+    const res = await askGeminiAction({ prompt: "Valid technical prompt" });
+    assert.equal(res.success, false);
+    assert.equal(res.code, "UNAUTHORIZED");
+    assert.match(res.error, /Unauthorized/);
+  } finally {
+    delete process.env.TEST_ENFORCE_AUTH;
+  }
+});
+
 

@@ -134,7 +134,7 @@ const useCommonHeader = (isEchart) => {
   };
 
   useEffect(() => {
-    if (!indexObj.value && companyObj.label) {
+    if (companyObj?.label) {
       setIndexes(companyObj);
     }
   }, [companyObj]);
