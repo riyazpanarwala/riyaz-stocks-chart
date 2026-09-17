@@ -13,9 +13,12 @@ const HEADERS = {
 
 // Expected first line of each CSV — cheap, effective structural check.
 const EXPECTED_HEADERS = {
-  "nse_equity.csv": "SYMBOL,NAME OF COMPANY",
-  "eq_etfseclist.csv": "Symbol,Underlying,SecurityName",
-  "fo_mktlots.csv": "UNDERLYING", // first column name; header row has trailing spaces/commas
+  "nse_equity.csv": ["SYMBOL,NAME OF COMPANY"],
+  "eq_etfseclist.csv": [
+    "Symbol,Underlying Asset,SecurityName",
+    "Symbol,Underlying,SecurityName",
+  ],
+  "fo_mktlots.csv": ["UNDERLYING"], // first column name; header row has trailing spaces/commas
 };
 
 async function fetchCsv(url, outFile, { minBytes = 1000 } = {}) {
@@ -32,11 +35,20 @@ async function fetchCsv(url, outFile, { minBytes = 1000 } = {}) {
     );
   }
 
-  const expectedHeader = EXPECTED_HEADERS[outFile];
-  if (expectedHeader && !text.trimStart().startsWith(expectedHeader)) {
-    throw new Error(
-      `Unexpected CSV header for ${outFile} — got "${text.slice(0, 60)}..." expected to start with "${expectedHeader}"`
-    );
+  const expected = EXPECTED_HEADERS[outFile];
+  if (expected) {
+    const trimmed = text.trimStart();
+    const expectedList = Array.isArray(expected) ? expected : [expected];
+    const matches = expectedList.some((h) => {
+      if (!trimmed.startsWith(h)) return false;
+      const rest = trimmed.slice(h.length);
+      return /^[ \t]*(?:,|\r|\n|$)/.test(rest);
+    });
+    if (!matches) {
+      throw new Error(
+        `Unexpected CSV header for ${outFile} — got "${text.slice(0, 60)}..." expected to start with "${expectedList.join('" or "')}"`
+      );
+    }
   }
 
   return { outFile, text };
@@ -57,7 +69,8 @@ async function main() {
   if (failures.length) {
     failures.forEach((r) => console.error("✖", r.reason.message));
     console.error(`${failures.length}/${jobs.length} downloads failed — no files written.`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const successes = results.map((r) => r.value);
