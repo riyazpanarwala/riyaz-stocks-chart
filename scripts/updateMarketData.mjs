@@ -1,6 +1,9 @@
 // scripts/updateMarketData.mjs
+import dns from "node:dns";
 import { writeFile } from "fs/promises";
 import path from "path";
+
+dns.setDefaultResultOrder("ipv4first");
 
 const PUBLIC_DIR = path.resolve(process.cwd(), "public");
 const FETCH_TIMEOUT_MS = 30_000;
