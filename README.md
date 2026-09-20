@@ -17,7 +17,7 @@ A modern, high-performance Indian Stock Market (NSE & BSE) technical analysis, c
 - **🏢 Fundamentals & Financial Analysis**: Detailed financial statements (P&L, Balance Sheet, Cash Flow), ratios, and valuation data via Yahoo Finance & NSE APIs.
 - **🧮 Trading Utilities & Calculators**: Long/Short position size calculator, risk-reward manager, and angle calculation tools.
 - **🌐 TradingView & Forex Views**: Embedded TradingView widgets for global market data and Forex pairs.
-- **🔄 Automated Data Pipeline**: Autonomous scraping and downloading scripts for NSE equities, BSE equities (via Playwright stealth), ETF security lists, and F&O market lot sizes.
+- **🔄 Dynamic Market Universe & Instruments API**: Automatically synchronizes all active NSE & BSE equities, ETFs, F&O contracts, lot sizes, and indices via Upstox's official daily master contract CDN feed with 24-hour server ISR caching and zero Git commit churn.
 - **🎨 Modern Dark/Light Theme**: Built with Sass modules, Framer Motion animations, dynamic drop-downs, and virtualized tables for fast rendering.
 
 ---
@@ -29,9 +29,9 @@ A modern, high-performance Indian Stock Market (NSE & BSE) technical analysis, c
 | **Framework & UI** | Next.js 16 (App Router), React 19, Framer Motion, React Icons, React Select, React Window |
 | **Charting Engine** | `@riyazpanarwala/react-financial-charts`, Recharts, D3 Format (`d3-format`, `d3-time-format`) |
 | **Styling** | Sass (`.module.scss`, `.scss`), ThemeProvider (Dark/Light mode) |
-| **Data APIs & Services** | `yahoo-finance2`, `stock-nse-india`, `@zero65tech/indian-stock-market`, Axios, Next.js API Routes |
-| **Automation & Scraping** | Playwright (`playwright-extra`), `puppeteer-extra-plugin-stealth` |
-| **Parsing & Utilities** | `react-papaparse` (CSV Parsing), `file-saver` (JSON Export) |
+| **Data APIs & Services** | Upstox Market Data CDN, `yahoo-finance2`, `stock-nse-india`, `@zero65tech/indian-stock-market`, Axios, Next.js API Routes |
+| **Instruments Pipeline** | Upstox Daily Master Contract Feeds (`NSE.json.gz`, `BSE.json.gz`), Next.js 24h ISR Caching |
+| **Utilities** | `file-saver` (JSON Export), Node.js `zlib` stream decompression |
 
 ---
 
@@ -127,6 +127,29 @@ npm run start
 ```
 
 The application is optimized for hosting on **Vercel** or any Node.js hosting environment.
+
+---
+
+## 📈 Dynamic Instruments & Market Universe
+
+The application dynamically manages the entire universe of Indian stock market instruments (over 13,000+ active securities across NSE, BSE, ETFs, F&O contracts, and indices) with zero daily Git commit noise:
+
+1. **Official Upstox CDN Master Feeds**:
+   - Master contract files are fetched directly from Upstox's high-speed CDN:
+     - `https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz`
+     - `https://assets.upstox.com/market-quote/instruments/exchange/BSE.json.gz`
+   - Covers active NSE equities, BSE equities, ETFs, F&O market lots/freeze quantities, and major index benchmarks.
+
+2. **Server-Side ISR Caching (`/api/instruments`)**:
+   - The Next.js Route Handler (`src/app/api/instruments/route.js`) caches compiled instruments for 24 hours (`revalidate = 86400`).
+   - Client browsers fetch a single pre-compiled JSON payload (`~290 KB` gzipped) with pre-indexed search labels, completely removing the need to download and parse multiple large CSV files in the browser.
+
+3. **Offline Development & Engine Support**:
+   - A local baseline snapshot (`data/instruments.json`) is maintained so CLI commands (`npm run analyze -- <symbol>`) and unit test suites (`npm test`) execute offline with zero network latency.
+   - To manually refresh the local baseline snapshot at any time, run:
+     ```bash
+     npm run updateInstruments
+     ```
 
 ---
 
