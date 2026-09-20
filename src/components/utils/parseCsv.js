@@ -1,6 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { usePapaParse } from "react-papaparse";
-import { useFOSymbols } from "./parseFO";
+import { useEffect, useState } from "react";
 import foMapData from "./FOmap.js";
 
 const indicesArr = [
@@ -62,6 +60,7 @@ const bseIndicesArr = [
 ];
 
 let cachedMergedArr = null;
+let cachedFoSet = null;
 
 /**
  * Updates the browser address bar with the selected symbol query parameter.
@@ -108,127 +107,10 @@ const resolveInitialCompany = (merged) => {
 };
 
 const useParseCsv = () => {
-  const [nseData, setNseData] = useState([]);
-  const [bseData, setBseData] = useState([]);
-  const [etfData, setEtfData] = useState([]);
   const [companyObj, setCompany] = useState(() => resolveInitialCompany(cachedMergedArr));
   const [companyArr, setCompanyArr] = useState(() => cachedMergedArr || []);
   const [isFO, setFO] = useState(false);
-  const { readRemoteFile } = usePapaParse();
-  const { isFOSymbol, isFOLoading } = useFOSymbols();
-
-  const mergeArrays = (arr1, arr2, etfArr) => {
-    const merged = [];
-
-    // Map ISIN to BSE items for O(1) lookup
-    const bseMap = new Map();
-    arr2.forEach((item2, j) => {
-      if (j > 0 && item2 && item2.length >= 8) {
-        bseMap.set(item2[7], item2);
-      }
-    });
-
-    const nseIsinSet = new Set();
-
-    // Add NSE + BSE equities
-    arr1.forEach((item, i) => {
-      if (i > 0) {
-        const isin = item[6];
-        const label = String(item[1] || "").trim();
-        const symbol = String(item[0] || "").trim();
-        if (isin) nseIsinSet.add(isin);
-        merged.push({
-          label,
-          value: isin,
-          symbol,
-          nse: true,
-          bse: bseMap.has(isin),
-          _lowerLabel: label.toLowerCase(),
-          _lowerSymbol: symbol.toLowerCase(),
-        });
-      }
-    });
-
-    arr2.forEach((item2, j) => {
-      if (j === 0) return;
-      if (!item2 || item2.length < 8) return;
-      const isin = item2[7];
-      if (!nseIsinSet.has(isin)) {
-        const label = String(item2[1] || "").trim();
-        const symbol = String(item2[2] || "").trim();
-        merged.push({
-          label,
-          value: isin,
-          symbol,
-          nse: false,
-          bse: true,
-          _lowerLabel: label.toLowerCase(),
-          _lowerSymbol: symbol.toLowerCase(),
-        });
-      }
-    });
-
-    // Add NSE Indices
-    indicesArr.forEach((v) => {
-      const label = String(v.name || "").trim();
-      const symbol = String(v.symbol || "").trim();
-      merged.push({
-        label,
-        value: v.value,
-        symbol,
-        nse: false,
-        bse: false,
-        nseIndex: true,
-        yahooSymbol: v.yahooSymbol,
-        upstoxOnly: v.upstoxOnly,
-        _lowerLabel: label.toLowerCase(),
-        _lowerSymbol: symbol.toLowerCase(),
-      });
-    });
-
-    globalInstruments.forEach((v) => {
-      const label = String(v.name || "").trim();
-      const symbol = String(v.symbol || "").trim();
-      merged.push({
-        label,
-        value: v.value,
-        symbol,
-        global: true,
-        globalSegment: v.segment,
-        upstoxOnly: true,
-        _lowerLabel: label.toLowerCase(),
-        _lowerSymbol: symbol.toLowerCase(),
-      });
-    });
-
-    // Add BSE Indices
-    bseIndicesArr.forEach((v) => {
-      const label = String(v.name || "").trim();
-      const symbol = String(v.symbol || "").trim();
-      merged.push({
-        label,
-        value: v.value,
-        symbol,
-        bseIndex: true,
-        yahooSymbol: v.yahooSymbol,
-        _lowerLabel: label.toLowerCase(),
-        _lowerSymbol: symbol.toLowerCase(),
-      });
-    });
-
-    // Add ETFs parsed from CSV
-    etfArr.forEach((etf) => {
-      const label = String(etf.label || "").trim();
-      const symbol = String(etf.symbol || "").trim();
-      merged.push({
-        ...etf,
-        _lowerLabel: label.toLowerCase(),
-        _lowerSymbol: symbol.toLowerCase(),
-      });
-    });
-
-    return merged;
-  };
+  const [isLoading, setIsLoading] = useState(!cachedMergedArr);
 
   useEffect(() => {
     if (cachedMergedArr) {
@@ -238,76 +120,48 @@ const useParseCsv = () => {
       }
       return;
     }
-    if (nseData.length && bseData.length && etfData.length) {
-      const merged = mergeArrays(nseData, bseData, etfData);
-      cachedMergedArr = merged;
-      setCompanyArr(merged);
-      setCompany((prev) => (prev?.symbol ? prev : resolveInitialCompany(merged)));
+
+    let isMounted = true;
+
+    async function loadInstruments() {
+      try {
+        const res = await fetch("/api/instruments");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (data && Array.isArray(data.instruments)) {
+          const merged = data.instruments;
+          cachedMergedArr = merged;
+          if (data.foSymbols && Array.isArray(data.foSymbols)) {
+            cachedFoSet = new Set(data.foSymbols);
+          }
+
+          if (isMounted) {
+            setCompanyArr(merged);
+            setCompany((prev) => (prev?.symbol ? prev : resolveInitialCompany(merged)));
+            setIsLoading(false);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load /api/instruments:", err);
+      }
     }
-  }, [nseData, bseData, etfData]);
 
-  useEffect(() => {
-    if (cachedMergedArr) return;
+    loadInstruments();
 
-    // Parse NSE equities
-    readRemoteFile("/nse_equity.csv", {
-      complete: (results) => {
-        setNseData(results.data);
-      },
-    });
-
-    // Parse BSE equities
-    readRemoteFile("/bse_equity.csv", {
-      complete: (results) => {
-        setBseData(results.data);
-      },
-    });
-
-    // Parse ETF list
-    // NSE eq_etfseclist.csv columns (header row):
-    // SYMBOL, NAME OF COMPANY, SERIES, DATE OF LISTING, PAID UP VALUE, MARKET LOT, ISIN NUMBER, FACE VALUE
-    readRemoteFile("/eq_etfseclist.csv", {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (h) => h.trim(),
-      transform: (v) => v.trim(),
-      complete: (results) => {
-        if (!results.data?.length) return;
-
-        const parsed = results.data
-          .filter((row) => {
-            const symbol = row["Symbol"];
-            const isin = row["ISINNumber"];
-            return symbol && isin;
-          })
-          .map((row) => {
-            const symbol = (row["Symbol"] || "").trim();
-            const name = (row["SecurityName"] || row["NAME OF COMPANY"] || row["Symbol"] || "").trim();
-            const isin = (row["ISINNumber"] || "").trim();
-
-            return {
-              label: name,
-              value: isin,
-              symbol,
-              nse: true,
-              bse: false,
-              etf: true,             // ← new flag
-              indexName: "NSE_EQ",   // ETFs trade on NSE as equities
-            };
-          })
-          .filter((item) => item.symbol && item.value);
-
-        setEtfData(parsed);
-      },
-    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (!isFOLoading) {
-      const symbol = foMapData[companyObj.symbol] ?? companyObj.symbol;
-      setFO(isFOSymbol(symbol));
+    if (companyObj && companyObj.symbol) {
+      const sym = foMapData[companyObj.symbol] ?? companyObj.symbol;
+      if (cachedFoSet) {
+        setFO(cachedFoSet.has(sym));
+      }
     }
-  }, [companyObj.symbol, isFOLoading]);
+  }, [companyObj?.symbol, companyArr]);
 
   // Keep URL query param in sync with currently selected stock
   useEffect(() => {
@@ -346,6 +200,7 @@ const useParseCsv = () => {
     companyArr,
     companyObj,
     setCompany,
+    isLoading,
   };
 };
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { usePapaParse } from "react-papaparse";
 
 // Global cache (persists across hook calls)
-const csvCache = {};
+let globalFoCache = null;
 
 const FO_MONTHS = {
   JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
@@ -20,24 +20,57 @@ function parseFoMonthKey(key) {
 
 export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
   const { readRemoteFile } = usePapaParse();
-  const [symbols, setSymbols] = useState([]);
-  const [symbolList, setSymbolList] = useState([]);
-  const [symbolSet, setSymbolSet] = useState(new Set());
-  const [isFOLoading, setIsLoading] = useState(true);
+  const [symbols, setSymbols] = useState(() => globalFoCache?.symbols || []);
+  const [symbolList, setSymbolList] = useState(() => globalFoCache?.symbolList || []);
+  const [symbolSet, setSymbolSet] = useState(() => globalFoCache?.symbolSet || new Set());
+  const [isFOLoading, setIsLoading] = useState(!globalFoCache);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!csvUrl) return;
-
-    // If cached, use it immediately
-    if (csvCache[csvUrl]) {
-      const data = csvCache[csvUrl];
-      setSymbols(data);
-      const list = data.map((item) => item.symbol);
-      setSymbolList(list);
-      setSymbolSet(new Set(list));
+    if (globalFoCache) {
+      setSymbols(globalFoCache.symbols);
+      setSymbolList(globalFoCache.symbolList);
+      setSymbolSet(globalFoCache.symbolSet);
       setIsLoading(false);
       return;
+    }
+
+    let isMounted = true;
+
+    async function fetchFromApi() {
+      try {
+        const res = await fetch("/api/instruments");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.foSymbols) && data.foSymbols.length > 0) {
+            const list = data.foSymbols;
+            const lots = data.foLots || {};
+            const foObjects = list.map((sym) => ({
+              symbol: sym,
+              underlying: sym,
+              lotSize: lots[sym],
+            }));
+            const set = new Set(list);
+
+            globalFoCache = {
+              symbols: foObjects,
+              symbolList: list,
+              symbolSet: set,
+            };
+
+            if (isMounted) {
+              setSymbols(foObjects);
+              setSymbolList(list);
+              setSymbolSet(set);
+              setIsLoading(false);
+            }
+            return true;
+          }
+        }
+      } catch {
+        // Continue to CSV fallback
+      }
+      return false;
     }
 
     const parseCSV = () => {
@@ -67,9 +100,7 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
                 const symbol = (row.SYMBOL || row.Symbol)?.trim();
                 const underlying = (row.UNDERLYING || row.underlying)?.trim();
                 const monthKeys = Object.keys(row).filter((k) =>
-                  /^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-\d{2}$/i.test(
-                    k
-                  )
+                  /^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)-\d{2}$/i.test(k)
                 );
                 const lastMonth = monthKeys
                   .sort((a, b) => parseFoMonthKey(a) - parseFoMonthKey(b))
@@ -84,31 +115,44 @@ export function useFOSymbols(csvUrl = "/fo_mktlots.csv") {
               })
               .filter((item) => item.symbol && item.symbol !== "");
 
-            // Save to cache
-            csvCache[csvUrl] = foSymbols;
-
             const list = foSymbols.map((item) => item.symbol);
-            setSymbols(foSymbols);
-            setSymbolList(list);
-            setSymbolSet(new Set(list));
-            setIsLoading(false);
+            const set = new Set(list);
+
+            globalFoCache = {
+              symbols: foSymbols,
+              symbolList: list,
+              symbolSet: set,
+            };
+
+            if (isMounted) {
+              setSymbols(foSymbols);
+              setSymbolList(list);
+              setSymbolSet(set);
+              setIsLoading(false);
+            }
           },
         });
       } catch (err) {
         console.error("Error parsing F&O symbols:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to parse CSV data"
-        );
-        setIsLoading(false);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : "Failed to parse CSV data");
+          setIsLoading(false);
+        }
       }
     };
 
-    parseCSV();
+    fetchFromApi().then((success) => {
+      if (!success && csvUrl) {
+        parseCSV();
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [csvUrl, readRemoteFile]);
 
   const isFOSymbol = (symbol) => symbolSet.has(symbol);
 
   return { symbols, symbolList, isFOSymbol, isFOLoading, error };
 }
-
-

@@ -8,8 +8,7 @@
     "build": "next build",
     "start": "next start",
     "stockAnalysis": "node scripts/analyze.mjs",
-    "updateMarketData": "node scripts/updateMarketData.mjs",
-    "updateBseEquity": "node scripts/updateBseEquity.mjs",
+    "updateInstruments": "node -e \"import('./src/lib/server/instruments.js').then(m => m.getUnifiedInstruments({ forceRefresh: true }))\"",
     "analyze": "node scripts/analyze.mjs",
     "backtest": "node scripts/backtest.mjs",
     "paperTrade": "node scripts/paperTrade.mjs",
@@ -49,10 +48,7 @@
   },
   "devDependencies": {
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.2.11",
-    "playwright": "^1.61.1",
-    "playwright-extra": "^4.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "eslint-config-next": "^16.2.11"
   },
   "engines": {
     "node": "24.11.1",

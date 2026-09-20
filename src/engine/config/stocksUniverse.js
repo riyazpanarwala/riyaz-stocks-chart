@@ -61,6 +61,61 @@ export function getUniverse(options = {}) {
     return universeCache;
   }
 
+  // 1. Try loading from compiled data/instruments.json snapshot
+  const snapshotPath = options.snapshotPath || path.join(process.cwd(), "data", "instruments.json");
+  if (fs.existsSync(snapshotPath)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(snapshotPath, "utf8"));
+      if (data && Array.isArray(data.instruments)) {
+        const nseBySymbol = new Map();
+        const bseByCode = new Map();
+        const bseById = new Map();
+        const isinMap = new Map();
+
+        data.instruments.forEach((item) => {
+          const isin = item.value;
+          if (item.nse && item.symbol && isin) {
+            const nseItem = Object.freeze({
+              symbol: item.symbol,
+              name: item.label,
+              isin,
+              exchange: "NSE",
+              instrumentKey: `NSE_EQ|${isin}`,
+            });
+            nseBySymbol.set(item.symbol, nseItem);
+            if (!isinMap.has(isin)) isinMap.set(isin, nseItem);
+          }
+          if (item.bse && isin) {
+            const code = item.bseCode;
+            const bseItem = Object.freeze({
+              symbol: item.symbol || code,
+              code,
+              name: item.label,
+              isin,
+              exchange: "BSE",
+              instrumentKey: `BSE_EQ|${isin}`,
+            });
+            if (code) bseByCode.set(code, bseItem);
+            if (item.symbol) bseById.set(item.symbol, bseItem);
+            if (!isinMap.has(isin)) isinMap.set(isin, bseItem);
+          }
+        });
+
+        universeCache = {
+          nseBySymbol,
+          bseByCode,
+          bseById,
+          isinMap,
+          nseCount: nseBySymbol.size,
+          bseCount: bseByCode.size,
+        };
+        return universeCache;
+      }
+    } catch (err) {
+      console.warn("Failed to load data/instruments.json, falling back to CSVs:", err.message);
+    }
+  }
+
   const publicDir = options.publicDir || getPublicDir();
   const nseCsvPath = path.join(publicDir, "nse_equity.csv");
   const bseCsvPath = path.join(publicDir, "bse_equity.csv");
@@ -70,7 +125,7 @@ export function getUniverse(options = {}) {
   const bseById = new Map();
   const isinMap = new Map();
 
-  // 1. Load NSE equities
+  // 2. Fallback: Load NSE equities from CSV
   if (fs.existsSync(nseCsvPath)) {
     try {
       const content = fs.readFileSync(nseCsvPath, "utf8");
