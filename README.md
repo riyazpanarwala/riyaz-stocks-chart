@@ -77,8 +77,7 @@ In the project directory, you can run:
 | `npm run build` | Compiles and optimizes the app for production deployment. |
 | `npm run start` | Starts the production server (run after `npm run build`). |
 | `npm run stockAnalysis` | Runs the node script to analyze watchlist equities and export indicator summaries. |
-| `npm run updateMarketData` | Downloads latest NSE Equity list (`nse_equity.csv`), ETF list (`eq_etfseclist.csv`), and F&O Lot sizes (`fo_mktlots.csv`) to `public/`. |
-| `npm run updateBseEquity` | Scrapes latest active BSE T+1 equities list (`bse_equity.csv`) to `public/` using Playwright in headless stealth mode. |
+| `npm run updateInstruments` | Manually refreshes the local instrument snapshot from Upstox official CDN feeds. |
 
 ---
 
@@ -86,10 +85,9 @@ In the project directory, you can run:
 
 ```text
 riyaz-stocks-chart/
-├── public/                 # Static assets & updated CSV market data (NSE/BSE)
-├── scripts/                # Data pipeline scripts
-│   ├── updateMarketData.mjs # Downloads NSE equity, ETF, and F&O lot data
-│   └── updateBseEquity.mjs  # Playwright stealth script for BSE equity data
+├── data/                   # Local instrument baseline cache (instruments.json)
+├── public/                 # Static public assets
+├── scripts/                # Analysis, backtest, and trading pipeline scripts
 ├── src/
 │   ├── app/                # Next.js App Router pages and API routes
 │   │   ├── api/            # API endpoints (Fundamentals, NSE Equity, Finance)
