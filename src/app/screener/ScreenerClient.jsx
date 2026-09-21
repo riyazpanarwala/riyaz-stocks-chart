@@ -975,6 +975,9 @@ export default function ScreenerClient() {
           <Link href="/screener" className="nav-pill-link active">
             🔍 Signals Screener
           </Link>
+          <Link href="/heatmap" className="nav-pill-link">
+            🗺️ Sector Heatmap
+          </Link>
           <Link href="/briefing" className="nav-pill-link">
             🤖 AI Briefing
           </Link>

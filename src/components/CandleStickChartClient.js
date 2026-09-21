@@ -288,6 +288,14 @@ const CandleStickChart = () => {
                 >
                   🤖 AI Briefing
                 </Link>
+                <Link
+                  href="/heatmap"
+                  className="custom-button"
+                  aria-label="Open NSE Sector Heatmap & Market Breadth Dashboard"
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                >
+                  🗺️ Heatmap
+                </Link>
                 {isCompanyExist ? (
 
                   <ActionButton
