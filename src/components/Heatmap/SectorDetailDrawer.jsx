@@ -25,8 +25,10 @@ export default function SectorDetailDrawer({ sector, onClose }) {
     // Save trigger element to restore focus on exit
     previousFocusRef.current = document.activeElement;
 
-    // Shift initial focus to the close button
-    closeButtonRef.current?.focus();
+    // Shift initial focus to the close button once mounted
+    const focusTimer = requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
 
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -61,6 +63,7 @@ export default function SectorDetailDrawer({ sector, onClose }) {
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      cancelAnimationFrame(focusTimer);
       window.removeEventListener("keydown", handleKeyDown);
       // Restore focus to trigger element when drawer unmounts
       if (previousFocusRef.current && typeof previousFocusRef.current.focus === "function") {
