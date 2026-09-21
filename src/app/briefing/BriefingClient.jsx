@@ -149,6 +149,9 @@ export default function BriefingClient() {
             <Link href="/screener" className="nav-pill-link">
               🔍 Signals Screener
             </Link>
+            <Link href="/heatmap" className="nav-pill-link">
+              🗺️ Sector Heatmap
+            </Link>
             <Link href="/optionchain" className="nav-pill-link">
               📊 Option Chain
             </Link>
@@ -231,6 +234,9 @@ export default function BriefingClient() {
           </Link>
           <Link href="/screener" className="nav-pill-link">
             🔍 Signals Screener
+          </Link>
+          <Link href="/heatmap" className="nav-pill-link">
+            🗺️ Sector Heatmap
           </Link>
           <Link href="/briefing" className="nav-pill-link active">
             🤖 AI Briefing
