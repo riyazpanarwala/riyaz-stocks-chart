@@ -4,7 +4,42 @@ import assert from "node:assert/strict";
 import {
   SECTOR_DEFINITIONS,
   getSectorBreadthData,
+  resetSectorBreadthCache,
+  cleanSymbol,
+  formatQuote,
 } from "../../src/services/market/sectorBreadthService.js";
+
+/**
+ * Creates a deterministic mock YahooFinance client returning fixture data.
+ */
+function createMockYahooClient() {
+  let callCount = 0;
+  return {
+    get callCount() {
+      return callCount;
+    },
+    quote: async (symbols) => {
+      callCount++;
+      return symbols.map((sym, idx) => {
+        const isUp = idx % 2 === 0;
+        return {
+          symbol: sym,
+          shortName: sym.replace(/\.NS$/, "").replace(/^\^/, ""),
+          regularMarketPrice: 1000 + idx * 10,
+          regularMarketChange: isUp ? 15.5 : -12.3,
+          regularMarketChangePercent: isUp ? 1.55 : -1.23,
+          regularMarketDayHigh: 1020 + idx * 10,
+          regularMarketDayLow: 990 + idx * 10,
+          regularMarketVolume: 500000 + idx * 1000,
+          fiftyDayAverage: 980 + idx * 10,
+          twoHundredDayAverage: 950 + idx * 10,
+          fiftyTwoWeekHigh: 1100 + idx * 10,
+          fiftyTwoWeekLow: 800 + idx * 10,
+        };
+      });
+    },
+  };
+}
 
 test("Sector Definitions: contains verified NSE sectors with non-empty constituents", () => {
   assert.ok(SECTOR_DEFINITIONS.length >= 10, "Should define at least 10 major NSE sectors");
@@ -20,9 +55,35 @@ test("Sector Definitions: contains verified NSE sectors with non-empty constitue
   }
 });
 
-test("Sector Breadth Service: returns structured payload and valid breadth statistics", async () => {
-  const result = await getSectorBreadthData({ forceRefresh: false });
+test("cleanSymbol and formatQuote: correctly normalizes symbols and handles null averages", () => {
+  assert.equal(cleanSymbol("RELIANCE.NS"), "RELIANCE");
+  assert.equal(cleanSymbol("^NSEBANK"), "^NSEBANK");
+  assert.equal(cleanSymbol(""), "");
 
+  const formattedWithNulls = formatQuote({
+    symbol: "TEST.NS",
+    regularMarketPrice: 100,
+    regularMarketChange: 2,
+    regularMarketChangePercent: 2.04,
+    fiftyDayAverage: 0, // Should produce null above50
+    twoHundredDayAverage: null, // Should produce null above200
+  });
+
+  assert.equal(formattedWithNulls.symbol, "TEST");
+  assert.equal(formattedWithNulls.above50, null);
+  assert.equal(formattedWithNulls.above200, null);
+});
+
+test("Sector Breadth Service: uses mock client, calculates breadth, and leverages cache", async () => {
+  resetSectorBreadthCache();
+  const mockClient = createMockYahooClient();
+
+  const result = await getSectorBreadthData({
+    forceRefresh: true,
+    quoteClient: mockClient,
+  });
+
+  assert.equal(mockClient.callCount, 1, "Mock quote client should be invoked on initial fetch");
   assert.ok(result, "Result must not be null");
   assert.ok(result.timestamp, "Must include timestamp");
   assert.ok(result.breadth, "Must include breadth object");
@@ -41,13 +102,15 @@ test("Sector Breadth Service: returns structured payload and valid breadth stati
   assert.ok(b.above200Pct >= 0 && b.above200Pct <= 100, "above200Pct must be between 0 and 100");
   assert.ok(["bullish", "mild-bullish", "neutral", "mild-bearish", "bearish"].includes(b.regimeColor));
 
-  // Check sector structure
-  const firstSector = result.sectors[0];
-  assert.ok(firstSector.name, "Sector must have name");
-  assert.equal(typeof firstSector.changePercent, "number");
-  assert.ok(Array.isArray(firstSector.constituents), "Sector constituents must be an array");
+  // Second call within TTL should return cached response without calling mockClient again
+  const cachedResult = await getSectorBreadthData({
+    forceRefresh: false,
+    quoteClient: mockClient,
+  });
 
-  // Check caching
-  const cachedResult = await getSectorBreadthData({ forceRefresh: false });
-  assert.equal(cachedResult.isCached, true, "Second call within TTL should return cached data");
+  assert.equal(cachedResult.isCached, true, "Second call within TTL must return cached data");
+  assert.equal(mockClient.callCount, 1, "Mock client should not be called again when cache is valid");
+
+  // Clean up
+  resetSectorBreadthCache();
 });

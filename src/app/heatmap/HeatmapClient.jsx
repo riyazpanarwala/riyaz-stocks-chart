@@ -9,6 +9,14 @@ import SectorHeatmapGrid from "@/components/Heatmap/SectorHeatmapGrid";
 import SectorDetailDrawer from "@/components/Heatmap/SectorDetailDrawer";
 import "./Heatmap.scss";
 
+/**
+ * HeatmapClient - Interactive client controller for NSE Sector Heatmap and Breadth Dashboard.
+ * Manages search filtering, sorting, drawer selection, and automatic or manual data refreshes.
+ *
+ * @param {object} props
+ * @param {object|null} [props.initialData=null] - Server-side pre-fetched initial dataset.
+ * @returns {JSX.Element}
+ */
 export default function HeatmapClient({ initialData = null }) {
   const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(!initialData);
@@ -38,11 +46,11 @@ export default function HeatmapClient({ initialData = null }) {
 
       setData(json);
 
-      // If a sector drawer is currently open, refresh its data reference
-      if (selectedSector) {
-        const updated = json.sectors?.find((s) => s.id === selectedSector.id);
-        if (updated) setSelectedSector(updated);
-      }
+      // Reconcile open drawer selection without creating a dependency cycle
+      setSelectedSector((current) => {
+        if (!current) return null;
+        return json.sectors?.find((s) => s.id === current.id) ?? current;
+      });
     } catch (err) {
       console.error("Error fetching heatmap data:", err);
       setError(err.message || "Failed to load sector heatmap");
@@ -50,7 +58,7 @@ export default function HeatmapClient({ initialData = null }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedSector]);
+  }, []);
 
   useEffect(() => {
     if (!initialData) {

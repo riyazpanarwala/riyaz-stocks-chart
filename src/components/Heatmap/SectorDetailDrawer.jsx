@@ -1,20 +1,72 @@
 // src/components/Heatmap/SectorDetailDrawer.jsx
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiExternalLink, FiTrendingUp, FiTrendingDown, FiCheck, FiMinus } from "react-icons/fi";
 
+/**
+ * SectorDetailDrawer - Slide-over modal dialog displaying constituents, price action,
+ * moving-average status, and chart navigation for a selected sector.
+ * Implements accessible focus trapping and focus restoration on close.
+ *
+ * @param {object} props
+ * @param {object|null} props.sector - Selected sector data object.
+ * @param {Function} props.onClose - Callback invoked when closing drawer.
+ * @returns {JSX.Element|null}
+ */
 export default function SectorDetailDrawer({ sector, onClose }) {
+  const drawerRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
   useEffect(() => {
+    // Save trigger element to restore focus on exit
+    previousFocusRef.current = document.activeElement;
+
+    // Shift initial focus to the close button
+    closeButtonRef.current?.focus();
+
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         onClose();
+        return;
+      }
+
+      // Trap Tab focus inside modal dialog
+      if (e.key === "Tab" && drawerRef.current) {
+        const focusableElements = drawerRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      // Restore focus to trigger element when drawer unmounts
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === "function") {
+        previousFocusRef.current.focus();
+      }
+    };
   }, [onClose]);
 
   if (!sector) return null;
@@ -26,6 +78,7 @@ export default function SectorDetailDrawer({ sector, onClose }) {
     <AnimatePresence>
       <div className="drawer-backdrop" onClick={onClose}>
         <motion.div
+          ref={drawerRef}
           className="sector-detail-drawer"
           initial={{ x: "100%", opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -53,6 +106,7 @@ export default function SectorDetailDrawer({ sector, onClose }) {
               </p>
             </div>
             <button
+              ref={closeButtonRef}
               type="button"
               className="drawer-close-btn"
               onClick={onClose}

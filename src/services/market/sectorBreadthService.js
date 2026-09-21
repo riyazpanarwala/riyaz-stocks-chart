@@ -1,12 +1,14 @@
 // src/services/market/sectorBreadthService.js
 import YahooFinance from "yahoo-finance2";
 
-const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
+const defaultYahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
-// Cache storage for sector breadth data (60 seconds TTL)
+// Cache storage for sector breadth data (60 seconds TTL, 10s cooldown for forced refresh)
 let cachedBreadthData = null;
 let lastFetchTimestamp = 0;
+let pendingFetchPromise = null;
 const CACHE_TTL_MS = 60 * 1000;
+const MIN_REFRESH_COOLDOWN_MS = 10 * 1000;
 
 export const SECTOR_DEFINITIONS = [
   {
@@ -240,17 +242,21 @@ export const SECTOR_DEFINITIONS = [
 const BENCHMARK_SYMBOLS = ["^NSEI", "^CRSLDX"];
 
 /**
- * Strips exchange suffix (e.g. "TCS.NS" -> "TCS")
+ * Strips exchange suffix from ticker symbols (e.g. "TCS.NS" -> "TCS").
+ * @param {string} symbol - Ticker symbol with optional exchange suffix.
+ * @returns {string} Clean symbol identifier.
  */
-function cleanSymbol(symbol) {
+export function cleanSymbol(symbol) {
   if (!symbol) return "";
   return symbol.replace(/\.NS$/, "").replace(/\.BO$/, "");
 }
 
 /**
  * Formats a raw quote item from Yahoo Finance into a standardized quote object.
+ * @param {object} q - Raw quote item from Yahoo Finance API.
+ * @returns {object|null} Formatted quote object or null if input is invalid.
  */
-function formatQuote(q) {
+export function formatQuote(q) {
   if (!q) return null;
   const price = Number(q.regularMarketPrice ?? 0);
   const change = Number(q.regularMarketChange ?? 0);
@@ -290,21 +296,13 @@ function formatQuote(q) {
 }
 
 /**
- * Fetches sector quotes and calculates market breadth metrics deterministically.
+ * Internal executor that fetches fresh quotes and builds the heatmap & breadth payload.
  * @param {object} options
- * @param {boolean} options.forceRefresh - Bypass cache if true
- * @returns {Promise<object>} Complete heatmap and breadth payload
+ * @param {object} [options.client] - Yahoo Finance client instance (injected for testing).
+ * @returns {Promise<object>} Complete heatmap and breadth payload.
  */
-export async function getSectorBreadthData({ forceRefresh = false } = {}) {
+async function executeFetchSectorBreadth({ client = defaultYahooFinance } = {}) {
   const now = Date.now();
-
-  if (!forceRefresh && cachedBreadthData && now - lastFetchTimestamp < CACHE_TTL_MS) {
-    return {
-      ...cachedBreadthData,
-      isCached: true,
-      cacheAgeSeconds: Math.floor((now - lastFetchTimestamp) / 1000),
-    };
-  }
 
   // 1. Gather all unique symbols to query in batch
   const sectorSymbols = SECTOR_DEFINITIONS.map((s) => s.symbol);
@@ -317,16 +315,16 @@ export async function getSectorBreadthData({ forceRefresh = false } = {}) {
 
   let rawQuotes = [];
   try {
-    rawQuotes = await yahooFinance.quote(allSymbolsToFetch);
+    rawQuotes = await client.quote(allSymbolsToFetch);
   } catch (error) {
-    // If batch fails, fallback to cached data if available
+    // If batch fails, fallback to cached data if available without leaking internal message
     if (cachedBreadthData) {
-      console.warn("Sector breadth batch quote failed, using stale cache:", error.message);
+      console.warn("Sector breadth batch quote failed, returning stale cache:", error.message);
       return {
         ...cachedBreadthData,
         isCached: true,
         isStale: true,
-        error: error.message,
+        cacheAgeSeconds: Math.floor((now - lastFetchTimestamp) / 1000),
       };
     }
     throw error;
@@ -414,7 +412,9 @@ export async function getSectorBreadthData({ forceRefresh = false } = {}) {
   let declines = 0;
   let unchanged = 0;
   let countAbove50 = 0;
+  let validAbove50Count = 0;
   let countAbove200 = 0;
+  let validAbove200Count = 0;
   let countNear52WHigh = 0;
   let countNear52WLow = 0;
   let advancingVolume = 0;
@@ -431,8 +431,16 @@ export async function getSectorBreadthData({ forceRefresh = false } = {}) {
       unchanged++;
     }
 
-    if (c.above50) countAbove50++;
-    if (c.above200) countAbove200++;
+    if (c.above50 !== null) {
+      validAbove50Count++;
+      if (c.above50) countAbove50++;
+    }
+
+    if (c.above200 !== null) {
+      validAbove200Count++;
+      if (c.above200) countAbove200++;
+    }
+
     if (c.isNear52WHigh) countNear52WHigh++;
     if (c.isNear52WLow) countNear52WLow++;
   }
@@ -444,16 +452,17 @@ export async function getSectorBreadthData({ forceRefresh = false } = {}) {
   const unchangedPct =
     totalStocks > 0 ? Number(((unchanged / totalStocks) * 100).toFixed(1)) : 0;
 
+  // Calculate moving average health based on valid non-null quotes
   const above50Pct =
-    totalStocks > 0 ? Number(((countAbove50 / totalStocks) * 100).toFixed(1)) : 0;
+    validAbove50Count > 0 ? Number(((countAbove50 / validAbove50Count) * 100).toFixed(1)) : 0;
   const above200Pct =
-    totalStocks > 0 ? Number(((countAbove200 / totalStocks) * 100).toFixed(1)) : 0;
+    validAbove200Count > 0 ? Number(((countAbove200 / validAbove200Count) * 100).toFixed(1)) : 0;
 
   const totalVolume = advancingVolume + decliningVolume;
   const advancingVolumePct =
     totalVolume > 0 ? Number(((advancingVolume / totalVolume) * 100).toFixed(1)) : 50;
 
-  // Breadth regime determination
+  // Breadth regime determination based on accurate percentages
   let breadthRegime = "Neutral";
   let regimeColor = "neutral";
   if (adRatio >= 2.0 && above50Pct >= 60) {
@@ -480,8 +489,10 @@ export async function getSectorBreadthData({ forceRefresh = false } = {}) {
     unchangedPct,
     adRatio,
     above50Count: countAbove50,
+    above50Total: validAbove50Count,
     above50Pct,
     above200Count: countAbove200,
+    above200Total: validAbove200Count,
     above200Pct,
     near52WHighCount: countNear52WHigh,
     near52WLowCount: countNear52WLow,
@@ -510,4 +521,56 @@ export async function getSectorBreadthData({ forceRefresh = false } = {}) {
     isCached: false,
     cacheAgeSeconds: 0,
   };
+}
+
+/**
+ * Fetches sector quotes and calculates market breadth metrics deterministically with caching,
+ * request coalescing, and forced-refresh rate protection.
+ * @param {object} [options]
+ * @param {boolean} [options.forceRefresh=false] - Bypass standard cache if true (subject to cooldown).
+ * @param {object} [options.quoteClient] - Optional Yahoo Finance client instance (for testing/mocking).
+ * @returns {Promise<object>} Complete heatmap and breadth payload.
+ */
+export async function getSectorBreadthData({ forceRefresh = false, quoteClient = defaultYahooFinance } = {}) {
+  const now = Date.now();
+
+  // If a fetch is currently in-flight, return the same promise (request coalescing)
+  if (pendingFetchPromise) {
+    return pendingFetchPromise;
+  }
+
+  // Return from standard cache if within TTL
+  if (!forceRefresh && cachedBreadthData && now - lastFetchTimestamp < CACHE_TTL_MS) {
+    return {
+      ...cachedBreadthData,
+      isCached: true,
+      cacheAgeSeconds: Math.floor((now - lastFetchTimestamp) / 1000),
+    };
+  }
+
+  // If forced refresh requested within cooldown period, return cached data to protect upstream
+  if (forceRefresh && cachedBreadthData && now - lastFetchTimestamp < MIN_REFRESH_COOLDOWN_MS) {
+    return {
+      ...cachedBreadthData,
+      isCached: true,
+      cacheAgeSeconds: Math.floor((now - lastFetchTimestamp) / 1000),
+    };
+  }
+
+  // Launch coalesced fetch
+  pendingFetchPromise = executeFetchSectorBreadth({ client: quoteClient })
+    .finally(() => {
+      pendingFetchPromise = null;
+    });
+
+  return pendingFetchPromise;
+}
+
+/**
+ * Resets the in-memory cache (primarily for unit test isolation).
+ */
+export function resetSectorBreadthCache() {
+  cachedBreadthData = null;
+  lastFetchTimestamp = 0;
+  pendingFetchPromise = null;
 }

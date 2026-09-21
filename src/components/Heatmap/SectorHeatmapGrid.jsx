@@ -5,6 +5,11 @@ import React from "react";
 import { motion } from "framer-motion";
 import { FiChevronRight, FiTrendingUp, FiTrendingDown } from "react-icons/fi";
 
+/**
+ * Returns CSS class for sector tile color gradation based on percentage change.
+ * @param {number} changePercent - Percentage price movement of the sector index.
+ * @returns {string} CSS class name representing the color gradient tier.
+ */
 function getPerformanceColorClass(changePercent) {
   if (changePercent >= 2.0) return "heat-super-green";
   if (changePercent >= 0.8) return "heat-green";
@@ -15,6 +20,16 @@ function getPerformanceColorClass(changePercent) {
   return "heat-super-red";
 }
 
+/**
+ * SectorHeatmapGrid - Interactive responsive grid of NSE sectoral indices with
+ * color-coded performance tiles, top gainer/loser badges, and click-to-drilldown.
+ *
+ * @param {object} props
+ * @param {Array<object>} [props.sectors=[]] - Array of sector summary objects.
+ * @param {string|null} [props.selectedSectorId] - Currently selected sector id.
+ * @param {Function} props.onSelectSector - Callback when user clicks a sector tile.
+ * @returns {JSX.Element}
+ */
 export default function SectorHeatmapGrid({
   sectors = [],
   selectedSectorId,

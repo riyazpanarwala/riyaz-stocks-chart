@@ -4,6 +4,15 @@
 import React from "react";
 import { FiTrendingUp, FiTrendingDown, FiActivity, FiLayers } from "react-icons/fi";
 
+/**
+ * MarketBreadthBar - Renders the visual Advance/Decline progress distribution bar
+ * and quantitative market breadth cards (A/D ratio, 50/200 DMA health, 52W High/Low balance).
+ *
+ * @param {object} props
+ * @param {object} props.breadth - Calculated market breadth indicators.
+ * @param {object} [props.benchmark] - Benchmark index (NIFTY 50) quote snapshot.
+ * @returns {JSX.Element|null}
+ */
 export default function MarketBreadthBar({ breadth, benchmark }) {
   if (!breadth) return null;
 
@@ -60,7 +69,7 @@ export default function MarketBreadthBar({ breadth, benchmark }) {
         <div className="ad-bar-track">
           <div
             className="ad-bar-segment advances"
-            style={{ width: `${Math.max(advancesPct, 5)}%` }}
+            style={{ width: `${advancesPct}%` }}
             title={`Advances: ${advances} stocks (${advancesPct}%)`}
           >
             {advancesPct >= 12 && <span>▲ {advances} ({advancesPct}%)</span>}
@@ -78,7 +87,7 @@ export default function MarketBreadthBar({ breadth, benchmark }) {
 
           <div
             className="ad-bar-segment declines"
-            style={{ width: `${Math.max(declinesPct, 5)}%` }}
+            style={{ width: `${declinesPct}%` }}
             title={`Declines: ${declines} stocks (${declinesPct}%)`}
           >
             {declinesPct >= 12 && <span>▼ {declines} ({declinesPct}%)</span>}

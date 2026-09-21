@@ -4,6 +4,14 @@ import { getSectorBreadthData } from "@/services/market/sectorBreadthService.js"
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Route handler for GET /api/heatmap.
+ * Returns live or cached NSE sector performance, constituent details, and market breadth statistics.
+ * Supports ?refresh=true with server-side cooldown throttling.
+ *
+ * @param {Request} request - Incoming Next.js API request.
+ * @returns {Promise<NextResponse>} JSON response with sector breadth data or generic error.
+ */
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -14,13 +22,15 @@ export async function GET(request) {
     return NextResponse.json(data, {
       status: 200,
       headers: {
-        "Cache-Control": "public, max-age=60, stale-while-revalidate=30",
+        "Cache-Control": forceRefresh
+          ? "no-store"
+          : "public, max-age=60, stale-while-revalidate=30",
       },
     });
   } catch (error) {
     console.error("Error serving /api/heatmap:", error);
     return NextResponse.json(
-      { error: "Failed to fetch sector heatmap and breadth data", details: error.message },
+      { error: "Failed to fetch sector heatmap and breadth data" },
       { status: 500 }
     );
   }

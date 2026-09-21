@@ -49,6 +49,12 @@ export const metadata = {
   },
 };
 
+/**
+ * HeatmapPage - Next.js App Router server component that pre-fetches initial
+ * sector breadth dataset on the server to prevent layout shift and maximize SEO.
+ *
+ * @returns {Promise<JSX.Element>} Rendered HeatmapClient component.
+ */
 export default async function HeatmapPage() {
   let initialData = null;
   try {
