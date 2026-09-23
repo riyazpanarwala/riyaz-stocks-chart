@@ -399,7 +399,7 @@ export async function executeFetchMacroSentiment({
   try {
     const sectorData = breadthFn
       ? await breadthFn()
-      : await getSectorBreadthData({ forceRefresh: false, client: yfClient });
+      : await getSectorBreadthData({ forceRefresh: false, quoteClient: yfClient });
     if (sectorData?.breadth && (sectorData.breadth.totalStocks > 0 || sectorData.breadth.advances > 0)) {
       const b = sectorData.breadth;
       dmaBreadth = {
