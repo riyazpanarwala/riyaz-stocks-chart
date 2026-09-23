@@ -8,6 +8,7 @@ import {
   formatIndexBreadth,
   getMacroSentimentData,
   resetSentimentCache,
+  getVixGaugePercent,
 } from "../../src/services/market/macroSentimentService.js";
 
 test("VIX Regime: accurately classifies volatility zones and returns advice", () => {
@@ -35,6 +36,29 @@ test("VIX Regime: accurately classifies volatility zones and returns advice", ()
   assert.equal(panic.zone, "High");
   assert.equal(panic.badgeColor, "danger");
   assert.match(panic.label, /Panic/i);
+});
+
+test("VIX Gauge: maps values piecewise strictly into corresponding 25% regime segments", () => {
+  // Low Volatility (< 12) -> strictly between 0% and 25%
+  assert.equal(getVixGaugePercent(8), 0);
+  assert.equal(getVixGaugePercent(10), 12.5);
+  assert.equal(getVixGaugePercent(11.9), 24.4);
+
+  // Normal Volatility (12 - 16) -> strictly between 25% and 50%
+  assert.equal(getVixGaugePercent(12), 25);
+  assert.equal(getVixGaugePercent(14), 37.5);
+  assert.equal(getVixGaugePercent(15.9), 49.4);
+
+  // Elevated Caution (16 - 22) -> strictly between 50% and 75%
+  assert.equal(getVixGaugePercent(16), 50);
+  assert.equal(getVixGaugePercent(19), 62.5);
+  assert.equal(getVixGaugePercent(21.9), 74.6);
+
+  // Extreme Panic (> 22) -> strictly >= 75%
+  assert.equal(getVixGaugePercent(22), 75);
+  assert.equal(getVixGaugePercent(27), 87.5);
+  assert.equal(getVixGaugePercent(32), 100);
+  assert.equal(getVixGaugePercent(40), 100);
 });
 
 test("Institutional Stance: accurately determines institutional market bias", () => {
@@ -244,4 +268,69 @@ test("Macro Sentiment Service: integrates mock clients, calculates sentiment, an
 
   assert.equal(data2.isCached, true);
   assert.equal(data2.vix.value, 13.5);
+});
+
+test("Outage Handling: refuses to cache when all upstream sources fail and preserves existing good cache", async () => {
+  resetSentimentCache();
+
+  const failingNseClient = {
+    getDataByEndpoint: async () => {
+      throw new Error("NSE endpoint down");
+    },
+    getAllIndices: async () => {
+      throw new Error("NSE indices down");
+    },
+  };
+
+  const failingYfClient = {
+    quote: async () => {
+      throw new Error("Yahoo Finance down");
+    },
+  };
+
+  const failingBreadthFn = async () => {
+    throw new Error("Breadth calculation down");
+  };
+
+  // 1. When all sources fail on cold cache -> must throw without caching zeroes
+  await assert.rejects(
+    async () => {
+      await getMacroSentimentData({
+        forceRefresh: true,
+        nseClient: failingNseClient,
+        yfClient: failingYfClient,
+        breadthFn: failingBreadthFn,
+      });
+    },
+    /All macro sentiment upstream sources failed/
+  );
+
+  // 2. Seed cache with valid data
+  const workingNseClient = {
+    getDataByEndpoint: async () => [
+      { category: "DII", date: "23-Sep-2026", buyValue: "5000", sellValue: "4000", netValue: "1000" },
+    ],
+    getAllIndices: async () => ({ data: [] }),
+  };
+
+  const goodData = await getMacroSentimentData({
+    forceRefresh: true,
+    nseClient: workingNseClient,
+    yfClient: failingYfClient,
+    breadthFn: failingBreadthFn,
+  });
+  assert.equal(goodData.fiiDii.dii.net, 1000);
+  assert.equal(goodData.isCached, false);
+
+  // 3. Now trigger an outage with forced refresh -> must fall back to stale cache, NOT overwrite with zeroes
+  const staleData = await getMacroSentimentData({
+    forceRefresh: true,
+    bypassCooldown: true,
+    nseClient: failingNseClient,
+    yfClient: failingYfClient,
+    breadthFn: failingBreadthFn,
+  });
+
+  assert.equal(staleData.isStale, true);
+  assert.equal(staleData.fiiDii.dii.net, 1000); // Preserved previous good snapshot
 });

@@ -84,6 +84,8 @@ export function classifyVixRegime(vix) {
   };
 }
 
+export { getVixGaugePercent } from "../../lib/market/vixHelpers.js";
+
 /**
  * Classifies FII and DII net cash investments into an institutional bias.
  * @param {number} fiiNet - FII Net Investment in ₹ Crores.
@@ -294,22 +296,33 @@ export function formatIndexBreadth(allIndices = []) {
 }
 
 /**
- * Builds the complete macro sentiment payload with fallbacks.
+ * Builds the complete macro sentiment payload with fallbacks and source success tracking.
  * @param {object} options
  * @param {object} [options.nseClient] - Injected NseIndia instance.
  * @param {object} [options.yfClient] - Injected YahooFinance instance.
  * @param {Function} [options.breadthFn] - Injected sector breadth function.
- * @returns {Promise<object>} Complete sentiment payload.
+ * @returns {Promise<object>} Complete sentiment payload including hasAnySuccess flag.
  */
 export async function executeFetchMacroSentiment({
   nseClient = defaultNseIndia,
   yfClient = defaultYahooFinance,
   breadthFn = null,
 } = {}) {
+  const sourcesSuccess = {
+    fiiDii: false,
+    indices: false,
+    vix: false,
+    breadth: false,
+  };
+
   // 1. Fetch FII / DII data
   let rawFiiDii = [];
   try {
-    rawFiiDii = await nseClient.getDataByEndpoint("/api/fiidiiTradeReact");
+    const res = await nseClient.getDataByEndpoint("/api/fiidiiTradeReact");
+    if (Array.isArray(res) && res.length > 0) {
+      rawFiiDii = res;
+      sourcesSuccess.fiiDii = true;
+    }
   } catch (err) {
     console.warn("NSE FII/DII API unavailable, using fallback:", err.message);
   }
@@ -319,7 +332,10 @@ export async function executeFetchMacroSentiment({
   let rawAllIndices = [];
   try {
     const indicesRes = await nseClient.getAllIndices();
-    rawAllIndices = indicesRes?.data || [];
+    if (Array.isArray(indicesRes?.data) && indicesRes.data.length > 0) {
+      rawAllIndices = indicesRes.data;
+      sourcesSuccess.indices = true;
+    }
   } catch (err) {
     console.warn("NSE getAllIndices API unavailable, using fallback:", err.message);
   }
@@ -336,7 +352,7 @@ export async function executeFetchMacroSentiment({
 
   try {
     const vixQuote = await yfClient.quote("^INDIAVIX");
-    if (vixQuote) {
+    if (vixQuote && Number(vixQuote.regularMarketPrice) > 0) {
       vixValue = Number(vixQuote.regularMarketPrice ?? 0);
       vixChange = Number(vixQuote.regularMarketChange ?? 0);
       vixChangePct = Number(vixQuote.regularMarketChangePercent ?? 0);
@@ -344,11 +360,15 @@ export async function executeFetchMacroSentiment({
       vix52Low = Number(vixQuote.fiftyTwoWeekLow ?? 0);
       vixDayHigh = Number(vixQuote.regularMarketDayHigh ?? 0);
       vixDayLow = Number(vixQuote.regularMarketDayLow ?? 0);
+      sourcesSuccess.vix = true;
     }
   } catch (err) {
     console.warn("Yahoo Finance ^INDIAVIX fetch failed, attempting NSE index fallback:", err.message);
+  }
+
+  if (!sourcesSuccess.vix) {
     const nseVix = rawAllIndices.find((idx) => idx && (idx.index === "INDIA VIX" || idx.indexSymbol === "INDIA VIX"));
-    if (nseVix) {
+    if (nseVix && Number(nseVix.last) > 0) {
       vixValue = Number(nseVix.last ?? 0);
       vixChange = Number(nseVix.variation ?? 0);
       vixChangePct = Number(nseVix.percentChange ?? 0);
@@ -356,6 +376,7 @@ export async function executeFetchMacroSentiment({
       vix52Low = Number(nseVix.yearLow ?? 0);
       vixDayHigh = Number(nseVix.high ?? 0);
       vixDayLow = Number(nseVix.low ?? 0);
+      sourcesSuccess.vix = true;
     }
   }
 
@@ -379,7 +400,7 @@ export async function executeFetchMacroSentiment({
     const sectorData = breadthFn
       ? await breadthFn()
       : await getSectorBreadthData({ forceRefresh: false, client: yfClient });
-    if (sectorData?.breadth) {
+    if (sectorData?.breadth && (sectorData.breadth.totalStocks > 0 || sectorData.breadth.advances > 0)) {
       const b = sectorData.breadth;
       dmaBreadth = {
         above50Pct: b.above50Pct || 0,
@@ -393,15 +414,24 @@ export async function executeFetchMacroSentiment({
         near52WLowCount: b.near52WLowCount || 0,
         netNewHighs: b.netNewHighs || 0,
       };
+      sourcesSuccess.breadth = true;
     }
   } catch (err) {
     console.warn("Sector breadth fetch for DMA calculation failed:", err.message);
   }
 
+  const hasAnySuccess =
+    sourcesSuccess.fiiDii ||
+    sourcesSuccess.indices ||
+    sourcesSuccess.vix ||
+    sourcesSuccess.breadth;
+
   return {
     timestamp: new Date().toISOString(),
     isCached: false,
     cacheAgeSeconds: 0,
+    hasAnySuccess,
+    sourcesSuccess,
     vix: {
       value: Number(vixValue.toFixed(2)),
       change: Number(vixChange.toFixed(2)),
@@ -422,6 +452,7 @@ export async function executeFetchMacroSentiment({
 /**
  * Public accessor for Macro Sentiment Data.
  * Handles in-memory caching, forced refresh throttling, and deduplication.
+ * Rejects caching when all upstream sources fail to prevent overwriting valid data with zeroes.
  * @param {object} [options]
  * @param {boolean} [options.forceRefresh=false]
  * @param {object} [options.nseClient]
@@ -431,6 +462,7 @@ export async function executeFetchMacroSentiment({
  */
 export async function getMacroSentimentData({
   forceRefresh = false,
+  bypassCooldown = false,
   nseClient = defaultNseIndia,
   yfClient = defaultYahooFinance,
   breadthFn = null,
@@ -449,7 +481,12 @@ export async function getMacroSentimentData({
     };
   }
 
-  if (forceRefresh && now - lastFetchTimestamp < MIN_REFRESH_COOLDOWN_MS && cachedSentimentData) {
+  if (
+    forceRefresh &&
+    !bypassCooldown &&
+    now - lastFetchTimestamp < MIN_REFRESH_COOLDOWN_MS &&
+    cachedSentimentData
+  ) {
     return {
       ...cachedSentimentData,
       isCached: true,
@@ -465,6 +502,9 @@ export async function getMacroSentimentData({
   pendingFetchPromise = (async () => {
     try {
       const data = await executeFetchMacroSentiment({ nseClient, yfClient, breadthFn });
+      if (!data.hasAnySuccess) {
+        throw new Error("All macro sentiment upstream sources failed");
+      }
       cachedSentimentData = data;
       lastFetchTimestamp = Date.now();
       return {

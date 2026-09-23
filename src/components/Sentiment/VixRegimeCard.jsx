@@ -2,7 +2,8 @@
 "use client";
 
 import React from "react";
-import { FiActivity, FiAlertCircle, FiCheckCircle, FiTrendingUp, FiTrendingDown } from "react-icons/fi";
+import { FiActivity, FiTrendingUp, FiTrendingDown } from "react-icons/fi";
+import { getVixGaugePercent } from "@/lib/market/vixHelpers";
 
 /**
  * VixRegimeCard - Renders the India VIX Volatility Gauge, current regime classification,
@@ -28,11 +29,8 @@ export default function VixRegimeCard({ vix }) {
 
   const isVixUp = change >= 0;
 
-  // Calculate position percentage on 8 - 30 scale for gauge needle
-  const MIN_VIX = 8;
-  const MAX_VIX = 30;
-  const clampedValue = Math.min(Math.max(value, MIN_VIX), MAX_VIX);
-  const gaugePercent = Math.round(((clampedValue - MIN_VIX) / (MAX_VIX - MIN_VIX)) * 100);
+  // Calculate piecewise position percentage ensuring needle aligns with the displayed regime
+  const gaugePercent = getVixGaugePercent(value);
 
   // Calculate 52W range progress
   const range52Diff = fiftyTwoWeekHigh - fiftyTwoWeekLow || 1;
@@ -91,23 +89,23 @@ export default function VixRegimeCard({ vix }) {
       {/* ── Volatility Gauge Meter ── */}
       <div className="vix-gauge-container">
         <div className="gauge-segments-track">
-          <div className="segment segment-low" style={{ width: "18%" }} title="Low Volatility (< 12)">
+          <div className="segment segment-low" style={{ width: "25%" }} title="Low Volatility (< 12)">
             <span>Low (&lt;12)</span>
           </div>
-          <div className="segment segment-normal" style={{ width: "20%" }} title="Normal Volatility (12 - 16)">
+          <div className="segment segment-normal" style={{ width: "25%" }} title="Normal Volatility (12 - 16)">
             <span>Normal (12-16)</span>
           </div>
-          <div className="segment segment-elevated" style={{ width: "30%" }} title="Elevated Caution (16 - 22)">
+          <div className="segment segment-elevated" style={{ width: "25%" }} title="Elevated Caution (16 - 22)">
             <span>Caution (16-22)</span>
           </div>
-          <div className="segment segment-panic" style={{ width: "32%" }} title="Extreme Panic (> 22)">
+          <div className="segment segment-panic" style={{ width: "25%" }} title="Extreme Panic (> 22)">
             <span>Panic (&gt;22)</span>
           </div>
           {/* Needle Indicator */}
           <div
             className="gauge-needle"
             style={{ left: `${gaugePercent}%` }}
-            title={`VIX: ${value}`}
+            title={`VIX: ${value} (${gaugePercent}%)`}
           >
             <div className="needle-head" />
             <div className="needle-line" />
