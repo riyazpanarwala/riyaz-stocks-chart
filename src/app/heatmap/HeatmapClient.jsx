@@ -143,6 +143,9 @@ export default function HeatmapClient({ initialData = null }) {
           <Link href="/heatmap" className="nav-pill-link active">
             🗺️ Sector Heatmap
           </Link>
+          <Link href="/sentiment" className="nav-pill-link">
+            🌐 Market Sentiment
+          </Link>
           <Link href="/briefing" className="nav-pill-link">
             🤖 AI Briefing
           </Link>

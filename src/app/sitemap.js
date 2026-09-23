@@ -36,6 +36,12 @@ export default function sitemap() {
       priority: 0.9,
     },
     {
+      url: `${SITE_URL}/sentiment`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
       url: `${SITE_URL}/briefing`,
       lastModified: now,
       changeFrequency: "daily",

@@ -296,6 +296,14 @@ const CandleStickChart = () => {
                 >
                   🗺️ Heatmap
                 </Link>
+                <Link
+                  href="/sentiment"
+                  className="custom-button"
+                  aria-label="Open Market Sentiment & Macro Indicators Dashboard"
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                >
+                  🌐 Sentiment
+                </Link>
                 {isCompanyExist ? (
 
                   <ActionButton
