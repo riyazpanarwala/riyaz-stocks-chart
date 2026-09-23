@@ -152,6 +152,9 @@ export default function BriefingClient() {
             <Link href="/heatmap" className="nav-pill-link">
               🗺️ Sector Heatmap
             </Link>
+            <Link href="/sentiment" className="nav-pill-link">
+              🌐 Market Sentiment
+            </Link>
             <Link href="/optionchain" className="nav-pill-link">
               📊 Option Chain
             </Link>
@@ -237,6 +240,9 @@ export default function BriefingClient() {
           </Link>
           <Link href="/heatmap" className="nav-pill-link">
             🗺️ Sector Heatmap
+          </Link>
+          <Link href="/sentiment" className="nav-pill-link">
+            🌐 Market Sentiment
           </Link>
           <Link href="/briefing" className="nav-pill-link active">
             🤖 AI Briefing
