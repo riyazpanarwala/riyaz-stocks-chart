@@ -35,6 +35,8 @@ const GLOBAL_SYMBOLS = new Set([
 
 export default function TrendlyneChecklist({
   symbol = 'JPPOWER',
+  bseCode,
+  isBseOnly = false,
   isGlobal = false,
   theme = 'light',
   primaryCol = '006AFF',
@@ -45,13 +47,24 @@ export default function TrendlyneChecklist({
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
+  // Trendlyne expects NSE ticker symbols (e.g. RELIANCE, TCS) or BSE Scrip Codes (e.g. 544937, 500325).
+  // For BSE-only equities or unlisted tickers like 'NSE', resolve to the BSE Scrip Code.
+  let effectiveSymbol = symbol;
+  if ((isBseOnly || symbol === 'NSE') && bseCode) {
+    effectiveSymbol = (bseCode === '200000000' && symbol === 'NSE') ? '544937' : bseCode;
+  } else if (symbol === 'NSE') {
+    effectiveSymbol = '544937';
+  }
+
   const isGlobalSymbol =
     isGlobal ||
+    !effectiveSymbol ||
+    GLOBAL_SYMBOLS.has(effectiveSymbol) ||
     GLOBAL_SYMBOLS.has(symbol) ||
-    (typeof symbol === 'string' && (symbol.startsWith('^') || symbol.includes('|')));
+    (typeof effectiveSymbol === 'string' && (effectiveSymbol.startsWith('^') || effectiveSymbol.includes('|')));
 
   useEffect(() => {
-    if (isGlobalSymbol) return;
+    if (isGlobalSymbol || !effectiveSymbol) return;
 
     // Check if script is already loaded
     if (document.querySelector('script[src*="tl-widgets.js"]')) {
@@ -84,13 +97,13 @@ export default function TrendlyneChecklist({
         document.head.removeChild(script);
       }
     };
-  }, [isGlobalSymbol]);
+  }, [isGlobalSymbol, effectiveSymbol]);
 
-  if (isGlobalSymbol) {
+  if (isGlobalSymbol || !effectiveSymbol) {
     return null;
   }
 
-  const encodedSymbol = encodeURIComponent(symbol);
+  const encodedSymbol = encodeURIComponent(effectiveSymbol);
 
   return (
     <div>

@@ -369,10 +369,12 @@ const CandleStickChart = () => {
               <SeoIntro headingTag="h2" />
             )}
 
-            {!(companyObj.nseIndex || companyObj.etf || companyObj.global || companyObj.upstoxOnly) && (
+            {!(companyObj.nseIndex || companyObj.bseIndex || companyObj.etf || companyObj.global || companyObj.upstoxOnly) && (
               <TrendlyneChecklist
-                key={companyObj.symbol}
+                key={`${companyObj.symbol}_${companyObj.bseCode || ''}`}
                 symbol={companyObj.symbol}
+                bseCode={companyObj.bseCode}
+                isBseOnly={!companyObj.nse && companyObj.bse}
                 isGlobal={companyObj.global}
               />
             )}

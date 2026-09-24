@@ -77,10 +77,11 @@ function buildMergedInstruments(nseInstruments, bseInstruments) {
   // Index BSE equities
   bseInstruments.forEach((item) => {
     if (item.segment === "BSE_EQ" && item.isin && item.exchange_token) {
-      const code = String(item.exchange_token).trim();
+      const isin = item.isin.trim();
+      const rawCode = String(item.exchange_token).trim();
+      const code = (isin === "INE721I01024" && rawCode.startsWith("20000")) ? "544937" : rawCode;
       const symbol = (item.trading_symbol || code).trim().toUpperCase();
       const name = item.name || symbol;
-      const isin = item.isin.trim();
 
       bseIsinSet.add(isin);
       bseCodeMap.set(isin, code);
@@ -95,6 +96,9 @@ function buildMergedInstruments(nseInstruments, bseInstruments) {
       };
 
       bseByCode[code] = bseRecord;
+      if (rawCode !== code) {
+        bseByCode[rawCode] = bseRecord;
+      }
       if (symbol) bseById[symbol] = bseRecord;
       if (!isinMap[isin]) isinMap[isin] = bseRecord;
     }
@@ -155,7 +159,8 @@ function buildMergedInstruments(nseInstruments, bseInstruments) {
     ) {
       const isin = item.isin.trim();
       if (!nseIsinSet.has(isin)) {
-        const code = String(item.exchange_token).trim();
+        const rawCode = String(item.exchange_token).trim();
+        const code = (isin === "INE721I01024" && rawCode.startsWith("20000")) ? "544937" : rawCode;
         const symbol = (item.trading_symbol || code).trim().toUpperCase();
         const name = item.name || symbol;
 
