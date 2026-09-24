@@ -835,6 +835,9 @@ export function generate315NextDayOptionSignal({
       date: analysisDate,
       time: "3:15 PM IST",
       rawScore: 0,
+      bullishScore: 0,
+      bearishScore: 0,
+      finalScore: 0,
       confidence: "LOW",
     };
   }
@@ -890,13 +893,14 @@ export function generate315NextDayOptionSignal({
   // NO TRADE otherwise or if conflicting
   let primarySignal = "NO TRADE";
   let activeConfirmedList = [];
+  let noTradeReason = null;
 
   if (finalScore >= 60 && confirmedFactors.bullish.length >= 3) {
     primarySignal = "BUY CE";
-    activeConfirmedList = confirmedFactors.bullish;
+    activeConfirmedList = [...confirmedFactors.bullish];
   } else if (finalScore <= -60 && confirmedFactors.bearish.length >= 3) {
     primarySignal = "BUY PE";
-    activeConfirmedList = confirmedFactors.bearish;
+    activeConfirmedList = [...confirmedFactors.bearish];
   }
 
   // 6. Option Selection
@@ -910,7 +914,7 @@ export function generate315NextDayOptionSignal({
   // Check liquidity guard: if recommended option has zero volume/OI, revert to NO TRADE
   if (primarySignal !== "NO TRADE" && (!optionSelected || optionSelected.volume < 1000)) {
     primarySignal = "NO TRADE";
-    activeConfirmedList.push("Recommended option contract lacked required minimum liquidity.");
+    noTradeReason = "Recommended option contract lacked required minimum liquidity.";
   }
 
   // 7. Entry, Stop, Targets
@@ -926,14 +930,26 @@ export function generate315NextDayOptionSignal({
   // R:R Guard: If R:R < 1.5, revert to NO TRADE
   if (primarySignal !== "NO TRADE" && tradeLevels.riskRewardRatio < 1.5) {
     primarySignal = "NO TRADE";
+    noTradeReason = `Risk/reward (${tradeLevels.riskRewardRatio}) below 1:1.5 minimum.`;
+  }
+
+  const isNoTrade = primarySignal === "NO TRADE";
+  const finalOption = isNoTrade ? null : optionSelected;
+  const finalLevels = isNoTrade
+    ? calculateNextDayTradeLevels({ signal: "NO TRADE" })
+    : tradeLevels;
+  if (isNoTrade) {
+    activeConfirmedList = [];
   }
 
   // 8. Confidence Assessment
-  const confidence = determineConfidence({
-    finalScore,
-    confirmedFactorsList: activeConfirmedList,
-    optionContract: optionSelected,
-  });
+  const confidence = isNoTrade
+    ? "LOW"
+    : determineConfidence({
+        finalScore,
+        confirmedFactorsList: activeConfirmedList,
+        optionContract: finalOption,
+      });
 
   return {
     status: "SUCCESS",
@@ -952,11 +968,12 @@ export function generate315NextDayOptionSignal({
     bearishScore,
     finalScore,
     primarySignal,
-    recommendedOption: optionSelected,
-    tradeLevels,
+    recommendedOption: finalOption,
+    tradeLevels: finalLevels,
     confidence,
-    whyReasons: activeConfirmedList.slice(0, 4),
-    invalidation: tradeLevels.underlyingInvalidation,
+    whyReasons: isNoTrade ? [] : activeConfirmedList.slice(0, 4),
+    invalidation: finalLevels.underlyingInvalidation,
+    reason: noTradeReason,
   };
 }
 
@@ -1059,12 +1076,27 @@ Do not chase the option if the next-day opening has already moved substantially 
  * @returns {string}
  */
 export function formatNextDaySignalTelegram(res) {
-  if (res.status === "DATA_UNAVAILABLE" || res.primarySignal === "NO TRADE") {
+  if (res.status === "DATA_UNAVAILABLE") {
+    return `⚪ NO TRADE — DATA UNAVAILABLE
+
+Reliable 3:15 PM option chain or spot data was not returned by market feeds.
+
+Reason:
+${res.reason || "Spot price or option chain unavailable."}
+
+Action:
+Do not force an option buy.
+Wait for market feeds to restore.`;
+  }
+
+  if (res.primarySignal === "NO TRADE") {
+    const scoreVal = res.finalScore ?? 0;
+    const scoreStr = scoreVal > 0 ? `+${scoreVal}` : `${scoreVal}`;
     return `⚪ NO TRADE
 
 NIFTY next-day option setup is inconclusive at 3:15 PM.
 
-Score: ${res.finalScore > 0 ? `+${res.finalScore}` : res.finalScore}/100
+Score: ${scoreStr}/100
 
 Reason:
 ${res.reason || "CE and PE option-chain signals are conflicting."}

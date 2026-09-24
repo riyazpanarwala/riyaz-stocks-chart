@@ -109,6 +109,10 @@ const metrics = runNextDayOptionBacktest(candles);
 console.log("-------------------------------------------------------------------------");
 console.log("🎯 STRATEGY BACKTEST PERFORMANCE METRICS");
 console.log("-------------------------------------------------------------------------");
+console.log(`Dataset Mode:               ${metrics.datasetMode}`);
+if (metrics.isPriceProxy) {
+  console.log(`ℹ Notice: Spot Price Proxy Mode — OI & Greeks are modeled from daily price action.`);
+}
 console.log(`Total Trading Sessions:     ${metrics.totalSessions}`);
 console.log(`Total Signals Generated:    ${metrics.totalSignals}`);
 console.log(`  • CE Signals:             ${metrics.ceSignals}`);

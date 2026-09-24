@@ -164,11 +164,35 @@ export async function getNextDayOptionSignal({
     const fullReport = formatNextDaySignalFull(unavailableSignal);
     const telegramText = formatNextDaySignalTelegram(unavailableSignal);
 
+    let telegramSent = false;
+    if (dispatchTelegram) {
+      const tgRes = await sendTelegramMessage(telegramText);
+      telegramSent = tgRes.sent;
+    }
+
+    let savedPath = null;
+    if (saveReport) {
+      try {
+        const reportsDir = path.resolve(process.cwd(), "reports", "next-day-signals");
+        await fs.mkdir(reportsDir, { recursive: true });
+
+        const filename = `next-day-signal-${todayStr}.json`;
+        const mdFilename = `next-day-signal-${todayStr}.md`;
+        savedPath = path.join(reportsDir, filename);
+
+        await fs.writeFile(savedPath, JSON.stringify(unavailableSignal, null, 2), "utf8");
+        await fs.writeFile(path.join(reportsDir, mdFilename), fullReport, "utf8");
+      } catch (saveErr) {
+        console.warn("[getNextDayOptionSignal] Failed to save report:", saveErr.message);
+      }
+    }
+
     return {
       result: unavailableSignal,
       fullReport,
       telegramText,
-      telegramSent: false,
+      telegramSent,
+      savedPath,
     };
   }
 

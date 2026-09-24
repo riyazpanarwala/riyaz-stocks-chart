@@ -9,8 +9,12 @@ import {
 } from "../options/nextDayOptionSignalEngine.js";
 
 /**
- * Reconstructs a realistic option chain slice for a historical session
- * based on the underlying spot price, previous closes, and day range.
+ * Reconstructs a price-action proxy option chain slice for a historical session
+ * when recorded real-time option chain snapshots are not provided.
+ *
+ * NOTE: This is a price-only proxy. Open interest is approximated from underlying
+ * price action and ATM proximity, not actual historical NSE exchange order flow.
+ * For production verification, pass recorded historical option-chain snapshots.
  *
  * @param {object} dayCandle { open, high, low, close, volume }
  * @param {object} prevCandle { close }
@@ -91,6 +95,11 @@ export function runNextDayOptionBacktest(candles, options = {}) {
     throw new Error("Backtest requires at least 5 historical daily candles.");
   }
 
+  const hasRecordedChains = candles.some((c) => Boolean(c.optionChain));
+  const datasetMode = hasRecordedChains
+    ? "RECORDED_HISTORICAL_SNAPSHOTS"
+    : "PRICE_ACTION_PROXY (Synthetic OI Reconstructed)";
+
   let totalSignals = 0;
   let ceSignals = 0;
   let peSignals = 0;
@@ -128,8 +137,8 @@ export function runNextDayOptionBacktest(candles, options = {}) {
       monthlyMap[monthKey] = { trades: 0, wins: 0, losses: 0, pnl: 0 };
     }
 
-    // 1. Simulate 3:15 PM Analysis at day t
-    const optionChain = buildSyntheticHistoricalOptionChain(currentDay, prevCandle);
+    // 1. Simulate 3:15 PM Analysis at day t (use real recorded chain if present, else synthetic price proxy)
+    const optionChain = currentDay.optionChain || buildSyntheticHistoricalOptionChain(currentDay, prevCandle);
     const spotData = {
       spot: currentDay.close,
       open: currentDay.open,
@@ -318,6 +327,8 @@ export function runNextDayOptionBacktest(candles, options = {}) {
   }));
 
   return {
+    datasetMode,
+    isPriceProxy: !hasRecordedChains,
     totalSessions: candles.length - 2,
     totalSignals,
     ceSignals,
