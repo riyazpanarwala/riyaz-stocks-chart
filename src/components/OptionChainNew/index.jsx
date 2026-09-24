@@ -22,6 +22,7 @@ import { InstitutionalPanel } from "./ui/InstitutionalPanel.jsx";
 import { BreakoutPanel }      from "./ui/BreakoutPanel.jsx";
 import { ExpiryCards }        from "./ui/ExpiryCards.jsx";
 import { MaxPainPcrTracker }  from "./ui/MaxPainPcrTracker.jsx";
+import { NextDaySignalPanel }  from "./ui/NextDaySignalPanel.jsx";
 
 // ─── Tab definition ───────────────────────────────────────────
 
@@ -258,6 +259,7 @@ export default function App({ initialSymbol = null }) {
               <Tab id="trend"    label="🎯 Max Pain & PCR" activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="table"    label="Strike Table"       activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="inst"     label="🧠 Smart Money"    activeTab={activeTab} setActiveTab={setActiveTab} />
+              <Tab id="nextday"  label="🔮 3:15 Next-Day Setup" activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="breakout" label={`⚡ Breakouts${breakoutSignals.length ? ` (${breakoutSignals.length})` : ""}`} activeTab={activeTab} setActiveTab={setActiveTab} />
               {!isIndex && <Tab id="expiry" label="All Expiries" activeTab={activeTab} setActiveTab={setActiveTab} />}
             </div>
@@ -309,6 +311,7 @@ export default function App({ initialSymbol = null }) {
                       spot={underlyingValue} atm={atm} maxPain={maxPain} pcr={pcr} sig={sig}
                     />
                   )}
+                  {activeTab === "nextday"  && <NextDaySignalPanel spot={underlyingValue} atm={atm} />}
                   {activeTab === "breakout" && <BreakoutPanel signals={breakoutSignals} fetchedAt={fetchedAt} />}
                   {activeTab === "expiry" && !isIndex && (
                     <ExpiryCards

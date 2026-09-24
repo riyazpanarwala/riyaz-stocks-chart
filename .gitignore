@@ -44,6 +44,7 @@ next-env.d.ts
 # engine data downloads
 data/*.json
 !data/instruments.json
+reports/
 
 # ide
 .sonarlint/
