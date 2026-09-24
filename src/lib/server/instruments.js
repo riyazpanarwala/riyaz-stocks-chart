@@ -155,7 +155,8 @@ function buildMergedInstruments(nseInstruments, bseInstruments) {
     ) {
       const isin = item.isin.trim();
       if (!nseIsinSet.has(isin)) {
-        const code = String(item.exchange_token).trim();
+        const rawCode = String(item.exchange_token).trim();
+        const code = (isin === "INE721I01024" && rawCode.startsWith("20000")) ? "544937" : rawCode;
         const symbol = (item.trading_symbol || code).trim().toUpperCase();
         const name = item.name || symbol;
 
