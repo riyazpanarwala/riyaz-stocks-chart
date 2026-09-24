@@ -20,9 +20,9 @@
     "test:engine": "node --test test/engine/*.test.js",
     "test:gemini": "node --env-file=.env scripts/testGemini.mjs",
     "briefing": "node --env-file=.env scripts/marketBriefing.mjs",
-    "signal:315": "node scripts/run315OptionSignal.mjs",
+    "signal:315": "node --env-file-if-exists=.env scripts/run315OptionSignal.mjs",
     "backtest:options": "node scripts/backtestOptionSignal.mjs",
-    "schedule:315": "node scripts/schedule315Signal.mjs"
+    "schedule:315": "node --env-file-if-exists=.env scripts/schedule315Signal.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",

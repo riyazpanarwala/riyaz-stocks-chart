@@ -8,20 +8,14 @@ import { getNextDayOptionSignal } from "../../services/market/nextDayOptionSigna
  * Queryable by client UI components.
  * Returns the latest 3:15 PM Next-Day Option Signal.
  *
- * @param {object} [params]
- * @param {boolean} [params.forceRefresh=false]
- * @param {boolean} [params.dispatchTelegram=false]
  * @returns {Promise<object>}
  */
-export async function getNextDayOptionSignalAction({
-  forceRefresh = false,
-  dispatchTelegram = false,
-} = {}) {
+export async function getNextDayOptionSignalAction() {
   try {
     const data = await getNextDayOptionSignal({
-      forceRefresh,
-      dispatchTelegram,
-      saveReport: true,
+      forceRefresh: false,
+      dispatchTelegram: false,
+      saveReport: false,
     });
     return {
       success: true,

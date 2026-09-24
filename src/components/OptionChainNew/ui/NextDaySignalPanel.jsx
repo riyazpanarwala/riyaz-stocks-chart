@@ -7,17 +7,17 @@ import { motion } from "framer-motion";
 import { C } from "../constants.js";
 import { getNextDayOptionSignalAction } from "../../../app/actions/nextDayOptionSignal.js";
 
-export function NextDaySignalPanel({ spot = 0, atm = 0 }) {
+export function NextDaySignalPanel() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
-  const fetchSignal = async (force = false) => {
+  const fetchSignal = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getNextDayOptionSignalAction({ forceRefresh: force });
+      const res = await getNextDayOptionSignalAction();
       if (res.success && res.data) {
         setData(res.data);
       } else {
@@ -62,7 +62,7 @@ export function NextDaySignalPanel({ spot = 0, atm = 0 }) {
       <div style={{ padding: "20px", background: "#2a0d0d", border: `1px solid ${C.red}55`, borderRadius: 10, color: C.text }}>
         <div style={{ fontWeight: 700, color: C.red, marginBottom: 6 }}>✖ Failed to load 3:15 PM Setup</div>
         <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>{error}</div>
-        <button onClick={() => fetchSignal(true)} style={{ padding: "6px 14px", borderRadius: 6, background: C.surface2, border: `1px solid ${C.border}`, color: C.text, cursor: "pointer", fontSize: 11 }}>
+        <button onClick={() => fetchSignal()} style={{ padding: "6px 14px", borderRadius: 6, background: C.surface2, border: `1px solid ${C.border}`, color: C.text, cursor: "pointer", fontSize: 11 }}>
           ↺ Retry Analysis
         </button>
       </div>
@@ -119,9 +119,9 @@ export function NextDaySignalPanel({ spot = 0, atm = 0 }) {
           <div style={{ fontSize: 24, fontWeight: 900, color: signalColor, display: "flex", alignItems: "center", gap: 8 }}>
             <span>{isCE ? "▲" : isPE ? "▼" : "—"}</span>
             <span>{res.primarySignal}</span>
-            {opt && (
+            {!isNoTrade && opt && (
               <span style={{ fontSize: 16, fontWeight: 700, color: C.text, opacity: 0.9 }}>
-                ({opt.strike} {isCE ? "CE" : "PE"})
+                ({opt.strike} {opt.type || (isCE ? "CE" : "PE")})
               </span>
             )}
           </div>

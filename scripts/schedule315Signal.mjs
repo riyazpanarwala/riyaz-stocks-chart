@@ -30,6 +30,9 @@ function getNext315IstDate() {
     return acc;
   }, {});
 
+  const currentYear = parseInt(parts.year, 10);
+  const currentMonth = parseInt(parts.month, 10);
+  const currentDay = parseInt(parts.day, 10);
   const currentHour = parseInt(parts.hour, 10);
   const currentMinute = parseInt(parts.minute, 10);
 
@@ -42,16 +45,15 @@ function getNext315IstDate() {
     daysToAdd = 1;
   }
 
-  // Create date object for next target
-  const nextTarget = new Date(now);
-  nextTarget.setDate(nextTarget.getDate() + daysToAdd);
+  // Construct target Date in IST (15:15:00 IST = 09:45:00 UTC)
+  const target = new Date(Date.UTC(currentYear, currentMonth - 1, currentDay + daysToAdd, 9, 45, 0));
 
-  // Adjust for weekends (Saturday=6, Sunday=0)
-  while (nextTarget.getDay() === 0 || nextTarget.getDay() === 6 || isHoliday(nextTarget)) {
-    nextTarget.setDate(nextTarget.getDate() + 1);
+  // Forward through holidays and weekends
+  while (isHoliday(target)) {
+    target.setUTCDate(target.getUTCDate() + 1);
   }
 
-  return nextTarget;
+  return target;
 }
 
 async function runScheduledSignal() {
@@ -69,6 +71,8 @@ async function runScheduledSignal() {
     console.log(`  • Status: ${res.result.status}`);
     if (res.telegramSent) {
       console.log("  • Telegram: Dispatched successfully");
+    } else {
+      console.warn("  • Telegram: Not sent (check TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env)");
     }
   } catch (err) {
     console.error("✖ Scheduled run error:", err.message);
@@ -82,18 +86,9 @@ console.log("===================================================================
 function scheduleLoop() {
   const now = new Date();
   const nextTarget = getNext315IstDate();
+  const msToWait = Math.max(1000, nextTarget.getTime() - now.getTime());
 
-  // Compute exact ms to 15:15 IST
-  const targetFormatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-  const targetDateStr = targetFormatter.format(nextTarget);
-  const targetTimeEpoch = new Date(`${targetDateStr}T15:15:00+05:30`).getTime();
-  const msToWait = Math.max(1000, targetTimeEpoch - now.getTime());
-
+  const targetDateStr = nextTarget.toISOString().slice(0, 10);
   console.log(`Next execution scheduled for: ${targetDateStr} at 15:15:00 IST (in ${(msToWait / 1000 / 60).toFixed(1)} mins)`);
 
   setTimeout(async () => {

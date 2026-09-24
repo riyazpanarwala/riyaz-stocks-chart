@@ -4,6 +4,6 @@ export const isMarketOpen = () => {
   return ism.isOpen();
 };
 
-export const isHoliday = () => {
-  return ism.isHoliday();
+export const isHoliday = (date) => {
+  return ism.isHoliday(date);
 };

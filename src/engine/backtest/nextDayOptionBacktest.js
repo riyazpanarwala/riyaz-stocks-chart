@@ -236,13 +236,21 @@ export function runNextDayOptionBacktest(candles, options = {}) {
     let exitPrice = stopLoss;
     let tradePnL = -(initialPremium - stopLoss);
 
-    // If Target 1 was hit
-    if (maxOptionPremium >= target1) {
+    const hitStop = minOptionPremium <= stopLoss;
+    const hitTarget = maxOptionPremium >= target1;
+
+    if (hitStop && hitTarget) {
+      // Conservative risk model: if both stop-loss and target extremes were reached
+      // in the same daily candle, treat as stop-loss first to avoid optimistic hindsight bias
+      tradeResult = "LOSS";
+      exitPrice = stopLoss;
+      tradePnL = -(initialPremium - stopLoss);
+    } else if (hitTarget) {
       tradeResult = "WIN";
       // Partial to Target 2 or average exit between T1 and T2
       exitPrice = maxOptionPremium >= target2 ? target2 : target1;
       tradePnL = exitPrice - initialPremium;
-    } else if (minOptionPremium <= stopLoss) {
+    } else if (hitStop) {
       tradeResult = "LOSS";
       exitPrice = stopLoss;
       tradePnL = -(initialPremium - stopLoss);

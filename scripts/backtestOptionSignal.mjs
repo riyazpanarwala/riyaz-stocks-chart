@@ -15,9 +15,10 @@ import { runNextDayOptionBacktest } from "../src/engine/backtest/nextDayOptionBa
 const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
 const args = process.argv.slice(2);
-const fileArg = args.find((a) => !a.startsWith("-"));
 const daysIdx = args.indexOf("--days");
 const daysToFetch = daysIdx !== -1 && args[daysIdx + 1] ? parseInt(args[daysIdx + 1], 10) : 180;
+const fileArg = args.find((a, i) => !a.startsWith("-") && !(daysIdx !== -1 && i === daysIdx + 1));
+const allowSynthetic = args.includes("--synthetic");
 
 console.log("\n=========================================================================");
 console.log("  📊 HISTORICAL BACKTEST: NIFTY 3:15 PM NEXT-DAY OPTION SIGNAL");
@@ -30,7 +31,8 @@ if (fileArg) {
   try {
     const raw = await fs.readFile(fileArg, "utf8");
     const parsed = JSON.parse(raw);
-    candles = Array.isArray(parsed) ? parsed : parsed.candles;
+    const loaded = Array.isArray(parsed) ? parsed : parsed?.candles;
+    candles = Array.isArray(loaded) ? loaded : [];
     console.log(`✔ Loaded ${candles.length} candles from local file: ${fileArg}`);
   } catch (err) {
     console.warn(`Could not read local file ${fileArg}: ${err.message}`);
@@ -61,12 +63,18 @@ if (!candles.length) {
       console.log(`✔ Retrieved ${candles.length} trading days from market feeds.`);
     }
   } catch (err) {
-    console.log(`ℹ Remote chart feed unavailable (${err.message}). Using standard NIFTY multi-session dataset.`);
+    console.log(`ℹ Remote chart feed unavailable (${err.message}).`);
   }
 }
 
-// Resilient fallback: standard realistic NIFTY benchmark walk if network is blocked
+// Fallback: standard realistic NIFTY benchmark walk only if --synthetic is explicitly passed
 if (!candles.length) {
+  if (!allowSynthetic) {
+    console.error("✖ No candle data available. Please provide a historical JSON file (e.g. node scripts/backtestOptionSignal.mjs data.json), ensure internet connectivity for Yahoo Finance, or pass --synthetic to run on synthetic test data.");
+    process.exit(1);
+  }
+
+  console.warn("⚠️  WARNING: Running backtest on SYNTHETIC mathematical mock data (--synthetic flag passed). This is not real market data!\n");
   let base = 24200;
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 180);
