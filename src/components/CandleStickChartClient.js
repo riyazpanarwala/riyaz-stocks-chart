@@ -66,7 +66,12 @@ const CandleStickChart = () => {
   } = useCommonHeader();
 
   const corporateEventsCount = React.useMemo(() => {
-    return (candleData || []).filter((c) => c && (c.dividend || c.split)).length;
+    return (candleData || []).reduce((count, c) => {
+      if (!c) return count;
+      const divCount = c.dividends?.length ?? (c.dividend ? 1 : 0);
+      const splitCount = c.splits?.length ?? (c.split ? 1 : 0);
+      return count + divCount + splitCount;
+    }, 0);
   }, [candleData]);
 
   const [isCompanyExist, setCompanyExist] = useState(

@@ -1,6 +1,23 @@
 import YahooFinance from "yahoo-finance2";
 const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
+/**
+ * Fetches chart candle data and corporate action events (dividends and splits)
+ * for a given symbol from Yahoo Finance.
+ *
+ * Each mapped quote contains:
+ * - `dividends`: Array of dividend events mapped to this candle
+ * - `dividend`: First dividend event (for backwards compatibility)
+ * - `splits`: Array of stock split events mapped to this candle
+ * - `split`: First split event (for backwards compatibility)
+ *
+ * @param {string} symbol - Equity ticker (e.g. "TCS.NS", "^NSEI")
+ * @param {object} [options] - Query options
+ * @param {string} [options.interval] - Granularity ("1d", "1wk", "1mo", etc.)
+ * @param {string|Date} [options.fromDate] - Start date
+ * @param {string|Date} [options.toDate] - End date
+ * @returns {Promise<Array<object>>} Filtered quote candles with corporate actions
+ */
 export async function getChartData(symbol, { interval, fromDate, toDate } = {}) {
   const queryObj = {
     interval,
@@ -40,10 +57,13 @@ export async function getChartData(symbol, { interval, fromDate, toDate } = {}) 
       for (const div of rawEvents.dividends) {
         const idx = findQuoteIndex(div.date);
         if (idx !== -1) {
-          quotes[idx].dividend = {
+          const divObj = {
             amount: Number(div.amount),
             date: div.date instanceof Date ? div.date.toISOString() : String(div.date),
           };
+          quotes[idx].dividends = quotes[idx].dividends || [];
+          quotes[idx].dividends.push(divObj);
+          quotes[idx].dividend = quotes[idx].dividends[0];
         }
       }
     }
@@ -52,12 +72,15 @@ export async function getChartData(symbol, { interval, fromDate, toDate } = {}) 
       for (const sp of rawEvents.splits) {
         const idx = findQuoteIndex(sp.date);
         if (idx !== -1) {
-          quotes[idx].split = {
+          const splitObj = {
             splitRatio: String(sp.splitRatio),
             numerator: Number(sp.numerator),
             denominator: Number(sp.denominator),
             date: sp.date instanceof Date ? sp.date.toISOString() : String(sp.date),
           };
+          quotes[idx].splits = quotes[idx].splits || [];
+          quotes[idx].splits.push(splitObj);
+          quotes[idx].split = quotes[idx].splits[0];
         }
       }
     }
@@ -66,11 +89,27 @@ export async function getChartData(symbol, { interval, fromDate, toDate } = {}) 
   return quotes;
 }
 
+/**
+ * Fetches current option chain data for a symbol from Yahoo Finance.
+ *
+ * @param {string|number} symbol - Equity ticker or symbol identifier
+ * @returns {Promise<object>} Raw option chain payload
+ */
 export async function getOptionData(symbol) {
   const result = await yahooFinance.options("" + symbol);
   return result;
 }
 
+/**
+ * Fetches historical quote records for a symbol from Yahoo Finance.
+ *
+ * @param {string} symbol - Equity ticker
+ * @param {object} [options] - Query options
+ * @param {string} [options.interval] - Candle interval
+ * @param {string|Date} [options.fromDate] - Start date
+ * @param {string|Date} [options.toDate] - End date (defaults to now)
+ * @returns {Promise<Array<object>>} Historical quotes array
+ */
 export async function getHistoricalData(symbol, { interval, fromDate, toDate } = {}) {
   const queryObj = { interval, period1: fromDate };
 

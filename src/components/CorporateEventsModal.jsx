@@ -1,7 +1,26 @@
 "use client";
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useRef } from "react";
 import "./TechnicalInfo/Modal.scss";
 
+/**
+ * CorporateEventsModal renders a comprehensive modal dialog displaying
+ * historical dividends and stock splits for the selected stock.
+ *
+ * It provides:
+ * - Focus trapping and focus restoration for accessibility (WCAG dialog pattern)
+ * - Exact ex-date extraction from each corporate action event
+ * - Multi-event mapping support per candle
+ * - Badge toggle control for the chart
+ *
+ * @param {object} props - Component props
+ * @param {object} props.companyObj - Active company metadata object
+ * @param {Array<object>} [props.candleData] - Loaded candles array
+ * @param {object|null} [props.selectedEvent] - Event selected by clicking a badge on chart
+ * @param {Function} props.onClose - Modal close callback
+ * @param {boolean} [props.showBadges] - Whether badges are currently displayed on chart
+ * @param {Function} [props.onToggleBadges] - Toggle badges callback
+ * @returns {React.ReactElement} Corporate events modal dialog
+ */
 export default function CorporateEventsModal({
   companyObj,
   candleData = [],
@@ -10,35 +29,106 @@ export default function CorporateEventsModal({
   showBadges = true,
   onToggleBadges,
 }) {
-  // Extract all dividend and split events across the loaded candles
+  const modalRef = useRef(null);
+  const closeBtnRef = useRef(null);
+  const previousActiveElementRef = useRef(null);
+
+  // Manage accessibility focus: capture trigger, focus inside dialog, trap tab, restore focus on unmount
+  useEffect(() => {
+    previousActiveElementRef.current =
+      typeof document !== "undefined" ? document.activeElement : null;
+
+    const timer = setTimeout(() => {
+      if (closeBtnRef.current) {
+        closeBtnRef.current.focus();
+      }
+    }, 50);
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (e.key === "Tab" && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", handleKeyDown);
+      if (
+        previousActiveElementRef.current &&
+        typeof previousActiveElementRef.current.focus === "function"
+      ) {
+        previousActiveElementRef.current.focus();
+      }
+    };
+  }, [onClose]);
+
+  // Extract all dividend and split events across the loaded candles,
+  // deriving the event's true ex-date rather than the candle date.
   const allEvents = useMemo(() => {
     const events = [];
     for (const c of candleData) {
       if (!c) continue;
-      const dateStr = c.date ? String(c.date).split(" ")[0] : "";
+      const candleDateStr = c.date ? String(c.date).split(" ")[0] : "";
 
-      if (c.dividend) {
+      const candleDividends = c.dividends || (c.dividend ? [c.dividend] : []);
+      for (const div of candleDividends) {
+        const eventDateStr = div.date
+          ? String(div.date).split("T")[0].split(" ")[0]
+          : candleDateStr;
+
         events.push({
           type: "dividend",
-          date: dateStr,
-          amount: Number(c.dividend.amount),
+          date: eventDateStr,
+          amount: Number(div.amount),
           close: c.close,
-          rawDate: c.date,
+          candleDate: candleDateStr,
+          rawDate: div.date || c.date,
         });
       }
 
-      if (c.split) {
+      const candleSplits = c.splits || (c.split ? [c.split] : []);
+      for (const sp of candleSplits) {
+        const eventDateStr = sp.date
+          ? String(sp.date).split("T")[0].split(" ")[0]
+          : candleDateStr;
+
         events.push({
           type: "split",
-          date: dateStr,
-          ratio: c.split.splitRatio || `${c.split.numerator}:${c.split.denominator}`,
+          date: eventDateStr,
+          ratio: sp.splitRatio || `${sp.numerator}:${sp.denominator}`,
           close: c.close,
-          rawDate: c.date,
+          candleDate: candleDateStr,
+          rawDate: sp.date || c.date,
         });
       }
     }
 
-    // Sort newest first
+    // Sort newest first by ex-date
     return events.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   }, [candleData]);
 
@@ -51,22 +141,20 @@ export default function CorporateEventsModal({
     [allEvents]
   );
 
-  // Close on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
   const companyName =
     companyObj?.name || companyObj?.symbol || companyObj?.value || "Stock";
   const ticker = companyObj?.symbol || companyObj?.value || "";
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="corporate-actions-title"
+    >
       <div
+        ref={modalRef}
         className="modal-content"
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -92,6 +180,7 @@ export default function CorporateEventsModal({
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ fontSize: "20px" }}>🏷️</span>
               <h2
+                id="corporate-actions-title"
                 style={{
                   margin: 0,
                   fontSize: "18px",
@@ -126,6 +215,7 @@ export default function CorporateEventsModal({
           </div>
 
           <button
+            ref={closeBtnRef}
             onClick={onClose}
             className="close-btn"
             style={{ position: "static" }}

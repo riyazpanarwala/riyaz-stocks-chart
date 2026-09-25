@@ -2,12 +2,39 @@
 import React from "react";
 import { GenericChartComponent } from "@riyazpanarwala/core";
 
+/**
+ * Extracts a formatted YYYY-MM-DD date string from an event object or fallback.
+ *
+ * @param {object} evt - Corporate action event object
+ * @param {string} fallback - Fallback date string
+ * @returns {string} Clean date string
+ */
+function getEventDate(evt, fallback) {
+  if (evt && evt.date) {
+    return String(evt.date).split("T")[0].split(" ")[0];
+  }
+  return fallback || "";
+}
+
+/**
+ * CorporateEventsChart renders visual badges for corporate action events
+ * (Dividends and Stock Splits) on the financial candlestick chart.
+ *
+ * Each badge is positioned along the baseline below the corresponding candle,
+ * connected by a vertical dashed stem, with native tooltips and click handling.
+ */
 export default class CorporateEventsChart extends React.Component {
   constructor(props) {
     super(props);
     this.renderSVG = this.renderSVG.bind(this);
   }
 
+  /**
+   * Renders SVG badges and guidelines for visible corporate action points.
+   *
+   * @param {object} moreProps - Chart canvas context properties
+   * @returns {React.ReactElement|null} SVG element group
+   */
   renderSVG(moreProps) {
     const { xAccessor, xScale, chartConfig, plotData } = moreProps;
     if (!plotData || !chartConfig || !this.props.enabled) return null;
@@ -16,7 +43,14 @@ export default class CorporateEventsChart extends React.Component {
     const { onSelectEvent } = this.props;
 
     // Filter points in current plotData that contain corporate action events
-    const eventsData = plotData.filter((d) => d && (d.dividend || d.split));
+    const eventsData = plotData.filter(
+      (d) =>
+        d &&
+        (d.dividend ||
+          d.split ||
+          (d.dividends && d.dividends.length > 0) ||
+          (d.splits && d.splits.length > 0))
+    );
     if (!eventsData.length) return null;
 
     const badgeY = Math.max(20, height - 16);
@@ -28,15 +62,54 @@ export default class CorporateEventsChart extends React.Component {
           const xPos = xScale(xAccessor(d));
           if (!Number.isFinite(xPos)) return null;
 
-          const hasDividend = Boolean(d.dividend);
-          const hasSplit = Boolean(d.split);
+          const candleDividends = d.dividends || (d.dividend ? [d.dividend] : []);
+          const candleSplits = d.splits || (d.split ? [d.split] : []);
+
+          const hasDividend = candleDividends.length > 0;
+          const hasSplit = candleSplits.length > 0;
           const candleLowY = yScale(d.low);
 
-          const dateStr = d.date ? String(d.date).split(" ")[0] : "";
+          const candleDateStr = d.date ? String(d.date).split(" ")[0] : "";
+          const divDate = getEventDate(candleDividends[0], candleDateStr);
+          const splitDate = getEventDate(candleSplits[0], candleDateStr);
 
           // Offset horizontally if both events occur on the same day
           const divX = hasDividend && hasSplit ? xPos - 10 : xPos;
           const splitX = hasDividend && hasSplit ? xPos + 10 : xPos;
+
+          const divTooltip =
+            candleDividends.length > 1
+              ? `💰 Dividends (${candleDividends.length}):\n` +
+                candleDividends
+                  .map(
+                    (dv) =>
+                      `  • ₹${Number(dv.amount).toFixed(2)} (Ex: ${getEventDate(
+                        dv,
+                        candleDateStr
+                      )})`
+                  )
+                  .join("\n") +
+                "\n(Click to view details)"
+              : `💰 Dividend: ₹${Number(candleDividends[0].amount).toFixed(
+                  2
+                )}\n📅 Ex-Date: ${divDate}\n(Click to view details)`;
+
+          const splitTooltip =
+            candleSplits.length > 1
+              ? `✂️ Stock Splits (${candleSplits.length}):\n` +
+                candleSplits
+                  .map(
+                    (sp) =>
+                      `  • ${
+                        sp.splitRatio || `${sp.numerator}:${sp.denominator}`
+                      } (Ex: ${getEventDate(sp, candleDateStr)})`
+                  )
+                  .join("\n") +
+                "\n(Click to view details)"
+              : `✂️ Stock Split: ${
+                  candleSplits[0].splitRatio ||
+                  `${candleSplits[0].numerator}:${candleSplits[0].denominator}`
+                }\n📅 Ex-Date: ${splitDate}\n(Click to view details)`;
 
           return (
             <g key={`event-${d.date}-${idx}`} className="corporate-event-group">
@@ -64,16 +137,16 @@ export default class CorporateEventsChart extends React.Component {
                     if (onSelectEvent) {
                       onSelectEvent({
                         type: "dividend",
-                        date: dateStr,
-                        amount: d.dividend.amount,
+                        date: divDate,
+                        amount: candleDividends[0].amount,
+                        events: candleDividends,
                         close: d.close,
                         datum: d,
                       });
                     }
                   }}
                 >
-                  <title>{`💰 Dividend: ₹${Number(d.dividend.amount).toFixed(2)}\n📅 Ex-Date: ${dateStr}\n(Click to view details)`}</title>
-                  {/* Subtle glow / outer stroke */}
+                  <title>{divTooltip}</title>
                   <circle
                     cx={divX}
                     cy={badgeY}
@@ -107,16 +180,18 @@ export default class CorporateEventsChart extends React.Component {
                     if (onSelectEvent) {
                       onSelectEvent({
                         type: "split",
-                        date: dateStr,
-                        ratio: d.split.splitRatio || `${d.split.numerator}:${d.split.denominator}`,
+                        date: splitDate,
+                        ratio:
+                          candleSplits[0].splitRatio ||
+                          `${candleSplits[0].numerator}:${candleSplits[0].denominator}`,
+                        events: candleSplits,
                         close: d.close,
                         datum: d,
                       });
                     }
                   }}
                 >
-                  <title>{`✂️ Stock Split: ${d.split.splitRatio || `${d.split.numerator}:${d.split.denominator}`}\n📅 Ex-Date: ${dateStr}\n(Click to view details)`}</title>
-                  {/* Subtle glow / outer stroke */}
+                  <title>{splitTooltip}</title>
                   <circle
                     cx={splitX}
                     cy={badgeY}
