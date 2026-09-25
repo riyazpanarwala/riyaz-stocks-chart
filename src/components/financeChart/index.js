@@ -53,6 +53,7 @@ import IndicatorChart from "./IndicatorChart";
 import STOChart from "./STOChart";
 import BolingerChart from "./BolingerChart";
 import MACrossOverChart from "./MACrossOverChart";
+import CorporateEventsChart from "./CorporateEventsChart";
 import technicalAnalysis from "../technical-analysis/index.js";
 import { useThemeColors } from "./useThemeColors";
 const { analyzeMarketStructure } = technicalAnalysis;
@@ -104,6 +105,8 @@ const FinanceChart = ({
   isAngleEnabled,
   breakoutName,
   patternName,
+  showCorporateEvents = true,
+  onSelectCorporateEvent,
 }) => {
   const [trendLines, setTrendLines] = useState([]);
   const [textList, setTextList] = useState([]);
@@ -321,6 +324,13 @@ const FinanceChart = ({
           stroke={openCloseColor}
           candleStrokeWidth={0.5}
         />
+
+        {showCorporateEvents ? (
+          <CorporateEventsChart
+            enabled={showCorporateEvents}
+            onSelectEvent={onSelectCorporateEvent}
+          />
+        ) : null}
 
         {breakoutName ? (
           <Breakout patternName={breakoutName} data={initialData} isIntraday={isIntraday} />

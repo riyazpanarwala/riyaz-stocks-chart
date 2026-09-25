@@ -38,6 +38,14 @@ export const getDataFromIntraday = (intradayData) => {
   };
 };
 
+/**
+ * Transforms candle arrays into structured candle objects or EChart format,
+ * preserving all mapped corporate action events.
+ *
+ * @param {object} arr - Raw candle wrapper object
+ * @param {boolean} [isEchart] - Whether to return EChart format
+ * @returns {{ dataArr: Array<object>, timeArr: Array<string> }} Formatted candles and timestamps
+ */
 export const getCandleArr = (arr, isEchart) => {
   let timeArr = [];
   let dataArr = [];
@@ -50,6 +58,22 @@ export const getCandleArr = (arr, isEchart) => {
     dataArr = candles.map((item) => {
       const aa = String(item[0] || "").split("T");
       const hhmmss = aa[1] ? aa[1].split("+")[0] : "";
+
+      const rawDividends = item[6];
+      const rawSplits = item[7];
+
+      const dividends = Array.isArray(rawDividends)
+        ? rawDividends
+        : rawDividends
+        ? [rawDividends]
+        : null;
+
+      const splits = Array.isArray(rawSplits)
+        ? rawSplits
+        : rawSplits
+        ? [rawSplits]
+        : null;
+
       return {
         date: `${aa[0]} ${hhmmss}`.trim(),
         open: item[1],
@@ -57,6 +81,10 @@ export const getCandleArr = (arr, isEchart) => {
         low: item[3],
         close: item[4],
         volume: item[5],
+        dividend: dividends?.[0] ?? null,
+        split: splits?.[0] ?? null,
+        dividends: dividends ?? null,
+        splits: splits ?? null,
       };
     });
   }
@@ -114,6 +142,19 @@ export const getIntradayDataForCurrentDay = async (
   return candles;
 };
 
+/**
+ * Fetches historical candle data from Yahoo Finance or NSE/Upstox adapters,
+ * mapping corporate actions onto the resulting candle series.
+ *
+ * @param {boolean} isEchart - Whether output is intended for EChart
+ * @param {string} intervalVal - Interval unit ("minutes", "hours", "days", etc.)
+ * @param {string} interval - Granularity code ("1d", "1wk", "1mo", etc.)
+ * @param {string} indexName - Index / segment identifier
+ * @param {string} period - Historical period span ("1y", "5y", "Max", etc.)
+ * @param {object} companyObj - Selected stock object
+ * @param {number} [apiInterval] - Custom interval multiplier
+ * @returns {Promise<{ candles: Array<object>, timeArr: Array<string> }>}
+ */
 export const fetchHistoricData = async (
   isEchart,
   intervalVal,
@@ -147,7 +188,16 @@ export const fetchHistoricData = async (
       arr = {
         data: {
           candles: rawData
-            .map((q) => [q.date, q.open, q.high, q.low, q.close, q.volume])
+            .map((q) => [
+              q.date,
+              q.open,
+              q.high,
+              q.low,
+              q.close,
+              q.volume,
+              q.dividends ?? (q.dividend ? [q.dividend] : null),
+              q.splits ?? (q.split ? [q.split] : null),
+            ])
             .reverse(),
         },
       };
