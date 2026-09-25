@@ -57,6 +57,8 @@ export const getCandleArr = (arr, isEchart) => {
         low: item[3],
         close: item[4],
         volume: item[5],
+        dividend: item[6] ?? null,
+        split: item[7] ?? null,
       };
     });
   }
@@ -147,7 +149,16 @@ export const fetchHistoricData = async (
       arr = {
         data: {
           candles: rawData
-            .map((q) => [q.date, q.open, q.high, q.low, q.close, q.volume])
+            .map((q) => [
+              q.date,
+              q.open,
+              q.high,
+              q.low,
+              q.close,
+              q.volume,
+              q.dividend ?? null,
+              q.split ?? null,
+            ])
             .reverse(),
         },
       };

@@ -28,6 +28,7 @@ import Fundamentals from "./FundaMentals/index.js";
 import ActionButton from "./ActionButton.js";
 import TrendlyneChecklist from "./Trendlyne/TrendlyneChecklist.jsx";
 import StockSignalModal from "./StockSignalModal";
+import CorporateEventsModal from "./CorporateEventsModal.jsx";
 
 
 const CandleStickChart = () => {
@@ -43,6 +44,9 @@ const CandleStickChart = () => {
   const [modal, setModalOpen] = useState(false);
   const [modal1, setModalOpen1] = useState(false);
   const [signalModalOpen, setSignalModalOpen] = useState(false);
+  const [eventsModalOpen, setEventsModalOpen] = useState(false);
+  const [selectedCorporateEvent, setSelectedCorporateEvent] = useState(null);
+  const [showCorporateEvents, setShowCorporateEvents] = useState(true);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   const {
@@ -60,6 +64,11 @@ const CandleStickChart = () => {
     candleData,
     period,
   } = useCommonHeader();
+
+  const corporateEventsCount = React.useMemo(() => {
+    return (candleData || []).filter((c) => c && (c.dividend || c.split)).length;
+  }, [candleData]);
+
   const [isCompanyExist, setCompanyExist] = useState(
     isCompanyExistInStorage(companyObj),
   );
@@ -272,6 +281,13 @@ const CandleStickChart = () => {
                 >
                   ⚡ Signal Engine
                 </ActionButton>
+                <ActionButton
+                  onClick={() => setEventsModalOpen(true)}
+                  aria-label={`View corporate actions (dividends and splits) for ${getCompanyName()}`}
+                  title="View recorded dividends and stock splits"
+                >
+                  🏷️ Events {corporateEventsCount > 0 ? `(${corporateEventsCount})` : ""}
+                </ActionButton>
                 <Link
                   href="/screener"
                   className="custom-button"
@@ -361,6 +377,11 @@ const CandleStickChart = () => {
                     isAngleEnabled={isAngleEnabled}
                     breakoutName={breakoutName}
                     patternName={patternName}
+                    showCorporateEvents={showCorporateEvents}
+                    onSelectCorporateEvent={(evt) => {
+                      setSelectedCorporateEvent(evt);
+                      setEventsModalOpen(true);
+                    }}
                   />
                 </div>
               </FullScreen>
@@ -403,6 +424,20 @@ const CandleStickChart = () => {
             indexName={indexObj.value}
             isOpen={signalModalOpen}
             onClose={() => setSignalModalOpen(false)}
+          />
+        )}
+
+        {eventsModalOpen && (
+          <CorporateEventsModal
+            companyObj={companyObj}
+            candleData={candleData}
+            selectedEvent={selectedCorporateEvent}
+            onClose={() => {
+              setEventsModalOpen(false);
+              setSelectedCorporateEvent(null);
+            }}
+            showBadges={showCorporateEvents}
+            onToggleBadges={() => setShowCorporateEvents((prev) => !prev)}
           />
         )}
       </div>
