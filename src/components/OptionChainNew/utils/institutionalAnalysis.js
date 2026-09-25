@@ -296,22 +296,49 @@ export function calcInstitutional(rows, spot, atm, pcr) {
       : 0;
 
   // ── Smart bias ────────────────────────────────────────────
-  const pcrBias = pcr > 1.2 ? 1 : pcr < 0.8 ? -1 : 0;
-  const oiBias = nearPeDOI > nearCeDOI ? 1 : nearCeDOI > nearPeDOI ? -1 : 0;
+  const pcrBias = pcr > 1.25 ? 1 : pcr < 0.8 ? -1 : 0;
+  const oiBias = nearPeDOI > nearCeDOI * 1.2 ? 1 : nearCeDOI > nearPeDOI * 1.2 ? -1 : 0;
   const closestRes = topRes3.length
     ? Math.min(...topRes3.map((r) => r.strikePrice))
     : null;
   const closestSup = topSup3.length
     ? Math.max(...topSup3.map((r) => r.strikePrice))
     : null;
-  const zoneBias =
-    closestRes == null || closestSup == null
-      ? 0
-      : spot - closestSup < closestRes - spot
-        ? 1
-        : closestRes - spot < spot - closestSup
-          ? -1
-          : 0;
+
+  let zoneBias = 0;
+  if (closestRes != null && closestSup != null) {
+    const distToRes = closestRes - spot;
+    const distToSup = spot - closestSup;
+
+    const resRow = rows.find((r) => r.strikePrice === closestRes);
+    const supRow = rows.find((r) => r.strikePrice === closestSup);
+    const closestCeLeg = resRow?.CE;
+    const closestPeLeg = supRow?.PE;
+
+    if (distToRes <= step && distToRes < distToSup) {
+      // Nearer to resistance: check if breaking out with call unwinding or rejecting
+      const isBreakout = closestCeLeg && (closestCeLeg.changeinOpenInterest < 0 || closestCeLeg.change > 0);
+      zoneBias = isBreakout ? 1 : -1;
+    } else if (distToSup <= step && distToSup < distToRes) {
+      // Nearer to support: check if breaking down with put unwinding or holding
+      const isBreakdown = closestPeLeg && (closestPeLeg.changeinOpenInterest < 0 || closestPeLeg.change > 0);
+      zoneBias = isBreakdown ? -1 : 1;
+    } else if (distToRes <= step && distToSup <= step && distToRes === distToSup) {
+      // Equidistant between both nearby levels
+      const isBreakout = closestCeLeg && (closestCeLeg.changeinOpenInterest < 0 || closestCeLeg.change > 0);
+      const isBreakdown = closestPeLeg && (closestPeLeg.changeinOpenInterest < 0 || closestPeLeg.change > 0);
+      if (isBreakout && !isBreakdown) zoneBias = 1;
+      else if (isBreakdown && !isBreakout) zoneBias = -1;
+      else zoneBias = 0;
+    } else {
+      zoneBias =
+        distToSup < distToRes
+          ? 1
+          : distToRes < distToSup
+            ? -1
+            : 0;
+    }
+  }
 
   const totalBias = pcrBias + oiBias + zoneBias;
   const smartBias =
