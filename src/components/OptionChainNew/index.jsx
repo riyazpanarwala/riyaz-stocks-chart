@@ -23,6 +23,7 @@ import { BreakoutPanel }      from "./ui/BreakoutPanel.jsx";
 import { ExpiryCards }        from "./ui/ExpiryCards.jsx";
 import { MaxPainPcrTracker }  from "./ui/MaxPainPcrTracker.jsx";
 import { NextDaySignalPanel }  from "./ui/NextDaySignalPanel.jsx";
+import { StraddleBanner }     from "./ui/StraddleBanner.jsx";
 
 // ─── Tab definition ───────────────────────────────────────────
 
@@ -125,8 +126,9 @@ export default function App({ initialSymbol = null }) {
     rows, prevRows, displayRows, prevDisplayRows,
     expiries, activeExpiry, underlyingValue,
     atm, pcr, maxPain, sig, chartData,
+    straddleInfo, tYears,
     activeRange,
-  } = useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode });
+  } = useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode, lotSize: instrument.lot });
 
   // ── Snapshot history + breakout signals ──────────────────
   const { breakoutSignals } = useSnapshotHistory({
@@ -251,6 +253,7 @@ export default function App({ initialSymbol = null }) {
           <>
             {sig && <SignalBanner sig={sig} atm={atm} maxPain={maxPain} spot={underlyingValue} />}
             {sig && <ZoneBadges sig={sig} />}
+            {straddleInfo && <StraddleBanner straddleInfo={straddleInfo} lotSize={instrument.lot} />}
 
             {/* Tab bar */}
             <div style={{ display: "flex", gap: 3, marginBottom: 10, borderBottom: `1px solid ${C.border}`, paddingBottom: 4, flexWrap: "wrap" }}>
@@ -306,7 +309,16 @@ export default function App({ initialSymbol = null }) {
                       fetchedAt={fetchedAt}
                     />
                   )}
-                  {activeTab === "table"   && sig && <StrikeTable displayRows={displayRows} atm={atm} sig={sig} />}
+                  {activeTab === "table"   && sig && (
+                    <StrikeTable
+                      displayRows={displayRows}
+                      atm={atm}
+                      sig={sig}
+                      spot={underlyingValue}
+                      tYears={tYears}
+                      lotSize={instrument.lot}
+                    />
+                  )}
                   {activeTab === "inst"    && (
                     <InstitutionalPanel
                       rows={displayRows} prevRows={prevDisplayRows}

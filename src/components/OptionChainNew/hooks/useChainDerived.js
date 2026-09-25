@@ -7,8 +7,10 @@ import { useMemo } from "react";
 import {
   parseIndexChain, parseStockChain,
   calcPCRFull, calcPCR, calcMaxPain, calcMaxPainFull, findATM,
+  parseNSEExpiry,
 } from "../utils/parsers.js";
 import { generateSignal } from "../utils/signalEngine.js";
+import { calcATMStraddle } from "../utils/greeksEngine.js";
 import { NORMAL_RANGE, SCALP_RANGE } from "../constants.js";
 
 /**
@@ -18,9 +20,10 @@ import { NORMAL_RANGE, SCALP_RANGE } from "../constants.js";
  *   isIndex:      boolean,
  *   selectedExpiry: string|null,
  *   scalpMode:    boolean,
+ *   lotSize?:     number,
  * }} opts
  */
-export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode }) {
+export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode, lotSize = 1 }) {
   // ── Parse current rows ─────────────────────────────────────
   const { rows, expiries, selectedExpiry: activeExpiry, underlyingValue } = useMemo(() => {
     if (!rawData) return { rows: [], expiries: [], selectedExpiry: null, underlyingValue: 0 };
@@ -126,10 +129,26 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
     [displayRows, atm],
   );
 
+  // ── Time to Expiry (years) ────────────────────────────────
+  const tYears = useMemo(() => {
+    if (!activeExpiry) return 7 / 365;
+    const expiryMs = parseNSEExpiry(activeExpiry);
+    if (!Number.isFinite(expiryMs)) return 7 / 365;
+    const diffMs = expiryMs - Date.now();
+    const days = Math.max(0.1, diffMs / (1000 * 60 * 60 * 24));
+    return days / 365;
+  }, [activeExpiry]);
+
+  // ── ATM Straddle & Expected Move ───────────────────────────
+  const straddleInfo = useMemo(() => {
+    return rows.length ? calcATMStraddle(rows, atm, underlyingValue, tYears, lotSize) : null;
+  }, [rows, atm, underlyingValue, tYears, lotSize]);
+
   return {
     rows, prevRows, displayRows, prevDisplayRows,
     expiries, activeExpiry, underlyingValue,
     atm, pcr, maxPain, sig, chartData,
+    straddleInfo, tYears,
     // Expose the active range so the UI label always matches the actual slice.
     activeRange: range,
   };

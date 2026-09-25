@@ -23,6 +23,8 @@ function safeLeg(raw) {
     totalTradedVolume:    raw.totalTradedVolume     ?? 0,
     lastPrice:            raw.lastPrice             ?? 0,
     change:               raw.change               ?? 0,
+    impliedVolatility:    raw.impliedVolatility    ?? 0,
+    expiryDate:           raw.expiryDate           ?? "",
   };
 }
 
@@ -62,7 +64,7 @@ export function parseIndexChain(records) {
  * @param {string} value
  * @returns {number}
  */
-function parseNSEExpiry(value) {
+export function parseNSEExpiry(value) {
   const NSE_MONTHS = {
     Jan: 0, Feb: 1, Mar: 2,  Apr: 3,  May: 4,  Jun: 5,
     Jul: 6, Aug: 7, Sep: 8,  Oct: 9,  Nov: 10, Dec: 11,

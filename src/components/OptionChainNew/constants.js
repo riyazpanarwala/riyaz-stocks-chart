@@ -62,4 +62,5 @@ export const EMPTY_STOCK_DATA = Object.freeze({
 export const EMPTY_OPTION_LEG = Object.freeze({
   openInterest: 0, changeinOpenInterest: 0,
   totalTradedVolume: 0, lastPrice: 0, change: 0,
+  impliedVolatility: 0,
 });
