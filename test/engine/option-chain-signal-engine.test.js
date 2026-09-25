@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 
 import { generateSignal, sigMeta } from "../../src/components/OptionChainNew/utils/signalEngine.js";
 import { buildupType } from "../../src/components/OptionChainNew/utils/parsers.js";
+import { calcInstitutional } from "../../src/components/OptionChainNew/utils/institutionalAnalysis.js";
 
 function buildMockRow(strikePrice, {
   ceLtp = 100, ceChg = 0, ceOi = 50000, ceOiChg = 0, ceVol = 10000,
@@ -194,3 +195,64 @@ test("Strike Table Buildup: Side-aware buildup correctly differentiates CE and P
   });
   assert.equal(buildupType(squeezeCallRow, "CE"), "Short Covering");
 });
+
+test("Option Chain Signal Engine: Dominant Call writing with minor CE unwind above ATM does not trigger bullish OI bias", () => {
+  const atm = 24500;
+  const spot = 24500;
+  const strikes = [24300, 24400, 24500, 24600, 24700];
+
+  // nearCeDelta is massive (60000), nearPeDelta is small (1000)
+  // One CE strike at 24600 has a tiny -1 unwind
+  const rows = strikes.map((sp) => buildMockRow(sp, {
+    ceLtp: 100,
+    ceChg: -5,
+    ceOi: 100000,
+    ceOiChg: sp === 24600 ? -1 : (sp === 24500 ? 60001 : 1000), // nearCeDelta = 60000
+    ceVol: 20000,
+    peLtp: 100,
+    peChg: 5,
+    peOi: 100000,
+    peOiChg: sp === 24500 ? 1000 : 0, // nearPeDelta = 1000
+    peVol: 10000,
+  }));
+
+  const sig = generateSignal(rows, atm, 0.9, spot);
+
+  assert.notEqual(sig.oiChangeBias, "Put writing / Bullish support");
+  assert.equal(sig.oiChangeBias, "Call writing / Bearish resistance");
+});
+
+test("Institutional Analysis: Nearer zone is selected when both support and resistance are within step", () => {
+  // Support at 90, Resistance at 100, step = 10. Spot = 91.
+  // Support is 1 point away, Resistance is 9 points away.
+  const rows = [
+    buildMockRow(80, { peOi: 10000 }),
+    buildMockRow(90, { peOi: 50000, peOiChg: 5000, peChg: -1 }), // Support floor holding
+    buildMockRow(100, { ceOi: 50000, ceOiChg: 5000, ceChg: -1 }), // Resistance wall
+    buildMockRow(110, { ceOi: 10000 }),
+  ];
+
+  const analysis = calcInstitutional(rows, 91, 90, 1.3);
+  assert.ok(analysis);
+  // Spot at 91 is closer to support at 90; support floor holding should give a positive / bullish zone bias
+  assert.equal(analysis.smartBias, "BULLISH");
+});
+
+test("Institutional Analysis: Reads the exact leg matching closestRes rather than topRes3[0]", () => {
+  // Strikes above spot (24520): 24600 and 25000
+  // 25000 has highest total OI (topRes3[0]), but 24600 is closestRes.
+  // 24600 is holding firm (OI added), while 25000 has unwinding.
+  const rows = [
+    buildMockRow(24400, { peOi: 80000, peOiChg: 2000 }),
+    buildMockRow(24500, { peOi: 120000, peOiChg: 5000 }),
+    buildMockRow(24600, { ceOi: 60000, ceOiChg: 10000, ceChg: -5 }), // closestRes: resistance wall holding
+    buildMockRow(25000, { ceOi: 200000, ceOiChg: -20000, ceChg: 10 }), // topRes3[0]: unwinding far away
+  ];
+
+  // Spot 24590 is near 24600 (within step = 100).
+  const analysis = calcInstitutional(rows, 24590, 24500, 1.0);
+  assert.ok(analysis);
+  // Because 24600 is holding (ceOiChg > 0), it should NOT be flagged as breakout
+  assert.notEqual(analysis.smartBias, "BULLISH");
+});
+

@@ -309,16 +309,27 @@ export function calcInstitutional(rows, spot, atm, pcr) {
   if (closestRes != null && closestSup != null) {
     const distToRes = closestRes - spot;
     const distToSup = spot - closestSup;
-    if (distToRes <= step) {
-      // Near resistance: check if breaking out with call unwinding or rejecting
-      const topCeLeg = topRes3[0]?.CE;
-      const isBreakout = topCeLeg && (topCeLeg.changeinOpenInterest < 0 || topCeLeg.change > 0);
+
+    const resRow = rows.find((r) => r.strikePrice === closestRes);
+    const supRow = rows.find((r) => r.strikePrice === closestSup);
+    const closestCeLeg = resRow?.CE;
+    const closestPeLeg = supRow?.PE;
+
+    if (distToRes <= step && distToRes < distToSup) {
+      // Nearer to resistance: check if breaking out with call unwinding or rejecting
+      const isBreakout = closestCeLeg && (closestCeLeg.changeinOpenInterest < 0 || closestCeLeg.change > 0);
       zoneBias = isBreakout ? 1 : -1;
-    } else if (distToSup <= step) {
-      // Near support: check if breaking down with put unwinding or holding
-      const topPeLeg = topSup3[0]?.PE;
-      const isBreakdown = topPeLeg && (topPeLeg.changeinOpenInterest < 0 || topPeLeg.change > 0);
+    } else if (distToSup <= step && distToSup < distToRes) {
+      // Nearer to support: check if breaking down with put unwinding or holding
+      const isBreakdown = closestPeLeg && (closestPeLeg.changeinOpenInterest < 0 || closestPeLeg.change > 0);
       zoneBias = isBreakdown ? -1 : 1;
+    } else if (distToRes <= step && distToSup <= step && distToRes === distToSup) {
+      // Equidistant between both nearby levels
+      const isBreakout = closestCeLeg && (closestCeLeg.changeinOpenInterest < 0 || closestCeLeg.change > 0);
+      const isBreakdown = closestPeLeg && (closestPeLeg.changeinOpenInterest < 0 || closestPeLeg.change > 0);
+      if (isBreakout && !isBreakdown) zoneBias = 1;
+      else if (isBreakdown && !isBreakout) zoneBias = -1;
+      else zoneBias = 0;
     } else {
       zoneBias =
         distToSup < distToRes

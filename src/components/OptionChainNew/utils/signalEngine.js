@@ -101,10 +101,14 @@ export function generateSignal(rows, atm, pcr, spot) {
   const peUnwindCount = putsBelow.filter((r) => (r.PE?.changeinOpenInterest || 0) < 0).length;
 
   let oiChangeBias = 0;
-  if (nearPeDelta > 0 && (nearCeDelta <= 0 || nearPeDelta > nearCeDelta * 1.35 || ceUnwindCount >= 1)) {
+  const peDominant = nearPeDelta > 0 && (nearCeDelta <= 0 || nearPeDelta > nearCeDelta * 1.35);
+  const ceDominant = nearCeDelta > 0 && (nearPeDelta <= 0 || nearCeDelta > nearPeDelta * 1.35);
+  const noDominance = !peDominant && !ceDominant;
+
+  if (peDominant || (noDominance && nearPeDelta > 0 && ceUnwindCount > peUnwindCount)) {
     oiChangeBias = 1;
     bullScore += 25;
-  } else if (nearCeDelta > 0 && (nearPeDelta <= 0 || nearCeDelta > nearPeDelta * 1.35 || peUnwindCount >= 1)) {
+  } else if (ceDominant || (noDominance && nearCeDelta > 0 && peUnwindCount > ceUnwindCount)) {
     oiChangeBias = -1;
     bearScore += 25;
   }
