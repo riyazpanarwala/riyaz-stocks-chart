@@ -1,6 +1,8 @@
 "use client";
 import React, { useMemo, useEffect, useRef } from "react";
 import "./TechnicalInfo/Modal.scss";
+import "./CorporateEventsModal.scss";
+import { corporateActionDate } from "./utils/corporateActionDate.js";
 
 /**
  * CorporateEventsModal renders a comprehensive modal dialog displaying
@@ -93,13 +95,11 @@ export default function CorporateEventsModal({
     const events = [];
     for (const c of candleData) {
       if (!c) continue;
-      const candleDateStr = c.date ? String(c.date).split(" ")[0] : "";
+      const candleDateStr = corporateActionDate(c.date);
 
       const candleDividends = c.dividends || (c.dividend ? [c.dividend] : []);
       for (const div of candleDividends) {
-        const eventDateStr = div.date
-          ? String(div.date).split("T")[0].split(" ")[0]
-          : candleDateStr;
+        const eventDateStr = corporateActionDate(div.date, candleDateStr);
 
         events.push({
           type: "dividend",
@@ -113,9 +113,7 @@ export default function CorporateEventsModal({
 
       const candleSplits = c.splits || (c.split ? [c.split] : []);
       for (const sp of candleSplits) {
-        const eventDateStr = sp.date
-          ? String(sp.date).split("T")[0].split(" ")[0]
-          : candleDateStr;
+        const eventDateStr = corporateActionDate(sp.date, candleDateStr);
 
         events.push({
           type: "split",
@@ -155,7 +153,7 @@ export default function CorporateEventsModal({
     >
       <div
         ref={modalRef}
-        className="modal-content"
+        className="modal-content corporate-events-modal"
         onClick={(e) => e.stopPropagation()}
         style={{
           maxWidth: "680px",
@@ -255,8 +253,8 @@ export default function CorporateEventsModal({
                   width: "18px",
                   height: "18px",
                   borderRadius: "50%",
-                  background: "#10b981",
-                  color: "#ffffff",
+                  background: "var(--event-dividend-text)",
+                  color: "var(--surface-1)",
                   fontSize: "11px",
                   fontWeight: "800",
                   display: "inline-flex",
@@ -266,7 +264,7 @@ export default function CorporateEventsModal({
               >
                 D
               </span>
-              <span style={{ fontSize: "12px", color: "#34d399", fontWeight: "600" }}>
+              <span style={{ fontSize: "12px", color: "var(--event-dividend-text)", fontWeight: "600" }}>
                 {dividendEvents.length} Dividends
               </span>
             </div>
@@ -287,8 +285,8 @@ export default function CorporateEventsModal({
                   width: "18px",
                   height: "18px",
                   borderRadius: "50%",
-                  background: "#8b5cf6",
-                  color: "#ffffff",
+                  background: "var(--event-split-text)",
+                  color: "var(--surface-1)",
                   fontSize: "11px",
                   fontWeight: "800",
                   display: "inline-flex",
@@ -298,7 +296,7 @@ export default function CorporateEventsModal({
               >
                 S
               </span>
-              <span style={{ fontSize: "12px", color: "#a78bfa", fontWeight: "600" }}>
+              <span style={{ fontSize: "12px", color: "var(--event-split-text)", fontWeight: "600" }}>
                 {splitEvents.length} Splits / Bonuses
               </span>
             </div>
@@ -314,7 +312,7 @@ export default function CorporateEventsModal({
                 border: `1px solid ${
                   showBadges ? "#10b981" : "rgba(255, 255, 255, 0.15)"
                 }`,
-                color: showBadges ? "#10b981" : "var(--tx-second, #8b949e)",
+                color: showBadges ? "var(--event-dividend-text)" : "var(--tx-second, #8b949e)",
                 borderRadius: "6px",
                 padding: "6px 12px",
                 fontSize: "12px",
@@ -360,7 +358,7 @@ export default function CorporateEventsModal({
                   textTransform: "uppercase",
                   letterSpacing: "0.5px",
                   color:
-                    selectedEvent.type === "dividend" ? "#34d399" : "#a78bfa",
+                    selectedEvent.type === "dividend" ? "var(--event-dividend-text)" : "var(--event-split-text)",
                 }}
               >
                 Selected Badge on Chart
@@ -369,7 +367,7 @@ export default function CorporateEventsModal({
                 style={{
                   fontSize: "14px",
                   fontWeight: "700",
-                  color: "#ffffff",
+                  color: "var(--tx-primary, #ffffff)",
                   marginTop: "2px",
                 }}
               >
@@ -382,15 +380,15 @@ export default function CorporateEventsModal({
               <div style={{ fontSize: "12px", color: "var(--tx-second, #8b949e)" }}>
                 Ex-Date
               </div>
-              <div style={{ fontSize: "13px", fontWeight: "600", color: "#ffffff" }}>
-                {selectedEvent.date}
+              <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--tx-primary, #ffffff)" }}>
+                {corporateActionDate(selectedEvent.date, "—")}
               </div>
             </div>
           </div>
         )}
 
         {/* Table Content */}
-        <div style={{ padding: "16px 24px", maxHeight: "55vh", overflowY: "auto" }}>
+        <div style={{ padding: "16px 24px", maxHeight: "55vh", overflow: "auto", minHeight: 0 }}>
           {allEvents.length === 0 ? (
             <div
               style={{
@@ -400,7 +398,7 @@ export default function CorporateEventsModal({
               }}
             >
               <div style={{ fontSize: "32px", marginBottom: "8px" }}>ℹ️</div>
-              <div style={{ fontSize: "15px", fontWeight: "600", color: "#ffffff" }}>
+              <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--tx-primary, #ffffff)" }}>
                 No Corporate Actions Recorded
               </div>
               <div style={{ fontSize: "13px", marginTop: "4px" }}>
@@ -440,14 +438,14 @@ export default function CorporateEventsModal({
                 {allEvents.map((event, idx) => {
                   const isSelected =
                     selectedEvent &&
-                    selectedEvent.date === event.date &&
+                    corporateActionDate(selectedEvent.date) === event.date &&
                     selectedEvent.type === event.type;
 
                   return (
                     <tr
                       key={`evt-${event.type}-${event.date}-${idx}`}
                       style={{
-                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                        borderBottom: "1px solid var(--bd-faint)",
                         background: isSelected
                           ? "rgba(0, 207, 247, 0.08)"
                           : idx % 2 === 0
@@ -461,9 +459,10 @@ export default function CorporateEventsModal({
                           fontFamily: "DM Mono, monospace",
                           color: "var(--tx-primary, #ffffff)",
                           fontWeight: isSelected ? "700" : "500",
+                          whiteSpace: "nowrap",
                         }}
                       >
-                        {event.date}
+                        {event.date || "—"}
                       </td>
                       <td style={{ padding: "10px 12px" }}>
                         {event.type === "dividend" ? (
@@ -475,7 +474,7 @@ export default function CorporateEventsModal({
                               padding: "2px 8px",
                               borderRadius: "4px",
                               background: "rgba(16, 185, 129, 0.15)",
-                              color: "#34d399",
+                              color: "var(--event-dividend-text)",
                               fontSize: "12px",
                               fontWeight: "700",
                             }}
@@ -485,8 +484,8 @@ export default function CorporateEventsModal({
                                 width: "14px",
                                 height: "14px",
                                 borderRadius: "50%",
-                                background: "#10b981",
-                                color: "#ffffff",
+                                background: "var(--event-dividend-text)",
+                                color: "var(--surface-1)",
                                 fontSize: "9px",
                                 display: "inline-flex",
                                 alignItems: "center",
@@ -506,7 +505,7 @@ export default function CorporateEventsModal({
                               padding: "2px 8px",
                               borderRadius: "4px",
                               background: "rgba(139, 92, 246, 0.15)",
-                              color: "#a78bfa",
+                              color: "var(--event-split-text)",
                               fontSize: "12px",
                               fontWeight: "700",
                             }}
@@ -516,8 +515,8 @@ export default function CorporateEventsModal({
                                 width: "14px",
                                 height: "14px",
                                 borderRadius: "50%",
-                                background: "#8b5cf6",
-                                color: "#ffffff",
+                                background: "var(--event-split-text)",
+                                color: "var(--surface-1)",
                                 fontSize: "9px",
                                 display: "inline-flex",
                                 alignItems: "center",
@@ -535,7 +534,7 @@ export default function CorporateEventsModal({
                           padding: "10px 12px",
                           fontWeight: "700",
                           color:
-                            event.type === "dividend" ? "#34d399" : "#a78bfa",
+                            event.type === "dividend" ? "var(--event-dividend-text)" : "var(--event-split-text)",
                           fontSize: "13px",
                         }}
                       >

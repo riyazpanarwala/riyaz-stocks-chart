@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { GenericChartComponent } from "@riyazpanarwala/core";
+import { corporateActionDate } from "../utils/corporateActionDate.js";
 
 /**
  * Extracts a formatted YYYY-MM-DD date string from an event object or fallback.
@@ -10,10 +11,7 @@ import { GenericChartComponent } from "@riyazpanarwala/core";
  * @returns {string} Clean date string
  */
 function getEventDate(evt, fallback) {
-  if (evt && evt.date) {
-    return String(evt.date).split("T")[0].split(" ")[0];
-  }
-  return fallback || "";
+  return corporateActionDate(evt?.date, fallback || "");
 }
 
 /**
@@ -69,7 +67,7 @@ export default class CorporateEventsChart extends React.Component {
           const hasSplit = candleSplits.length > 0;
           const candleLowY = yScale(d.low);
 
-          const candleDateStr = d.date ? String(d.date).split(" ")[0] : "";
+          const candleDateStr = corporateActionDate(d.date);
           const divDate = getEventDate(candleDividends[0], candleDateStr);
           const splitDate = getEventDate(candleSplits[0], candleDateStr);
 
@@ -78,7 +76,7 @@ export default class CorporateEventsChart extends React.Component {
           const splitX = hasDividend && hasSplit ? xPos + 10 : xPos;
 
           const divTooltip =
-            candleDividends.length > 1
+            !hasDividend ? "" : candleDividends.length > 1
               ? `💰 Dividends (${candleDividends.length}):\n` +
                 candleDividends
                   .map(
@@ -95,7 +93,7 @@ export default class CorporateEventsChart extends React.Component {
                 )}\n📅 Ex-Date: ${divDate}\n(Click to view details)`;
 
           const splitTooltip =
-            candleSplits.length > 1
+            !hasSplit ? "" : candleSplits.length > 1
               ? `✂️ Stock Splits (${candleSplits.length}):\n` +
                 candleSplits
                   .map(

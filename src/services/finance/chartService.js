@@ -1,6 +1,17 @@
 import YahooFinance from "yahoo-finance2";
 const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
+// Corporate actions are independent of the provider used for chart prices.
+export async function getCorporateActions(symbol, { fromDate, toDate } = {}) {
+  const result = await yahooFinance.chart(symbol, {
+    interval: "1d",
+    period1: fromDate,
+    ...(toDate ? { period2: toDate } : {}),
+    events: "div|split",
+  });
+  return result?.events ?? {};
+}
+
 /**
  * Fetches chart candle data and corporate action events (dividends and splits)
  * for a given symbol from Yahoo Finance.

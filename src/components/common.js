@@ -4,6 +4,8 @@ import {
   getNSEDataYahooFinance,
 } from "./getIntervalData.js";
 import isYFinanceEnable from "./utils/isYFinanceEnable.js";
+import { getFinanceDataAction } from "../app/actions/finance.js";
+import { mergeCorporateActions } from "./utils/corporateActions.js";
 
 export const getDataFromIntraday = (intradayData) => {
   if (!Array.isArray(intradayData) || intradayData.length === 0) {
@@ -222,6 +224,23 @@ export const fetchHistoricData = async (
       indexName,
       companyObj,
     );
+  }
+
+  if (!isYFinanceEnable && !isEchart && indexName === "NSE_EQ" && companyObj.symbol && dataArr.length) {
+    try {
+      const events = await getFinanceDataAction({
+        symbol: companyObj.yahooSymbol || `${companyObj.symbol}.NS`,
+        corporateActionsOnly: true,
+        fromDate: dataArr[0].date.slice(0, 10),
+      });
+      if (events?.error) {
+        console.error("Corporate actions could not be loaded:", events.error);
+      } else {
+        dataArr = mergeCorporateActions(dataArr, events, interval);
+      }
+    } catch (error) {
+      console.error("Corporate actions could not be loaded:", error);
+    }
   }
 
   return {
