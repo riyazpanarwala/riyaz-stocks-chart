@@ -21,6 +21,22 @@ const HeaderWithDropdowns = ({
         <div className="grid-container">
           <div className="grid-item">
             <ReactSelect
+              options={companyArr}
+              onChange={handleCompanyChange}
+              value={companyObj}
+              width="350px"
+            />
+          </div>
+          <div className="grid-item">
+            <ReactSelect
+              options={indexArr}
+              onChange={handleIndexChange}
+              value={indexObj}
+              width="auto"
+            />
+          </div>
+          <div className="grid-item">
+            <ReactSelect
               options={intervalArr}
               onChange={handleIntervalChange}
               value={intervalObj}
@@ -33,22 +49,6 @@ const HeaderWithDropdowns = ({
               options={intraArr}
               onChange={handleIntradayChange}
               value={intradayObj}
-              width="auto"
-            />
-          </div>
-          <div className="grid-item">
-            <ReactSelect
-              options={companyArr}
-              onChange={handleCompanyChange}
-              value={companyObj}
-              width="350px"
-            />
-          </div>
-          <div className="grid-item">
-            <ReactSelect
-              options={indexArr}
-              onChange={handleIndexChange}
-              value={indexObj}
               width="auto"
             />
           </div>

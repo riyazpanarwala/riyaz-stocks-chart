@@ -26,6 +26,7 @@ import {
 } from "./utils/storage";
 import Fundamentals from "./FundaMentals/index.js";
 import ActionButton from "./ActionButton.js";
+import ChartActionMenu from "./ChartActionMenu.js";
 import TrendlyneChecklist from "./Trendlyne/TrendlyneChecklist.jsx";
 import StockSignalModal from "./StockSignalModal";
 import CorporateEventsModal from "./CorporateEventsModal.jsx";
@@ -262,9 +263,16 @@ const CandleStickChart = () => {
           <div>
             <div className="headerContent">
               {/* Primary visible H1 heading for Googlebot and screen readers */}
+              <div className="stock-summary">
               <h1 className="company-name" aria-label={`${getCompanyName()} stock chart`}>
                 {getCompanyName()}
               </h1>
+              {Number.isFinite(candleData.at(-1)?.close) && (
+                <span className="stock-price" title="Latest loaded candle close">
+                  {candleData.at(-1).close.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              )}
+              </div>
               <div className="action-buttons" role="toolbar" aria-label="Chart actions">
                 {(indexObj.value === "NSE_EQ" || indexObj.value === "BSE_EQ") && (
                   <ActionButton
@@ -280,18 +288,12 @@ const CandleStickChart = () => {
                 >
                   Technical Analysis
                 </ActionButton>
+                <ChartActionMenu label="Research ▾" accessibleLabel="Research tools">
                 <ActionButton
                   onClick={() => setSignalModalOpen(true)}
                   aria-label={`View algorithmic trading signals for ${getCompanyName()}`}
                 >
                   ⚡ Signal Engine
-                </ActionButton>
-                <ActionButton
-                  onClick={() => setEventsModalOpen(true)}
-                  aria-label={`View corporate actions (dividends and splits) for ${getCompanyName()}`}
-                  title="View recorded dividends and stock splits"
-                >
-                  🏷️ Events {corporateEventsCount > 0 ? `(${corporateEventsCount})` : ""}
                 </ActionButton>
                 <Link
                   href="/screener"
@@ -325,22 +327,32 @@ const CandleStickChart = () => {
                 >
                   🌐 Sentiment
                 </Link>
+                </ChartActionMenu>
+                <ActionButton
+                  onClick={() => setEventsModalOpen(true)}
+                  aria-label={`View corporate actions (dividends and splits) for ${getCompanyName()}`}
+                  title="View recorded dividends and stock splits"
+                >
+                  🏷️ Events {corporateEventsCount > 0 ? `(${corporateEventsCount})` : ""}
+                </ActionButton>
+                <ChartActionMenu label="•••" accessibleLabel="More chart actions">
                 {isCompanyExist ? (
 
                   <ActionButton
                     onClick={removeFrmWatchList}
                     aria-label={`Remove ${getCompanyName()} from watchlist`}
                   >
-                    ★ Remove
+                    ★ Remove from watchlist
                   </ActionButton>
                 ) : (
                   <ActionButton
                     onClick={addToWatchList}
                     aria-label={`Add ${getCompanyName()} to watchlist`}
                   >
-                    ☆ Add
+                    ☆ Add to watchlist
                   </ActionButton>
                 )}
+                </ChartActionMenu>
                 <div className="mobile-view">
                   <ActionButton onClick={enterFullScreen} aria-label="Enter full screen mode">
                     ⛶ Full Screen

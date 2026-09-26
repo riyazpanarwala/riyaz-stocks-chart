@@ -40,7 +40,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
         .merge((d, c) => {
           d.ema5 = c;
         })
-        .accessor((d) => d.ema5);
+        .accessor((d) => d?.ema5);
       /*
       ema8 = ema()
         .id(2)
@@ -48,7 +48,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
         .merge((d, c) => {
           d.ema8 = c;
         })
-        .accessor((d) => d.ema8);
+        .accessor((d) => d?.ema8);
 */
       ema13 = ema()
         .id(3)
@@ -56,7 +56,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
         .merge((d, c) => {
           d.ema13 = c;
         })
-        .accessor((d) => d.ema13);
+        .accessor((d) => d?.ema13);
       calculatedData = ema13(ema5(initialData));
       angles = "";
     } else {
@@ -66,7 +66,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
         .merge((d, c) => {
           d.ema12 = c;
         })
-        .accessor((d) => d.ema12);
+        .accessor((d) => d?.ema12);
 
       ema26 = ema()
         .id(2)
@@ -74,7 +74,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
         .merge((d, c) => {
           d.ema26 = c;
         })
-        .accessor((d) => d.ema26);
+        .accessor((d) => d?.ema26);
       calculatedData = ema26(ema12(initialData));
 
       angles = emaAngle(initialData, "ema12", "ema26", emaPeriod1, emaPeriod2);
@@ -85,7 +85,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d.rsi = c;
       })
-      .accessor((d) => d.rsi);
+      .accessor((d) => d?.rsi);
 
     calculatedData = rsiCalculator(initialData);
     rsiYAccessor = rsiCalculator.accessor();
@@ -114,7 +114,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d.ema12 = c;
       })
-      .accessor((d) => d.ema12);
+      .accessor((d) => d?.ema12);
 
     ema26 = ema()
       .id(0)
@@ -122,7 +122,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d.ema26 = c;
       })
-      .accessor((d) => d.ema26);
+      .accessor((d) => d?.ema26);
 
     macdCalculator = macd()
       .options({
@@ -133,7 +133,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d.macd = c;
       })
-      .accessor((d) => d.macd);
+      .accessor((d) => d?.macd);
 
     calculatedData = macdCalculator(ema12(ema26(initialData)));
   } else if (indicatorName === "zerolagmacd") {
@@ -146,7 +146,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d.ema12 = c;
       })
-      .accessor((d) => d.ema12);
+      .accessor((d) => d?.ema12);
 
     ema26 = ema()
       .id(0)
@@ -154,7 +154,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d.ema26 = c;
       })
-      .accessor((d) => d.ema26);
+      .accessor((d) => d?.ema26);
 
     const { macdLine, signalLine, histogram } = zeroLagMACD(
       initialData,
@@ -194,7 +194,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d.sma20 = c;
       })
-      .accessor((d) => d.sma20);
+      .accessor((d) => d?.sma20);
 
     sma50 = sma()
       .id(2)
@@ -202,7 +202,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d.sma50 = c;
       })
-      .accessor((d) => d.sma50);
+      .accessor((d) => d?.sma50);
 
     sma200 = sma()
       .id(3)
@@ -210,7 +210,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d.sma200 = c;
       })
-      .accessor((d) => d.sma200);
+      .accessor((d) => d?.sma200);
 
     calculatedData = sma200(sma50(sma20(initialData)));
   } else if (indicatorName === "supertrend") {
@@ -225,13 +225,13 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d.sma20 = c;
       })
-      .accessor((d) => d.sma20);
+      .accessor((d) => d?.sma20);
 
     bb = bollingerBand()
       .merge((d, c) => {
         d.bb = c;
       })
-      .accessor((d) => d.bb);
+      .accessor((d) => d?.bb);
 
     calculatedData = sma20(bb(initialData));
   } else if (indicatorName === "cci") {
@@ -256,7 +256,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d[`ma${period1}`] = c;
       })
-      .accessor((d) => d[`ma${period1}`]);
+      .accessor((d) => d?.[`ma${period1}`]);
 
     ma2 = sma()
       .id(2)
@@ -264,7 +264,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       .merge((d, c) => {
         d[`ma${period2}`] = c;
       })
-      .accessor((d) => d[`ma${period2}`]);
+      .accessor((d) => d?.[`ma${period2}`]);
 
     const buySell = algo()
       .windowSize(2)
