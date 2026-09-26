@@ -304,6 +304,14 @@ const CandleStickChart = () => {
                   🔍 Screener
                 </Link>
                 <Link
+                  href="/optionchain"
+                  className="custom-button"
+                  aria-label="Open NSE Option Chain Analysis"
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                >
+                  📊 Option Chain
+                </Link>
+                <Link
                   href="/briefing"
                   className="custom-button"
                   aria-label="Open AI Pre-Market & Daily Briefing"
