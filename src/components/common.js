@@ -41,57 +41,49 @@ export const getDataFromIntraday = (intradayData) => {
 };
 
 /**
- * Transforms candle arrays into structured candle objects or EChart format,
+ * Transforms candle arrays into structured candle objects,
  * preserving all mapped corporate action events.
  *
  * @param {object} arr - Raw candle wrapper object
- * @param {boolean} [isEchart] - Whether to return EChart format
- * @returns {{ dataArr: Array<object>, timeArr: Array<string> }} Formatted candles and timestamps
+ * @returns {{ dataArr: Array<object> }} Formatted candles
  */
-export const getCandleArr = (arr, isEchart) => {
-  let timeArr = [];
-  let dataArr = [];
-  let candles = arr?.data?.candles ? [...arr.data.candles].reverse() : [];
+export const getCandleArr = (arr) => {
+  const candles = arr?.data?.candles ? [...arr.data.candles].reverse() : [];
 
-  if (isEchart) {
-    dataArr = candles.map((item) => [item[1], item[4], item[3], item[2]]);
-    timeArr = candles.map((item) => item[0]);
-  } else {
-    dataArr = candles.map((item) => {
-      const aa = String(item[0] || "").split("T");
-      const hhmmss = aa[1] ? aa[1].split("+")[0] : "";
+  const dataArr = candles.map((item) => {
+    const aa = String(item[0] || "").split("T");
+    const hhmmss = aa[1] ? aa[1].split("+")[0] : "";
 
-      const rawDividends = item[6];
-      const rawSplits = item[7];
+    const rawDividends = item[6];
+    const rawSplits = item[7];
 
-      const dividends = Array.isArray(rawDividends)
-        ? rawDividends
-        : rawDividends
-        ? [rawDividends]
-        : null;
+    const dividends = Array.isArray(rawDividends)
+      ? rawDividends
+      : rawDividends
+      ? [rawDividends]
+      : null;
 
-      const splits = Array.isArray(rawSplits)
-        ? rawSplits
-        : rawSplits
-        ? [rawSplits]
-        : null;
+    const splits = Array.isArray(rawSplits)
+      ? rawSplits
+      : rawSplits
+      ? [rawSplits]
+      : null;
 
-      return {
-        date: `${aa[0]} ${hhmmss}`.trim(),
-        open: item[1],
-        high: item[2],
-        low: item[3],
-        close: item[4],
-        volume: item[5],
-        dividend: dividends?.[0] ?? null,
-        split: splits?.[0] ?? null,
-        dividends: dividends ?? null,
-        splits: splits ?? null,
-      };
-    });
-  }
+    return {
+      date: `${aa[0]} ${hhmmss}`.trim(),
+      open: item[1],
+      high: item[2],
+      low: item[3],
+      close: item[4],
+      volume: item[5],
+      dividend: dividends?.[0] ?? null,
+      split: splits?.[0] ?? null,
+      dividends: dividends ?? null,
+      splits: splits ?? null,
+    };
+  });
 
-  return { dataArr, timeArr };
+  return { dataArr };
 };
 
 export const getIntradayDataForCurrentDay = async (
@@ -148,17 +140,15 @@ export const getIntradayDataForCurrentDay = async (
  * Fetches historical candle data from Yahoo Finance or NSE/Upstox adapters,
  * mapping corporate actions onto the resulting candle series.
  *
- * @param {boolean} isEchart - Whether output is intended for EChart
  * @param {string} intervalVal - Interval unit ("minutes", "hours", "days", etc.)
  * @param {string} interval - Granularity code ("1d", "1wk", "1mo", etc.)
  * @param {string} indexName - Index / segment identifier
  * @param {string} period - Historical period span ("1y", "5y", "Max", etc.)
  * @param {object} companyObj - Selected stock object
  * @param {number} [apiInterval] - Custom interval multiplier
- * @returns {Promise<{ candles: Array<object>, timeArr: Array<string> }>}
+ * @returns {Promise<{ candles: Array<object> }>}
  */
 export const fetchHistoricData = async (
-  isEchart,
   intervalVal,
   interval,
   indexName,
@@ -167,7 +157,7 @@ export const fetchHistoricData = async (
   apiInterval = 1,
 ) => {
   if (!companyObj || (!companyObj.symbol && !companyObj.value && !companyObj.yahooSymbol)) {
-    return { candles: [], timeArr: [] };
+    return { candles: [] };
   }
 
   let arr;
@@ -178,7 +168,7 @@ export const fetchHistoricData = async (
   ) {
     const yahooTicker = companyObj.yahooSymbol || (companyObj.symbol ? `${companyObj.symbol}.NS` : null);
     if (!yahooTicker) {
-      return { candles: [], timeArr: [] };
+      return { candles: [] };
     }
     const rawData = await getNSEDataYahooFinance(
       yahooTicker,
@@ -216,9 +206,9 @@ export const fetchHistoricData = async (
     );
   }
 
-  let { dataArr, timeArr } = getCandleArr(arr, isEchart);
+  let { dataArr } = getCandleArr(arr);
 
-  if (intervalVal === "days" && !isEchart && !isYFinanceEnable) {
+  if (intervalVal === "days" && !isYFinanceEnable) {
     dataArr = await getIntradayDataForCurrentDay(
       dataArr,
       indexName,
@@ -226,7 +216,7 @@ export const fetchHistoricData = async (
     );
   }
 
-  if (!isYFinanceEnable && !isEchart && indexName === "NSE_EQ" && companyObj.symbol && dataArr.length) {
+  if (!isYFinanceEnable && indexName === "NSE_EQ" && companyObj.symbol && dataArr.length) {
     try {
       const events = await getFinanceDataAction({
         symbol: companyObj.yahooSymbol || `${companyObj.symbol}.NS`,
@@ -245,6 +235,5 @@ export const fetchHistoricData = async (
 
   return {
     candles: dataArr,
-    timeArr,
   };
 };

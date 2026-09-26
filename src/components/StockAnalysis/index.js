@@ -31,7 +31,6 @@ export const stockAnalysis = async (
   };
 
   const { candles } = await fetchHistoricData(
-    false,
     interval,
     "1d",
     indexName,

@@ -43,7 +43,6 @@ const TechnicalInfo = ({ companyObj, indexName, onClose }) => {
         period = "Max";
       }
       const { candles } = await fetchHistoricData(
-        false,
         unitName,
         "1d",
         indexName || companyObj.indexName,
