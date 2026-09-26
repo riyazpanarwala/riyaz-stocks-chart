@@ -19,7 +19,7 @@ import { getCandleArr, fetchHistoricData } from "./common";
 // ETF trades on NSE as an equity — reuse the NSE_EQ entry
 const etfIndexArr = [{ label: "NSE ETF", value: "NSE_EQ" }];
 
-const useCommonHeader = (isEchart) => {
+const useCommonHeader = () => {
   const [period, setPeriod] = useState(periodDays[1]);
   const [intervalObj, setIntervalObj] = useState(intervalArr1[6]);
   const [intradayObj, setIntradayOrHistoric] = useState(intraArr[1]);
@@ -27,7 +27,6 @@ const useCommonHeader = (isEchart) => {
   const [newIndexArr, setNewIndexArr] = useState([]);
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
-  const [timeData, setTimeData] = useState([]);
   const { companyArr, companyObj, setCompany, isFO } = useParseCsv();
   const timerRef = useRef(null);
   const lastLoadedSymbolRef = useRef(null);
@@ -47,8 +46,7 @@ const useCommonHeader = (isEchart) => {
     const intervalVal = intervalObj.apiUnit;
     const indexName = indexObj.value;
 
-    const { candles, timeArr } = await fetchHistoricData(
-      isEchart,
+    const { candles } = await fetchHistoricData(
       intervalVal,
       interval,
       indexName,
@@ -57,7 +55,6 @@ const useCommonHeader = (isEchart) => {
       intervalObj.apiInterval
     );
 
-    setTimeData(timeArr);
     setCandleData(candles);
   };
 
@@ -71,8 +68,7 @@ const useCommonHeader = (isEchart) => {
       intervalObj.apiInterval
     );
 
-    const { dataArr, timeArr } = getCandleArr(arr, isEchart);
-    setTimeData(timeArr);
+    const { dataArr } = getCandleArr(arr);
     setCandleData(dataArr);
   };
 
@@ -221,7 +217,6 @@ const useCommonHeader = (isEchart) => {
     companyArr,
     newIndexArr,
     candleData,
-    timeData,
     period,
     isFO,
   };

@@ -1,7 +1,7 @@
 "use server";
 
 import { getQuoteSummary } from "../../services/finance/quoteService.js";
-import { getChartData } from "../../services/finance/chartService.js";
+import { getChartData, getCorporateActions } from "../../services/finance/chartService.js";
 
 /**
  * Server Action: getFinanceDataAction
@@ -11,6 +11,7 @@ import { getChartData } from "../../services/finance/chartService.js";
 export async function getFinanceDataAction({
   symbol: rawSymbol,
   isQuote = false,
+  corporateActionsOnly = false,
   interval,
   fromDate,
   toDate,
@@ -22,6 +23,9 @@ export async function getFinanceDataAction({
       return { error: "Invalid or missing symbol." };
     }
 
+    if (corporateActionsOnly) {
+      return await getCorporateActions(symbol, { fromDate, toDate });
+    }
     if (isQuote) {
       const data = await getQuoteSummary(symbol);
       return data ?? {};

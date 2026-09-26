@@ -1,0 +1,17 @@
+.corporate-events-modal {
+  --event-dividend-text: #34d399;
+  --event-split-text: #a78bfa;
+  display: flex;
+  flex-direction: column;
+
+  > div { flex-shrink: 0; }
+  > div:has(table) { flex-shrink: 1; }
+
+  table { min-width: 560px; }
+  th { white-space: nowrap; }
+}
+
+[data-theme="light"] .corporate-events-modal {
+  --event-dividend-text: #047857;
+  --event-split-text: #6d28d9;
+}
