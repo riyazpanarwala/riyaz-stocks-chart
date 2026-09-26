@@ -28,7 +28,7 @@
 
   /* ── Text ── */
   --tx-primary:  #f0f6fc;
-  --tx-second:   #8b949e;
+  --tx-second:   #a5b2c3;
   --tx-muted:    #484f58;
   --tx-inverse:  #0a0e17;
 
@@ -56,7 +56,7 @@
   /* ── Chart Colors ── */
   --chart-grid-line:       rgba(255,255,255,0.05);
   --chart-axis:            rgba(255,255,255,0.25);
-  --chart-axis-label:      #6e7681;
+  --chart-axis-label:      #9aa9bc;
   --chart-crosshair:       rgba(56,189,248,0.60);
   --chart-edge-fill:       #1e2636;
   --chart-edge-stroke:     #38bdf8;
@@ -473,3 +473,33 @@ header {
   border-width: 0;
 }
 
+
+/* Chart workspace hierarchy */
+.chart-shell .mainChart { min-width: 0; }
+.stock-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; min-width: 0; }
+.chart-shell .company-name { font-family: var(--font-ui); font-size: 16px !important; font-weight: 600; letter-spacing: 0; }
+.stock-price { font-family: var(--font-mono); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chart-shell .headerContent { padding: 14px 16px !important; gap: 12px; }
+.chart-shell .action-buttons { gap: 8px; overflow: visible; }
+.chart-shell .custom-button { min-height: 34px; }
+.chart-action-menu { position: relative; }
+.chart-action-popover {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 200;
+  width: 220px; max-width: calc(100vw - 32px); padding: 6px;
+  display: flex; flex-direction: column; gap: 3px;
+  background: var(--surface-2); border: 1px solid var(--bd-soft);
+  border-radius: var(--radius-md); box-shadow: 0 12px 32px rgba(var(--shadow-color), .3);
+}
+.chart-action-popover .custom-button { width: 100%; text-align: left; justify-content: flex-start; border-color: transparent !important; color: var(--tx-primary) !important; }
+.chart-shell button:focus-visible, .chart-shell a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chart-shell .grid-item { min-width: 0; max-width: 100%; }
+.chart-shell .grid-item > div { max-width: 100%; }
+.chart-shell .react-select__control { max-width: 100%; }
+@media (max-width: 768px) {
+  .chart-shell .grid-item, .chart-shell .grid-item > div { width: 100%; }
+  .chart-shell .grid-item .react-select__control { width: 100%; min-width: 0; }
+  .chart-shell .company-name { font-size: 14px !important; }
+  .stock-price { font-size: 20px; }
+  .chart-shell .headerContent { padding: 12px !important; }
+  .chart-action-popover { position: fixed; top: auto; right: 12px; left: 12px; width: auto; max-width: none; margin-top: 6px; }
+}

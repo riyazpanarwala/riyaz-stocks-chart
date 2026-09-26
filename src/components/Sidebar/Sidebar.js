@@ -141,69 +141,75 @@ const Sidebar = ({
         animate={{ x: isOpen ? 0 : "calc(var(--sidebar-w) * -1)" }}
         transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div
+        <h2 className={styles.sectionHeading}>Workspace</h2>
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{ name: "Watchlist", icon: <CiViewList className={styles.icon} />, subMenu: formattedWatchlist }}
+          onClick={(e, id) => { closeSidebar(); handleWatchListClick(id); }}
+        />
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{ name: "Positions", icon: <FcPositiveDynamic className={styles.icon} />, subMenu: positionArr }}
+          onClick={(e, id) => { closeSidebar(); handlePositionClick(id); }}
+        />
+        <h2 className={styles.sectionHeading}>Drawing</h2>
+        <button type="button"
           className={`${styles.button} ${trendLineEnable ? styles.active : ""}`}
           onClick={() => { closeSidebar(); handleTrendLineClick(); }}
         >
           <MdTrendingFlat className={styles.icon} />
           <span>Trendline</span>
-        </div>
+        </button>
 
-        <div
+        <button type="button"
           className={`${styles.button} ${textEnable ? styles.active : ""}`}
           onClick={() => { closeSidebar(); handleTextClick(); }}
         >
           <CiText className={styles.icon} />
           <span>Text</span>
-        </div>
+        </button>
 
-        <div
+        <button type="button"
           className={`${styles.button} ${measurementEnable ? styles.active : ""}`}
           onClick={() => { closeSidebar(); handleMeasurementClick(); }}
         >
           <LiaRulerHorizontalSolid className={styles.icon} />
           <span>Measurement</span>
-        </div>
+        </button>
 
-        <TooltipSubMenu
-          styles={styles}
-          tooltipObj={{ name: "WatchList", icon: <CiViewList className={styles.icon} />, subMenu: formattedWatchlist }}
-          onClick={(e, id) => { closeSidebar(); handleWatchListClick(id); }}
-        />
 
-        <TooltipSubMenu
-          styles={styles}
-          tooltipObj={{ name: "Indicator", icon: <GrIndicator className={styles.icon} />, subMenu: indicatorArr }}
-          onClick={(e, id) => { closeSidebar(); handleIndicatorClick(id); }}
-        />
-
-        <TooltipSubMenu
-          styles={styles}
-          tooltipObj={{ name: "MACrossOver", icon: <MdPattern className={styles.icon} />, subMenu: crossOverArr }}
-          onClick={(e, id) => { closeSidebar(); handleIndicatorClick(id); }}
-        />
-
-        {indicatorName === "ema" && (
-          <div
-            className={`${styles.button} ${isAngleEnabled ? styles.active : ""}`}
-            onClick={() => { closeSidebar(); handleEMAangleClick(); }}
-          >
-            <MdOutlineRotate90DegreesCw className={styles.icon} />
-            <span>EMA Angle</span>
-          </div>
-        )}
-
-        <TooltipSubMenu
-          styles={styles}
-          tooltipObj={{ name: "Position", icon: <FcPositiveDynamic className={styles.icon} />, subMenu: positionArr }}
-          onClick={(e, id) => { closeSidebar(); handlePositionClick(id); }}
-        />
 
         <TooltipSubMenu
           styles={styles}
           tooltipObj={{ name: "Shapes", icon: <FaShapes className={styles.icon} />, subMenu: shapeArr }}
           onClick={(e, id) => { closeSidebar(); handleShapeClick(id); }}
         />
+        <h2 className={styles.sectionHeading}>Analysis</h2>
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{ name: "Indicators", icon: <GrIndicator className={styles.icon} />, subMenu: indicatorArr }}
+          onClick={(e, id) => { closeSidebar(); handleIndicatorClick(id); }}
+        />
+
+        <TooltipSubMenu
+          styles={styles}
+          tooltipObj={{ name: "MA Crossover", icon: <MdPattern className={styles.icon} />, subMenu: crossOverArr }}
+          onClick={(e, id) => { closeSidebar(); handleIndicatorClick(id); }}
+        />
+
+        {indicatorName === "ema" && (
+          <button type="button"
+            className={`${styles.button} ${isAngleEnabled ? styles.active : ""}`}
+            onClick={() => { closeSidebar(); handleEMAangleClick(); }}
+          >
+            <MdOutlineRotate90DegreesCw className={styles.icon} />
+            <span>EMA Angle</span>
+          </button>
+        )}
+
+
+
+
 
         <TooltipSubMenu
           styles={styles}
@@ -213,7 +219,7 @@ const Sidebar = ({
 
         <TooltipSubMenu
           styles={styles}
-          tooltipObj={{ name: "Pattern", icon: <MdPattern className={styles.icon} />, subMenu: patternArr }}
+          tooltipObj={{ name: "Patterns", icon: <MdPattern className={styles.icon} />, subMenu: patternArr }}
           onClick={(e, id) => { closeSidebar(); handlePatternClick(id); }}
         />
       </motion.div>

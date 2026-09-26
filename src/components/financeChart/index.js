@@ -150,13 +150,15 @@ const FinanceChart = ({
   const xExtents = [min - 5, max + 5];
 
   const gridHeight = height - margin.top - margin.bottom;
-  const elderRayHeight = 0;
-  const barChartHeight = gridHeight / 4;
-  const barChartOrigin = (_, h) => [0, h - barChartHeight - elderRayHeight];
-  const chartHeight = gridHeight - barChartHeight - elderRayHeight;
+  const hasIndicatorPanel = SUBCHART_INDICATORS.has(indicatorName);
+  const barChartHeight = Math.round(gridHeight * 0.18);
+  const indicatorHeight = hasIndicatorPanel ? Math.round(gridHeight * 0.24) : 0;
+  const chartHeight = gridHeight - barChartHeight - indicatorHeight;
+  const barChartOrigin = () => [0, chartHeight];
+  const indicatorOrigin = () => [0, chartHeight + barChartHeight];
 
   /* ── Accessors ── */
-  const barChartExtents = (d) => d.volume;
+  const barChartExtents = (d) => [0, d.volume];
   const candleChartExtents = (d) => {
     let high = d.high, low = d.low;
     if (d.bb && indicatorName === "bolinger") { high = d.bb.top; low = d.bb.bottom; }
@@ -291,14 +293,25 @@ const FinanceChart = ({
         height={barChartHeight}
         origin={barChartOrigin}
         yExtents={barChartExtents}
+        padding={{ top: 22, bottom: 0 }}
       >
+        <XAxis axisAt="top" orient="top" showTicks={false} showTickLabel={false} strokeStyle={DARK.axis} />
+        <XAxis showTicks={!hasIndicatorPanel} showTickLabel={!hasIndicatorPanel}
+          strokeStyle={DARK.axis} tickStrokeStyle={DARK.axis}
+          tickLabelFill={DARK.axisLabel} fontSize={11} />
+        <YAxis ticks={3} tickFormat={format(".2s")} tickLabelFill={DARK.axisLabel}
+          strokeStyle={DARK.axis} tickStrokeStyle={DARK.axis} fontSize={11} />
         <BarSeries fillStyle={volumeColor} yAccessor={volumeSeries} />
+        <CustomTooltip origin={[8, 16]} yAccessor={volumeSeries} displayFormat={format(".3s")}
+          tooltipName="Volume" labelFill={DARK.axisLabel} textFill={DARK.tx_primary} fontSize={11} />
       </Chart>
 
       {/* ── Main candle chart ── */}
       <Chart id={3} height={chartHeight} yExtents={candleChartExtents}>
 
         <XAxis
+          showTicks={false}
+          showTickLabel={false}
           showGridLines
           gridLinesStrokeStyle={DARK.gridLine}
           strokeStyle={DARK.axis}
@@ -566,7 +579,7 @@ const FinanceChart = ({
       </Chart>
 
       {/* ── Sub-chart (indicator panel) ── */}
-      {SUBCHART_INDICATORS.has(indicatorName) ? (
+      {hasIndicatorPanel ? (
         <Chart
           id={4}
           yExtents={
@@ -574,8 +587,8 @@ const FinanceChart = ({
               ? (d) => d.macd
               : indicatorYExtentsObj[indicatorName]
           }
-          height={barChartHeight}
-          origin={barChartOrigin}
+          height={indicatorHeight}
+          origin={indicatorOrigin}
         >
           <XAxis
             strokeStyle={DARK.axis}
