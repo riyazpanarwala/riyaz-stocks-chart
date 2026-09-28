@@ -1,6 +1,6 @@
 "use server";
 
-import { getQuoteSummary } from "../../services/finance/quoteService.js";
+import { getQuoteSummary, getHistoricalFinancials } from "../../services/finance/quoteService.js";
 import { getChartData, getCorporateActions } from "../../services/finance/chartService.js";
 
 /**
@@ -11,6 +11,8 @@ import { getChartData, getCorporateActions } from "../../services/finance/chartS
 export async function getFinanceDataAction({
   symbol: rawSymbol,
   isQuote = false,
+  isHistoricalFinancials = false,
+  financialsType = "quarterly",
   corporateActionsOnly = false,
   interval,
   fromDate,
@@ -25,6 +27,10 @@ export async function getFinanceDataAction({
 
     if (corporateActionsOnly) {
       return await getCorporateActions(symbol, { fromDate, toDate });
+    }
+    if (isHistoricalFinancials) {
+      const data = await getHistoricalFinancials(symbol, financialsType);
+      return data ?? [];
     }
     if (isQuote) {
       const data = await getQuoteSummary(symbol);
