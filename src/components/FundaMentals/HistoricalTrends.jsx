@@ -147,7 +147,9 @@ const MarginsTooltip = ({ active, payload, label }) => {
       )}
       {data?.ebitdaMarginPct != null && (
         <div className="trends-tooltip-row">
-          <span style={{ color: "var(--accent)" }}>EBITDA Margin:</span>
+          <span className="val-ebitda" style={{ color: "var(--chart-ebitda, #c084fc)" }}>
+            EBITDA Margin:
+          </span>
           <b>{data.ebitdaMarginPct}%</b>
         </div>
       )}

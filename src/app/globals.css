@@ -82,6 +82,7 @@
   --chart-rsi-band:        rgba(255,255,255,0.12);
   --chart-rsi-oversold:    #10b981;
   --chart-rsi-overbought:  #f85149;
+  --chart-ebitda:          #c084fc;
 
   --chart-pos-target:      rgba(16,185,129,1);
   --chart-pos-target-bg:   rgba(16,185,129,0.30);
@@ -177,6 +178,7 @@
   --chart-rsi-band:        rgba(0,0,0,0.08);
   --chart-rsi-oversold:    #059669;
   --chart-rsi-overbought:  #dc2626;
+  --chart-ebitda:          #7c3aed;
 
   --chart-pos-target:      rgba(5,150,105,1);
   --chart-pos-target-bg:   rgba(5,150,105,0.25);

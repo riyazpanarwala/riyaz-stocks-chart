@@ -244,6 +244,10 @@
   color: var(--accent) !important;
 }
 
+.val-ebitda {
+  color: var(--chart-ebitda, #c084fc) !important;
+}
+
 .growth-badge {
   font-size:     10.5px;
   font-weight:   600;
@@ -422,7 +426,7 @@
 .trends-footnote {
   margin-top:  12px;
   font-size:   10px;
-  color:       var(--tx-muted);
+  color:       var(--tx-second);
   text-align:  right;
   font-style:  italic;
 }
