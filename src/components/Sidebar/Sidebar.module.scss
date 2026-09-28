@@ -164,7 +164,7 @@
   max-height:    420px;
   overflow-y:    auto;
   overflow-x:    hidden;
-  box-shadow:    8px 4px 32px rgba(0,0,0,0.65);
+  box-shadow:    8px 4px 32px rgba(var(--shadow-color), 0.25);
   z-index:       600;
   pointer-events: auto;
 }
@@ -194,7 +194,7 @@
 }
 
 .active.tooltipItem {
-  background:  rgba(0,207,247,0.13);  /* Slightly stronger than --accent-soft */
+  background:  var(--accent-soft);
   color:       var(--accent);
   font-weight: 500;
 }
