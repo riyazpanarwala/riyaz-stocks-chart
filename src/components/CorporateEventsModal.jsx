@@ -157,9 +157,9 @@ export default function CorporateEventsModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           maxWidth: "680px",
-          background: "var(--surface-1, #12151f)",
+          background: "var(--surface-1)",
           borderRadius: "14px",
-          border: "1px solid var(--bd-dim, rgba(255,255,255,0.1))",
+          border: "1px solid var(--bd-dim)",
           overflow: "hidden",
         }}
       >
@@ -167,8 +167,8 @@ export default function CorporateEventsModal({
         <div
           style={{
             padding: "18px 24px",
-            borderBottom: "1px solid var(--bd-dim, rgba(255,255,255,0.08))",
-            background: "var(--surface-2, #181c28)",
+            borderBottom: "1px solid var(--bd-dim)",
+            background: "var(--surface-2)",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -183,7 +183,7 @@ export default function CorporateEventsModal({
                   margin: 0,
                   fontSize: "18px",
                   fontWeight: "700",
-                  color: "var(--tx-primary, #ffffff)",
+                  color: "var(--tx-primary)",
                 }}
               >
                 Corporate Actions
@@ -193,8 +193,8 @@ export default function CorporateEventsModal({
                   fontSize: "12px",
                   padding: "2px 8px",
                   borderRadius: "4px",
-                  background: "rgba(0, 207, 247, 0.12)",
-                  color: "var(--accent, #00cff7)",
+                  background: "var(--accent-soft)",
+                  color: "var(--accent)",
                   fontWeight: "600",
                 }}
               >
@@ -204,7 +204,7 @@ export default function CorporateEventsModal({
             <div
               style={{
                 fontSize: "13px",
-                color: "var(--tx-second, #8b949e)",
+                color: "var(--tx-second)",
                 marginTop: "4px",
               }}
             >
@@ -232,8 +232,8 @@ export default function CorporateEventsModal({
             gap: "12px",
             justifyContent: "space-between",
             alignItems: "center",
-            background: "rgba(255, 255, 255, 0.02)",
-            borderBottom: "1px solid var(--bd-dim, rgba(255,255,255,0.06))",
+            background: "var(--surface-2)",
+            borderBottom: "1px solid var(--bd-dim)",
           }}
         >
           <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
@@ -308,11 +308,11 @@ export default function CorporateEventsModal({
               style={{
                 background: showBadges
                   ? "rgba(16, 185, 129, 0.15)"
-                  : "rgba(255, 255, 255, 0.05)",
+                  : "var(--surface-3)",
                 border: `1px solid ${
-                  showBadges ? "#10b981" : "rgba(255, 255, 255, 0.15)"
+                  showBadges ? "#10b981" : "var(--bd-dim)"
                 }`,
-                color: showBadges ? "var(--event-dividend-text)" : "var(--tx-second, #8b949e)",
+                color: showBadges ? "var(--event-dividend-text)" : "var(--tx-second)",
                 borderRadius: "6px",
                 padding: "6px 12px",
                 fontSize: "12px",
@@ -367,7 +367,7 @@ export default function CorporateEventsModal({
                 style={{
                   fontSize: "14px",
                   fontWeight: "700",
-                  color: "var(--tx-primary, #ffffff)",
+                  color: "var(--tx-primary)",
                   marginTop: "2px",
                 }}
               >
@@ -377,10 +377,10 @@ export default function CorporateEventsModal({
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "12px", color: "var(--tx-second, #8b949e)" }}>
+              <div style={{ fontSize: "12px", color: "var(--tx-second)" }}>
                 Ex-Date
               </div>
-              <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--tx-primary, #ffffff)" }}>
+              <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--tx-primary)" }}>
                 {corporateActionDate(selectedEvent.date, "—")}
               </div>
             </div>
@@ -394,11 +394,11 @@ export default function CorporateEventsModal({
               style={{
                 textAlign: "center",
                 padding: "48px 16px",
-                color: "var(--tx-second, #8b949e)",
+                color: "var(--tx-second)",
               }}
             >
               <div style={{ fontSize: "32px", marginBottom: "8px" }}>ℹ️</div>
-              <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--tx-primary, #ffffff)" }}>
+              <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--tx-primary)" }}>
                 No Corporate Actions Recorded
               </div>
               <div style={{ fontSize: "13px", marginTop: "4px" }}>
@@ -418,9 +418,9 @@ export default function CorporateEventsModal({
               <thead>
                 <tr
                   style={{
-                    borderBottom: "1px solid var(--bd-dim, rgba(255,255,255,0.12))",
+                    borderBottom: "1px solid var(--bd-dim)",
                     textAlign: "left",
-                    color: "var(--tx-second, #8b949e)",
+                    color: "var(--tx-second)",
                     fontSize: "12px",
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
@@ -447,17 +447,17 @@ export default function CorporateEventsModal({
                       style={{
                         borderBottom: "1px solid var(--bd-faint)",
                         background: isSelected
-                          ? "rgba(0, 207, 247, 0.08)"
+                          ? "var(--accent-soft)"
                           : idx % 2 === 0
                           ? "transparent"
-                          : "rgba(255, 255, 255, 0.02)",
+                          : "var(--bd-faint)",
                       }}
                     >
                       <td
                         style={{
                           padding: "10px 12px",
                           fontFamily: "DM Mono, monospace",
-                          color: "var(--tx-primary, #ffffff)",
+                          color: "var(--tx-primary)",
                           fontWeight: isSelected ? "700" : "500",
                           whiteSpace: "nowrap",
                         }}
@@ -547,7 +547,7 @@ export default function CorporateEventsModal({
                           padding: "10px 12px",
                           textAlign: "right",
                           fontFamily: "DM Mono, monospace",
-                          color: "var(--tx-second, #8b949e)",
+                          color: "var(--tx-second)",
                         }}
                       >
                         {Number.isFinite(event.close)
@@ -566,13 +566,13 @@ export default function CorporateEventsModal({
         <div
           style={{
             padding: "12px 24px",
-            background: "var(--surface-2, #181c28)",
-            borderTop: "1px solid var(--bd-dim, rgba(255,255,255,0.08))",
+            background: "var(--surface-2)",
+            borderTop: "1px solid var(--bd-dim)",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             fontSize: "11px",
-            color: "var(--tx-second, #8b949e)",
+            color: "var(--tx-second)",
           }}
         >
           <span>Data source: Yahoo Finance Corporate Actions API</span>
@@ -581,8 +581,8 @@ export default function CorporateEventsModal({
             style={{
               padding: "6px 14px",
               borderRadius: "6px",
-              background: "var(--accent, #00cff7)",
-              color: "#000000",
+              background: "var(--accent)",
+              color: "var(--tx-inverse, #ffffff)",
               fontWeight: "700",
               border: "none",
               cursor: "pointer",

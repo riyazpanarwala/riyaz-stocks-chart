@@ -13,19 +13,53 @@ import {
 } from "recharts";
 import { getFinanceDataAction } from "../../app/actions/finance";
 
-// Dark theme colors matching globals.css
-const THEME = {
-  bg: "#12151f",
-  surface: "#181c28",
-  border: "rgba(255, 255, 255, 0.09)",
-  text: "#d8dce8",
-  muted: "#7a82a0",
-  cyan: "#00cff7",
-  green: "#22c55e",
-  yellow: "#eab308",
-  purple: "#a855f7",
-  red: "#ef4444",
-};
+// Hook to detect dark/light theme and return adaptive chart colors
+function useThemePalette() {
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    const update = () => {
+      if (typeof document === "undefined") return;
+      const currentTheme =
+        document.documentElement.getAttribute("data-theme") || "dark";
+      setIsDark(currentTheme !== "light");
+    };
+
+    update();
+
+    window.addEventListener("themechange", update);
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    return () => {
+      window.removeEventListener("themechange", update);
+      observer.disconnect();
+    };
+  }, []);
+
+  return isDark
+    ? {
+        grid: "rgba(255, 255, 255, 0.08)",
+        axis: "#7a82a0",
+        revenue: "#38bdf8",
+        profit: "#22c55e",
+        operating: "#eab308",
+        gross: "#00cff7",
+        ebitda: "#c084fc",
+      }
+    : {
+        grid: "rgba(0, 0, 0, 0.08)",
+        axis: "#64748b",
+        revenue: "#0284c7",
+        profit: "#059669",
+        operating: "#d97706",
+        gross: "#0369a1",
+        ebitda: "#7c3aed",
+      };
+}
 
 // Custom Tooltip for Revenue & Profit
 const RevenueProfitTooltip = ({ active, payload, label }) => {
@@ -35,7 +69,7 @@ const RevenueProfitTooltip = ({ active, payload, label }) => {
     <div className="trends-tooltip">
       <div className="trends-tooltip-title">{label || data?.periodLabel}</div>
       <div className="trends-tooltip-row">
-        <span style={{ color: THEME.cyan }}>Revenue:</span>
+        <span className="val-accent">Revenue:</span>
         <b>
           {data?.revenueCr != null
             ? `₹${Number(data.revenueCr).toLocaleString("en-IN")} Cr`
@@ -52,7 +86,7 @@ const RevenueProfitTooltip = ({ active, payload, label }) => {
         </div>
       )}
       <div className="trends-tooltip-row" style={{ marginTop: 4 }}>
-        <span style={{ color: THEME.yellow }}>Operating Profit:</span>
+        <span className="val-warn">Operating Profit:</span>
         <b>
           {data?.operatingIncomeCr != null
             ? `₹${Number(data.operatingIncomeCr).toLocaleString("en-IN")} Cr`
@@ -60,7 +94,7 @@ const RevenueProfitTooltip = ({ active, payload, label }) => {
         </b>
       </div>
       <div className="trends-tooltip-row">
-        <span style={{ color: THEME.green }}>Net Profit:</span>
+        <span className="val-bull">Net Profit:</span>
         <b>
           {data?.netIncomeCr != null
             ? `₹${Number(data.netIncomeCr).toLocaleString("en-IN")} Cr`
@@ -78,7 +112,7 @@ const RevenueProfitTooltip = ({ active, payload, label }) => {
       )}
       {data?.eps != null && (
         <div className="trends-tooltip-row" style={{ marginTop: 4 }}>
-          <span style={{ color: THEME.muted }}>EPS:</span>
+          <span style={{ color: "var(--tx-second)" }}>EPS:</span>
           <b>₹{data.eps}</b>
         </div>
       )}
@@ -95,25 +129,27 @@ const MarginsTooltip = ({ active, payload, label }) => {
       <div className="trends-tooltip-title">{label || data?.periodLabel}</div>
       {data?.operatingMarginPct != null && (
         <div className="trends-tooltip-row">
-          <span style={{ color: THEME.yellow }}>Operating Margin:</span>
+          <span className="val-warn">Operating Margin:</span>
           <b>{data.operatingMarginPct}%</b>
         </div>
       )}
       {data?.netMarginPct != null && (
         <div className="trends-tooltip-row">
-          <span style={{ color: THEME.green }}>Net Profit Margin:</span>
+          <span className="val-bull">Net Profit Margin:</span>
           <b>{data.netMarginPct}%</b>
         </div>
       )}
       {data?.grossMarginPct != null && (
         <div className="trends-tooltip-row">
-          <span style={{ color: THEME.cyan }}>Gross Margin:</span>
+          <span className="val-accent">Gross Margin:</span>
           <b>{data.grossMarginPct}%</b>
         </div>
       )}
       {data?.ebitdaMarginPct != null && (
         <div className="trends-tooltip-row">
-          <span style={{ color: THEME.purple }}>EBITDA Margin:</span>
+          <span className="val-ebitda" style={{ color: "var(--chart-ebitda, #c084fc)" }}>
+            EBITDA Margin:
+          </span>
           <b>{data.ebitdaMarginPct}%</b>
         </div>
       )}
@@ -122,6 +158,7 @@ const MarginsTooltip = ({ active, payload, label }) => {
 };
 
 const HistoricalTrends = ({ symbol }) => {
+  const colors = useThemePalette();
   const [periodType, setPeriodType] = useState("quarterly"); // "quarterly" | "annual"
   const [viewMode, setViewMode] = useState("revenue"); // "revenue" | "margins" | "table"
   const [data, setData] = useState([]);
@@ -256,7 +293,7 @@ const HistoricalTrends = ({ symbol }) => {
               Latest Net Profit
             </span>
             <div className="summary-val-wrap">
-              <span className="summary-val" style={{ color: THEME.green }}>
+              <span className="summary-val val-bull">
                 {latest.netIncomeCr != null
                   ? `₹${Number(latest.netIncomeCr).toLocaleString("en-IN")} Cr`
                   : "N/A"}
@@ -276,14 +313,14 @@ const HistoricalTrends = ({ symbol }) => {
 
           <div className="trends-summary-card">
             <span className="summary-label">Operating Margin (OPM)</span>
-            <span className="summary-val" style={{ color: THEME.yellow }}>
+            <span className="summary-val val-warn">
               {latest.operatingMarginPct != null ? `${latest.operatingMarginPct}%` : "N/A"}
             </span>
           </div>
 
           <div className="trends-summary-card">
             <span className="summary-label">Net Profit Margin (NPM)</span>
-            <span className="summary-val" style={{ color: THEME.cyan }}>
+            <span className="summary-val val-accent">
               {latest.netMarginPct != null ? `${latest.netMarginPct}%` : "N/A"}
             </span>
           </div>
@@ -315,17 +352,17 @@ const HistoricalTrends = ({ symbol }) => {
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke={THEME.border}
+                  stroke={colors.grid}
                   vertical={false}
                 />
                 <XAxis
                   dataKey="periodLabel"
-                  stroke={THEME.muted}
+                  stroke={colors.axis}
                   fontSize={11}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke={THEME.muted}
+                  stroke={colors.axis}
                   fontSize={11}
                   tickLine={false}
                   tickFormatter={(val) =>
@@ -340,14 +377,14 @@ const HistoricalTrends = ({ symbol }) => {
                 <Bar
                   dataKey="revenueCr"
                   name="Revenue (₹ Cr)"
-                  fill={THEME.cyan}
+                  fill={colors.revenue}
                   radius={[4, 4, 0, 0]}
                   maxBarSize={40}
                 />
                 <Bar
                   dataKey="netIncomeCr"
                   name="Net Profit (₹ Cr)"
-                  fill={THEME.green}
+                  fill={colors.profit}
                   radius={[4, 4, 0, 0]}
                   maxBarSize={40}
                 />
@@ -355,9 +392,9 @@ const HistoricalTrends = ({ symbol }) => {
                   type="monotone"
                   dataKey="operatingIncomeCr"
                   name="Operating Profit (₹ Cr)"
-                  stroke={THEME.yellow}
+                  stroke={colors.operating}
                   strokeWidth={2}
-                  dot={{ r: 3, fill: THEME.yellow }}
+                  dot={{ r: 3, fill: colors.operating }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -374,17 +411,17 @@ const HistoricalTrends = ({ symbol }) => {
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke={THEME.border}
+                  stroke={colors.grid}
                   vertical={false}
                 />
                 <XAxis
                   dataKey="periodLabel"
-                  stroke={THEME.muted}
+                  stroke={colors.axis}
                   fontSize={11}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke={THEME.muted}
+                  stroke={colors.axis}
                   fontSize={11}
                   tickLine={false}
                   tickFormatter={(val) => `${val}%`}
@@ -399,7 +436,7 @@ const HistoricalTrends = ({ symbol }) => {
                     type="monotone"
                     dataKey="grossMarginPct"
                     name="Gross Margin (%)"
-                    stroke={THEME.cyan}
+                    stroke={colors.gross}
                     strokeWidth={2}
                     dot={{ r: 3 }}
                   />
@@ -408,7 +445,7 @@ const HistoricalTrends = ({ symbol }) => {
                   type="monotone"
                   dataKey="operatingMarginPct"
                   name="Operating Margin (%)"
-                  stroke={THEME.yellow}
+                  stroke={colors.operating}
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
@@ -416,7 +453,7 @@ const HistoricalTrends = ({ symbol }) => {
                   type="monotone"
                   dataKey="netMarginPct"
                   name="Net Margin (%)"
-                  stroke={THEME.green}
+                  stroke={colors.profit}
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
@@ -425,7 +462,7 @@ const HistoricalTrends = ({ symbol }) => {
                     type="monotone"
                     dataKey="ebitdaMarginPct"
                     name="EBITDA Margin (%)"
-                    stroke={THEME.purple}
+                    stroke={colors.ebitda}
                     strokeWidth={1.5}
                     strokeDasharray="4 2"
                     dot={{ r: 2 }}
@@ -454,10 +491,18 @@ const HistoricalTrends = ({ symbol }) => {
                 {data.map((row, idx) => (
                   <tr key={idx}>
                     <td className="bold">{row.periodLabel}</td>
-                    <td>{row.revenueCr != null ? Number(row.revenueCr).toLocaleString("en-IN") : "—"}</td>
+                    <td>
+                      {row.revenueCr != null
+                        ? Number(row.revenueCr).toLocaleString("en-IN")
+                        : "—"}
+                    </td>
                     <td>
                       {row.revenueGrowthPct != null ? (
-                        <span className={`growth-pill ${row.revenueGrowthPct >= 0 ? "up" : "down"}`}>
+                        <span
+                          className={`growth-pill ${
+                            row.revenueGrowthPct >= 0 ? "up" : "down"
+                          }`}
+                        >
                           {row.revenueGrowthPct >= 0 ? "+" : ""}
                           {row.revenueGrowthPct}%
                         </span>
@@ -465,13 +510,27 @@ const HistoricalTrends = ({ symbol }) => {
                         "—"
                       )}
                     </td>
-                    <td>{row.operatingIncomeCr != null ? Number(row.operatingIncomeCr).toLocaleString("en-IN") : "—"}</td>
-                    <td style={{ color: THEME.green }}>
-                      {row.netIncomeCr != null ? Number(row.netIncomeCr).toLocaleString("en-IN") : "—"}
+                    <td>
+                      {row.operatingIncomeCr != null
+                        ? Number(row.operatingIncomeCr).toLocaleString("en-IN")
+                        : "—"}
                     </td>
-                    <td>{row.operatingMarginPct != null ? `${row.operatingMarginPct}%` : "—"}</td>
-                    <td>{row.netMarginPct != null ? `${row.netMarginPct}%` : "—"}</td>
-                    <td className="mono">{row.eps != null ? `₹${row.eps}` : "—"}</td>
+                    <td className="val-bull bold">
+                      {row.netIncomeCr != null
+                        ? Number(row.netIncomeCr).toLocaleString("en-IN")
+                        : "—"}
+                    </td>
+                    <td>
+                      {row.operatingMarginPct != null
+                        ? `${row.operatingMarginPct}%`
+                        : "—"}
+                    </td>
+                    <td>
+                      {row.netMarginPct != null ? `${row.netMarginPct}%` : "—"}
+                    </td>
+                    <td className="mono">
+                      {row.eps != null ? `₹${row.eps}` : "—"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
