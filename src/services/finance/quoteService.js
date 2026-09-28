@@ -92,7 +92,15 @@ export async function getHistoricalFinancials(symbol, type = "quarterly") {
 
     // Filter out empty rows and sort chronologically (oldest to newest)
     const validRows = rawData
-      .filter((r) => r && (r.totalRevenue || r.operatingRevenue || r.netIncome || r.operatingIncome))
+      .filter(
+        (r) =>
+          r &&
+          (r.totalRevenue != null ||
+            r.operatingRevenue != null ||
+            r.netIncome != null ||
+            r.operatingIncome != null ||
+            r.netIncomeCommonStockholders != null)
+      )
       .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     const processed = validRows.map((row) => {
@@ -114,21 +122,22 @@ export async function getHistoricalFinancials(symbol, type = "quarterly") {
       const ebitdaCr = ebitda != null ? Number((ebitda / 1e7).toFixed(2)) : null;
       const grossProfitCr = grossProfit != null ? Number((grossProfit / 1e7).toFixed(2)) : null;
 
-      // Margins in %
+      // Margins in % (requires nonzero revenue; preserves 0% if income is 0)
+      const hasRevenue = totalRevenue != null && totalRevenue !== 0;
       const operatingMarginPct =
-        totalRevenue && operatingIncome
+        hasRevenue && operatingIncome != null
           ? Number(((operatingIncome / totalRevenue) * 100).toFixed(2))
           : null;
       const netMarginPct =
-        totalRevenue && netIncome
+        hasRevenue && netIncome != null
           ? Number(((netIncome / totalRevenue) * 100).toFixed(2))
           : null;
       const ebitdaMarginPct =
-        totalRevenue && ebitda
+        hasRevenue && ebitda != null
           ? Number(((ebitda / totalRevenue) * 100).toFixed(2))
           : null;
       const grossMarginPct =
-        totalRevenue && grossProfit
+        hasRevenue && grossProfit != null
           ? Number(((grossProfit / totalRevenue) * 100).toFixed(2))
           : null;
 
@@ -148,31 +157,46 @@ export async function getHistoricalFinancials(symbol, type = "quarterly") {
         grossMarginPct,
         revenueGrowthPct: null,
         netIncomeGrowthPct: null,
+        _rawRevenue: totalRevenue,
+        _rawNetIncome: netIncome,
       };
     });
 
-    // Compute period-over-period growth rates
+    // Compute period-over-period growth rates using unrounded source amounts
     for (let i = 0; i < processed.length; i++) {
       const cur = processed[i];
       const prev = i > 0 ? processed[i - 1] : null;
 
-      if (prev && prev.revenueCr && prev.revenueCr > 0 && cur.revenueCr != null) {
+      if (
+        prev &&
+        prev._rawRevenue != null &&
+        prev._rawRevenue !== 0 &&
+        cur._rawRevenue != null
+      ) {
         cur.revenueGrowthPct = Number(
-          (((cur.revenueCr - prev.revenueCr) / Math.abs(prev.revenueCr)) * 100).toFixed(1)
+          (((cur._rawRevenue - prev._rawRevenue) / Math.abs(prev._rawRevenue)) * 100).toFixed(1)
         );
       }
-      if (prev && prev.netIncomeCr != null && prev.netIncomeCr !== 0 && cur.netIncomeCr != null) {
+      if (
+        prev &&
+        prev._rawNetIncome != null &&
+        prev._rawNetIncome !== 0 &&
+        cur._rawNetIncome != null
+      ) {
         cur.netIncomeGrowthPct = Number(
-          (((cur.netIncomeCr - prev.netIncomeCr) / Math.abs(prev.netIncomeCr)) * 100).toFixed(1)
+          (((cur._rawNetIncome - prev._rawNetIncome) / Math.abs(prev._rawNetIncome)) * 100).toFixed(1)
         );
       }
+
+      delete cur._rawRevenue;
+      delete cur._rawNetIncome;
     }
 
     setCachedData(cacheKey, processed, 1000 * 60 * 60 * 6); // Cache for 6 hours
     return processed;
   } catch (error) {
     console.error(`[getHistoricalFinancials] Error fetching for ${symbol}:`, error.message);
-    return [];
+    throw error;
   }
 }
 

@@ -78,6 +78,11 @@
   color: var(--tx-primary, #ffffff);
 }
 
+.fundamentals-tab-btn:focus-visible {
+  outline:        2px solid var(--accent, #00cff7);
+  outline-offset: 2px;
+}
+
 .fundamentals-tab-btn.active {
   background:  rgba(255, 255, 255, 0.1);
   color:       var(--tx-primary, #ffffff);
@@ -168,6 +173,12 @@
 .trends-btn:hover,
 .trends-view-btn:hover {
   color: #fff;
+}
+
+.trends-btn:focus-visible,
+.trends-view-btn:focus-visible {
+  outline:        2px solid var(--accent, #00cff7);
+  outline-offset: 2px;
 }
 
 .trends-btn.active,

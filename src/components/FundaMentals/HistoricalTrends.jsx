@@ -36,7 +36,11 @@ const RevenueProfitTooltip = ({ active, payload, label }) => {
       <div className="trends-tooltip-title">{label || data?.periodLabel}</div>
       <div className="trends-tooltip-row">
         <span style={{ color: THEME.cyan }}>Revenue:</span>
-        <b>₹{Number(data?.revenueCr || 0).toLocaleString("en-IN")} Cr</b>
+        <b>
+          {data?.revenueCr != null
+            ? `₹${Number(data.revenueCr).toLocaleString("en-IN")} Cr`
+            : "N/A"}
+        </b>
       </div>
       {data?.revenueGrowthPct != null && (
         <div className="trends-tooltip-sub">
@@ -49,11 +53,19 @@ const RevenueProfitTooltip = ({ active, payload, label }) => {
       )}
       <div className="trends-tooltip-row" style={{ marginTop: 4 }}>
         <span style={{ color: THEME.yellow }}>Operating Profit:</span>
-        <b>₹{Number(data?.operatingIncomeCr || 0).toLocaleString("en-IN")} Cr</b>
+        <b>
+          {data?.operatingIncomeCr != null
+            ? `₹${Number(data.operatingIncomeCr).toLocaleString("en-IN")} Cr`
+            : "N/A"}
+        </b>
       </div>
       <div className="trends-tooltip-row">
         <span style={{ color: THEME.green }}>Net Profit:</span>
-        <b>₹{Number(data?.netIncomeCr || 0).toLocaleString("en-IN")} Cr</b>
+        <b>
+          {data?.netIncomeCr != null
+            ? `₹${Number(data.netIncomeCr).toLocaleString("en-IN")} Cr`
+            : "N/A"}
+        </b>
       </div>
       {data?.netIncomeGrowthPct != null && (
         <div className="trends-tooltip-sub">
@@ -120,7 +132,12 @@ const HistoricalTrends = ({ symbol }) => {
     let isMounted = true;
 
     async function fetchHistorical() {
-      if (!symbol) return;
+      if (!symbol) {
+        setData([]);
+        setError(null);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
 
@@ -217,7 +234,9 @@ const HistoricalTrends = ({ symbol }) => {
             </span>
             <div className="summary-val-wrap">
               <span className="summary-val">
-                ₹{Number(latest.revenueCr || 0).toLocaleString("en-IN")} Cr
+                {latest.revenueCr != null
+                  ? `₹${Number(latest.revenueCr).toLocaleString("en-IN")} Cr`
+                  : "N/A"}
               </span>
               {latest.revenueGrowthPct != null && (
                 <span
@@ -238,7 +257,9 @@ const HistoricalTrends = ({ symbol }) => {
             </span>
             <div className="summary-val-wrap">
               <span className="summary-val" style={{ color: THEME.green }}>
-                ₹{Number(latest.netIncomeCr || 0).toLocaleString("en-IN")} Cr
+                {latest.netIncomeCr != null
+                  ? `₹${Number(latest.netIncomeCr).toLocaleString("en-IN")} Cr`
+                  : "N/A"}
               </span>
               {latest.netIncomeGrowthPct != null && (
                 <span

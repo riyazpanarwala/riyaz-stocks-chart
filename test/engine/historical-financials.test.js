@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { getFinanceDataAction } from "../../src/app/actions/finance.js";
 import { getHistoricalFinancials } from "../../src/services/finance/quoteService.js";
+import { setCachedData } from "../../src/services/finance/CachedFinancialData.js";
 
 test("Historical Financials: validates symbols and rejects malicious input", async () => {
   const emptyRes = await getFinanceDataAction({
@@ -41,18 +42,27 @@ test("Historical Financials: returns formatted financial series with valid schem
   }
 });
 
-test("Historical Financials: caches successive requests", async () => {
-  const start1 = Date.now();
+test("Historical Financials: reuses cached memory reference on successive requests", async () => {
+  // Pre-seed a controlled mock result into the cache
+  const mockPayload = [
+    {
+      date: "2025-03-31",
+      periodLabel: "Q4 FY25 (Mar '25)",
+      periodType: "3M",
+      revenueCr: 50000,
+      netIncomeCr: 10000,
+      operatingMarginPct: 25,
+      netMarginPct: 20,
+    },
+  ];
+  setCachedData("MOCK_CACHE_SYM.NS:historical:quarterly", mockPayload);
+
+  // Calling getHistoricalFinancials with this symbol must return the pre-seeded cached entry directly
+  const cachedRes = await getHistoricalFinancials("MOCK_CACHE_SYM.NS", "quarterly");
+  assert.equal(cachedRes, mockPayload);
+
+  // Real fetch also returns exact same reference on second call from cache
   const res1 = await getHistoricalFinancials("TCS.NS", "annual");
-  const duration1 = Date.now() - start1;
-
-  const start2 = Date.now();
   const res2 = await getHistoricalFinancials("TCS.NS", "annual");
-  const duration2 = Date.now() - start2;
-
-  assert.ok(Array.isArray(res1));
-  assert.ok(Array.isArray(res2));
-  assert.equal(res1.length, res2.length);
-  // Cached hit should be substantially faster
-  assert.ok(duration2 <= duration1);
+  assert.equal(res1, res2);
 });

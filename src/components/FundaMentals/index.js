@@ -15,37 +15,47 @@ const Fundamentals = ({ companyObj, indexObj, onClose }) => {
       ? `${companyObj.symbol}.${indexObj?.value === "BSE_EQ" ? "BO" : "NS"}`
       : "");
 
-  const extractFinancials = async () => {
-    if (!symbol) return;
-    setLoadingSnapshot(true);
+  useEffect(() => {
+    let isCancelled = false;
+    setFundamentals([]);
 
-    try {
-      const response = await getFinanceDataAction({
-        symbol,
-        isQuote: true,
-      });
+    const fetchSnapshot = async () => {
+      if (!symbol) return;
+      if (indexObj?.value !== "NSE_EQ" && indexObj?.value !== "BSE_EQ") return;
 
-      const data = [];
-      for (const prop in response) {
-        if (prop !== "error") {
-          data.push({ name: prop, value: response[prop] });
+      setLoadingSnapshot(true);
+      try {
+        const response = await getFinanceDataAction({
+          symbol,
+          isQuote: true,
+        });
+
+        if (isCancelled) return;
+
+        const data = [];
+        for (const prop in response) {
+          if (prop !== "error") {
+            data.push({ name: prop, value: response[prop] });
+          }
+        }
+
+        setFundamentals(data);
+      } catch (error) {
+        if (isCancelled) return;
+        console.error(`Error extracting financials:`, error);
+        setFundamentals([]);
+      } finally {
+        if (!isCancelled) {
+          setLoadingSnapshot(false);
         }
       }
+    };
 
-      setFundamentals(data);
-    } catch (error) {
-      console.error(`Error extracting financials:`, error);
-      setFundamentals([]);
-    } finally {
-      setLoadingSnapshot(false);
-    }
-  };
+    fetchSnapshot();
 
-  useEffect(() => {
-    setFundamentals([]);
-    if (indexObj?.value === "NSE_EQ" || indexObj?.value === "BSE_EQ") {
-      extractFinancials();
-    }
+    return () => {
+      isCancelled = true;
+    };
   }, [companyObj, indexObj, symbol]);
 
   return (
