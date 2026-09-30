@@ -58,7 +58,7 @@ export const StraddleBanner = React.memo(function StraddleBanner({ straddleInfo,
             </span>
           </div>
           <div style={{ fontSize: 10, color: C.muted }}>
-            CE: ₹{ceLtp} + PE: ₹{peLtp}
+            Call ₹{ceLtp} + Put ₹{peLtp} (Combined Cost)
           </div>
         </div>
 
@@ -101,23 +101,23 @@ export const StraddleBanner = React.memo(function StraddleBanner({ straddleInfo,
 
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 9, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>
-            Implied Expiry Band
+            Expected Expiry Range
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.yellow }}>
             ₹{expectedLower.toLocaleString("en-IN")} – ₹{expectedUpper.toLocaleString("en-IN")}
           </div>
-          <div style={{ fontSize: 9, color: C.muted }}>1-Sigma Break-even</div>
+          <div style={{ fontSize: 9, color: C.muted }}>Break-even Range</div>
         </div>
 
         {combinedThetaLot > 0 && (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 9, color: C.muted, textTransform: "uppercase", letterSpacing: 0.5 }}>
-              Daily Theta Burn
+              Daily Time Decay Loss
             </div>
             <div style={{ fontSize: 15, fontWeight: 700, color: C.red }}>
               -₹{combinedThetaLot.toLocaleString("en-IN")}
             </div>
-            <div style={{ fontSize: 9, color: C.muted }}>per lot ({lotSize})</div>
+            <div style={{ fontSize: 9, color: C.muted }}>per lot / day ({lotSize})</div>
           </div>
         )}
       </div>

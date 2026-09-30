@@ -146,41 +146,41 @@ export function getPcrSentiment(pcr) {
   const val = Number(pcr) || 0;
   if (val >= 1.45) {
     return {
-      label: "Extreme Put Writing",
+      label: "Very Bullish (Strong Floor)",
       sentiment: "bullish",
       color: "#3fb950",
-      description: "Aggressive PE writing dominance. High institutional support floor; watch for overbought profit-booking or squeeze if spot corrects.",
+      description: "Massive support floor built below current price. Buyers are firmly in control; watch for quick profit-taking if market stretches too far.",
     };
   }
   if (val >= 1.15) {
     return {
-      label: "Bullish Put Writing",
+      label: "Bullish (Buyers in Control)",
       sentiment: "mild_bullish",
       color: "#56d364",
-      description: "Put writers outweigh call writers. Buyers control the tape with steady support building beneath ATM.",
+      description: "Strong floor building beneath current price. Downside is well-protected by big market participants.",
     };
   }
   if (val >= 0.85) {
     return {
-      label: "Neutral / Rangebound",
+      label: "Neutral (Sideways Range)",
       sentiment: "neutral",
       color: "#e3b341",
-      description: "Balanced equilibrium between Call and Put writers. Expected sideways consolidation within support and resistance boundaries.",
+      description: "Buyers and sellers are evenly balanced. Price is expected to consolidate sideways between support and resistance boundaries.",
     };
   }
   if (val >= 0.6) {
     return {
-      label: "Bearish Call Writing",
+      label: "Bearish (Ceiling Overhead)",
       sentiment: "mild_bearish",
       color: "#ff7b72",
-      description: "Call writers dominating overhead strikes. Rallies likely to face immediate supply walls.",
+      description: "Sellers are adding ceilings overhead. Upward rallies are likely to face immediate resistance walls.",
     };
   }
   return {
-    label: "Extreme Call Writing (Oversold)",
+    label: "Heavy Selling Overhead (Resistance Wall)",
     sentiment: "bearish",
     color: "#f85149",
-    description: "Massive CE writing overhead. Market technically oversold; high risk of sharp short-covering bounce if resistance breaks.",
+    description: "Huge selling pressure capping upside. Market is heavily suppressed; beware of sharp relief bounce if resistance breaks.",
   };
 }
 
