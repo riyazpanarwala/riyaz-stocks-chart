@@ -76,6 +76,24 @@ const CandleStickChart = () => {
     }, 0);
   }, [candleData]);
 
+  // Compute 1D price delta and percentage change
+  const priceChange = React.useMemo(() => {
+    if (!candleData || candleData.length < 2) return null;
+    const latest = candleData.at(-1);
+    const prev = candleData.at(-2);
+    if (!Number.isFinite(latest?.close) || !Number.isFinite(prev?.close) || prev.close === 0) {
+      return null;
+    }
+    const delta = latest.close - prev.close;
+    const percent = (delta / prev.close) * 100;
+    return {
+      delta,
+      percent,
+      isPositive: delta > 0,
+      isNegative: delta < 0,
+    };
+  }, [candleData]);
+
   const [isCompanyExist, setCompanyExist] = useState(
     isCompanyExistInStorage(companyObj),
   );
@@ -270,7 +288,31 @@ const CandleStickChart = () => {
               </h1>
               {Number.isFinite(candleData.at(-1)?.close) && (
                 <span className="stock-price" title="Latest loaded candle close">
-                  {candleData.at(-1).close.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ₹{candleData.at(-1).close.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              )}
+              {priceChange && (
+                <span
+                  className={`stock-change-badge ${
+                    priceChange.isPositive
+                      ? "change-positive"
+                      : priceChange.isNegative
+                        ? "change-negative"
+                        : "change-neutral"
+                  }`}
+                  title={`1-Day Change: ${priceChange.delta >= 0 ? "+" : ""}${priceChange.delta.toFixed(2)} (${priceChange.percent >= 0 ? "+" : ""}${priceChange.percent.toFixed(2)}%)`}
+                >
+                  <span className="change-arrow">
+                    {priceChange.isPositive ? "▲" : priceChange.isNegative ? "▼" : "•"}
+                  </span>
+                  <span className="change-delta">
+                    {priceChange.delta >= 0 ? "+" : ""}
+                    {priceChange.delta.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="change-percent">
+                    ({priceChange.percent >= 0 ? "+" : ""}
+                    {priceChange.percent.toFixed(2)}%)
+                  </span>
                 </span>
               )}
               </div>
