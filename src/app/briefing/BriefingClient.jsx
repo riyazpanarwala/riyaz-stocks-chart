@@ -26,6 +26,7 @@ import {
   verifyScreenerAccessAction,
   lockScreenerAccessAction,
 } from "../actions/screenerAuth.js";
+import AppNavbar from "../../components/AppNavbar";
 import "./Briefing.scss";
 
 export default function BriefingClient() {
@@ -138,31 +139,7 @@ export default function BriefingClient() {
   if (!isAuthenticated && !isCheckingAuth) {
     return (
       <div className="briefing-page">
-        <nav className="briefing-nav" aria-label="Main Navigation">
-          <Link href="/" className="briefing-brand">
-            <h1>🤖 AI Pre-Market & Daily Briefing</h1>
-          </Link>
-          <div className="briefing-nav-links">
-            <Link href="/" className="nav-pill-link">
-              📈 Interactive Chart
-            </Link>
-            <Link href="/screener" className="nav-pill-link">
-              🔍 Signals Screener
-            </Link>
-            <Link href="/heatmap" className="nav-pill-link">
-              🗺️ Sector Heatmap
-            </Link>
-            <Link href="/sentiment" className="nav-pill-link">
-              🌐 Market Sentiment
-            </Link>
-            <Link href="/optionchain" className="nav-pill-link">
-              📊 Option Chain
-            </Link>
-            <Link href="/TradingView" className="nav-pill-link">
-              ⚡ TradingView
-            </Link>
-          </div>
-        </nav>
+        <AppNavbar title="AI Pre-Market & Daily Briefing" />
 
         <div className="briefing-lock-screen">
           <motion.div
@@ -227,44 +204,18 @@ export default function BriefingClient() {
   return (
     <div className="briefing-page">
       {/* ── Top Navigation Bar ── */}
-      <nav className="briefing-nav" aria-label="Main Navigation">
-        <Link href="/" className="briefing-brand">
-          <h1>🤖 AI Pre-Market & Daily Briefing</h1>
-        </Link>
-        <div className="briefing-nav-links">
-          <Link href="/" className="nav-pill-link">
-            📈 Interactive Chart
-          </Link>
-          <Link href="/screener" className="nav-pill-link">
-            🔍 Signals Screener
-          </Link>
-          <Link href="/heatmap" className="nav-pill-link">
-            🗺️ Sector Heatmap
-          </Link>
-          <Link href="/sentiment" className="nav-pill-link">
-            🌐 Market Sentiment
-          </Link>
-          <Link href="/briefing" className="nav-pill-link active">
-            🤖 AI Briefing
-          </Link>
-          <Link href="/optionchain" className="nav-pill-link">
-            📊 Option Chain
-          </Link>
-          <Link href="/TradingView" className="nav-pill-link">
-            ⚡ TradingView
-          </Link>
-          {isAuthenticated && (
-            <button
-              type="button"
-              onClick={handleLock}
-              className="nav-lock-btn"
-              title="Lock Session"
-            >
-              <FiLock size={12} /> Lock
-            </button>
-          )}
-        </div>
-      </nav>
+      <AppNavbar title="AI Pre-Market & Daily Briefing">
+        {isAuthenticated && (
+          <button
+            type="button"
+            onClick={handleLock}
+            className="nav-lock-btn"
+            title="Lock Session"
+          >
+            <FiLock size={12} /> Lock
+          </button>
+        )}
+      </AppNavbar>
 
       {/* ── Main Container ── */}
       <div className="briefing-container">

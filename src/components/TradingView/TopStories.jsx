@@ -2,11 +2,11 @@
 import React from "react";
 import TradingViewEmbed from "./TradingViewEmbed";
 
-export default function TopStories({ symbol = "BSE:TCS" }) {
+export default function TopStories({ symbol = "BSE:TCS", theme = "dark" }) {
   const config = {
     feedMode: "symbol",
     symbol,
-    colorTheme: "light",
+    colorTheme: theme,
     isTransparent: true,
     displayMode: "regular",
     width: "100%",

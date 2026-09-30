@@ -2,7 +2,7 @@
 import React from "react";
 import TradingViewEmbed from "./TradingViewEmbed";
 
-export default function TechnicalAnalysis({ symbol = "BSE:TCS" }) {
+export default function TechnicalAnalysis({ symbol = "BSE:TCS", theme = "dark" }) {
   const config = {
     interval: "15m",
     width: "100%",
@@ -12,7 +12,7 @@ export default function TechnicalAnalysis({ symbol = "BSE:TCS" }) {
     showIntervalTabs: true,
     displayMode: "single",
     locale: "en",
-    colorTheme: "light",
+    colorTheme: theme,
   };
 
   return (

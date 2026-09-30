@@ -2,7 +2,7 @@
 import React from "react";
 import TradingViewEmbed from "./TradingViewEmbed";
 
-export default function TickerTape() {
+export default function TickerTape({ theme = "dark" }) {
   const config = {
     symbols: [
       { proName: "BSE:TCS" },
@@ -13,7 +13,7 @@ export default function TickerTape() {
       { proName: "BSE:SBIN" },
     ],
     showSymbolLogo: true,
-    colorTheme: "light",
+    colorTheme: theme,
     displayMode: "adaptive",
     locale: "en",
   };

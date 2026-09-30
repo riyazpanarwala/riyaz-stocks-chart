@@ -25,6 +25,7 @@ import {
   lockScreenerAccessAction,
 } from "../actions/screenerAuth";
 import StockSignalModal from "../../components/StockSignalModal";
+import AppNavbar from "../../components/AppNavbar";
 import "./Screener.scss";
 
 // ── Watchlist Presets ────────────────────────────────────────────────────────
@@ -964,44 +965,18 @@ export default function ScreenerClient() {
   return (
     <div className="screener-page">
       {/* ── Top Navigation Bar ── */}
-      <nav className="screener-nav" aria-label="Main Navigation">
-        <Link href="/" className="screener-brand">
-          <h1>⚡ Panarwala Market Screener</h1>
-        </Link>
-        <div className="screener-nav-links">
-          <Link href="/" className="nav-pill-link">
-            📈 Interactive Chart
-          </Link>
-          <Link href="/screener" className="nav-pill-link active">
-            🔍 Signals Screener
-          </Link>
-          <Link href="/heatmap" className="nav-pill-link">
-            🗺️ Sector Heatmap
-          </Link>
-          <Link href="/sentiment" className="nav-pill-link">
-            🌐 Market Sentiment
-          </Link>
-          <Link href="/briefing" className="nav-pill-link">
-            🤖 AI Briefing
-          </Link>
-          <Link href="/optionchain" className="nav-pill-link">
-            📊 Option Chain
-          </Link>
-          <Link href="/TradingView" className="nav-pill-link">
-            ⚡ TradingView
-          </Link>
-          {isAuthenticated && (
-            <button
-              type="button"
-              onClick={handleLock}
-              className="nav-lock-btn"
-              title="Lock Screener Session"
-            >
-              <FiLock size={12} /> Lock
-            </button>
-          )}
-        </div>
-      </nav>
+      <AppNavbar title="Panarwala Market Screener">
+        {isAuthenticated && (
+          <button
+            type="button"
+            onClick={handleLock}
+            className="nav-lock-btn"
+            title="Lock Screener Session"
+          >
+            <FiLock size={12} /> Lock
+          </button>
+        )}
+      </AppNavbar>
 
       {/* ── Main Container ── */}
       <div className="screener-container">
