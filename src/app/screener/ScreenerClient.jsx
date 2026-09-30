@@ -990,13 +990,12 @@ export default function ScreenerClient() {
       "Scan Timestamp",
     ];
 
-    const escapeCsv = (val) => {
+    const escapeCsv = (val, isNumeric = false) => {
       if (val == null) return "";
       const str = String(val);
-      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
+      const isNumericValue = isNumeric && /^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(str);
+      const safeStr = !isNumericValue && /^[=+\-@\t\r]/.test(str) ? `'${str}` : str;
+      return `"${safeStr.replace(/"/g, '""')}"`;
     };
 
     const rows = filteredResults.map((item) => [
@@ -1018,9 +1017,12 @@ export default function ScreenerClient() {
       item.timestamp || "",
     ]);
 
+    const numericColumns = new Set([2, 6, 7, 8, 9, 12, 13, 14]);
     const csvContent = [
-      headers.map(escapeCsv).join(","),
-      ...rows.map((row) => row.map(escapeCsv).join(",")),
+      headers.map((h) => escapeCsv(h, false)).join(","),
+      ...rows.map((row) =>
+        row.map((val, idx) => escapeCsv(val, numericColumns.has(idx))).join(",")
+      ),
     ].join("\r\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

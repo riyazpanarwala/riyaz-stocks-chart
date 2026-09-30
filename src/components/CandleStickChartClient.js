@@ -300,7 +300,7 @@ const CandleStickChart = () => {
                         ? "change-negative"
                         : "change-neutral"
                   }`}
-                  title={`1-Day Change: ${priceChange.delta >= 0 ? "+" : ""}${priceChange.delta.toFixed(2)} (${priceChange.percent >= 0 ? "+" : ""}${priceChange.percent.toFixed(2)}%)`}
+                  title={`Change vs previous candle: ${priceChange.delta >= 0 ? "+" : ""}${priceChange.delta.toFixed(2)} (${priceChange.percent >= 0 ? "+" : ""}${priceChange.percent.toFixed(2)}%)`}
                 >
                   <span className="change-arrow">
                     {priceChange.isPositive ? "▲" : priceChange.isNegative ? "▼" : "•"}
