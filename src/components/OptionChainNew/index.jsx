@@ -3,7 +3,6 @@
 // Thin orchestrator — all logic lives in hooks & utilities.
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { browser } from "react-dom";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { C } from "./constants.js";
@@ -83,7 +82,6 @@ export default function App({ initialSymbol = null }) {
 
   // Resolve URL parameter after client mount to prevent SSR hydration mismatch
   useEffect(() => {
-    browser();
     if (!initialSymbol) {
       const urlParams = new URLSearchParams(window.location.search);
       const param = urlParams.get("symbol") || urlParams.get("q");
@@ -99,7 +97,6 @@ export default function App({ initialSymbol = null }) {
 
   // Synchronize selected instrument back to URL query parameter
   useEffect(() => {
-    browser();
     if (!isInitializedRef.current || !instrument?.symbol) return;
     try {
       const url = new URL(window.location.href);

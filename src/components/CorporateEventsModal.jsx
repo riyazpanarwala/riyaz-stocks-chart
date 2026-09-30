@@ -1,6 +1,5 @@
 "use client";
 import React, { useMemo, useEffect, useRef } from "react";
-import { browser } from "react-dom";
 import "./TechnicalInfo/Modal.scss";
 import "./CorporateEventsModal.scss";
 import { corporateActionDate } from "./utils/corporateActionDate.js";
@@ -38,7 +37,6 @@ export default function CorporateEventsModal({
 
   // Manage accessibility focus: capture trigger, focus inside dialog, trap tab, restore focus on unmount
   useEffect(() => {
-    browser();
     previousActiveElementRef.current = document.activeElement;
 
     const timer = setTimeout(() => {

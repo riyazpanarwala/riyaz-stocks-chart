@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { browser } from "react-dom";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { FiSearch, FiBarChart2, FiGlobe } from "react-icons/fi";
@@ -32,7 +31,6 @@ export default function TradingViewClient() {
 
   // Resolve URL state after client mount to prevent SSR hydration mismatches
   useEffect(() => {
-    browser();
     const params = new URLSearchParams(window.location.search);
     const urlSymbol = (params.get("symbol") || params.get("q") || "").trim();
     if (urlSymbol) {
@@ -47,7 +45,6 @@ export default function TradingViewClient() {
     if (!isInitializedRef.current) return;
 
     const timer = setTimeout(() => {
-      browser();
       const trimmed = inputValue.trim();
       const nextSymbol = trimmed || DEFAULT_SYMBOL;
       setSymbol(nextSymbol);

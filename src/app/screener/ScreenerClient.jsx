@@ -19,7 +19,6 @@ import {
   FiShield,
   FiDownload,
 } from "react-icons/fi";
-import { browser } from "react-dom";
 import { getStockSignalAction } from "../actions/stockSignal";
 import {
   checkScreenerAccessAction,
@@ -968,7 +967,6 @@ export default function ScreenerClient() {
    * Exports the currently displayed/filtered screener results to a downloadable CSV file.
    */
   const handleExportCSV = useCallback(() => {
-    browser();
     if (!filteredResults || filteredResults.length === 0) return;
 
     const headers = [

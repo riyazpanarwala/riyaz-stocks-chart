@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { browser } from "react-dom";
 
 /**
  * Hook to retrieve and reactively track the current UI theme ("dark" | "light").
  * Synchronizes with document[data-theme], localStorage, and "themechange" custom events.
- * Uses React 19.3's browser() API to assert client-side execution.
  *
  * @returns {"dark" | "light"} The active theme.
  */
@@ -14,8 +12,6 @@ export function useActiveTheme() {
   const [theme, setTheme] = useState("dark");
 
   useEffect(() => {
-    browser();
-
     // Initial check from document attribute or localStorage
     const docTheme = document.documentElement.getAttribute("data-theme");
     const savedTheme = localStorage.getItem("theme");
