@@ -5,6 +5,9 @@ import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiExternalLink, FiTrendingUp, FiTrendingDown, FiCheck, FiMinus } from "react-icons/fi";
+import FO_LIST from "../OptionChainNew/FOlist.js";
+
+const FO_SYMBOLS = new Set(FO_LIST.map((item) => item.symbol.toUpperCase()));
 
 /**
  * SectorDetailDrawer - Slide-over modal dialog displaying constituents, price action,
@@ -155,7 +158,13 @@ export default function SectorDetailDrawer({ sector, onClose }) {
                     return (
                       <tr key={stock.symbol} className="constituent-row">
                         <td className="symbol-cell">
-                          <span className="stock-sym">{stock.symbol}</span>
+                          <Link
+                            href={`/?symbol=${encodeURIComponent(stock.symbol)}`}
+                            title={`Open ${stock.symbol} Candlestick Chart`}
+                            style={{ textDecoration: "none", color: "inherit" }}
+                          >
+                            <span className="stock-sym" style={{ cursor: "pointer" }}>{stock.symbol}</span>
+                          </Link>
                           <span className="stock-name">{stock.name}</span>
                           {stock.isNear52WHigh && (
                             <span className="tag-52w high">Near 52W High</span>
@@ -205,13 +214,25 @@ export default function SectorDetailDrawer({ sector, onClose }) {
                         </td>
 
                         <td className="text-right action-cell">
-                          <Link
-                            href={`/?symbol=${stock.symbol}`}
-                            className="chart-link-btn"
-                            title={`Open ${stock.symbol} Candlestick Chart`}
-                          >
-                            Chart <FiExternalLink size={13} />
-                          </Link>
+                          <div style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                            <Link
+                              href={`/?symbol=${encodeURIComponent(stock.symbol)}`}
+                              className="chart-link-btn"
+                              title={`Open ${stock.symbol} Candlestick Chart`}
+                            >
+                              Chart <FiExternalLink size={12} />
+                            </Link>
+                            {FO_SYMBOLS.has(stock.symbol.toUpperCase()) && (
+                              <Link
+                                href={`/optionchain?symbol=${encodeURIComponent(stock.symbol)}`}
+                                className="chart-link-btn"
+                                title={`Open ${stock.symbol} Option Chain`}
+                                style={{ color: "#c084fc", borderColor: "rgba(192, 132, 252, 0.35)" }}
+                              >
+                                Options <FiExternalLink size={12} />
+                              </Link>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );

@@ -64,6 +64,7 @@ const CandleStickChart = () => {
     newIndexArr,
     candleData,
     period,
+    isFO,
   } = useCommonHeader();
 
   const corporateEventsCount = React.useMemo(() => {
@@ -288,6 +289,17 @@ const CandleStickChart = () => {
                 >
                   Technical Analysis
                 </ActionButton>
+                {isFO && companyObj?.symbol && (
+                  <Link
+                    href={`/optionchain?symbol=${encodeURIComponent(companyObj.symbol)}`}
+                    className="custom-button"
+                    aria-label={`Open Option Chain for ${getCompanyName()}`}
+                    title={`Live F&O Option Chain for ${getCompanyName()}`}
+                    style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                  >
+                    📊 Option Chain
+                  </Link>
+                )}
                 <ChartActionMenu label="Research ▾" accessibleLabel="Research tools">
                 <ActionButton
                   onClick={() => setSignalModalOpen(true)}
@@ -304,12 +316,20 @@ const CandleStickChart = () => {
                   🔍 Screener
                 </Link>
                 <Link
-                  href="/optionchain"
+                  href={companyObj?.symbol ? `/optionchain?symbol=${encodeURIComponent(companyObj.symbol)}` : "/optionchain"}
                   className="custom-button"
                   aria-label="Open NSE Option Chain Analysis"
                   style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
                 >
                   📊 Option Chain
+                </Link>
+                <Link
+                  href={companyObj?.symbol ? `/TradingView?symbol=${indexObj?.value === "BSE_EQ" ? "BSE" : "NSE"}:${encodeURIComponent(companyObj.symbol)}` : "/TradingView"}
+                  className="custom-button"
+                  aria-label="Open TradingView Advanced Chart"
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                >
+                  ⚡ TradingView
                 </Link>
                 <Link
                   href="/briefing"

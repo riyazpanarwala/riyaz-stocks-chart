@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { browser } from "react-dom";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { C } from "./constants.js";
 import FO_LIST from "./FOlist.js";
@@ -213,7 +214,7 @@ export default function App({ initialSymbol = null }) {
           </div>
 
           {/* Title row */}
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <span style={{ fontSize: 20, fontWeight: 800, color: isIndex ? C.blue : C.purple }}>
               {instrument.symbol}
             </span>
@@ -223,6 +224,45 @@ export default function App({ initialSymbol = null }) {
               </span>
             )}
             <span style={{ fontSize: 11, color: C.muted }}>{instrument.name}</span>
+            <Link
+              href={`/?symbol=${encodeURIComponent(instrument.symbol)}`}
+              title={`Open ${instrument.symbol} in Interactive Candlestick Chart`}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "3px 8px",
+                borderRadius: 5,
+                fontSize: 11,
+                fontWeight: 600,
+                background: C.surface2,
+                color: C.blue,
+                border: `1px solid ${C.border}`,
+                textDecoration: "none",
+                marginLeft: 4,
+              }}
+            >
+              📈 Chart ↗
+            </Link>
+            <Link
+              href={`/TradingView?symbol=NSE:${encodeURIComponent(instrument.symbol)}`}
+              title={`Open ${instrument.symbol} in TradingView`}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "3px 8px",
+                borderRadius: 5,
+                fontSize: 11,
+                fontWeight: 600,
+                background: C.surface2,
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                textDecoration: "none",
+              }}
+            >
+              ⚡ TradingView ↗
+            </Link>
             <span style={{ fontSize: 10, color: C.muted, marginLeft: "auto" }}>{timestamp}</span>
           </div>
 

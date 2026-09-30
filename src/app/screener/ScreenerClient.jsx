@@ -26,7 +26,10 @@ import {
 } from "../actions/screenerAuth";
 import StockSignalModal from "../../components/StockSignalModal";
 import AppNavbar from "../../components/AppNavbar";
+import FO_LIST from "../../components/OptionChainNew/FOlist.js";
 import "./Screener.scss";
+
+const FO_SYMBOLS = new Set(FO_LIST.map((item) => item.symbol.toUpperCase()));
 
 // ── Watchlist Presets ────────────────────────────────────────────────────────
 const PRESETS = {
@@ -1417,6 +1420,22 @@ export default function ScreenerClient() {
                             title={`Open ${row.symbol} in Interactive Candlestick Chart`}
                           >
                             <FiExternalLink size={12} /> Chart
+                          </Link>
+                          {FO_SYMBOLS.has(row.symbol.toUpperCase()) && (
+                            <Link
+                              href={`/optionchain?symbol=${encodeURIComponent(row.symbol)}`}
+                              className="btn-table-action btn-options"
+                              title={`Open ${row.symbol} in Option Chain`}
+                            >
+                              Options
+                            </Link>
+                          )}
+                          <Link
+                            href={`/TradingView?symbol=NSE:${encodeURIComponent(row.symbol)}`}
+                            className="btn-table-action btn-tv"
+                            title={`Open ${row.symbol} in TradingView`}
+                          >
+                            TV
                           </Link>
                           <button
                             type="button"
