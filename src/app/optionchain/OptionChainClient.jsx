@@ -1,10 +1,12 @@
 "use client";
 
 import OptionChain from "../../components/OptionChainNew/index.jsx";
+import AppNavbar from "../../components/AppNavbar";
 
 export default function OptionChainClient() {
   return (
     <div>
+      <AppNavbar title="Panarwala Option Chain" />
       <h1 className="sr-only" style={{
         position: "absolute",
         width: "1px",

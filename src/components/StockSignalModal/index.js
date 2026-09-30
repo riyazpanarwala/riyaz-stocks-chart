@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import Modal from "../TechnicalInfo/Modal";
 import { getStockSignalAction } from "../../app/actions/stockSignal";
 import StockSignalAiCard from "./StockSignalAiCard";
+import FO_LIST from "../OptionChainNew/FOlist.js";
 import "./StockSignalModal.scss";
+
+const FO_SYMBOLS = new Set(FO_LIST.map((item) => item.symbol.toUpperCase()));
 
 /**
  * Modal dialog presenting algorithmic technical analysis, signal engine recommendations,
@@ -83,6 +87,8 @@ const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => 
     }
   };
 
+  const isFOSymbol = companyObj?.symbol && FO_SYMBOLS.has(companyObj.symbol.toUpperCase());
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="signal-modal-container">
@@ -98,6 +104,72 @@ const StockSignalModal = ({ companyObj, indexName, isOpen = true, onClose }) => 
             <p className="signal-subtitle">
               Ticker: {companyObj?.symbol} | ISIN: {companyObj?.value || instrument?.isin || "N/A"}
             </p>
+            {companyObj?.symbol && (
+              <div className="signal-modal-links" style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                <Link
+                  href={`/?symbol=${encodeURIComponent(companyObj.symbol)}`}
+                  className="btn-modal-link"
+                  title={`Open ${companyObj.symbol} in Candlestick Chart`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "3px 8px",
+                    borderRadius: 5,
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    background: "var(--surface-2, #161d2a)",
+                    color: "var(--accent, #38bdf8)",
+                    border: "1px solid var(--bd-dim, rgba(255, 255, 255, 0.1))",
+                    textDecoration: "none",
+                  }}
+                >
+                  📈 Chart ↗
+                </Link>
+                {isFOSymbol && (
+                  <Link
+                    href={`/optionchain?symbol=${encodeURIComponent(companyObj.symbol)}`}
+                    className="btn-modal-link"
+                    title={`Open ${companyObj.symbol} Option Chain`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "3px 8px",
+                      borderRadius: 5,
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      background: "rgba(192, 132, 252, 0.12)",
+                      color: "#c084fc",
+                      border: "1px solid rgba(192, 132, 252, 0.35)",
+                      textDecoration: "none",
+                    }}
+                  >
+                    📊 Options ↗
+                  </Link>
+                )}
+                <Link
+                  href={`/TradingView?symbol=${(indexName === "BSE_EQ" ? "BSE" : "NSE")}:${encodeURIComponent(companyObj.symbol)}`}
+                  className="btn-modal-link"
+                  title={`Open ${companyObj.symbol} in TradingView`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "3px 8px",
+                    borderRadius: 5,
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    background: "rgba(41, 98, 255, 0.12)",
+                    color: "#60a5fa",
+                    border: "1px solid rgba(41, 98, 255, 0.35)",
+                    textDecoration: "none",
+                  }}
+                >
+                  ⚡ TradingView ↗
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="signal-top-controls">

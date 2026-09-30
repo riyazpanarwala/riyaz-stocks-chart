@@ -1,4 +1,4 @@
-import ForexHeatMap from "../../../components/Forex/ForexHeatMap";
+import ForexClient from "./ForexClient";
 import { SITE_URL } from "../../../lib/siteConfig";
 
 export const metadata = {
@@ -44,12 +44,5 @@ export const metadata = {
 };
 
 export default function ForexPage() {
-  return (
-    <main style={{ padding: 20 }}>
-      <h1 style={{ textAlign: "center", marginBottom: 20 }}>
-        Live Forex Cross Rates Heat Map
-      </h1>
-      <ForexHeatMap theme="light" />
-    </main>
-  );
+  return <ForexClient />;
 }

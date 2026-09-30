@@ -37,8 +37,7 @@ export default function CorporateEventsModal({
 
   // Manage accessibility focus: capture trigger, focus inside dialog, trap tab, restore focus on unmount
   useEffect(() => {
-    previousActiveElementRef.current =
-      typeof document !== "undefined" ? document.activeElement : null;
+    previousActiveElementRef.current = document.activeElement;
 
     const timer = setTimeout(() => {
       if (closeBtnRef.current) {

@@ -8,6 +8,7 @@ import FiiDiiCard from "@/components/Sentiment/FiiDiiCard";
 import VixRegimeCard from "@/components/Sentiment/VixRegimeCard";
 import MarketBreadthCard from "@/components/Sentiment/MarketBreadthCard";
 import ValuationCard from "@/components/Sentiment/ValuationCard";
+import AppNavbar from "@/components/AppNavbar";
 import "./Sentiment.scss";
 
 /**
@@ -52,36 +53,7 @@ export default function SentimentClient({ initialData }) {
   return (
     <div className="sentiment-page">
       {/* ── Top Navigation Bar ── */}
-      <nav className="sentiment-nav" aria-label="Main Navigation">
-        <Link href="/" className="sentiment-brand">
-          <h1>
-            <FiCompass /> Panarwala Market Sentiment
-          </h1>
-        </Link>
-        <div className="sentiment-nav-links">
-          <Link href="/" className="nav-pill-link">
-            📈 Interactive Chart
-          </Link>
-          <Link href="/screener" className="nav-pill-link">
-            🔍 Signals Screener
-          </Link>
-          <Link href="/heatmap" className="nav-pill-link">
-            🗺️ Sector Heatmap
-          </Link>
-          <Link href="/sentiment" className="nav-pill-link active">
-            🌐 Market Sentiment
-          </Link>
-          <Link href="/briefing" className="nav-pill-link">
-            🤖 AI Briefing
-          </Link>
-          <Link href="/optionchain" className="nav-pill-link">
-            📊 Option Chain
-          </Link>
-          <Link href="/TradingView" className="nav-pill-link">
-            ⚡ TradingView
-          </Link>
-        </div>
-      </nav>
+      <AppNavbar title="Panarwala Market Sentiment" />
 
       {/* ── Main Dashboard Container ── */}
       <main className="sentiment-container">

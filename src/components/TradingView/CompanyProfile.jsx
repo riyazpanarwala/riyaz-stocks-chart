@@ -2,12 +2,12 @@
 import React from "react";
 import TradingViewEmbed from "./TradingViewEmbed";
 
-export default function CompanyProfile({ symbol = "BSE:TCS" }) {
+export default function CompanyProfile({ symbol = "BSE:TCS", theme = "dark" }) {
   const config = {
     symbol,
     width: "100%",
     height: "100%",
-    colorTheme: "light",
+    colorTheme: theme,
     isTransparent: true,
     locale: "en",
   };

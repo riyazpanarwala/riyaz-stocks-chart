@@ -17,6 +17,7 @@ import {
   FiEye,
   FiEyeOff,
   FiShield,
+  FiDownload,
 } from "react-icons/fi";
 import { getStockSignalAction } from "../actions/stockSignal";
 import {
@@ -25,7 +26,11 @@ import {
   lockScreenerAccessAction,
 } from "../actions/screenerAuth";
 import StockSignalModal from "../../components/StockSignalModal";
+import AppNavbar from "../../components/AppNavbar";
+import FO_LIST from "../../components/OptionChainNew/FOlist.js";
 import "./Screener.scss";
+
+const FO_SYMBOLS = new Set(FO_LIST.map((item) => item.symbol.toUpperCase()));
 
 // ── Watchlist Presets ────────────────────────────────────────────────────────
 const PRESETS = {
@@ -842,6 +847,7 @@ export default function ScreenerClient() {
                         ? "Insufficient Data"
                         : "Consolidation / Low Trend Momentum",
               performance: perf,
+              risk: sig.risk || null,
               timestamp: sig.timestamp,
             };
 
@@ -957,6 +963,81 @@ export default function ScreenerClient() {
     });
   }, [results, activeFilter, searchQuery]);
 
+  /**
+   * Exports the currently displayed/filtered screener results to a downloadable CSV file.
+   */
+  const handleExportCSV = useCallback(() => {
+    if (!filteredResults || filteredResults.length === 0) return;
+
+    const headers = [
+      "Symbol",
+      "Company Name",
+      "Price (INR)",
+      "Regime",
+      "Signal",
+      "Action",
+      "Bullish Score",
+      "Bearish Score",
+      "ADX (14)",
+      "RSI (14)",
+      "Status",
+      "Reason",
+      "Stop Loss",
+      "Target 1",
+      "Target 2",
+      "Scan Timestamp",
+    ];
+
+    const escapeCsv = (val, isNumeric = false) => {
+      if (val == null) return "";
+      const str = String(val);
+      const isNumericValue = isNumeric && /^-?(?:\d+(?:\.\d+)?|\.\d+)$/.test(str);
+      const safeStr = !isNumericValue && /^[=+\-@\t\r]/.test(str) ? `'${str}` : str;
+      return `"${safeStr.replace(/"/g, '""')}"`;
+    };
+
+    const rows = filteredResults.map((item) => [
+      item.symbol,
+      item.name || item.symbol,
+      item.price != null ? item.price.toFixed(2) : "",
+      item.regime || "",
+      item.signal || "",
+      item.action || "",
+      item.bullishScore ?? "",
+      item.bearishScore ?? "",
+      item.adx != null ? item.adx.toFixed(1) : "",
+      item.rsi != null ? item.rsi.toFixed(1) : "",
+      item.status || "",
+      item.reason || "",
+      item.risk?.stopLoss != null ? Number(item.risk.stopLoss).toFixed(2) : "",
+      item.risk?.target1 != null ? Number(item.risk.target1).toFixed(2) : "",
+      item.risk?.target2 != null ? Number(item.risk.target2).toFixed(2) : "",
+      item.timestamp || "",
+    ]);
+
+    const numericColumns = new Set([2, 6, 7, 8, 9, 12, 13, 14]);
+    const csvContent = [
+      headers.map((h) => escapeCsv(h, false)).join(","),
+      ...rows.map((row) =>
+        row.map((val, idx) => escapeCsv(val, numericColumns.has(idx))).join(",")
+      ),
+    ].join("\r\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const filterSlug = activeFilter.toLowerCase();
+    const presetSlug = activePreset.toLowerCase().replace(/[^a-z0-9]/g, "-");
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", `screener_${presetSlug}_${filterSlug}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [filteredResults, activeFilter, activePreset]);
+
   const progressPercent = scanProgress.total > 0
     ? Math.round((scanProgress.current / scanProgress.total) * 100)
     : 0;
@@ -964,44 +1045,18 @@ export default function ScreenerClient() {
   return (
     <div className="screener-page">
       {/* ── Top Navigation Bar ── */}
-      <nav className="screener-nav" aria-label="Main Navigation">
-        <Link href="/" className="screener-brand">
-          <h1>⚡ Panarwala Market Screener</h1>
-        </Link>
-        <div className="screener-nav-links">
-          <Link href="/" className="nav-pill-link">
-            📈 Interactive Chart
-          </Link>
-          <Link href="/screener" className="nav-pill-link active">
-            🔍 Signals Screener
-          </Link>
-          <Link href="/heatmap" className="nav-pill-link">
-            🗺️ Sector Heatmap
-          </Link>
-          <Link href="/sentiment" className="nav-pill-link">
-            🌐 Market Sentiment
-          </Link>
-          <Link href="/briefing" className="nav-pill-link">
-            🤖 AI Briefing
-          </Link>
-          <Link href="/optionchain" className="nav-pill-link">
-            📊 Option Chain
-          </Link>
-          <Link href="/TradingView" className="nav-pill-link">
-            ⚡ TradingView
-          </Link>
-          {isAuthenticated && (
-            <button
-              type="button"
-              onClick={handleLock}
-              className="nav-lock-btn"
-              title="Lock Screener Session"
-            >
-              <FiLock size={12} /> Lock
-            </button>
-          )}
-        </div>
-      </nav>
+      <AppNavbar title="Panarwala Market Screener">
+        {isAuthenticated && (
+          <button
+            type="button"
+            onClick={handleLock}
+            className="nav-lock-btn"
+            title="Lock Screener Session"
+          >
+            <FiLock size={12} /> Lock
+          </button>
+        )}
+      </AppNavbar>
 
       {/* ── Main Container ── */}
       <div className="screener-container">
@@ -1280,15 +1335,35 @@ export default function ScreenerClient() {
             </button>
           </div>
 
-          <div className="search-box">
-            <FiSearch size={14} color="#8b949e" />
-            <input
-              type="search"
-              placeholder="Search symbol or name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Filter scanned results"
-            />
+          <div className="filter-toolbar-right">
+            <div className="search-box">
+              <FiSearch size={14} color="#8b949e" />
+              <input
+                type="search"
+                placeholder="Search symbol or name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Filter scanned results"
+              />
+            </div>
+            <button
+              type="button"
+              className="btn-export-csv"
+              onClick={handleExportCSV}
+              disabled={filteredResults.length === 0}
+              title={
+                filteredResults.length === 0
+                  ? "Run a scan first to export data"
+                  : `Export ${filteredResults.length} scanned stocks to CSV`
+              }
+              aria-label="Export filtered results to CSV"
+            >
+              <FiDownload size={14} />
+              <span>Export CSV</span>
+              {filteredResults.length > 0 && (
+                <span className="export-count">({filteredResults.length})</span>
+              )}
+            </button>
           </div>
         </section>
 
@@ -1442,6 +1517,22 @@ export default function ScreenerClient() {
                             title={`Open ${row.symbol} in Interactive Candlestick Chart`}
                           >
                             <FiExternalLink size={12} /> Chart
+                          </Link>
+                          {FO_SYMBOLS.has(row.symbol.toUpperCase()) && (
+                            <Link
+                              href={`/optionchain?symbol=${encodeURIComponent(row.symbol)}`}
+                              className="btn-table-action btn-options"
+                              title={`Open ${row.symbol} in Option Chain`}
+                            >
+                              Options
+                            </Link>
+                          )}
+                          <Link
+                            href={`/TradingView?symbol=NSE:${encodeURIComponent(row.symbol)}`}
+                            className="btn-table-action btn-tv"
+                            title={`Open ${row.symbol} in TradingView`}
+                          >
+                            TV
                           </Link>
                           <button
                             type="button"

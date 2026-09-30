@@ -7,6 +7,7 @@ import { FiRefreshCw, FiSearch, FiLayers, FiTrendingUp } from "react-icons/fi";
 import MarketBreadthBar from "@/components/Heatmap/MarketBreadthBar";
 import SectorHeatmapGrid from "@/components/Heatmap/SectorHeatmapGrid";
 import SectorDetailDrawer from "@/components/Heatmap/SectorDetailDrawer";
+import AppNavbar from "@/components/AppNavbar";
 import "./Heatmap.scss";
 
 /**
@@ -127,36 +128,7 @@ export default function HeatmapClient({ initialData = null }) {
   return (
     <div className="heatmap-page">
       {/* ── Top Navigation Bar ── */}
-      <nav className="heatmap-nav" aria-label="Main Navigation">
-        <Link href="/" className="heatmap-brand">
-          <h1>
-            <FiLayers /> Panarwala Market Heatmap
-          </h1>
-        </Link>
-        <div className="heatmap-nav-links">
-          <Link href="/" className="nav-pill-link">
-            📈 Interactive Chart
-          </Link>
-          <Link href="/screener" className="nav-pill-link">
-            🔍 Signals Screener
-          </Link>
-          <Link href="/heatmap" className="nav-pill-link active">
-            🗺️ Sector Heatmap
-          </Link>
-          <Link href="/sentiment" className="nav-pill-link">
-            🌐 Market Sentiment
-          </Link>
-          <Link href="/briefing" className="nav-pill-link">
-            🤖 AI Briefing
-          </Link>
-          <Link href="/optionchain" className="nav-pill-link">
-            📊 Option Chain
-          </Link>
-          <Link href="/TradingView" className="nav-pill-link">
-            ⚡ TradingView
-          </Link>
-        </div>
-      </nav>
+      <AppNavbar title="Panarwala Market Heatmap" />
 
       {/* ── Main Container ── */}
       <main className="heatmap-container">

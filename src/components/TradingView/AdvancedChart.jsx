@@ -2,13 +2,13 @@
 import React from "react";
 import TradingViewEmbed from "./TradingViewEmbed";
 
-export default function AdvancedChart({ symbol = "BSE:TCS" }) {
+export default function AdvancedChart({ symbol = "BSE:TCS", theme = "dark" }) {
   const config = {
     autosize: true,
     symbol,
     interval: "D",
     timezone: "Asia/Kolkata",
-    theme: "light",
+    theme,
     style: "1",
     locale: "en",
     allow_symbol_change: true,

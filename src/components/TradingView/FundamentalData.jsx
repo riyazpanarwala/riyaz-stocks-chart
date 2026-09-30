@@ -2,10 +2,10 @@
 import React from "react";
 import TradingViewEmbed from "./TradingViewEmbed";
 
-export default function FundamentalData({ symbol = "BSE:TCS" }) {
+export default function FundamentalData({ symbol = "BSE:TCS", theme = "dark" }) {
   const config = {
     symbol,
-    colorTheme: "light",
+    colorTheme: theme,
     isTransparent: true,
     displayMode: "adaptive",
     width: "100%",

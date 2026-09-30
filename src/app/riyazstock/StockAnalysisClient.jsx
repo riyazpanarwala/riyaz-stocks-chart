@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import stocksAnalysis from "../../components/StockAnalysis";
+import AppNavbar from "../../components/AppNavbar";
 
 export default function StockAnalysisClient() {
   const [isRunning, setIsRunning] = useState(false);
@@ -28,7 +29,9 @@ export default function StockAnalysisClient() {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: "60px auto", padding: "32px", background: "#0e131f", borderRadius: 12, border: "1px solid #1e293b", color: "#e2e8f0", fontFamily: "sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg, #0a0e17)" }}>
+      <AppNavbar title="Batch Technical Analysis" />
+      <div style={{ maxWidth: 800, margin: "40px auto", padding: "32px", background: "var(--surface-1, #0e131f)", borderRadius: 12, border: "1px solid var(--bd-dim, #1e293b)", color: "var(--tx-primary, #e2e8f0)", fontFamily: "sans-serif" }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, color: "#38bdf8" }}>
         Automated Batch Technical Analysis
       </h1>
@@ -63,6 +66,7 @@ export default function StockAnalysisClient() {
           {statusMsg}
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -64,6 +64,7 @@ const CandleStickChart = () => {
     newIndexArr,
     candleData,
     period,
+    isFO,
   } = useCommonHeader();
 
   const corporateEventsCount = React.useMemo(() => {
@@ -73,6 +74,24 @@ const CandleStickChart = () => {
       const splitCount = c.splits?.length ?? (c.split ? 1 : 0);
       return count + divCount + splitCount;
     }, 0);
+  }, [candleData]);
+
+  // Compute 1D price delta and percentage change
+  const priceChange = React.useMemo(() => {
+    if (!candleData || candleData.length < 2) return null;
+    const latest = candleData.at(-1);
+    const prev = candleData.at(-2);
+    if (!Number.isFinite(latest?.close) || !Number.isFinite(prev?.close) || prev.close === 0) {
+      return null;
+    }
+    const delta = latest.close - prev.close;
+    const percent = (delta / prev.close) * 100;
+    return {
+      delta,
+      percent,
+      isPositive: delta > 0,
+      isNegative: delta < 0,
+    };
   }, [candleData]);
 
   const [isCompanyExist, setCompanyExist] = useState(
@@ -269,7 +288,31 @@ const CandleStickChart = () => {
               </h1>
               {Number.isFinite(candleData.at(-1)?.close) && (
                 <span className="stock-price" title="Latest loaded candle close">
-                  {candleData.at(-1).close.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ₹{candleData.at(-1).close.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              )}
+              {priceChange && (
+                <span
+                  className={`stock-change-badge ${
+                    priceChange.isPositive
+                      ? "change-positive"
+                      : priceChange.isNegative
+                        ? "change-negative"
+                        : "change-neutral"
+                  }`}
+                  title={`Change vs previous candle: ${priceChange.delta >= 0 ? "+" : ""}${priceChange.delta.toFixed(2)} (${priceChange.percent >= 0 ? "+" : ""}${priceChange.percent.toFixed(2)}%)`}
+                >
+                  <span className="change-arrow">
+                    {priceChange.isPositive ? "▲" : priceChange.isNegative ? "▼" : "•"}
+                  </span>
+                  <span className="change-delta">
+                    {priceChange.delta >= 0 ? "+" : ""}
+                    {priceChange.delta.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="change-percent">
+                    ({priceChange.percent >= 0 ? "+" : ""}
+                    {priceChange.percent.toFixed(2)}%)
+                  </span>
                 </span>
               )}
               </div>
@@ -288,6 +331,17 @@ const CandleStickChart = () => {
                 >
                   Technical Analysis
                 </ActionButton>
+                {isFO && companyObj?.symbol && (
+                  <Link
+                    href={`/optionchain?symbol=${encodeURIComponent(companyObj.symbol)}`}
+                    className="custom-button"
+                    aria-label={`Open Option Chain for ${getCompanyName()}`}
+                    title={`Live F&O Option Chain for ${getCompanyName()}`}
+                    style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                  >
+                    📊 Option Chain
+                  </Link>
+                )}
                 <ChartActionMenu label="Research ▾" accessibleLabel="Research tools">
                 <ActionButton
                   onClick={() => setSignalModalOpen(true)}
@@ -304,12 +358,20 @@ const CandleStickChart = () => {
                   🔍 Screener
                 </Link>
                 <Link
-                  href="/optionchain"
+                  href={companyObj?.symbol ? `/optionchain?symbol=${encodeURIComponent(companyObj.symbol)}` : "/optionchain"}
                   className="custom-button"
                   aria-label="Open NSE Option Chain Analysis"
                   style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
                 >
                   📊 Option Chain
+                </Link>
+                <Link
+                  href={companyObj?.symbol ? `/TradingView?symbol=${indexObj?.value === "BSE_EQ" ? "BSE" : "NSE"}:${encodeURIComponent(companyObj.symbol)}` : "/TradingView"}
+                  className="custom-button"
+                  aria-label="Open TradingView Advanced Chart"
+                  style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+                >
+                  ⚡ TradingView
                 </Link>
                 <Link
                   href="/briefing"

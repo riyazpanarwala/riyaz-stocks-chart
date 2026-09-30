@@ -481,6 +481,39 @@ header {
 .stock-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; min-width: 0; }
 .chart-shell .company-name { font-family: var(--font-ui); font-size: 16px !important; font-weight: 600; letter-spacing: 0; }
 .stock-price { font-family: var(--font-mono); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stock-change-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+.stock-change-badge .change-arrow {
+  font-size: 10px;
+  line-height: 1;
+}
+.stock-change-badge.change-positive {
+  background: var(--bull-soft);
+  color: var(--bull);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+.stock-change-badge.change-negative {
+  background: var(--bear-soft);
+  color: var(--bear);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.stock-change-badge.change-neutral {
+  background: var(--surface-3);
+  color: var(--tx-second);
+  border-color: var(--bd-dim);
+}
 .chart-shell .headerContent { padding: 14px 16px !important; gap: 12px; }
 .chart-shell .action-buttons { gap: 8px; overflow: visible; }
 .chart-shell .custom-button { min-height: 34px; }
