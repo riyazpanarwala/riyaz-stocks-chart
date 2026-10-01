@@ -252,7 +252,7 @@ export function calcInstitutional(rows, spot, atm, pcr) {
     if (r.PE.changeinOpenInterest < -avgPeDOI && r.PE.change < 0)
       signals.push({
         icon: "📉",
-        label: `Put sellers exiting at ${r.strikePrice} — downside selling pressure easing, possible bounce`,
+        label: `Put open interest and price falling at ${r.strikePrice} — downside pressure may be easing`,
         strike: r.strikePrice,
         conf: "MED",
       });

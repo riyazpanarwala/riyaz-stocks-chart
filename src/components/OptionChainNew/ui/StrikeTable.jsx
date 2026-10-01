@@ -192,7 +192,7 @@ export const StrikeTable = React.memo(function StrikeTable({
           {viewMode === "oi" ? (
             <span>Showing active contracts, today's position changes, and plain English market action</span>
           ) : (
-            <span>Delta (Δ) = Win Chance / Sensitivity | Theta (Θ) = Time decay lost per day in ₹/lot (lot size: {lotSize})</span>
+            <span>Delta (Δ) = Price Sensitivity (approx. chance of expiring ITM) | Theta (Θ) = Time decay lost per day in ₹/lot (lot size: {lotSize})</span>
           )}
         </div>
       </div>

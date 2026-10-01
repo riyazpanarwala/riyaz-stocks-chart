@@ -146,41 +146,41 @@ export function getPcrSentiment(pcr) {
   const val = Number(pcr) || 0;
   if (val >= 1.45) {
     return {
-      label: "Very Bullish (Strong Floor)",
+      label: "Very Bullish (Elevated Put OI)",
       sentiment: "bullish",
       color: "#3fb950",
-      description: "Massive support floor built below current price. Buyers are firmly in control; watch for quick profit-taking if market stretches too far.",
+      description: "Put open interest substantially exceeds Call open interest. Elevated ratio reflects strong bullish market positioning, though extreme levels can signal overbought conditions.",
     };
   }
   if (val >= 1.15) {
     return {
-      label: "Bullish (Buyers in Control)",
+      label: "Bullish (Put OI Dominant)",
       sentiment: "mild_bullish",
       color: "#56d364",
-      description: "Strong floor building beneath current price. Downside is well-protected by big market participants.",
+      description: "Put open interest is moderately higher than Call open interest, indicating positive broader market sentiment.",
     };
   }
   if (val >= 0.85) {
     return {
-      label: "Neutral (Sideways Range)",
+      label: "Neutral (Balanced Put/Call OI)",
       sentiment: "neutral",
       color: "#e3b341",
-      description: "Buyers and sellers are evenly balanced. Price is expected to consolidate sideways between support and resistance boundaries.",
+      description: "Put and Call open interest are relatively balanced, indicating neutral aggregate positioning across strikes.",
     };
   }
   if (val >= 0.6) {
     return {
-      label: "Bearish (Ceiling Overhead)",
+      label: "Bearish (Call OI Dominant)",
       sentiment: "mild_bearish",
       color: "#ff7b72",
-      description: "Sellers are adding ceilings overhead. Upward rallies are likely to face immediate resistance walls.",
+      description: "Call open interest is moderately higher than Put open interest, reflecting a cautious or defensive market bias.",
     };
   }
   return {
-    label: "Heavy Selling Overhead (Resistance Wall)",
+    label: "Very Bearish (Elevated Call OI)",
     sentiment: "bearish",
     color: "#f85149",
-    description: "Huge selling pressure capping upside. Market is heavily suppressed; beware of sharp relief bounce if resistance breaks.",
+    description: "Call open interest substantially exceeds Put open interest. Very low ratio reflects defensive positioning, though extreme lows can signal oversold conditions.",
   };
 }
 

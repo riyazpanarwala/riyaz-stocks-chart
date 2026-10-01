@@ -257,11 +257,11 @@ export const MaxPainPcrTracker = React.memo(function MaxPainPcrTracker({
           <div style={{ fontSize: 10, color: C.muted, marginTop: 6 }}>
             {Number.isFinite(volPcr) && volPcr > pcr ? (
               <span style={{ color: C.green }}>
-                ↑ More Puts traded today (Traders defending downside / expecting bounce)
+                ↑ Volume PCR is above OI PCR (Intraday volume skewed more towards Puts than open interest)
               </span>
             ) : Number.isFinite(volPcr) && volPcr < pcr ? (
               <span style={{ color: C.red }}>
-                ↓ More Calls traded today (Traders targeting upside / capping price)
+                ↓ Volume PCR is below OI PCR (Intraday volume skewed more towards Calls than open interest)
               </span>
             ) : (
               <span>Balanced volume & open interest ratio</span>

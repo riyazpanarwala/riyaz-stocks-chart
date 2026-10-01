@@ -115,8 +115,11 @@ export const OptionSpotChart = React.memo(function OptionSpotChart({
     return () => observer.disconnect();
   }, []);
 
+  const requestSeqRef = useRef(0);
+
   // Fetch candles
   const fetchCandles = useCallback(async () => {
+    const seq = ++requestSeqRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -132,6 +135,8 @@ export const OptionSpotChart = React.memo(function OptionSpotChart({
         fromDate,
       });
 
+      if (seq !== requestSeqRef.current) return;
+
       if (!res || res.error || !Array.isArray(res)) {
         throw new Error(res?.error || "No candlestick data available for this symbol");
       }
@@ -146,14 +151,23 @@ export const OptionSpotChart = React.memo(function OptionSpotChart({
           Number.isFinite(c.close)
       );
 
+      if (valid.length === 0) {
+        throw new Error("No candlestick data available for this symbol");
+      }
+
       valid.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       setCandles(valid);
       setHoverIdx(valid.length > 0 ? valid.length - 1 : null);
     } catch (err) {
+      if (seq !== requestSeqRef.current) return;
       console.error("[OptionSpotChart] Candle fetch failed:", err);
+      setCandles([]);
+      setHoverIdx(null);
       setError(err.message || "Failed to load candlestick chart");
     } finally {
-      setLoading(false);
+      if (seq === requestSeqRef.current) {
+        setLoading(false);
+      }
     }
   }, [instrument, interval]);
 
