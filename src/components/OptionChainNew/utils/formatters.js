@@ -72,10 +72,10 @@ export function atmShiftLabel(shift) {
  */
 export function buildupLabel(type) {
   const MAP = {
-    "Long Build-up":  "Fresh buying",
-    "Short Build-up": "Fresh selling",
-    "Short Covering": "Sellers exiting (price may rise)",
-    "Long Unwinding": "Buyers exiting (price may fall)",
+    "Long Build-up":  "Fresh buying (Bullish)",
+    "Short Build-up": "Sellers adding resistance/support",
+    "Short Covering": "Sellers trapped & exiting (Price may surge)",
+    "Long Unwinding": "Buyers exiting (Momentum fading)",
     "No Change":      "No activity",
   };
   return MAP[type] ?? type;

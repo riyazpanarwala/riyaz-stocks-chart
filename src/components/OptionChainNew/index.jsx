@@ -25,6 +25,7 @@ import { ExpiryCards }        from "./ui/ExpiryCards.jsx";
 import { MaxPainPcrTracker }  from "./ui/MaxPainPcrTracker.jsx";
 import { NextDaySignalPanel }  from "./ui/NextDaySignalPanel.jsx";
 import { StraddleBanner }     from "./ui/StraddleBanner.jsx";
+import { OptionSpotChart }    from "./ui/OptionSpotChart.jsx";
 
 // ─── Tab definition ───────────────────────────────────────────
 
@@ -297,6 +298,7 @@ export default function App({ initialSymbol = null }) {
             {/* Tab bar */}
             <div style={{ display: "flex", gap: 3, marginBottom: 10, borderBottom: `1px solid ${C.border}`, paddingBottom: 4, flexWrap: "wrap" }}>
               <Tab id="oi"       label="OI Chart"          activeTab={activeTab} setActiveTab={setActiveTab} />
+              <Tab id="candle"   label="🕯️ Candle Chart"   activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="doi"      label="ΔOI Activity"      activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="trend"    label="🎯 Max Pain & PCR" activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="table"    label="Strike Table"       activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -333,6 +335,16 @@ export default function App({ initialSymbol = null }) {
                   transition={{ duration: 0.2 }}
                 >
                   {activeTab === "oi"      && <OIChart chartData={chartData} atm={atm} maxPain={maxPain} sig={sig} />}
+                  {activeTab === "candle"  && (
+                    <OptionSpotChart
+                      instrument={instrument}
+                      spot={underlyingValue}
+                      atm={atm}
+                      maxPain={maxPain}
+                      sig={sig}
+                      straddleInfo={straddleInfo}
+                    />
+                  )}
                   {activeTab === "doi"     && <DeltaOIChart chartData={chartData} atm={atm} />}
                   {activeTab === "trend"   && (
                     <MaxPainPcrTracker

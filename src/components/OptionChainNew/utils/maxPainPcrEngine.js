@@ -146,41 +146,41 @@ export function getPcrSentiment(pcr) {
   const val = Number(pcr) || 0;
   if (val >= 1.45) {
     return {
-      label: "Extreme Put Writing",
+      label: "Very Bullish (Elevated Put OI)",
       sentiment: "bullish",
       color: "#3fb950",
-      description: "Aggressive PE writing dominance. High institutional support floor; watch for overbought profit-booking or squeeze if spot corrects.",
+      description: "Put open interest substantially exceeds Call open interest. Elevated ratio reflects strong bullish market positioning, though extreme levels can signal overbought conditions.",
     };
   }
   if (val >= 1.15) {
     return {
-      label: "Bullish Put Writing",
+      label: "Bullish (Put OI Dominant)",
       sentiment: "mild_bullish",
       color: "#56d364",
-      description: "Put writers outweigh call writers. Buyers control the tape with steady support building beneath ATM.",
+      description: "Put open interest is moderately higher than Call open interest, indicating positive broader market sentiment.",
     };
   }
   if (val >= 0.85) {
     return {
-      label: "Neutral / Rangebound",
+      label: "Neutral (Balanced Put/Call OI)",
       sentiment: "neutral",
       color: "#e3b341",
-      description: "Balanced equilibrium between Call and Put writers. Expected sideways consolidation within support and resistance boundaries.",
+      description: "Put and Call open interest are relatively balanced, indicating neutral aggregate positioning across strikes.",
     };
   }
   if (val >= 0.6) {
     return {
-      label: "Bearish Call Writing",
+      label: "Bearish (Call OI Dominant)",
       sentiment: "mild_bearish",
       color: "#ff7b72",
-      description: "Call writers dominating overhead strikes. Rallies likely to face immediate supply walls.",
+      description: "Call open interest is moderately higher than Put open interest, reflecting a cautious or defensive market bias.",
     };
   }
   return {
-    label: "Extreme Call Writing (Oversold)",
+    label: "Very Bearish (Elevated Call OI)",
     sentiment: "bearish",
     color: "#f85149",
-    description: "Massive CE writing overhead. Market technically oversold; high risk of sharp short-covering bounce if resistance breaks.",
+    description: "Call open interest substantially exceeds Put open interest. Very low ratio reflects defensive positioning, though extreme lows can signal oversold conditions.",
   };
 }
 

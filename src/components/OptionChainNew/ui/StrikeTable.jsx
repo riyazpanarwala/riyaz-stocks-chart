@@ -35,13 +35,13 @@ function getStrikeBuildup(row, atm) {
   if (side === "CE") {
     switch (buType) {
       case "Long Build-up":
-        return { label: "CE Long Build-up (Bullish)", color: C.green };
+        return { label: "Fresh Call Buying (Bullish)", color: C.green };
       case "Short Build-up":
-        return { label: "CE Call Writing (Resistance)", color: C.red };
+        return { label: "Sellers Adding Resistance (Ceiling)", color: C.red };
       case "Short Covering":
-        return { label: "CE Short Covering (Squeeze)", color: C.blue };
+        return { label: "Call Sellers Trapped (Fast Rally)", color: C.blue };
       case "Long Unwinding":
-        return { label: "CE Long Unwinding", color: C.muted };
+        return { label: "Call Buyers Exiting (Weakening)", color: C.muted };
       default:
         return { label: buType, color: C.muted };
     }
@@ -49,20 +49,20 @@ function getStrikeBuildup(row, atm) {
     // PE side
     switch (buType) {
       case "Long Build-up":
-        return { label: "PE Put Buying (Bearish)", color: C.red };
+        return { label: "Fresh Put Buying (Bearish)", color: C.red };
       case "Short Build-up":
-        return { label: "PE Put Writing (Support)", color: C.green };
+        return { label: "Buyers Defending Floor (Support)", color: C.green };
       case "Short Covering":
-        return { label: "PE Short Covering", color: C.blue };
+        return { label: "Put Sellers Panic-Exiting", color: C.blue };
       case "Long Unwinding":
-        return { label: "PE Put Unwinding (Exit)", color: C.muted };
+        return { label: "Put Buyers Exiting (Bounce Likely)", color: C.muted };
       default:
         return { label: buType, color: C.muted };
     }
   }
 }
 
-const OI_HEADERS = ["Call OI", "Call ΔOI", "Call Price", "STRIKE", "Put OI", "Put ΔOI", "Put Price", "What's Happening"];
+const OI_HEADERS = ["Call OI (Bets)", "Call ΔOI (Today)", "Call Price", "STRIKE", "Put OI (Bets)", "Put ΔOI (Today)", "Put Price", "What's Happening"];
 const GREEKS_HEADERS = ["Call IV", "Call Delta (Δ)", "Call Theta (₹/lot)", "STRIKE", "Put Theta (₹/lot)", "Put Delta (Δ)", "Put IV", "Gamma / Vega"];
 
 const StrikeRowOI = React.memo(function StrikeRowOI({ row, atm, sig }) {
@@ -190,9 +190,9 @@ export const StrikeTable = React.memo(function StrikeTable({
 
         <div style={{ fontSize: 10, color: C.muted }}>
           {viewMode === "oi" ? (
-            <span>Showing live OI, net changes, and side-aware buildup</span>
+            <span>Showing active contracts, today's position changes, and plain English market action</span>
           ) : (
-            <span>Delta (Δ) = ITM Prob | Theta (Θ) = Daily decay in ₹/lot (lot size: {lotSize})</span>
+            <span>Delta (Δ) = Price Sensitivity (approx. chance of expiring ITM) | Theta (Θ) = Time decay lost per day in ₹/lot (lot size: {lotSize})</span>
           )}
         </div>
       </div>
