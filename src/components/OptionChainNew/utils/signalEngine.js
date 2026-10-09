@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 import { pcrLabel } from "./formatters.js";
 import { topResistance, topSupport, strikePitch } from "./parsers.js";
+import { beforeEntryCutoff, buildPositionPlan, confirmedDirection, expiryIsActive, isFresh, liquidQuote, marketTimestamp } from "./tradeRules.js";
 
 /**
  * @typedef {import("./parsers.js").OptionRow} OptionRow
@@ -42,7 +43,7 @@ export function sigMeta(rawSignal) {
  *   distToRes: number|null, distToSup: number|null
  * }}
  */
-export function generateSignal(rows, atm, pcr, spot) {
+export function generateSignal(rows, atm, pcr, spot, context = {}) {
   if (!rows || !rows.length) {
     return {
       signal: "WAIT — No clear direction",
@@ -59,7 +60,7 @@ export function generateSignal(rows, atm, pcr, spot) {
     };
   }
 
-  const atmRow = rows.find((r) => r.strikePrice === atm) ?? rows[0];
+  const atmRow = rows.find((r) => r.strikePrice === atm);
   const pitch = strikePitch(rows);
 
   const resistance = topResistance(rows, spot);
@@ -77,8 +78,16 @@ export function generateSignal(rows, atm, pcr, spot) {
 
   // ── Factor 1: Intraday Price-Action Trend from ATM Premiums (25 pts) ──────
   // When Call premiums are expanding and Put premiums decaying, spot is trending up.
-  const atmCeChg = atmRow?.CE?.change ?? 0;
-  const atmPeChg = atmRow?.PE?.change ?? 0;
+  const previousAtm = context.prevRows?.find((r) => r.strikePrice === atm);
+  const snapshotsValid = isFresh(context.timestamp, context.now) && isFresh(context.prevTimestamp, context.now) &&
+    marketTimestamp(context.timestamp) > marketTimestamp(context.prevTimestamp);
+  const atmCeChg = snapshotsValid && previousAtm?.CE?.lastPrice > 0 ? atmRow?.CE?.lastPrice - previousAtm.CE.lastPrice : 0;
+  const atmPeChg = snapshotsValid && previousAtm?.PE?.lastPrice > 0 ? atmRow?.PE?.lastPrice - previousAtm.PE.lastPrice : 0;
+  const candleBias = confirmedDirection({ candles: context.candles, now: context.now, spot });
+  const legChange = (r, side, field) => {
+    const old = context.prevRows?.find((p) => p.strikePrice === r.strikePrice)?.[side];
+    return snapshotsValid && old ? Number(r[side]?.[field]) - Number(old[field]) : 0;
+  };
   let priceBias = 0;
   if (atmCeChg > 0 && atmPeChg < 0) {
     priceBias = 1;
@@ -91,24 +100,25 @@ export function generateSignal(rows, atm, pcr, spot) {
   // ── Factor 2: Cluster OI Change around ATM (25 pts) ──────────────────────
   // Evaluate ATM ± 1 pitch cluster instead of a fragile single strike
   const nearRows = rows.filter((r) => Math.abs(r.strikePrice - atm) <= pitch);
-  const nearCeDelta = nearRows.reduce((s, r) => s + (r.CE?.changeinOpenInterest || 0), 0);
-  const nearPeDelta = nearRows.reduce((s, r) => s + (r.PE?.changeinOpenInterest || 0), 0);
+  const nearCeDelta = nearRows.reduce((s, r) => s + legChange(r, "CE", "openInterest"), 0);
+  const nearPeDelta = nearRows.reduce((s, r) => s + legChange(r, "PE", "openInterest"), 0);
+  const writing = (r, side) => legChange(r, side, "openInterest") > 0 && legChange(r, side, "lastPrice") < 0;
 
   // Check Call unwinding above ATM and Put unwinding below ATM
   const callsAbove = rows.filter((r) => r.strikePrice >= atm && r.strikePrice <= atm + pitch * 2);
-  const ceUnwindCount = callsAbove.filter((r) => (r.CE?.changeinOpenInterest || 0) < 0).length;
+  const ceUnwindCount = callsAbove.filter((r) => legChange(r, "CE", "openInterest") < 0 && legChange(r, "CE", "lastPrice") > 0).length;
   const putsBelow = rows.filter((r) => r.strikePrice <= atm && r.strikePrice >= atm - pitch * 2);
-  const peUnwindCount = putsBelow.filter((r) => (r.PE?.changeinOpenInterest || 0) < 0).length;
+  const peUnwindCount = putsBelow.filter((r) => legChange(r, "PE", "openInterest") < 0 && legChange(r, "PE", "lastPrice") > 0).length;
 
   let oiChangeBias = 0;
-  const peDominant = nearPeDelta > 0 && (nearCeDelta <= 0 || nearPeDelta > nearCeDelta * 1.35);
-  const ceDominant = nearCeDelta > 0 && (nearPeDelta <= 0 || nearCeDelta > nearPeDelta * 1.35);
+  const peDominant = nearRows.some((r) => writing(r, "PE")) && nearPeDelta > 0 && (nearCeDelta <= 0 || nearPeDelta > nearCeDelta * 1.35);
+  const ceDominant = nearRows.some((r) => writing(r, "CE")) && nearCeDelta > 0 && (nearPeDelta <= 0 || nearCeDelta > nearPeDelta * 1.35);
   const noDominance = !peDominant && !ceDominant;
 
-  if (peDominant || (noDominance && nearPeDelta > 0 && ceUnwindCount > peUnwindCount)) {
+  if (peDominant || (noDominance && nearRows.some((r) => writing(r, "PE")) && nearPeDelta > 0 && ceUnwindCount > peUnwindCount)) {
     oiChangeBias = 1;
     bullScore += 25;
-  } else if (ceDominant || (noDominance && nearCeDelta > 0 && peUnwindCount > ceUnwindCount)) {
+  } else if (ceDominant || (noDominance && nearRows.some((r) => writing(r, "CE")) && nearCeDelta > 0 && peUnwindCount > ceUnwindCount)) {
     oiChangeBias = -1;
     bearScore += 25;
   }
@@ -116,10 +126,10 @@ export function generateSignal(rows, atm, pcr, spot) {
   // ── Factor 3: PCR Sentiment (20 pts) ─────────────────────────────────────
   // +Infinity (CE OI = 0, PE > 0) is bullish; NaN/missing is neutral
   let pcrBias = 0;
-  if (pcr > 1.25) {
+  if (Number.isFinite(pcr) && pcr > 1.25) {
     pcrBias = 1;
     bullScore += 20;
-  } else if (Number.isFinite(pcr) && pcr < 0.80) {
+  } else if (Number.isFinite(pcr) && pcr > 0 && pcr < 0.80) {
     pcrBias = -1;
     bearScore += 20;
   }
@@ -129,9 +139,9 @@ export function generateSignal(rows, atm, pcr, spot) {
   const nearCeVol = nearRows.reduce((s, r) => s + (r.CE?.totalTradedVolume || 0), 0);
   const nearPeVol = nearRows.reduce((s, r) => s + (r.PE?.totalTradedVolume || 0), 0);
 
-  if (priceBias === 1 && nearCeVol >= nearPeVol * 0.85) {
+  if (priceBias === 1 && nearCeVol > 0 && nearCeVol >= nearPeVol * 0.85) {
     bullScore += 15;
-  } else if (priceBias === -1 && nearPeVol >= nearCeVol * 0.85) {
+  } else if (priceBias === -1 && nearPeVol > 0 && nearPeVol >= nearCeVol * 0.85) {
     bearScore += 15;
   } else if (priceBias === 0) {
     if (oiChangeBias === 1 && nearPeVol > nearCeVol * 1.25) {
@@ -172,12 +182,25 @@ export function generateSignal(rows, atm, pcr, spot) {
 
   // Disciplined rules: require strong score on the winning side, minimal conflicting evidence
   let rawSignal = "NO TRADE";
-  if (bullScore >= 50 && bearScore <= 20 && netBias >= 30) {
+  const ready = context.marketOpen === true && beforeEntryCutoff(context.now) && snapshotsValid && Number.isFinite(spot) && spot > 0 &&
+    expiryIsActive(atmRow?.CE?.expiryDate, context.now) && expiryIsActive(atmRow?.PE?.expiryDate, context.now);
+  if (ready && candleBias === 1 && priceBias === 1 && liquidQuote(atmRow?.CE).valid && bullScore >= 50 && bearScore <= 20 && netBias >= 30) {
     rawSignal = "BUY CALL";
-  } else if (bearScore >= 50 && bullScore <= 20 && netBias <= -30) {
+  } else if (ready && candleBias === -1 && priceBias === -1 && liquidQuote(atmRow?.PE).valid && bearScore >= 50 && bullScore <= 20 && netBias <= -30) {
     rawSignal = "BUY PUT";
   }
 
+  const side = rawSignal === "BUY CALL" ? "CE" : rawSignal === "BUY PUT" ? "PE" : null;
+  const reversalSignal = rawSignal;
+  const contract = side ? { strike: atm, side, expiry: atmRow?.[side]?.expiryDate, ...liquidQuote(atmRow?.[side]) } : null;
+  const plan = side ? buildPositionPlan({ side, entryPrice: contract.ask, spot,
+    invalidationSpot: side === "CE" ? closestSup : closestRes,
+    targetSpot: side === "CE" ? closestRes : closestSup }) : null;
+  const reason = !ready ? "Waiting for fresh market snapshots during the session." :
+    !candleBias || candleBias !== priceBias ? "Waiting for two completed 5-minute candles and matching premium movement." :
+    side && !plan?.eligible ? "Available support/resistance room does not meet 1:1.5 risk/reward." :
+    !side ? "Price, OI or executable liquidity does not confirm an entry." : "Entry confirmed; recheck the quote before recording a fill.";
+  if (side && !plan?.eligible) rawSignal = "NO TRADE";
   const signal =
     rawSignal === "BUY CALL"
       ? "LIKELY UP — Consider buying a Call"
@@ -207,6 +230,11 @@ export function generateSignal(rows, atm, pcr, spot) {
     rawSignal,
     strength,
     strengthLabel,
+    reason,
+    confirmed: reversalSignal !== "NO TRADE",
+    reversalSignal,
+    contract: rawSignal !== "NO TRADE" ? contract : null,
+    tradePlan: rawSignal !== "NO TRADE" ? plan : null,
     pcr: Number.isFinite(pcr) ? pcr.toFixed(2) : "—",
     pcrBias: pcrLabel(pcr),
     oiChangeBias: oiChangeBiasLabel,

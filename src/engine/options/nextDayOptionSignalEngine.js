@@ -14,6 +14,7 @@ import {
   topSupport,
   buildupType,
 } from "../../components/OptionChainNew/utils/parsers.js";
+import { buildPositionPlan, confirmedDirection, expiryIsActive, isolateExpiry, isFresh, liquidQuote } from "../../components/OptionChainNew/utils/tradeRules.js";
 
 /**
  * Standard NIFTY strike interval
@@ -273,8 +274,8 @@ export function analyzeOILevels(rows, spot, atm) {
       return a.strikePrice - b.strikePrice;
     });
 
-  const resistance1 = callsAboveSpot[0]?.strikePrice ?? (atm + 100);
-  const resistance2 = callsAboveSpot[1]?.strikePrice ?? (atm + 200);
+  const resistance1 = callsAboveSpot[0]?.strikePrice ?? null;
+  const resistance2 = callsAboveSpot[1]?.strikePrice ?? null;
 
   // Supports below spot (sort by highest PE OI + highest PE addition, tie-break closest to spot)
   const putsBelowSpot = rows
@@ -286,8 +287,8 @@ export function analyzeOILevels(rows, spot, atm) {
       return b.strikePrice - a.strikePrice;
     });
 
-  const support1 = putsBelowSpot[0]?.strikePrice ?? (atm - 100);
-  const support2 = putsBelowSpot[1]?.strikePrice ?? (atm - 200);
+  const support1 = putsBelowSpot[0]?.strikePrice ?? null;
+  const support2 = putsBelowSpot[1]?.strikePrice ?? null;
 
   return {
     support1,
@@ -419,18 +420,18 @@ export function calculateWeightedOptionScore({
   const atmPeOI = Number(atmRow?.PE?.openInterest) || 0;
   const atmCeOI = Number(atmRow?.CE?.openInterest) || 0;
 
-  if (oiLevels.support1 >= atm - 50 && atmPeOI >= atmCeOI) {
+  if (oiLevels.support1 != null && atmPeOI > 0 && oiLevels.support1 >= atm - 50 && atmPeOI >= atmCeOI) {
     bullOiSupport = 15;
     confirmedBullish.push(`OI Support: Strong Put base anchored at/near ATM (₹${oiLevels.support1})`);
-  } else if (oiLevels.support1 >= spot - 100) {
+  } else if (oiLevels.support1 != null && atmPeOI > 0 && oiLevels.support1 >= spot - 100) {
     bullOiSupport = 10;
     confirmedBullish.push(`OI Support: Solid Put concentration near spot (₹${oiLevels.support1})`);
   }
 
-  if (oiLevels.resistance1 <= atm + 50 && atmCeOI >= atmPeOI) {
+  if (oiLevels.resistance1 != null && atmCeOI > 0 && oiLevels.resistance1 <= atm + 50 && atmCeOI >= atmPeOI) {
     bearOiResistance = 15;
     confirmedBearish.push(`OI Resistance: Heavy Call wall overhead at/near ATM (₹${oiLevels.resistance1})`);
-  } else if (oiLevels.resistance1 <= spot + 100) {
+  } else if (oiLevels.resistance1 != null && atmCeOI > 0 && oiLevels.resistance1 <= spot + 100) {
     bearOiResistance = 10;
     confirmedBearish.push(`OI Resistance: Heavy Call supply capping spot (₹${oiLevels.resistance1})`);
   }
@@ -438,10 +439,10 @@ export function calculateWeightedOptionScore({
   // 4. Call OI Unwinding / Put OI Unwinding (+/- 10)
   // Near or above ATM Call unwinding is strongly bullish
   const callsNearAtm = rows.filter((r) => r.strikePrice >= atm && r.strikePrice <= atm + 200);
-  const callUnwindingCount = callsNearAtm.filter((r) => (Number(r.CE?.changeinOpenInterest) || 0) < 0).length;
+  const callUnwindingCount = callsNearAtm.filter((r) => Number(r.CE?.changeinOpenInterest) < 0 && Number(r.CE?.change) > 0).length;
 
   const putsNearAtm = rows.filter((r) => r.strikePrice <= atm && r.strikePrice >= atm - 200);
-  const putUnwindingCount = putsNearAtm.filter((r) => (Number(r.PE?.changeinOpenInterest) || 0) < 0).length;
+  const putUnwindingCount = putsNearAtm.filter((r) => Number(r.PE?.changeinOpenInterest) < 0 && Number(r.PE?.change) > 0).length;
 
   if (callUnwindingCount >= 2) {
     bullCallUnwinding = 10;
@@ -458,8 +459,8 @@ export function calculateWeightedOptionScore({
   }
 
   // 5. Put Writing / Call Writing (+/- 10)
-  const peAddNearAtm = putsNearAtm.reduce((acc, r) => acc + (Number(r.PE?.changeinOpenInterest) || 0), 0);
-  const ceAddNearAtm = callsNearAtm.reduce((acc, r) => acc + (Number(r.CE?.changeinOpenInterest) || 0), 0);
+  const peAddNearAtm = putsNearAtm.reduce((acc, r) => acc + (Number(r.PE?.change) < 0 ? Math.max(0, Number(r.PE?.changeinOpenInterest) || 0) : 0), 0);
+  const ceAddNearAtm = callsNearAtm.reduce((acc, r) => acc + (Number(r.CE?.change) < 0 ? Math.max(0, Number(r.CE?.changeinOpenInterest) || 0) : 0), 0);
 
   if (peAddNearAtm > 0 && peAddNearAtm > ceAddNearAtm * 1.5) {
     bullPutWriting = 10;
@@ -621,11 +622,12 @@ export function selectOptionToBuy({ signal, rows, atm, expiry = "Current Expiry"
     const oi = Number(leg.openInterest) || 0;
     const vol = Number(leg.totalTradedVolume) || 0;
     const iv = Number(leg.impliedVolatility) || 0;
-    const bid = Number(leg.bidprice) || Number(leg.bid) || 0;
-    const ask = Number(leg.askPrice) || Number(leg.ask) || 0;
+    const bid = liquidQuote(leg).bid;
+    const ask = liquidQuote(leg).ask;
 
-    const spread = ask > 0 && bid > 0 ? ask - bid : 0;
-    const spreadPct = ltp > 0 ? (spread / ltp) * 100 : 0;
+    if (!liquidQuote(leg).valid || (expiry !== "Current Expiry" && leg.expiryDate !== expiry)) return null;
+    const spread = ask - bid;
+    const spreadPct = liquidQuote(leg).spreadPct;
 
     return {
       strike,
@@ -635,7 +637,7 @@ export function selectOptionToBuy({ signal, rows, atm, expiry = "Current Expiry"
       ltp,
       oi,
       volume: vol,
-      iv: iv > 0 ? iv : 14.5,
+      iv: iv > 0 ? iv : null,
       bid,
       ask,
       spread,
@@ -684,6 +686,9 @@ export function calculateNextDayTradeLevels({
   low,
   oiLevels,
   optionSelected,
+  entryPrice = null,
+  liveSpot = null,
+  roundTripCost = 0,
 }) {
   if (signal === "NO TRADE" || !optionSelected) {
     return {
@@ -698,7 +703,7 @@ export function calculateNextDayTradeLevels({
   }
 
   const isCE = signal === "BUY CE";
-  const premium = optionSelected.ltp;
+  const premium = optionSelected.ask;
 
   // Spot entry trigger based on high/low and key levels
   // For CE: NIFTY sustains above (slightly above day high or closest resistance)
@@ -708,53 +713,55 @@ export function calculateNextDayTradeLevels({
 
   if (isCE) {
     triggerSpot = Math.max(Math.round(high), Math.round(spot + 20));
-    invalidationSpot = Math.round(Math.min(oiLevels.support1, spot - 60));
+    invalidationSpot = oiLevels.support1 != null ? Math.round(oiLevels.support1) : null;
   } else {
     triggerSpot = Math.min(Math.round(low), Math.round(spot - 20));
-    invalidationSpot = Math.round(Math.max(oiLevels.resistance1, spot + 60));
+    invalidationSpot = oiLevels.resistance1 != null ? Math.round(oiLevels.resistance1) : null;
   }
 
   // Option Premium Calculations
   // Delta approximation: ATM delta ~ 0.50, ITM delta ~ 0.60
   const delta = optionSelected.isItm ? 0.6 : 0.5;
 
-  // Option Entry Zone: Expected premium band near market open around trigger
-  const lowerEntry = Math.max(1, Math.round(premium * 0.96));
-  const upperEntry = Math.round(premium * 1.05);
+  // Indicative delta projection to the underlying trigger; execution must be requoted.
+  const direction = isCE ? 1 : -1;
+  const referenceSpot = liveSpot ?? triggerSpot;
+  const referencePremium = entryPrice ?? (premium + direction * (triggerSpot - spot) * delta);
+  const projectedTarget = triggerSpot + direction * (high - low);
+  const barriers = (isCE ? [oiLevels.resistance1, oiLevels.resistance2] : [oiLevels.support1, oiLevels.support2])
+    .filter((n) => Number.isFinite(n) && direction * (n - triggerSpot) > 0);
+  const targetSpot = barriers.length ? (isCE ? Math.min(projectedTarget, ...barriers) : Math.max(projectedTarget, ...barriers)) : projectedTarget;
+  const plan = buildPositionPlan({ side: isCE ? "CE" : "PE", entryPrice: referencePremium, spot: referenceSpot,
+    invalidationSpot, targetSpot, target2Spot: targetSpot, delta, roundTripCost });
 
-  // Stop Loss:
-  // Option stop: ~25% to 30% of premium, aligned with underlying invalidation
-  const underlyingRiskPts = Math.abs(triggerSpot - invalidationSpot);
-  const impliedOptionRisk = Math.round(underlyingRiskPts * delta);
+  // Keep the premium stop aligned with underlying invalidation; reject impossible stops.
+  const stopLoss = plan?.stopLoss ?? 0;
+  const maxRisk = plan?.maxRisk ?? 0;
 
-  // Cap option risk between 20% and 35% of premium to prevent excessively tight or disastrous stops
-  const calculatedStopRisk = Math.min(
-    Math.round(premium * 0.35),
-    Math.max(Math.round(premium * 0.22), impliedOptionRisk)
-  );
+  // Targets reflect the measured range capped by observed opposing OI levels.
+  const target1 = plan?.target1 ?? 0;
+  const target2 = plan?.target2 ?? 0;
 
-  const stopLoss = Math.max(1, Math.round(premium - calculatedStopRisk));
-  const maxRisk = premium - stopLoss;
-
-  // Targets (Minimum 1 : 1.5, preferably 1 : 2)
-  const target1 = Math.round(premium + maxRisk * 1.5);
-  const target2 = Math.round(premium + maxRisk * 2.2);
-
-  const riskRewardRatio = maxRisk > 0 ? Number(((target1 - premium) / maxRisk).toFixed(1)) : 1.5;
+  const riskRewardRatio = plan?.riskRewardRatio ?? 0;
 
   const entryTriggerText = isCE
-    ? `NIFTY sustains above ${triggerSpot}`
-    : `NIFTY sustains below ${triggerSpot}`;
+    ? `NIFTY sustains above ${triggerSpot} for two completed 5-minute candles`
+    : `NIFTY sustains below ${triggerSpot} for two completed 5-minute candles`;
 
   const invalidationText = isCE
-    ? `NIFTY slips below ${invalidationSpot} or fails to sustain above ${triggerSpot} within first 15 mins.`
-    : `NIFTY climbs above ${invalidationSpot} or fails to sustain below ${triggerSpot} within first 15 mins.`;
+    ? `NIFTY slips below ${invalidationSpot}. Enter only after two completed 5-minute closes above ${triggerSpot}.`
+    : `NIFTY climbs above ${invalidationSpot}. Enter only after two completed 5-minute closes below ${triggerSpot}.`;
 
   return {
     triggerSpot,
     invalidationSpot,
     entryTrigger: entryTriggerText,
-    entryZone: `₹${lowerEntry} – ₹${upperEntry}`,
+    entryZone: entryPrice == null ? "Requote after the trigger; no fixed next-day premium entry band." : `Actual fill ₹${entryPrice}`,
+    referencePremium,
+    targetSpot,
+    indicative: entryPrice == null,
+    requiresRevalidation: true,
+    exitRule: "Sell the held option at stop, target, underlying invalidation, confirmed reversal, or 15:20 IST.",
     stopLoss,
     target1,
     target2,
@@ -822,10 +829,18 @@ export function generate315NextDayOptionSignal({
   intradayCandles = [],
   analysisDate = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }),
   expiry = null,
+  requireFreshData = false,
+  now = Date.now(),
+  analysisTime = "3:15 PM IST",
+  marketOpen = true,
 }) {
+  if (optionChain) {
+    const isolated = isolateExpiry(optionChain.displayData ?? optionChain.data ?? [], expiry ?? optionChain.expiry);
+    optionChain = { ...optionChain, displayData: isolated.rows, expiry: isolated.expiry };
+  }
   // 1. Data Integrity Guard
   const validation = validateOptionChainData(optionChain);
-  if (!validation.valid || !spotData || !spotData.spot) {
+  if (!validation.valid || !spotData || !Number.isFinite(Number(spotData.spot)) || Number(spotData.spot) <= 0) {
     return {
       status: "DATA_UNAVAILABLE",
       signal: "NO TRADE",
@@ -902,6 +917,11 @@ export function generate315NextDayOptionSignal({
     primarySignal = "BUY PE";
     activeConfirmedList = [...confirmedFactors.bearish];
   }
+  if (requireFreshData && (!marketOpen || !expiryIsActive(detectedExpiry, now) || !isFresh(optionChain.timestamp, now) ||
+      confirmedDirection({ candles: intradayCandles.map((c) => ({ ...c, date: c.date })), now, spot }) !== (primarySignal === "BUY CE" ? 1 : primarySignal === "BUY PE" ? -1 : 0))) {
+    primarySignal = "NO TRADE";
+    noTradeReason = "Fresh option quotes and two completed 5-minute candles are required.";
+  }
 
   // 6. Option Selection
   const optionSelected = selectOptionToBuy({
@@ -954,7 +974,9 @@ export function generate315NextDayOptionSignal({
   return {
     status: "SUCCESS",
     date: analysisDate,
-    time: "3:15 PM IST",
+    time: analysisTime,
+    setupOnly: true,
+    requiresRevalidation: true,
     spot,
     dayChangePct: Number(msInfo.dayChangePct.toFixed(2)),
     marketStructure: msInfo.structure,
@@ -1006,7 +1028,7 @@ Never fabricate option-chain values. Wait for active market connection before pl
   const premiumText = opt ? `₹${opt.ltp}` : "—";
   const whyLines = res.whyReasons?.length
     ? res.whyReasons.map((r, i) => `${i + 1}. ${r}`).join("\n")
-    : "1. Conflicting directional indications between Call & Put open interest\n2. Rangebound equilibrium near ATM strikes";
+    : res.reason || "No confirmed directional setup.";
 
   return `NIFTY NEXT-DAY OPTION SIGNAL
 Date: ${res.date}
@@ -1065,7 +1087,9 @@ INVALIDATION:
 ${res.invalidation}
 
 IMPORTANT:
-This is a probabilistic next-day setup based on 3:15 PM data.
+This is a conditional setup from the analysis time above, not an executed entry.
+Premium stop/target levels are indicative estimates. Requote after two completed 5-minute candles beyond the trigger and recalculate from the actual fill, spread and costs.
+Exit the held option at stop, target, underlying invalidation, confirmed reversal or 15:20 IST.
 Do not chase the option if the next-day opening has already moved substantially beyond the entry trigger.`;
 }
 
@@ -1117,7 +1141,7 @@ Wait for next-day price confirmation.`;
     : `• Option chain confirms directional institutional accumulation`;
 
   return `📊 NIFTY NEXT-DAY SETUP
-⏰ 3:15 PM IST
+⏰ ${res.time || "3:15 PM IST"}
 
 NIFTY: ${res.spot}
 Bias: ${bias}
@@ -1126,7 +1150,7 @@ ${icon} SIGNAL: BUY ${opt?.strike} ${isCE ? "CE" : "PE"}
 
 Expiry: ${opt?.expiry ?? "Current"}
 Entry: ${tl.entryZone}
-SL: ₹${tl.stopLoss}
+Indicative SL: ₹${tl.stopLoss}
 T1: ₹${tl.target1}
 T2: ₹${tl.target2}
 
@@ -1141,6 +1165,7 @@ ${res.resistance1}
 
 Score: ${res.finalScore > 0 ? `+${res.finalScore}` : res.finalScore}/100
 Confidence: ${res.confidence}
+Requote and recalculate from the actual fill after two completed 5-minute candles confirm the trigger. Exit at stop, target, invalidation, reversal or 15:20 IST.
 
 Reason:
 ${reasonsList}

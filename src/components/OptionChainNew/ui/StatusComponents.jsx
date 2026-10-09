@@ -33,7 +33,7 @@ export const SignalBanner = React.memo(function SignalBanner({ sig, atm, maxPain
           {meta.icon} {sig.signal}
         </span>
         <div>
-          <div style={{ fontSize: 10, color: C.muted }}>Signal Strength</div>
+          <div style={{ fontSize: 10, color: C.muted }}>Rule score · not win probability</div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 80, height: 5, background: C.border, borderRadius: 3, overflow: "hidden" }}>
               <div style={{
@@ -41,12 +41,13 @@ export const SignalBanner = React.memo(function SignalBanner({ sig, atm, maxPain
                 background: sig.strength > 70 ? C.green : sig.strength > 50 ? C.yellow : C.muted,
               }} />
             </div>
-            <span style={{ color: meta.color, fontWeight: 700, fontSize: 13 }}>{sig.strength}%</span>
+            <span style={{ color: meta.color, fontWeight: 700, fontSize: 13 }}>{sig.strength}/100</span>
             <span style={{ color: C.muted, fontSize: 10 }}>{sig.strengthLabel}</span>
           </div>
         </div>
       </div>
 
+      <div style={{ width: "100%", fontSize: 11, color: C.muted }}>{sig.reason}</div>
       <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
         {[
           { l: "Current Price",     v: spot?.toFixed(1),            c: C.text   },
@@ -85,8 +86,8 @@ const ZonePill = React.memo(function ZonePill({ strike, primary, type }) {
 
 export const ZoneBadges = React.memo(function ZoneBadges({ sig }) {
   const pcrColor = parseFloat(sig.pcr) > 1.2 ? C.green : parseFloat(sig.pcr) < 0.8 ? C.red : C.yellow;
-  const oiColor  = sig.oiChangeBias === "New buying activity"  ? C.green
-                 : sig.oiChangeBias === "New selling activity" ? C.red
+  const oiColor  = sig.oiChangeBias === "Put writing / Bullish support"  ? C.green
+                 : sig.oiChangeBias === "Call writing / Bearish resistance" ? C.red
                  : C.yellow;
 
   return (

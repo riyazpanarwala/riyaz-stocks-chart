@@ -40,7 +40,7 @@ export const THRESHOLDS = Object.freeze({
 // ═══════════════════════════════════════════════════════════════
 // AUTO-REFRESH INTERVAL
 // ═══════════════════════════════════════════════════════════════
-export const REFRESH_MS = 120_000;
+export const REFRESH_MS = 30_000;
 
 // ═══════════════════════════════════════════════════════════════
 // SCALP-MODE DISPLAY RANGES  (points either side of ATM)

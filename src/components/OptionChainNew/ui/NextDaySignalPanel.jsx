@@ -6,12 +6,33 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { C } from "../constants.js";
 import { getNextDayOptionSignalAction } from "../../../app/actions/nextDayOptionSignal.js";
+import { PositionPanel } from "./PositionPanel.jsx";
+import { revalidateNextDaySetup } from "../utils/tradeRules.js";
 
-export function NextDaySignalPanel() {
+export function NextDaySignalPanel({ rows = [], spot, timestamp, candles = [], now = Date.now(), marketOpen, expiry, sig }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [previousSetup, setPreviousSetup] = useState(null);
+  useEffect(() => {
+    try {
+      const history = JSON.parse(localStorage.getItem("option-next-day-setups") || "{}");
+      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now());
+      const previous = Object.keys(history).filter((date) => date < today).sort().at(-1);
+      if (previous) setPreviousSetup(history[previous]);
+    } catch { /* Missing or invalid browser history does not create a setup. */ }
+  }, []);
+  useEffect(() => {
+    const result = data?.result;
+    if (!result?.recommendedOption || !/^\d{4}-\d{2}-\d{2}$/.test(result.date ?? "")) return;
+    try {
+      const history = JSON.parse(localStorage.getItem("option-next-day-setups") || "{}");
+      history[result.date] = result;
+      const recent = Object.fromEntries(Object.keys(history).sort().slice(-7).map((date) => [date, history[date]]));
+      localStorage.setItem("option-next-day-setups", JSON.stringify(recent));
+    } catch { /* The live setup remains usable if browser storage is unavailable. */ }
+  }, [data]);
 
   const fetchSignal = async () => {
     setLoading(true);
@@ -74,6 +95,8 @@ export function NextDaySignalPanel() {
 
   const isCE = res.primarySignal === "BUY CE";
   const isPE = res.primarySignal === "BUY PE";
+  const executionSetup = previousSetup ?? res;
+  const liveSignal = revalidateNextDaySetup(executionSetup, { rows, spot, timestamp, candles, now, marketOpen, expiry });
   const isNoTrade = res.primarySignal === "NO TRADE";
 
   const signalColor = isCE ? C.green : isPE ? C.red : C.muted;
@@ -100,7 +123,7 @@ export function NextDaySignalPanel() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
             <span style={{ fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>
-              ⏰ Daily 3:15 PM IST Setup · {res.date}
+              ⏰ Conditional next-day setup · {res.date} · {res.time}
             </span>
             <span
               style={{
@@ -215,7 +238,7 @@ export function NextDaySignalPanel() {
       {!isNoTrade && opt && tl && (
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "16px" }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: C.blue, marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>
-            📋 Next-Day Trade Execution Blueprint
+            📋 Conditional next-day setup · revalidate at entry
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 14 }}>
@@ -238,7 +261,7 @@ export function NextDaySignalPanel() {
             </div>
 
             <div style={{ background: C.surface2, padding: "10px 12px", borderRadius: 8 }}>
-              <div style={{ fontSize: 10, color: C.muted }}>STOP LOSS & TARGETS</div>
+              <div style={{ fontSize: 10, color: C.muted }}>INDICATIVE STOP & TARGETS</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginTop: 2 }}>
                 SL: <span style={{ color: C.red }}>₹{tl.stopLoss}</span> · T1: <span style={{ color: C.green }}>₹{tl.target1}</span> · T2: <span style={{ color: C.green }}>₹{tl.target2}</span>
               </div>
@@ -248,9 +271,15 @@ export function NextDaySignalPanel() {
 
           <div style={{ background: "#221900", border: `1px solid ${C.yellow}44`, borderRadius: 8, padding: "10px 14px", fontSize: 11, color: "#ffd566" }}>
             <b>⚠️ Invalidation & Risk Rule:</b> {res.invalidation}
+            <div>Recheck expiry, live bid/ask, completed candles and risk/reward next session. Recalculate from the actual fill; these premium estimates exclude overnight IV and time decay. {tl.exitRule}</div>
           </div>
         </div>
       )}
+
+      {executionSetup.recommendedOption && <><div style={{ fontSize: 12, color: C.muted }}>Revalidating setup from {executionSetup.date}: {liveSignal.reason}</div>
+        <PositionPanel key={`${executionSetup.recommendedOption.strike}:${executionSetup.recommendedOption.expiry}`} sig={liveSignal} exitSignal={sig}
+          storageKey={`NIFTY:${expiry}:nextday`} rows={rows} spot={spot} timestamp={timestamp}
+          now={now} marketOpen={marketOpen} expiry={expiry} /></>}
 
       {/* ── Confluence & Rationale ── */}
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "16px" }}>
@@ -268,7 +297,7 @@ export function NextDaySignalPanel() {
           </div>
         ) : (
           <div style={{ fontSize: 11, color: C.muted }}>
-            Market indicators are currently balanced between Call and Put writers without an edge meeting the 60-point threshold.
+            {res.reason || "Market indicators do not confirm a tradable setup."}
           </div>
         )}
       </div>

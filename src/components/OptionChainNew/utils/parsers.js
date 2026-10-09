@@ -25,6 +25,8 @@ function safeLeg(raw) {
     change:               raw.change               ?? 0,
     impliedVolatility:    raw.impliedVolatility    ?? 0,
     expiryDate:           raw.expiryDate           ?? "",
+    bidprice:            raw.bidprice ?? raw.bid ?? raw.buyPrice1 ?? null,
+    askPrice:            raw.askPrice ?? raw.ask ?? raw.sellPrice1 ?? null,
   };
 }
 
@@ -271,7 +273,7 @@ export function buildupType(row, side = "CE") {
  */
 export function topResistance(rows, spot, n = 3) {
   return [...rows]
-    .filter((r) => r.strikePrice > spot)
+    .filter((r) => r.strikePrice > spot && r.CE?.openInterest > 0)
     .sort((a, b) => b.CE.openInterest - a.CE.openInterest)
     .slice(0, n)
     .map((r) => r.strikePrice);
@@ -286,7 +288,7 @@ export function topResistance(rows, spot, n = 3) {
  */
 export function topSupport(rows, spot, n = 3) {
   return [...rows]
-    .filter((r) => r.strikePrice < spot)
+    .filter((r) => r.strikePrice < spot && r.PE?.openInterest > 0)
     .sort((a, b) => b.PE.openInterest - a.PE.openInterest)
     .slice(0, n)
     .map((r) => r.strikePrice);

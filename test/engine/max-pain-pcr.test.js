@@ -94,19 +94,19 @@ test("calcVolumePCRFull: calculates volume ratio for index fullOI with cVol and 
 
 test("getPcrSentiment: maps numeric PCR values to correct institutional regimes", () => {
   assert.equal(getPcrSentiment(1.6).sentiment, "bullish");
-  assert.equal(getPcrSentiment(1.6).label, "Extreme Put Writing");
+  assert.equal(getPcrSentiment(1.6).label, "Very Bullish (Elevated Put OI)");
 
   assert.equal(getPcrSentiment(1.25).sentiment, "mild_bullish");
-  assert.equal(getPcrSentiment(1.25).label, "Bullish Put Writing");
+  assert.equal(getPcrSentiment(1.25).label, "Bullish (Put OI Dominant)");
 
   assert.equal(getPcrSentiment(1.0).sentiment, "neutral");
-  assert.equal(getPcrSentiment(1.0).label, "Neutral / Rangebound");
+  assert.equal(getPcrSentiment(1.0).label, "Neutral (Balanced Put/Call OI)");
 
   assert.equal(getPcrSentiment(0.75).sentiment, "mild_bearish");
-  assert.equal(getPcrSentiment(0.75).label, "Bearish Call Writing");
+  assert.equal(getPcrSentiment(0.75).label, "Bearish (Call OI Dominant)");
 
   assert.equal(getPcrSentiment(0.45).sentiment, "bearish");
-  assert.equal(getPcrSentiment(0.45).label, "Extreme Call Writing (Oversold)");
+  assert.equal(getPcrSentiment(0.45).label, "Very Bearish (Elevated Call OI)");
 });
 
 test("analyzePcrTrend: detects bullish divergence when spot falls but PCR rises", () => {

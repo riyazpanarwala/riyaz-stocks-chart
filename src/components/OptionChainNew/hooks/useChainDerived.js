@@ -23,7 +23,7 @@ import { NORMAL_RANGE, SCALP_RANGE } from "../constants.js";
  *   lotSize?:     number,
  * }} opts
  */
-export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode, lotSize = 1 }) {
+export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode, lotSize = 1, candles = [], marketOpen = false, now }) {
   // ── Parse current rows ─────────────────────────────────────
   const { rows, expiries, selectedExpiry: activeExpiry, underlyingValue } = useMemo(() => {
     if (!rawData) return { rows: [], expiries: [], selectedExpiry: null, underlyingValue: 0 };
@@ -32,7 +32,7 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
       return {
         rows: parseIndexChain(rawData),
         expiries: [],
-        selectedExpiry: null,
+        selectedExpiry: rawData.expiry ?? null,
         underlyingValue: rawData.underlyingValue ?? 0,
       };
     }
@@ -107,8 +107,11 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
 
   // ── Top-level signal ───────────────────────────────────────
   const sig = useMemo(
-    () => (rows.length ? generateSignal(rows, atm, pcr, underlyingValue) : null),
-    [rows, atm, pcr, underlyingValue],
+    () => (rows.length ? generateSignal(rows, atm, pcr, underlyingValue, {
+      prevRows: prevRawData?.expiry === rawData?.expiry ? prevRows : [],
+      timestamp: rawData?.timestamp, prevTimestamp: prevRawData?.timestamp, candles, marketOpen, now,
+    }) : null),
+    [rows, atm, pcr, underlyingValue, prevRows, rawData, prevRawData, candles, marketOpen, now],
   );
 
   // ── Chart data (memoised without `sig` — avoids spurious recomputes) ──

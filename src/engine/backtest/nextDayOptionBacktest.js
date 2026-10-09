@@ -95,10 +95,9 @@ export function runNextDayOptionBacktest(candles, options = {}) {
     throw new Error("Backtest requires at least 5 historical daily candles.");
   }
 
-  const hasRecordedChains = candles.some((c) => Boolean(c.optionChain));
-  const datasetMode = hasRecordedChains
-    ? "RECORDED_HISTORICAL_SNAPSHOTS"
-    : "PRICE_ACTION_PROXY (Synthetic OI Reconstructed)";
+  const hasRecordedChains = candles.every((c) => Boolean(c.optionChain));
+  const datasetMode = hasRecordedChains ? "RECORDED_CHAINS_WITH_ESTIMATED_EXECUTION" :
+    candles.some((c) => Boolean(c.optionChain)) ? "MIXED_RECORDED_AND_SYNTHETIC_PROXY" : "PRICE_ACTION_PROXY (Synthetic OI Reconstructed)";
 
   let totalSignals = 0;
   let ceSignals = 0;
@@ -328,6 +327,9 @@ export function runNextDayOptionBacktest(candles, options = {}) {
 
   return {
     datasetMode,
+    executionMode: "DAILY_CANDLE_DELTA_PROXY",
+    validatesTradingEdge: false,
+    limitations: "Premiums and fills are estimated from daily underlying candles; intraday trigger ordering, spreads, IV, theta and costs are not validated.",
     isPriceProxy: !hasRecordedChains,
     totalSessions: candles.length - 2,
     totalSignals,

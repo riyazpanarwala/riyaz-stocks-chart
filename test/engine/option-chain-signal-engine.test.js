@@ -2,9 +2,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { generateSignal, sigMeta } from "../../src/components/OptionChainNew/utils/signalEngine.js";
+import { generateSignal as engineSignal, sigMeta } from "../../src/components/OptionChainNew/utils/signalEngine.js";
 import { buildupType } from "../../src/components/OptionChainNew/utils/parsers.js";
 import { calcInstitutional } from "../../src/components/OptionChainNew/utils/institutionalAnalysis.js";
+
+function generateSignal(rows, atm, pcr, spot) {
+  const now = Date.parse("2026-10-09T05:00:00Z");
+  const bullish = rows?.find((r) => r.strikePrice === atm)?.CE.change > 0;
+  const direction = bullish ? 1 : -1;
+  const prevRows = rows?.map((r) => ({ ...r, CE: { ...r.CE, lastPrice: r.CE.lastPrice - r.CE.change, openInterest: r.CE.openInterest - r.CE.changeinOpenInterest }, PE: { ...r.PE, lastPrice: r.PE.lastPrice - r.PE.change, openInterest: r.PE.openInterest - r.PE.changeinOpenInterest } }));
+  return engineSignal(rows, atm, pcr, spot, { now, marketOpen: true, timestamp: now, prevTimestamp: now - 30_000, prevRows,
+    candles: [15, 10].map((minutes, i) => ({ date: new Date(now - minutes * 60_000).toISOString(), open: spot - direction * (3 - i), close: spot - direction * (2 - i), high: spot + 1, low: spot - 5 })) });
+}
 
 function buildMockRow(strikePrice, {
   ceLtp = 100, ceChg = 0, ceOi = 50000, ceOiChg = 0, ceVol = 10000,
@@ -18,6 +27,9 @@ function buildMockRow(strikePrice, {
       openInterest: ceOi,
       changeinOpenInterest: ceOiChg,
       totalTradedVolume: ceVol,
+      bidprice: ceLtp - 0.5,
+      askPrice: ceLtp + 0.5,
+      expiryDate: "13-Oct-2026",
     },
     PE: {
       lastPrice: peLtp,
@@ -25,6 +37,9 @@ function buildMockRow(strikePrice, {
       openInterest: peOi,
       changeinOpenInterest: peOiChg,
       totalTradedVolume: peVol,
+      bidprice: peLtp - 0.5,
+      askPrice: peLtp + 0.5,
+      expiryDate: "13-Oct-2026",
     },
   };
 }
@@ -146,7 +161,7 @@ test("Option Chain Signal Engine: Handles empty or invalid data gracefully", () 
   assert.equal(nullSig.strength, 0);
 });
 
-test("Option Chain Signal Engine: Breakout at resistance does not penalize bullish signal", () => {
+test("Option Chain Signal Engine: Unconfirmed breakout too near resistance is not an entry", () => {
   const atm = 24500;
   const spot = 24590; // Testing resistance at 24600
   const strikes = [24400, 24500, 24600, 24700];
@@ -166,8 +181,8 @@ test("Option Chain Signal Engine: Breakout at resistance does not penalize bulli
 
   const sig = generateSignal(rows, atm, 1.35, spot);
 
-  assert.equal(sig.rawSignal, "BUY CALL");
-  assert.ok(sig.strength >= 70);
+  assert.equal(sig.rawSignal, "NO TRADE");
+  assert.match(sig.reason, /risk\/reward/);
 });
 
 test("Strike Table Buildup: Side-aware buildup correctly differentiates CE and PE", () => {

@@ -5,6 +5,7 @@
 // ═══════════════════════════════════════════════════════════════
 import { EMPTY_INDEX_DATA, EMPTY_STOCK_DATA } from "../constants.js";
 import { getNSEData } from "../../getIntervalData.js"; // project-level import
+import { isolateExpiry } from "../utils/tradeRules.js";
 
 /**
  * @typedef {{ type:"index"|"stock", symbol:string, lot:number, name:string }} Instrument
@@ -38,7 +39,8 @@ export async function fetchOptionChain(instrument) {
 
   if (isIndex) {
     const rec = json.records ?? json;
-    const allRows = (rec.data ?? [])
+    const chain = isolateExpiry(rec.data ?? []);
+    const allRows = chain.rows
       .filter((r) => r.CE || r.PE)
       .sort((a, b) => a.strikePrice - b.strikePrice);
 
@@ -58,7 +60,9 @@ export async function fetchOptionChain(instrument) {
     }));
 
     return {
-      timestamp: rec.timestamp ?? new Date().toLocaleString("en-IN"),
+      timestamp: rec.timestamp ?? null,
+      expiry: chain.expiry,
+      expiries: chain.expiries,
       underlyingValue: uv,
       displayData,
       fullOI,
@@ -77,7 +81,7 @@ export async function fetchOptionChain(instrument) {
   }, 0);
 
   return {
-    timestamp: json.timestamp ?? new Date().toLocaleString("en-IN"),
+    timestamp: json.timestamp ?? null,
     underlyingValue,
     data: rows,
   };
