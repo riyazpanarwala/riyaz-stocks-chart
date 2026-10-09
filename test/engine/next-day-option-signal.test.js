@@ -158,10 +158,12 @@ test("OI Levels: accurately extracts Support 1/2, Resistance 1/2, PCR, and strik
   const chain = createMockOptionChain(24500, "bullish");
   const levels = analyzeOILevels(chain.displayData, 24500, 24500);
 
-  assert.equal(levels.support1, 24500);
+  assert.equal(levels.support1, 24400);
   assert.equal(levels.resistance1, 24600);
   assert.ok(levels.pcr > 1.0);
-  assert.ok(levels.changeOiPcr > 1.0);
+  assert.equal(levels.changeOiPcr, null);
+  assert.ok(levels.totalCeChgOI < 0);
+  assert.ok(levels.totalPeChgOI > 0);
 
   // Buildup classification check: strike 24600 CE has price up + negative OI change -> Short Covering
   assert.equal(levels.strikeBehaviors[24600].CE, "Short Covering");

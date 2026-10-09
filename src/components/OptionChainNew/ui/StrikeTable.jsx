@@ -35,13 +35,13 @@ function getStrikeBuildup(row, atm) {
   if (side === "CE") {
     switch (buType) {
       case "Long Build-up":
-        return { label: "Fresh Call Buying (Bullish)", color: C.green };
+        return { label: "Inferred Call Long Buildup", color: C.green };
       case "Short Build-up":
-        return { label: "Sellers Adding Resistance (Ceiling)", color: C.red };
+        return { label: "Inferred Call Short Buildup", color: C.red };
       case "Short Covering":
-        return { label: "Call Sellers Trapped (Fast Rally)", color: C.blue };
+        return { label: "Inferred Call Short Covering", color: C.blue };
       case "Long Unwinding":
-        return { label: "Call Buyers Exiting (Weakening)", color: C.muted };
+        return { label: "Inferred Call Long Unwinding", color: C.muted };
       default:
         return { label: buType, color: C.muted };
     }
@@ -49,13 +49,13 @@ function getStrikeBuildup(row, atm) {
     // PE side
     switch (buType) {
       case "Long Build-up":
-        return { label: "Fresh Put Buying (Bearish)", color: C.red };
+        return { label: "Inferred Put Long Buildup", color: C.red };
       case "Short Build-up":
-        return { label: "Buyers Defending Floor (Support)", color: C.green };
+        return { label: "Inferred Put Short Buildup", color: C.green };
       case "Short Covering":
-        return { label: "Put Sellers Panic-Exiting", color: C.blue };
+        return { label: "Inferred Put Short Covering", color: C.blue };
       case "Long Unwinding":
-        return { label: "Put Buyers Exiting (Bounce Likely)", color: C.muted };
+        return { label: "Inferred Put Long Unwinding", color: C.muted };
       default:
         return { label: buType, color: C.muted };
     }
@@ -77,9 +77,9 @@ const StrikeRowOI = React.memo(function StrikeRowOI({ row, atm, sig }) {
       borderBottom: `1px solid ${C.surface2}`,
       background: isATM ? "#161e2e" : isRes ? C.redBg : isSup ? C.greenBg : "transparent",
     }}>
-      <td style={{ padding: "4px 6px", textAlign: "right", color: C.red }}>{CE.openInterest.toLocaleString()}</td>
+      <td style={{ padding: "4px 6px", textAlign: "right", color: C.red }}>{CE.openInterest?.toLocaleString() ?? "—"}</td>
       <td style={{ padding: "4px 6px", textAlign: "right", color: CE.changeinOpenInterest >= 0 ? C.red : C.green }}>
-        {CE.changeinOpenInterest > 0 ? "+" : ""}{CE.changeinOpenInterest.toLocaleString()}
+        {CE.changeinOpenInterest > 0 ? "+" : ""}{CE.changeinOpenInterest?.toLocaleString() ?? "—"}
       </td>
       <td style={{ padding: "4px 6px", textAlign: "right", color: C.text }}>₹{CE.lastPrice}</td>
       <td style={{ padding: "4px 8px", textAlign: "center", fontWeight: 700,
@@ -88,9 +88,9 @@ const StrikeRowOI = React.memo(function StrikeRowOI({ row, atm, sig }) {
       }}>
         {sp}{isATM ? " ◆" : ""}
       </td>
-      <td style={{ padding: "4px 6px", textAlign: "right", color: C.green }}>{PE.openInterest.toLocaleString()}</td>
+      <td style={{ padding: "4px 6px", textAlign: "right", color: C.green }}>{PE.openInterest?.toLocaleString() ?? "—"}</td>
       <td style={{ padding: "4px 6px", textAlign: "right", color: PE.changeinOpenInterest >= 0 ? C.green : C.red }}>
-        {PE.changeinOpenInterest > 0 ? "+" : ""}{PE.changeinOpenInterest.toLocaleString()}
+        {PE.changeinOpenInterest > 0 ? "+" : ""}{PE.changeinOpenInterest?.toLocaleString() ?? "—"}
       </td>
       <td style={{ padding: "4px 6px", textAlign: "right", color: C.text }}>₹{PE.lastPrice}</td>
       <td style={{ padding: "4px 6px", textAlign: "right", color: buColor, whiteSpace: "nowrap", fontSize: 10 }}>

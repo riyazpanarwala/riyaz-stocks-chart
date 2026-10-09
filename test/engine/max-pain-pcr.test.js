@@ -75,11 +75,11 @@ test("calcVolumePCR: calculates PE / CE volume ratio with edge-case handling", (
   const zeroCE = [
     { strikePrice: 100, CE: { totalTradedVolume: 0 }, PE: { totalTradedVolume: 1000 } },
   ];
-  assert.equal(calcVolumePCR(zeroCE), Number.POSITIVE_INFINITY);
+  assert.equal(calcVolumePCR(zeroCE), null);
 
   // Empty rows
-  assert.equal(calcVolumePCR([]), 0);
-  assert.equal(calcVolumePCR(null), 0);
+  assert.equal(calcVolumePCR([]), null);
+  assert.equal(calcVolumePCR(null), null);
 });
 
 test("calcVolumePCRFull: calculates volume ratio for index fullOI with cVol and pVol", () => {
@@ -89,28 +89,28 @@ test("calcVolumePCRFull: calculates volume ratio for index fullOI with cVol and 
   ];
   // Total CE Vol: 1000, Total PE Vol: 1000 -> PCR = 1.0
   assert.equal(calcVolumePCRFull(fullOI), 1.0);
-  assert.equal(calcVolumePCRFull([]), 0);
+  assert.equal(calcVolumePCRFull([]), null);
 });
 
-test("getPcrSentiment: maps numeric PCR values to correct institutional regimes", () => {
-  assert.equal(getPcrSentiment(1.6).sentiment, "bullish");
-  assert.equal(getPcrSentiment(1.6).label, "Very Bullish (Elevated Put OI)");
+test("getPcrSentiment: maps numeric PCR values to correct concentration without inferring direction", () => {
+  assert.equal(getPcrSentiment(1.6).sentiment, "neutral");
+  assert.equal(getPcrSentiment(1.6).label, "High Put OI");
 
-  assert.equal(getPcrSentiment(1.25).sentiment, "mild_bullish");
-  assert.equal(getPcrSentiment(1.25).label, "Bullish (Put OI Dominant)");
+  assert.equal(getPcrSentiment(1.25).sentiment, "neutral");
+  assert.equal(getPcrSentiment(1.25).label, "Put OI dominant");
 
   assert.equal(getPcrSentiment(1.0).sentiment, "neutral");
-  assert.equal(getPcrSentiment(1.0).label, "Neutral (Balanced Put/Call OI)");
+  assert.equal(getPcrSentiment(1.0).label, "Balanced OI");
 
-  assert.equal(getPcrSentiment(0.75).sentiment, "mild_bearish");
-  assert.equal(getPcrSentiment(0.75).label, "Bearish (Call OI Dominant)");
+  assert.equal(getPcrSentiment(0.75).sentiment, "neutral");
+  assert.equal(getPcrSentiment(0.75).label, "Call OI dominant");
 
-  assert.equal(getPcrSentiment(0.45).sentiment, "bearish");
-  assert.equal(getPcrSentiment(0.45).label, "Very Bearish (Elevated Call OI)");
+  assert.equal(getPcrSentiment(0.45).sentiment, "neutral");
+  assert.equal(getPcrSentiment(0.45).label, "High Call OI");
 });
 
-test("analyzePcrTrend: detects bullish divergence when spot falls but PCR rises", () => {
-  const baseTime = Date.now() - 30 * 60 * 1000;
+test("analyzePcrTrend: detects price down/PCR up divergence when spot falls but PCR rises", () => {
+  const baseTime = Date.parse("2026-10-09T05:00:00Z");
   const snapshots = [
     { ts: baseTime, spot: 24200, pcr: 1.0, maxPain: 24100 },
     { ts: baseTime + 15 * 60 * 1000, spot: 24150, pcr: 1.05, maxPain: 24100 },
@@ -123,11 +123,11 @@ test("analyzePcrTrend: detects bullish divergence when spot falls but PCR rises"
   assert.equal(analysis.pcrChange, 0.1);
   assert.ok(analysis.spotChange < 0);
   assert.ok(analysis.divergence !== null);
-  assert.equal(analysis.divergence.type, "bullish_divergence");
+  assert.equal(analysis.divergence.type, "price_down_pcr_up");
 });
 
-test("analyzePcrTrend: detects bearish divergence when spot rises but PCR falls", () => {
-  const baseTime = Date.now() - 30 * 60 * 1000;
+test("analyzePcrTrend: detects price up/PCR down divergence when spot rises but PCR falls", () => {
+  const baseTime = Date.parse("2026-10-09T05:00:00Z");
   const snapshots = [
     { ts: baseTime, spot: 24000, pcr: 1.2, maxPain: 24000 },
     { ts: baseTime + 15 * 60 * 1000, spot: 24100, pcr: 1.15, maxPain: 24000 },
@@ -140,11 +140,11 @@ test("analyzePcrTrend: detects bearish divergence when spot rises but PCR falls"
   assert.equal(analysis.pcrChange, -0.1);
   assert.ok(analysis.spotChange > 0);
   assert.ok(analysis.divergence !== null);
-  assert.equal(analysis.divergence.type, "bearish_divergence");
+  assert.equal(analysis.divergence.type, "price_up_pcr_down");
 });
 
-test("analyzePcrTrend: detects Max Pain migration and gravitational pull", () => {
-  const baseTime = Date.now() - 30 * 60 * 1000;
+test("analyzePcrTrend: detects Max Pain migration and descriptive payout distance", () => {
+  const baseTime = Date.parse("2026-10-09T05:00:00Z");
   const snapshots = [
     { ts: baseTime, spot: 24150, pcr: 1.1, maxPain: 24000 },
     { ts: baseTime + 30 * 60 * 1000, spot: 24180, pcr: 1.15, maxPain: 24100 },
@@ -156,12 +156,12 @@ test("analyzePcrTrend: detects Max Pain migration and gravitational pull", () =>
   assert.equal(analysis.maxPainMigration.from, 24000);
   assert.equal(analysis.maxPainMigration.to, 24100);
   assert.equal(analysis.maxPainMigration.shift, 100);
-  assert.equal(analysis.maxPainMigration.type, "bullish_shift");
+  assert.equal(analysis.maxPainMigration.type, "observed_shift");
 
   assert.ok(analysis.gravityPull !== null);
   assert.equal(analysis.gravityPull.targetStrike, 24100);
   assert.equal(analysis.gravityPull.distancePts, 80);
-  assert.equal(analysis.gravityPull.bias, "Downside Gravity (Towards Max Pain)");
+  assert.equal(analysis.gravityPull.bias, "Above Max Pain");
 });
 
 test("buildStorageKey: generates consistent standardized keys", () => {

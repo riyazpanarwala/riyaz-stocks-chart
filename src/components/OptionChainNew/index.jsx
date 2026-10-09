@@ -141,7 +141,7 @@ export default function App({ initialSymbol = null }) {
   const { breakoutSignals } = useSnapshotHistory({
     rows, displayRows, prevDisplayRows,
     underlyingValue, atm, pcr, maxPain,
-    instrument, activeExpiry,
+    instrument, activeExpiry, timestamp: error ? null : rawData?.timestamp, candles, now, marketOpen: mktStatus?.open && !error,
   });
 
   // ── Handlers ─────────────────────────────────────────────
@@ -365,7 +365,7 @@ export default function App({ initialSymbol = null }) {
                       atm={atm}
                       pcr={pcr}
                       maxPain={maxPain}
-                      fetchedAt={fetchedAt}
+                      fetchedAt={fetchedAt} timestamp={error ? null : rawData.timestamp} now={now} marketOpen={mktStatus?.open && !error}
                     />
                   )}
                   {activeTab === "table"   && sig && (
@@ -380,7 +380,10 @@ export default function App({ initialSymbol = null }) {
                   )}
                   {activeTab === "inst"    && (
                     <InstitutionalPanel
-                      rows={displayRows} prevRows={prevDisplayRows}
+                      rows={rows} prevRows={prevRows}
+                      timestamp={error ? null : rawData.timestamp} prevTimestamp={prevRawData?.timestamp}
+                      expiry={activeExpiry} prevExpiry={isIndex ? prevRawData?.expiry : activeExpiry}
+                      candles={candles} now={now} marketOpen={mktStatus?.open && !error}
                       spot={underlyingValue} atm={atm} maxPain={maxPain} pcr={pcr} sig={sig}
                     />
                   )}

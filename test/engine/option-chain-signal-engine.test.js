@@ -10,7 +10,7 @@ function generateSignal(rows, atm, pcr, spot) {
   const now = Date.parse("2026-10-09T05:00:00Z");
   const bullish = rows?.find((r) => r.strikePrice === atm)?.CE.change > 0;
   const direction = bullish ? 1 : -1;
-  const prevRows = rows?.map((r) => ({ ...r, CE: { ...r.CE, lastPrice: r.CE.lastPrice - r.CE.change, openInterest: r.CE.openInterest - r.CE.changeinOpenInterest }, PE: { ...r.PE, lastPrice: r.PE.lastPrice - r.PE.change, openInterest: r.PE.openInterest - r.PE.changeinOpenInterest } }));
+  const prevRows = rows?.map((r) => ({ ...r, CE: { ...r.CE, totalTradedVolume: Math.floor(r.CE.totalTradedVolume*0.8), lastPrice: r.CE.lastPrice - r.CE.change, openInterest: r.CE.openInterest - r.CE.changeinOpenInterest }, PE: { ...r.PE, totalTradedVolume: Math.floor(r.PE.totalTradedVolume*0.8), lastPrice: r.PE.lastPrice - r.PE.change, openInterest: r.PE.openInterest - r.PE.changeinOpenInterest } }));
   return engineSignal(rows, atm, pcr, spot, { now, marketOpen: true, timestamp: now, prevTimestamp: now - 30_000, prevRows,
     candles: [15, 10].map((minutes, i) => ({ date: new Date(now - minutes * 60_000).toISOString(), open: spot - direction * (3 - i), close: spot - direction * (2 - i), high: spot + 1, low: spot - 5 })) });
 }
@@ -70,7 +70,7 @@ test("Option Chain Signal Engine: Bullish setup triggers BUY CALL with high conv
   assert.equal(sig.rawSignal, "BUY CALL");
   assert.equal(sig.strengthLabel, "Strong");
   assert.ok(sig.strength >= 70, `Expected strength >= 70, got ${sig.strength}`);
-  assert.equal(sig.oiChangeBias, "Put writing / Bullish support");
+  assert.equal(sig.oiChangeBias, "Inferred bullish positioning");
   assert.match(sig.signal, /Consider buying a Call/);
 });
 
@@ -100,7 +100,7 @@ test("Option Chain Signal Engine: Bearish setup triggers BUY PUT with high convi
   assert.equal(sig.rawSignal, "BUY PUT");
   assert.equal(sig.strengthLabel, "Strong");
   assert.ok(sig.strength >= 70, `Expected strength >= 70, got ${sig.strength}`);
-  assert.equal(sig.oiChangeBias, "Call writing / Bearish resistance");
+  assert.equal(sig.oiChangeBias, "Inferred bearish positioning");
   assert.match(sig.signal, /Consider buying a Put/);
 });
 
@@ -233,11 +233,11 @@ test("Option Chain Signal Engine: Dominant Call writing with minor CE unwind abo
 
   const sig = generateSignal(rows, atm, 0.9, spot);
 
-  assert.notEqual(sig.oiChangeBias, "Put writing / Bullish support");
-  assert.equal(sig.oiChangeBias, "Call writing / Bearish resistance");
+  assert.notEqual(sig.oiChangeBias, "Inferred bullish positioning");
+  assert.equal(sig.oiChangeBias, "Inferred bearish positioning");
 });
 
-test("Institutional Analysis: Nearer zone is selected when both support and resistance are within step", () => {
+test("Institutional Analysis: OI barriers alone do not confirm direction without fresh snapshots and candles", () => {
   // Support at 90, Resistance at 100, step = 10. Spot = 91.
   // Support is 1 point away, Resistance is 9 points away.
   const rows = [
@@ -250,7 +250,8 @@ test("Institutional Analysis: Nearer zone is selected when both support and resi
   const analysis = calcInstitutional(rows, 91, 90, 1.3);
   assert.ok(analysis);
   // Spot at 91 is closer to support at 90; support floor holding should give a positive / bullish zone bias
-  assert.equal(analysis.smartBias, "BULLISH");
+  assert.equal(analysis.smartBias, "NEUTRAL");
+  assert.equal(analysis.topSup[0].zoneState, "Inferred writing");
 });
 
 test("Institutional Analysis: Reads the exact leg matching closestRes rather than topRes3[0]", () => {

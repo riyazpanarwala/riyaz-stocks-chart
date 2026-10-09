@@ -2,6 +2,7 @@
 // PARSERS & DATA TRANSFORMATIONS
 // Pure functions — no React, no side-effects.
 // ═══════════════════════════════════════════════════════════════
+import { classifyChange, numeric, ratio, sumMetric } from "./analysis.js";
 import { EMPTY_OPTION_LEG } from "../constants.js";
 
 // ─── Types (JSDoc) ────────────────────────────────────────────
@@ -16,18 +17,13 @@ import { EMPTY_OPTION_LEG } from "../constants.js";
 
 /** Extract a safe OptionLeg from a raw CE/PE object. */
 function safeLeg(raw) {
-  if (!raw) return { ...EMPTY_OPTION_LEG };
-  return {
-    openInterest:         raw.openInterest         ?? 0,
-    changeinOpenInterest: raw.changeinOpenInterest  ?? 0,
-    totalTradedVolume:    raw.totalTradedVolume     ?? 0,
-    lastPrice:            raw.lastPrice             ?? 0,
-    change:               raw.change               ?? 0,
-    impliedVolatility:    raw.impliedVolatility    ?? 0,
-    expiryDate:           raw.expiryDate           ?? "",
-    bidprice:            raw.bidprice ?? raw.bid ?? raw.buyPrice1 ?? null,
-    askPrice:            raw.askPrice ?? raw.ask ?? raw.sellPrice1 ?? null,
-  };
+  if (!raw) return { ...EMPTY_OPTION_LEG, available: false };
+  const result = { available: true, expiryDate: raw.expiryDate ?? "",
+    bidprice: numeric(raw.bidprice ?? raw.bid ?? raw.buyPrice1),
+    askPrice: numeric(raw.askPrice ?? raw.ask ?? raw.sellPrice1) };
+  for (const key of ["openInterest", "changeinOpenInterest", "totalTradedVolume", "lastPrice", "change", "impliedVolatility"])
+    result[key] = numeric(raw[key]);
+  return result;
 }
 
 // ─── Index chain ──────────────────────────────────────────────
@@ -41,13 +37,13 @@ export function parseIndexChain(records) {
   if (!records) return [];
 
   // Detect stock-shaped data and bail early
-  const src = records.displayData ?? records.data ?? [];
+  const src = records.fullData ?? records.displayData ?? records.data ?? [];
   if (!Array.isArray(src) || src[0]?.optionType !== undefined) return [];
 
   return src
-    .filter((r) => r.CE || r.PE)
+    .filter((r) => (r.CE || r.PE) && numeric(r.strikePrice) > 0)
     .map((r) => ({
-      strikePrice: r.strikePrice,
+      strikePrice: numeric(r.strikePrice),
       CE: safeLeg(r.CE),
       PE: safeLeg(r.PE),
     }))
@@ -133,8 +129,8 @@ export function parseStockChain(data, expiry) {
 
   const rows = strikes.map((sp) => ({
     strikePrice: sp,
-    CE: ceMap[sp] ?? { ...EMPTY_OPTION_LEG },
-    PE: peMap[sp] ?? { ...EMPTY_OPTION_LEG },
+    CE: ceMap[sp] ?? { ...EMPTY_OPTION_LEG, available: false },
+    PE: peMap[sp] ?? { ...EMPTY_OPTION_LEG, available: false },
   }));
 
   return { rows, expiries, selectedExpiry: sel };
@@ -148,25 +144,10 @@ export function parseStockChain(data, expiry) {
  * @returns {number}
  */
 export function calcPCRFull(fullOI) {
-  if (!fullOI?.length) return 0;
-  const ce = fullOI.reduce((s, r) => s + r.c, 0);
-  const pe = fullOI.reduce((s, r) => s + r.p, 0);
-  // ce=0, pe=0 → neutral (0); ce=0, pe>0 → extreme bullish (+∞)
-  if (ce === 0) return pe === 0 ? 0 : Number.POSITIVE_INFINITY;
-  return pe / ce;
+  return ratio(sumMetric(fullOI, r => r.p), sumMetric(fullOI, r => r.c));
 }
-
-/**
- * Compute PCR from parsed OptionRow[] (stock path).
- * @param {OptionRow[]} rows
- * @returns {number}
- */
 export function calcPCR(rows) {
-  const ce = rows.reduce((s, r) => s + r.CE.openInterest, 0);
-  const pe = rows.reduce((s, r) => s + r.PE.openInterest, 0);
-  // ce=0, pe=0 → neutral (0); ce=0, pe>0 → extreme bullish (+∞)
-  if (ce === 0) return pe === 0 ? 0 : Number.POSITIVE_INFINITY;
-  return pe / ce;
+  return ratio(sumMetric(rows, r => r.PE?.openInterest), sumMetric(rows, r => r.CE?.openInterest));
 }
 
 // ─── Max Pain ─────────────────────────────────────────────────
@@ -177,7 +158,8 @@ export function calcPCR(rows) {
  * @returns {number}
  */
 export function calcMaxPainFull(fullOI) {
-  if (!fullOI?.length) return 0;
+  const ce = sumMetric(fullOI, r => r.c), pe = sumMetric(fullOI, r => r.p);
+  if (ce == null || pe == null || ce + pe === 0) return 0;
   let minLoss = Infinity;
   let maxPainStrike = fullOI[0].s;
 
@@ -187,7 +169,7 @@ export function calcMaxPainFull(fullOI) {
       if (target.s > r.s) loss += (target.s - r.s) * r.c;
       if (target.s < r.s) loss += (r.s - target.s) * r.p;
     }
-    if (loss < minLoss) { minLoss = loss; maxPainStrike = target.s; }
+    if (loss < minLoss) { minLoss = loss; maxPainStrike = Number(target.s); }
   }
   return maxPainStrike;
 }
@@ -198,7 +180,8 @@ export function calcMaxPainFull(fullOI) {
  * @returns {number}
  */
 export function calcMaxPain(rows) {
-  if (!rows.length) return 0;
+  const ce = sumMetric(rows, r => r.CE?.openInterest), pe = sumMetric(rows, r => r.PE?.openInterest);
+  if (ce == null || pe == null || ce + pe === 0) return 0;
   let minLoss = Infinity;
   let maxPainStrike = rows[0].strikePrice;
 
@@ -237,29 +220,16 @@ export function findATM(rows, uv) {
 /**
  * Classify OI + price-change combination for a single option leg.
  *
- * Strict comparisons (> / <) are intentional: a leg with zero price change
- * AND zero OI change (illiquid / far-OTM strike) must not be mislabelled as
- * "Long Build-up" by the old `>= 0` logic.
+ * Both changes must exceed their noise thresholds. A flat or missing input
+ * cannot establish one of the four inferred quadrants.
  *
  * @param {OptionRow} row
  * @param {"CE"|"PE"} side
  * @returns {"Long Build-up"|"Short Build-up"|"Short Covering"|"Long Unwinding"|"No Change"}
  */
-export function buildupType(row, side = "CE") {
-  const leg      = row[side];
-  const priceChg = leg.change;
-  const oiChg    = leg.changeinOpenInterest;
-
-  // Both flat → no meaningful classification
-  if (priceChg === 0 && oiChg === 0) return "No Change";
-
-  const priceUp = priceChg > 0;
-  const oiUp    = oiChg    > 0;
-
-  if (priceUp  && oiUp)  return "Long Build-up";
-  if (!priceUp && oiUp)  return "Short Build-up";
-  if (priceUp  && !oiUp) return "Short Covering";
-  return "Long Unwinding";
+export function buildupType(row, side = "CE", thresholds = {}) {
+  if (row?.[side]?.available === false) return "Unavailable";
+  return classifyChange(row?.[side]?.change, row?.[side]?.changeinOpenInterest, thresholds);
 }
 
 // ─── Support / Resistance ─────────────────────────────────────
@@ -297,12 +267,17 @@ export function topSupport(rows, spot, n = 3) {
 // ─── Strike pitch ─────────────────────────────────────────────
 
 /**
- * Average gap between consecutive strikes.
+ * Median of the nearest positive strike gaps, ignoring duplicates.
  * Falls back to 50 if fewer than 2 rows are present.
  * @param {OptionRow[]} rows
  * @returns {number}
  */
-export function strikePitch(rows) {
-  if (rows.length < 2) return 50;
-  return (rows[rows.length - 1].strikePrice - rows[0].strikePrice) / (rows.length - 1);
+export function strikePitch(rows, spot) {
+  const strikes = [...new Set((rows ?? []).map(r => numeric(r.strikePrice)).filter(v => v > 0))].sort((a,b) => a-b);
+  if (strikes.length < 2) return 50;
+  const center = spot ?? strikes[Math.floor(strikes.length / 2)];
+  const gaps = strikes.slice(1).map((strike, i) => ({ gap: strike - strikes[i], distance: Math.abs((strike + strikes[i]) / 2 - center) }))
+    .sort((a,b) => a.distance-b.distance).slice(0,5).map(v => v.gap).sort((a,b) => a-b);
+  const mid = Math.floor(gaps.length/2);
+  return gaps.length % 2 ? gaps[mid] : (gaps[mid-1]+gaps[mid])/2;
 }

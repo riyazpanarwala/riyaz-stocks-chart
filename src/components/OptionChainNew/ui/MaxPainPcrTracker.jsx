@@ -120,7 +120,7 @@ export const MaxPainPcrTracker = React.memo(function MaxPainPcrTracker({
   atm,
   pcr,
   maxPain,
-  fetchedAt,
+  fetchedAt, timestamp, now, marketOpen,
 }) {
   const {
     snapshots,
@@ -144,7 +144,7 @@ export const MaxPainPcrTracker = React.memo(function MaxPainPcrTracker({
     fetchedAt,
   });
 
-  const activeMaxPain = maxPain || maxPainCalculated || atm;
+  const activeMaxPain = maxPain || maxPainCalculated || null;
 
   // Filter loss curve to 12 strikes above and below ATM for clean display
   const displayLossCurve = useMemo(() => {
@@ -207,7 +207,7 @@ export const MaxPainPcrTracker = React.memo(function MaxPainPcrTracker({
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
             <span style={{ fontSize: 24, fontWeight: 800, color: pcrSentiment.color }}>
-              {Number(pcr).toFixed(2)}
+              {Number.isFinite(pcr) ? pcr.toFixed(2) : "—"}
             </span>
             <span
               style={{
@@ -245,26 +245,26 @@ export const MaxPainPcrTracker = React.memo(function MaxPainPcrTracker({
               style={{
                 fontSize: 24,
                 fontWeight: 800,
-                color: volPcr > 1.1 ? C.green : volPcr < 0.9 ? C.red : C.yellow,
+                color: !Number.isFinite(volPcr) ? C.muted : volPcr > 1.1 ? C.green : volPcr < 0.9 ? C.red : C.yellow,
               }}
             >
-              {Number.isFinite(volPcr) && volPcr > 0 ? Number(volPcr).toFixed(2) : "—"}
+              {Number.isFinite(volPcr) && volPcr >= 0 ? Number(volPcr).toFixed(2) : "—"}
             </span>
             <span style={{ fontSize: 10, color: C.muted }}>
-              OI PCR: <b style={{ color: C.text }}>{Number(pcr).toFixed(2)}</b>
+              OI PCR: <b style={{ color: C.text }}>{Number.isFinite(pcr) ? pcr.toFixed(2) : "—"}</b>
             </span>
           </div>
           <div style={{ fontSize: 10, color: C.muted, marginTop: 6 }}>
-            {Number.isFinite(volPcr) && volPcr > pcr ? (
+            {Number.isFinite(pcr) && Number.isFinite(volPcr) && volPcr > pcr ? (
               <span style={{ color: C.green }}>
-                ↑ Volume PCR is above OI PCR (Intraday volume skewed more towards Puts than open interest)
+                ↑ Volume PCR is above OI PCR (Session volume skewed more towards Puts than open interest)
               </span>
-            ) : Number.isFinite(volPcr) && volPcr < pcr ? (
+            ) : Number.isFinite(pcr) && Number.isFinite(volPcr) && volPcr < pcr ? (
               <span style={{ color: C.red }}>
                 ↓ Volume PCR is below OI PCR (Intraday volume skewed more towards Calls than open interest)
               </span>
             ) : (
-              <span>Balanced volume & open interest ratio</span>
+              <span>Ratios are balanced or unavailable</span>
             )}
           </div>
         </div>
@@ -671,31 +671,13 @@ export const MaxPainPcrTracker = React.memo(function MaxPainPcrTracker({
         }}
       >
         <div style={{ fontSize: 11, fontWeight: 700, color: C.text, marginBottom: 6 }}>
-          🧭 Expiry & Intraday Gravitational Playbook
+          🧭 Expiry Payout Reference
         </div>
         <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.5 }}>
-          {trendMetrics.gravityPull?.bias === "Downside Gravity (Towards Max Pain)" && (
-            <span>
-              Spot is currently floating{" "}
-              <b style={{ color: C.red }}>{Math.abs(trendMetrics.gravityPull.distancePts)} points above Max Pain</b>.
-              As expiry approaches, option writers have strong financial incentive to cap rallies and induce mean reversion
-              downward towards <b style={{ color: C.yellow }}>₹{activeMaxPain}</b> to maximize retained premiums.
-            </span>
-          )}
-          {trendMetrics.gravityPull?.bias === "Upside Gravity (Towards Max Pain)" && (
-            <span>
-              Spot is currently trading{" "}
-              <b style={{ color: C.green }}>{Math.abs(trendMetrics.gravityPull.distancePts)} points below Max Pain</b>.
-              Option writers experience heavy losses on Put writes at current depressed prices; gravitational expiry pull favors
-              an upward drift or short squeeze towards <b style={{ color: C.yellow }}>₹{activeMaxPain}</b>.
-            </span>
-          )}
-          {trendMetrics.gravityPull?.bias === "Pinned at Max Pain" && (
-            <span>
-              Spot is currently closely aligned with Max Pain (<b style={{ color: C.yellow }}>₹{activeMaxPain}</b>).
-              Expect heightened volatility compression, rangebound price action, and maximum theta decay.
-            </span>
-          )}
+          <span>Max Pain is the strike minimizing intrinsic payout for current OI.
+            {trendMetrics.gravityPull && <> Spot is {Math.abs(trendMetrics.gravityPull.distancePts)} points {trendMetrics.gravityPull.distancePts >= 0 ? "above" : "below"} this reference.</>}
+            {" "}Distance and migration alone do not establish a trade direction or mean reversion.</span>
+
         </div>
       </div>
 

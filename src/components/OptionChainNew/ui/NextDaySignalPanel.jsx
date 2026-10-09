@@ -8,28 +8,27 @@ import { C } from "../constants.js";
 import { getNextDayOptionSignalAction } from "../../../app/actions/nextDayOptionSignal.js";
 import { PositionPanel } from "./PositionPanel.jsx";
 import { revalidateNextDaySetup } from "../utils/tradeRules.js";
+import { latestPriorSetup, storeNextDaySetup, validSetupHistory } from "../utils/nextDaySetups.js";
 
 export function NextDaySignalPanel({ rows = [], spot, timestamp, candles = [], now = Date.now(), marketOpen, expiry, sig }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [previousSetup, setPreviousSetup] = useState(null);
+  const [setupHistory, setSetupHistory] = useState({});
   useEffect(() => {
     try {
       const history = JSON.parse(localStorage.getItem("option-next-day-setups") || "{}");
-      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now());
-      const previous = Object.keys(history).filter((date) => date < today).sort().at(-1);
-      if (previous) setPreviousSetup(history[previous]);
+      setSetupHistory(validSetupHistory(history));
     } catch { /* Missing or invalid browser history does not create a setup. */ }
   }, []);
   useEffect(() => {
     const result = data?.result;
-    if (!result?.recommendedOption || !/^\d{4}-\d{2}-\d{2}$/.test(result.date ?? "")) return;
+    if (!result?.recommendedOption || !result.tradeLevels || !/^\d{4}-\d{2}-\d{2}$/.test(result.date ?? "")) return;
+    setSetupHistory(history => storeNextDaySetup(history, result));
     try {
       const history = JSON.parse(localStorage.getItem("option-next-day-setups") || "{}");
-      history[result.date] = result;
-      const recent = Object.fromEntries(Object.keys(history).sort().slice(-7).map((date) => [date, history[date]]));
+      const recent = storeNextDaySetup(history, result);
       localStorage.setItem("option-next-day-setups", JSON.stringify(recent));
     } catch { /* The live setup remains usable if browser storage is unavailable. */ }
   }, [data]);
@@ -73,7 +72,7 @@ export function NextDaySignalPanel({ rows = [], spot, timestamp, candles = [], n
           ⚙️
         </motion.div>
         <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Analyzing NIFTY 3:15 PM Option Chain & Market Structure...</div>
-        <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>Synthesizing 100-pt institutional orderflow score & next-day triggers</div>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>Analyzing price, inferred positioning and execution liquidity</div>
       </div>
     );
   }
@@ -95,7 +94,7 @@ export function NextDaySignalPanel({ rows = [], spot, timestamp, candles = [], n
 
   const isCE = res.primarySignal === "BUY CE";
   const isPE = res.primarySignal === "BUY PE";
-  const executionSetup = previousSetup ?? res;
+  const executionSetup = latestPriorSetup(setupHistory, now) ?? res;
   const liveSignal = revalidateNextDaySetup(executionSetup, { rows, spot, timestamp, candles, now, marketOpen, expiry });
   const isNoTrade = res.primarySignal === "NO TRADE";
 
@@ -206,9 +205,9 @@ export function NextDaySignalPanel({ rows = [], spot, timestamp, candles = [], n
         </div>
 
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: "10px 14px" }}>
-          <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>PCR / ΔOI PCR</div>
+          <div style={{ fontSize: 10, color: C.muted, marginBottom: 2 }}>OI PCR / Additions PCR</div>
           <div style={{ fontSize: 15, fontWeight: 800, color: C.yellow }}>
-            {res.pcr?.toFixed(2)} <span style={{ fontSize: 11, color: C.muted }}>/ {res.changeOiPcr?.toFixed(2)}</span>
+            {Number.isFinite(res.pcr) ? res.pcr.toFixed(2) : "—"} <span style={{ fontSize: 11, color: C.muted }}>/ {Number.isFinite(res.changeOiPcr) ? res.changeOiPcr.toFixed(2) : "—"}</span>
           </div>
         </div>
 
@@ -276,15 +275,15 @@ export function NextDaySignalPanel({ rows = [], spot, timestamp, candles = [], n
         </div>
       )}
 
-      {executionSetup.recommendedOption && <><div style={{ fontSize: 12, color: C.muted }}>Revalidating setup from {executionSetup.date}: {liveSignal.reason}</div>
-        <PositionPanel key={`${executionSetup.recommendedOption.strike}:${executionSetup.recommendedOption.expiry}`} sig={liveSignal} exitSignal={sig}
+      {executionSetup.recommendedOption && <div style={{ fontSize: 12, color: C.muted }}>Revalidating setup from {executionSetup.date}: {liveSignal.reason}</div>}
+        <PositionPanel key={`NIFTY:${expiry}:nextday`} sig={liveSignal} exitSignal={sig}
           storageKey={`NIFTY:${expiry}:nextday`} rows={rows} spot={spot} timestamp={timestamp}
-          now={now} marketOpen={marketOpen} expiry={expiry} /></>}
+          now={now} marketOpen={marketOpen} expiry={expiry} />
 
       {/* ── Confluence & Rationale ── */}
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "16px" }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 10 }}>
-          💡 Institutional Evidence & Confluence
+          💡 Classified Activity & Confluence
         </div>
         {res.whyReasons?.length > 0 ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

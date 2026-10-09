@@ -57,13 +57,16 @@ export function liquidQuote(leg, minVolume = 1000) {
   return { bid, ask, spreadPct, valid: valid && spreadPct <= 3 };
 }
 
-export function confirmedDirection({ candles = [], now = Date.now(), spot }) {
-  const completed = candles.filter((c) => {
+export function completedSignalCandles(candles = [], now = Date.now()) {
+  return (candles ?? []).filter((c) => {
     const ts = marketTimestamp(c.date);
     return Number.isFinite(ts) && ts + 300_000 <= now && now - (ts + 300_000) <= 900_000 &&
       [c.open, c.high, c.low, c.close].every(Number.isFinite);
-  }).sort((a, b) => marketTimestamp(a.date) - marketTimestamp(b.date));
-  const [a, b] = completed.slice(-2);
+  }).sort((a, b) => marketTimestamp(a.date) - marketTimestamp(b.date)).slice(-2);
+}
+
+export function confirmedDirection({ candles = [], now = Date.now(), spot }) {
+  const [a, b] = completedSignalCandles(candles, now);
   if (!a || !b || marketTimestamp(b.date) - marketTimestamp(a.date) !== 300_000) return 0;
   if (b.close > a.close && b.close > b.open && spot >= b.close) return 1;
   if (b.close < a.close && b.close < b.open && spot <= b.close) return -1;
@@ -115,9 +118,8 @@ export function revalidateNextDaySetup(setup, { rows, spot, timestamp, candles, 
   if (!marketOpen || !isFresh(timestamp, now) || contract.expiry !== expiry) return wait("Fresh quotes for the setup’s expiry are required during the session.");
   const side = setup.primarySignal === "BUY CE" ? "CE" : "PE";
   const direction = side === "CE" ? 1 : -1;
-  const completed = (candles ?? []).filter((c) => marketTimestamp(c.date) + 300_000 <= now && now - marketTimestamp(c.date) <= 900_000)
-    .sort((a, b) => marketTimestamp(a.date) - marketTimestamp(b.date)).slice(-2);
-  if (confirmedDirection({ candles, now, spot }) !== direction || completed.length !== 2 ||
+  const completed = completedSignalCandles(candles, now);
+  if (confirmedDirection({ candles: completed, now, spot }) !== direction || completed.length !== 2 ||
       completed.some((c) => direction * (c.close - levels.triggerSpot) <= 0) || direction * (spot - levels.triggerSpot) <= 0) return wait("Wait for two completed 5-minute closes beyond the trigger.");
   if (direction * (spot - levels.triggerSpot) / levels.triggerSpot > 0.008) return wait("Opening move is beyond the chase limit.");
   const leg = rows.find((r) => r.strikePrice === contract.strike)?.[side];

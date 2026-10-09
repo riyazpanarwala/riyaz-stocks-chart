@@ -10,7 +10,7 @@ const leg = (price, oi, change) => ({ lastPrice: price, openInterest: oi, change
   totalTradedVolume: 10000, bidprice: price - 0.5, askPrice: price + 0.5, expiryDate: expiry });
 function fixture() {
   const rows = [24400, 24500, 24600].map((strikePrice) => ({ strikePrice, CE: leg(120, 50000, 10), PE: leg(80, 100000, -10) }));
-  const prevRows = rows.map((r) => ({ ...r, CE: { ...r.CE, lastPrice: 110, openInterest: 60000 }, PE: { ...r.PE, lastPrice: 90, openInterest: 90000 } }));
+  const prevRows = rows.map((r) => ({ ...r, CE: { ...r.CE, lastPrice: 110, openInterest: 60000, totalTradedVolume: 9000 }, PE: { ...r.PE, lastPrice: 90, openInterest: 90000, totalTradedVolume: 9000 } }));
   const candles = [15, 10].map((m, i) => ({ date: new Date(now - m * 60_000).toISOString(), open: 24510 + i * 3, close: 24512 + i * 3, high: 24518, low: 24505 }));
   return { rows, context: { now, marketOpen: true, timestamp: now, prevTimestamp: now - 30000, prevRows, candles } };
 }

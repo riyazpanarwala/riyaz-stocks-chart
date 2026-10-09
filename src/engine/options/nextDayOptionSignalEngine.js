@@ -1,3 +1,4 @@
+import { aggregateActivity, nearestLevels, numeric, ratio, sumMetric } from "../../components/OptionChainNew/utils/analysis.js";
 // src/engine/options/nextDayOptionSignalEngine.js
 // ═══════════════════════════════════════════════════════════════════════════
 // NIFTY 3:15 PM IST NEXT-DAY OPTION SIGNAL ENGINE
@@ -9,10 +10,7 @@
 
 import {
   findATM,
-  calcPCRFull,
-  topResistance,
-  topSupport,
-  buildupType,
+  buildupType, parseIndexChain, strikePitch,
 } from "../../components/OptionChainNew/utils/parsers.js";
 import { buildPositionPlan, confirmedDirection, expiryIsActive, isolateExpiry, isFresh, liquidQuote } from "../../components/OptionChainNew/utils/tradeRules.js";
 
@@ -198,8 +196,8 @@ export function analyzeOILevels(rows, spot, atm) {
       totalPeOI: 0,
       totalCeChgOI: 0,
       totalPeChgOI: 0,
-      pcr: 1.0,
-      changeOiPcr: 1.0,
+      pcr: null,
+      changeOiPcr: null,
       strikeBehaviors: {},
     };
   }
@@ -261,34 +259,12 @@ export function analyzeOILevels(rows, spot, atm) {
     };
   }
 
-  const pcr = totalCeOI > 0 ? Number((totalPeOI / totalCeOI).toFixed(2)) : 1.0;
-  const changeOiPcr = totalCeChgOI > 0 ? Number((totalPeChgOI / totalCeChgOI).toFixed(2)) : (totalPeChgOI > 0 ? 3.0 : 1.0);
-
-  // Resistances above spot (sort by highest CE OI + highest CE addition, tie-break closest to spot)
-  const callsAboveSpot = rows
-    .filter((r) => r.strikePrice > spot)
-    .sort((a, b) => {
-      const scoreA = (Number(a.CE?.openInterest) || 0) * 0.7 + (Number(a.CE?.changeinOpenInterest) || 0) * 0.3;
-      const scoreB = (Number(b.CE?.openInterest) || 0) * 0.7 + (Number(b.CE?.changeinOpenInterest) || 0) * 0.3;
-      if (Math.abs(scoreB - scoreA) > 1e-4) return scoreB - scoreA;
-      return a.strikePrice - b.strikePrice;
-    });
-
-  const resistance1 = callsAboveSpot[0]?.strikePrice ?? null;
-  const resistance2 = callsAboveSpot[1]?.strikePrice ?? null;
-
-  // Supports below spot (sort by highest PE OI + highest PE addition, tie-break closest to spot)
-  const putsBelowSpot = rows
-    .filter((r) => r.strikePrice <= spot)
-    .sort((a, b) => {
-      const scoreA = (Number(a.PE?.openInterest) || 0) * 0.7 + (Number(a.PE?.changeinOpenInterest) || 0) * 0.3;
-      const scoreB = (Number(b.PE?.openInterest) || 0) * 0.7 + (Number(b.PE?.changeinOpenInterest) || 0) * 0.3;
-      if (Math.abs(scoreB - scoreA) > 1e-4) return scoreB - scoreA;
-      return b.strikePrice - a.strikePrice;
-    });
-
-  const support1 = putsBelowSpot[0]?.strikePrice ?? null;
-  const support2 = putsBelowSpot[1]?.strikePrice ?? null;
+  const pcr = ratio(sumMetric(rows,r=>r.PE?.openInterest),sumMetric(rows,r=>r.CE?.openInterest));
+  const changeOiPcr = ratio(rows.reduce((sum,r)=>sum+Math.max(0,numeric(r.PE?.changeinOpenInterest)??0),0),
+    rows.reduce((sum,r)=>sum+Math.max(0,numeric(r.CE?.changeinOpenInterest)??0),0));
+  const nearest=nearestLevels(rows,spot);
+  const support1=nearest.support, support2=nearest.supportCandidates[1]?.strikePrice??null;
+  const resistance1=nearest.resistance, resistance2=nearest.resistanceCandidates[1]?.strikePrice??null;
 
   return {
     support1,
@@ -305,35 +281,15 @@ export function analyzeOILevels(rows, spot, atm) {
     totalPeChgOI,
     pcr,
     changeOiPcr,
+    positiveAdditionsPCR: changeOiPcr,
     strikeBehaviors,
   };
 }
 
 /**
- * Calculates the 100-point weighted scoring model:
- * Returns score from -100 (Extremely Bearish) to +100 (Extremely Bullish).
- *
- * Bullish factors (+100 max):
- * - Price action: +20
- * - VWAP/market structure: +15
- * - Put OI support: +15
- * - Call OI unwinding: +10
- * - Put writing: +10
- * - PCR/change-PCR: +10
- * - Volume confirmation: +5
- * - IV confirmation: +5
- * - Breakout confirmation: +10
- *
- * Bearish factors (-100 max):
- * - Price action: -20
- * - VWAP/market structure: -15
- * - Call OI resistance: -15
- * - Put OI unwinding: -10
- * - Call writing: -10
- * - PCR/change-PCR: -10
- * - Volume confirmation: -5
- * - IV confirmation: -5
- * - Breakdown confirmation: -10
+ * Three-domain 100-point model: underlying price (40), classified
+ * positioning including corroborated PCR (40), and executable liquidity (20).
+ * Correlated OI observations share one domain; IV skew has no direction vote.
  *
  * @param {object} inputs
  * @returns {{
@@ -344,242 +300,45 @@ export function analyzeOILevels(rows, spot, atm) {
  *   confirmedFactors: { bullish: string[], bearish: string[] }
  * }}
  */
-export function calculateWeightedOptionScore({
-  spot,
-  open,
-  high,
-  low,
-  prevClose,
-  vwap,
-  marketStructureInfo,
-  oiLevels,
-  rows,
-  atm,
-}) {
-  let bullPriceAction = 0;
-  let bearPriceAction = 0;
-  let bullVwapStructure = 0;
-  let bearVwapStructure = 0;
-  let bullOiSupport = 0;
-  let bearOiResistance = 0;
-  let bullCallUnwinding = 0;
-  let bearPutUnwinding = 0;
-  let bullPutWriting = 0;
-  let bearCallWriting = 0;
-  let bullPcr = 0;
-  let bearPcr = 0;
-  let bullVolume = 0;
-  let bearVolume = 0;
-  let bullIv = 0;
-  let bearIv = 0;
-  let bullBreakout = 0;
-  let bearBreakdown = 0;
-
-  const confirmedBullish = [];
-  const confirmedBearish = [];
-
-  // 1. Price Action (+/- 20)
-  const dayChangePct = prevClose > 0 ? ((spot - prevClose) / prevClose) * 100 : 0;
-  const dayRange = high - low;
-  const closePct = dayRange > 0 ? (spot - low) / dayRange : 0.5;
-
-  if (dayChangePct >= 0.5 && closePct >= 0.7) {
-    bullPriceAction = 20;
-    confirmedBullish.push("Price action: Strong day gain (>0.5%) with upper-range close");
-  } else if (dayChangePct > 0.15 && closePct >= 0.55) {
-    bullPriceAction = 14;
-    confirmedBullish.push("Price action: Modest intraday gain with constructive close");
-  } else if (dayChangePct <= -0.5 && closePct <= 0.3) {
-    bearPriceAction = 20;
-    confirmedBearish.push("Price action: Severe day drop (<-0.5%) with lower-range close");
-  } else if (dayChangePct < -0.15 && closePct <= 0.45) {
-    bearPriceAction = 14;
-    confirmedBearish.push("Price action: Modest intraday decline with weak close");
+export function calculateWeightedOptionScore({spot,open,high,low,prevClose,vwap,marketStructureInfo,oiLevels,rows,atm}) {
+  // Three independent domains. Correlated OI/PCR observations share one budget.
+  const factors={priceAction:{bull:0,bear:0},vwapStructure:{bull:0,bear:0},
+    oiSupportResistance:{bull:0,bear:0},unwinding:{bull:0,bear:0},writing:{bull:0,bear:0},
+    pcr:{bull:0,bear:0},volume:{bull:0,bear:0},iv:{bull:0,bear:0},breakoutBreakdown:{bull:0,bear:0}};
+  const confirmedFactors={bullish:[],bearish:[]}, confirmedGroups={bullish:[],bearish:[]};
+  const dayChange=prevClose>0?(spot-prevClose)/prevClose*100:0;
+  const range=high-low, location=range>0?(spot-low)/range:0.5;
+  const priceDirection=dayChange>0.15&&location>=0.55&&spot>open?1:dayChange< -0.15&&location<=0.45&&spot<open?-1:0;
+  if(priceDirection) {
+    const side=priceDirection===1?"bull":"bear", group=priceDirection===1?"bullish":"bearish";
+    factors.priceAction[side]=Math.abs(dayChange)>=0.5?25:20;
+    const benchmark=numeric(vwap);
+    const structure=marketStructureInfo?.structure??"NEUTRAL";
+    const alignedStructure=priceDirection===1?structure.includes("BULLISH"):structure.includes("BEARISH");
+    if(alignedStructure && benchmark>0 && priceDirection*(spot-benchmark)>0) factors.vwapStructure[side]=15;
+    else if(alignedStructure) factors.vwapStructure[side]=10;
+    confirmedGroups[group].push("underlying price");
+    confirmedFactors[group].push("Underlying price: session move and range location agree"+(benchmark>0?"; VWAP checked":"; VWAP unavailable"));
   }
-
-  // 2. VWAP / Market Structure (+/- 15)
-  const ms = marketStructureInfo.structure;
-  const isAboveVwap = vwap ? spot > vwap : spot > open;
-  if (ms === "STRONG BULLISH" && isAboveVwap) {
-    bullVwapStructure = 15;
-    confirmedBullish.push("Market structure: Strong bullish swing structure sustained above VWAP");
-  } else if (ms === "BULLISH" || (ms === "NEUTRAL" && isAboveVwap)) {
-    bullVwapStructure = 10;
-    confirmedBullish.push("Market structure: Positive slope above benchmark VWAP");
-  } else if (ms === "STRONG BEARISH" && !isAboveVwap) {
-    bearVwapStructure = 15;
-    confirmedBearish.push("Market structure: Strong bearish swing structure suppressed below VWAP");
-  } else if (ms === "BEARISH" || (ms === "NEUTRAL" && !isAboveVwap)) {
-    bearVwapStructure = 10;
-    confirmedBearish.push("Market structure: Negative slope below benchmark VWAP");
+  const activity=aggregateActivity(rows,atm,strikePitch(rows,spot));
+  if(activity.bias) {
+    const side=activity.bias===1?"bull":"bear", group=activity.bias===1?"bullish":"bearish";
+    factors.oiSupportResistance[side]=35;
+    if(activity.bias===priceDirection && Number.isFinite(oiLevels.pcr) && (activity.bias===1?oiLevels.pcr>1.25:oiLevels.pcr<0.8)) factors.pcr[side]=5;
+    confirmedGroups[group].push("classified positioning");
+    confirmedFactors[group].push("Positioning: normalized inferred buildup/covering amounts; PCR shares this domain");
   }
-
-  // 3. OI Support / Resistance (+/- 15)
-  // Check if ATM / near-ATM strikes have heavy PE OI floor or CE OI ceiling
-  const atmRow = rows.find((r) => r.strikePrice === atm) ?? rows[0];
-  const atmPeOI = Number(atmRow?.PE?.openInterest) || 0;
-  const atmCeOI = Number(atmRow?.CE?.openInterest) || 0;
-
-  if (oiLevels.support1 != null && atmPeOI > 0 && oiLevels.support1 >= atm - 50 && atmPeOI >= atmCeOI) {
-    bullOiSupport = 15;
-    confirmedBullish.push(`OI Support: Strong Put base anchored at/near ATM (₹${oiLevels.support1})`);
-  } else if (oiLevels.support1 != null && atmPeOI > 0 && oiLevels.support1 >= spot - 100) {
-    bullOiSupport = 10;
-    confirmedBullish.push(`OI Support: Solid Put concentration near spot (₹${oiLevels.support1})`);
+  const atmRow=rows.find(r=>r.strikePrice===atm);
+  const executionSide=priceDirection===1?"CE":priceDirection===-1?"PE":null;
+  if(executionSide && activity.bias===priceDirection && liquidQuote(atmRow?.[executionSide]).valid) {
+    const side=priceDirection===1?"bull":"bear", group=priceDirection===1?"bullish":"bearish";
+    factors.volume[side]=20;
+    confirmedGroups[group].push("execution liquidity");
+    confirmedFactors[group].push("Execution liquidity: valid bid/ask, spread, OI and volume; volume is participation");
   }
-
-  if (oiLevels.resistance1 != null && atmCeOI > 0 && oiLevels.resistance1 <= atm + 50 && atmCeOI >= atmPeOI) {
-    bearOiResistance = 15;
-    confirmedBearish.push(`OI Resistance: Heavy Call wall overhead at/near ATM (₹${oiLevels.resistance1})`);
-  } else if (oiLevels.resistance1 != null && atmCeOI > 0 && oiLevels.resistance1 <= spot + 100) {
-    bearOiResistance = 10;
-    confirmedBearish.push(`OI Resistance: Heavy Call supply capping spot (₹${oiLevels.resistance1})`);
-  }
-
-  // 4. Call OI Unwinding / Put OI Unwinding (+/- 10)
-  // Near or above ATM Call unwinding is strongly bullish
-  const callsNearAtm = rows.filter((r) => r.strikePrice >= atm && r.strikePrice <= atm + 200);
-  const callUnwindingCount = callsNearAtm.filter((r) => Number(r.CE?.changeinOpenInterest) < 0 && Number(r.CE?.change) > 0).length;
-
-  const putsNearAtm = rows.filter((r) => r.strikePrice <= atm && r.strikePrice >= atm - 200);
-  const putUnwindingCount = putsNearAtm.filter((r) => Number(r.PE?.changeinOpenInterest) < 0 && Number(r.PE?.change) > 0).length;
-
-  if (callUnwindingCount >= 2) {
-    bullCallUnwinding = 10;
-    confirmedBullish.push("Call Unwinding: Call writers running for cover above ATM strikes");
-  } else if (callUnwindingCount === 1) {
-    bullCallUnwinding = 5;
-  }
-
-  if (putUnwindingCount >= 2) {
-    bearPutUnwinding = 10;
-    confirmedBearish.push("Put Unwinding: Put writers panicking and abandoning support below ATM");
-  } else if (putUnwindingCount === 1) {
-    bearPutUnwinding = 5;
-  }
-
-  // 5. Put Writing / Call Writing (+/- 10)
-  const peAddNearAtm = putsNearAtm.reduce((acc, r) => acc + (Number(r.PE?.change) < 0 ? Math.max(0, Number(r.PE?.changeinOpenInterest) || 0) : 0), 0);
-  const ceAddNearAtm = callsNearAtm.reduce((acc, r) => acc + (Number(r.CE?.change) < 0 ? Math.max(0, Number(r.CE?.changeinOpenInterest) || 0) : 0), 0);
-
-  if (peAddNearAtm > 0 && peAddNearAtm > ceAddNearAtm * 1.5) {
-    bullPutWriting = 10;
-    confirmedBullish.push("Put Writing: Aggressive institutional PE buildup protecting the downside");
-  } else if (peAddNearAtm > 0 && peAddNearAtm > ceAddNearAtm) {
-    bullPutWriting = 6;
-  }
-
-  if (ceAddNearAtm > 0 && ceAddNearAtm > peAddNearAtm * 1.5) {
-    bearCallWriting = 10;
-    confirmedBearish.push("Call Writing: Massive CE accumulation suppressing upside expansion");
-  } else if (ceAddNearAtm > 0 && ceAddNearAtm > peAddNearAtm) {
-    bearCallWriting = 6;
-  }
-
-  // 6. PCR / Change-OI PCR (+/- 10)
-  const pcr = oiLevels.pcr;
-  const dPcr = oiLevels.changeOiPcr;
-
-  if (pcr >= 1.25 && dPcr >= 1.2) {
-    bullPcr = 10;
-    confirmedBullish.push(`PCR Confluence: Total PCR (${pcr}) & Change-OI PCR (${dPcr}) strongly bullish`);
-  } else if (pcr >= 1.1 || dPcr >= 1.15) {
-    bullPcr = 6;
-  } else if (pcr <= 0.75 && dPcr <= 0.8) {
-    bearPcr = 10;
-    confirmedBearish.push(`PCR Confluence: Total PCR (${pcr}) & Change-OI PCR (${dPcr}) heavily bearish`);
-  } else if (pcr <= 0.85 || dPcr <= 0.85) {
-    bearPcr = 6;
-  }
-
-  // 7. Volume Confirmation (+/- 5)
-  const atmCeVol = Number(atmRow?.CE?.totalTradedVolume) || 0;
-  const atmPeVol = Number(atmRow?.PE?.totalTradedVolume) || 0;
-
-  if (atmPeVol > atmCeVol * 1.35) {
-    bullVolume = 5;
-    confirmedBullish.push("Volume Confirmation: PE trading volume decisively outpaces CE volume");
-  } else if (atmCeVol > atmPeVol * 1.35) {
-    bearVolume = 5;
-    confirmedBearish.push("Volume Confirmation: CE trading volume decisively outpaces PE volume");
-  }
-
-  // 8. IV Confirmation (+/- 5)
-  // Rising CE IV during upmove or falling PE IV indicates healthy demand
-  const ceIv = Number(atmRow?.CE?.impliedVolatility) || 0;
-  const peIv = Number(atmRow?.PE?.impliedVolatility) || 0;
-
-  if (dayChangePct > 0 && ceIv > 0 && ceIv >= peIv) {
-    bullIv = 5;
-    confirmedBullish.push("IV Confirmation: Call implied volatility reflects active buyer bidding");
-  } else if (dayChangePct < 0 && peIv > 0 && peIv >= ceIv) {
-    bearIv = 5;
-    confirmedBearish.push("IV Confirmation: Put implied volatility reflects active downside hedging");
-  }
-
-  // 9. Breakout / Breakdown Confirmation (+/- 10)
-  if (spot >= high - 25 && oiLevels.resistance1 >= spot) {
-    bullBreakout = 10;
-    confirmedBullish.push("Breakout Confirmation: Spot testing day highs with momentum into 3:15 PM");
-  } else if (spot >= high - 40) {
-    bullBreakout = 5;
-  }
-
-  if (spot <= low + 25 && oiLevels.support1 <= spot) {
-    bearBreakdown = 10;
-    confirmedBearish.push("Breakdown Confirmation: Spot testing day lows under persistent selling into 3:15 PM");
-  } else if (spot <= low + 40) {
-    bearBreakdown = 5;
-  }
-
-  const bullishScore = Math.min(
-    100,
-    bullPriceAction +
-      bullVwapStructure +
-      bullOiSupport +
-      bullCallUnwinding +
-      bullPutWriting +
-      bullPcr +
-      bullVolume +
-      bullIv +
-      bullBreakout
-  );
-
-  const bearishScore = Math.min(
-    100,
-    bearPriceAction +
-      bearVwapStructure +
-      bearOiResistance +
-      bearPutUnwinding +
-      bearCallWriting +
-      bearPcr +
-      bearVolume +
-      bearIv +
-      bearBreakdown
-  );
-
-  const finalScore = bullishScore - bearishScore;
-
-  return {
-    bullishScore,
-    bearishScore,
-    finalScore,
-    factorBreakdown: {
-      priceAction: { bull: bullPriceAction, bear: bearPriceAction },
-      vwapStructure: { bull: bullVwapStructure, bear: bearVwapStructure },
-      oiSupportResistance: { bull: bullOiSupport, bear: bearOiResistance },
-      unwinding: { bull: bullCallUnwinding, bear: bearPutUnwinding },
-      writing: { bull: bullPutWriting, bear: bearCallWriting },
-      pcr: { bull: bullPcr, bear: bearPcr },
-      volume: { bull: bullVolume, bear: bearVolume },
-      iv: { bull: bullIv, bear: bearIv },
-      breakoutBreakdown: { bull: bullBreakout, bear: bearBreakdown },
-    },
-    confirmedFactors: {
-      bullish: confirmedBullish,
-      bearish: confirmedBearish,
-    },
-  };
+  const bullishScore=Object.values(factors).reduce((sum,f)=>sum+f.bull,0);
+  const bearishScore=Object.values(factors).reduce((sum,f)=>sum+f.bear,0);
+  return {bullishScore,bearishScore,finalScore:bullishScore-bearishScore,factorBreakdown:factors,confirmedFactors,confirmedGroups,activity};
 }
 
 /**
@@ -789,7 +548,7 @@ export function determineConfidence({
   optionContract,
 }) {
   const absScore = Math.abs(finalScore);
-  const factorCount = confirmedFactorsList.length;
+  const factorCount = Math.min(3, confirmedFactorsList.length);
 
   // Guard against illiquid contracts or insufficient factor agreement
   if (absScore < 60 || factorCount < 3) {
@@ -797,7 +556,7 @@ export function determineConfidence({
   }
 
   const hasLiquidity = optionContract && optionContract.volume >= 50_000 && optionContract.spreadPct <= 3.0;
-  const hasStrongConfirmation = factorCount >= 4 && absScore >= 75 && hasLiquidity;
+  const hasStrongConfirmation = factorCount === 3 && absScore >= 75 && hasLiquidity;
 
   if (hasStrongConfirmation) {
     return "HIGH";
@@ -835,7 +594,7 @@ export function generate315NextDayOptionSignal({
   marketOpen = true,
 }) {
   if (optionChain) {
-    const isolated = isolateExpiry(optionChain.displayData ?? optionChain.data ?? [], expiry ?? optionChain.expiry);
+    const isolated = isolateExpiry(optionChain.fullData ?? optionChain.displayData ?? optionChain.data ?? [], expiry ?? optionChain.expiry);
     optionChain = { ...optionChain, displayData: isolated.rows, expiry: isolated.expiry };
   }
   // 1. Data Integrity Guard
@@ -865,9 +624,7 @@ export function generate315NextDayOptionSignal({
   const vwap = spotData.vwap ?? calculateVWAP(intradayCandles);
 
   // Normalize rows
-  const rows = (optionChain.displayData ?? optionChain.data ?? [])
-    .filter((r) => r.CE || r.PE)
-    .sort((a, b) => a.strikePrice - b.strikePrice);
+  const rows = parseIndexChain({ data: optionChain.displayData });
 
   const atm = findATM(rows, spot);
   const detectedExpiry = expiry || optionChain.expiry || (rows[0]?.CE?.expiryDate ?? "Current Expiry");
@@ -900,7 +657,7 @@ export function generate315NextDayOptionSignal({
     atm,
   });
 
-  const { finalScore, bullishScore, bearishScore, confirmedFactors } = scoreResult;
+  const { finalScore, bullishScore, bearishScore, confirmedFactors, confirmedGroups } = scoreResult;
 
   // 5. Signal Rules Evaluation
   // BUY CE: Score >= +60 and >= 3 independent confirmed factors
@@ -910,10 +667,10 @@ export function generate315NextDayOptionSignal({
   let activeConfirmedList = [];
   let noTradeReason = null;
 
-  if (finalScore >= 60 && confirmedFactors.bullish.length >= 3) {
+  if (finalScore >= 60 && confirmedGroups.bullish.length === 3) {
     primarySignal = "BUY CE";
     activeConfirmedList = [...confirmedFactors.bullish];
-  } else if (finalScore <= -60 && confirmedFactors.bearish.length >= 3) {
+  } else if (finalScore <= -60 && confirmedGroups.bearish.length === 3) {
     primarySignal = "BUY PE";
     activeConfirmedList = [...confirmedFactors.bearish];
   }
@@ -986,6 +743,9 @@ export function generate315NextDayOptionSignal({
     resistance2: oiLevels.resistance2,
     pcr: oiLevels.pcr,
     changeOiPcr: oiLevels.changeOiPcr,
+    positiveAdditionsPCR: oiLevels.positiveAdditionsPCR,
+    netCeChangeOI: oiLevels.totalCeChgOI, netPeChangeOI: oiLevels.totalPeChgOI,
+    confirmedGroups,
     bullishScore,
     bearishScore,
     finalScore,
@@ -1044,8 +804,8 @@ Support 2: ${res.support2}
 Resistance 1: ${res.resistance1}
 Resistance 2: ${res.resistance2}
 
-PCR: ${res.pcr.toFixed(2)}
-Change-OI PCR: ${res.changeOiPcr.toFixed(2)}
+PCR: ${Number.isFinite(res.pcr) ? res.pcr.toFixed(2) : "Unavailable"}
+Positive-additions PCR: ${Number.isFinite(res.changeOiPcr) ? res.changeOiPcr.toFixed(2) : "Unavailable"}
 
 Bullish Score: ${res.bullishScore}
 Bearish Score: ${res.bearishScore}
@@ -1138,7 +898,7 @@ Wait for next-day price confirmation.`;
 
   const reasonsList = res.whyReasons?.length
     ? res.whyReasons.map((r) => `• ${r}`).join("\n")
-    : `• Option chain confirms directional institutional accumulation`;
+    : `• Underlying direction, inferred positioning and execution liquidity agree`;
 
   return `📊 NIFTY NEXT-DAY SETUP
 ⏰ ${res.time || "3:15 PM IST"}

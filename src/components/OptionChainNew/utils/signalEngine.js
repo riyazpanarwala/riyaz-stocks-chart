@@ -2,9 +2,10 @@
 // SIGNAL GENERATION ENGINE  (pure functions)
 // Derives the top-level directional signal from option-chain data.
 // ═══════════════════════════════════════════════════════════════
+import { aggregateActivity, crossedLevel, legActivity, matchedSnapshots, nearestLevels, wallState } from "./analysis.js";
 import { pcrLabel } from "./formatters.js";
 import { topResistance, topSupport, strikePitch } from "./parsers.js";
-import { beforeEntryCutoff, buildPositionPlan, confirmedDirection, expiryIsActive, isFresh, liquidQuote, marketTimestamp } from "./tradeRules.js";
+import { beforeEntryCutoff, buildPositionPlan, confirmedDirection, expiryIsActive, liquidQuote } from "./tradeRules.js";
 
 /**
  * @typedef {import("./parsers.js").OptionRow} OptionRow
@@ -50,7 +51,7 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
       rawSignal: "NO TRADE",
       strength: 0,
       strengthLabel: "Weak",
-      pcr: "0.00",
+      pcr: "—",
       pcrBias: "Neutral",
       oiChangeBias: "No data",
       topSupport: [],
@@ -61,13 +62,14 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
   }
 
   const atmRow = rows.find((r) => r.strikePrice === atm);
-  const pitch = strikePitch(rows);
+  const pitch = strikePitch(rows, spot);
 
   const resistance = topResistance(rows, spot);
   const support = topSupport(rows, spot);
 
-  const closestRes = resistance.length ? Math.min(...resistance) : null;
-  const closestSup = support.length ? Math.max(...support) : null;
+  const levels = nearestLevels(rows, spot);
+  const closestRes = levels.resistance;
+  const closestSup = levels.support;
 
   // FIX #6: use null when no level exists so the UI can render "—" instead of "+Infinity"
   const distToRes = closestRes != null ? closestRes - spot : null;
@@ -79,15 +81,14 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
   // ── Factor 1: Intraday Price-Action Trend from ATM Premiums (25 pts) ──────
   // When Call premiums are expanding and Put premiums decaying, spot is trending up.
   const previousAtm = context.prevRows?.find((r) => r.strikePrice === atm);
-  const snapshotsValid = isFresh(context.timestamp, context.now) && isFresh(context.prevTimestamp, context.now) &&
-    marketTimestamp(context.timestamp) > marketTimestamp(context.prevTimestamp);
+  const snapshotsValid = matchedSnapshots(context);
+  const activityContext = { ...context, mode: "intraday" };
+  const activity = aggregateActivity(rows, atm, pitch, activityContext);
   const atmCeChg = snapshotsValid && previousAtm?.CE?.lastPrice > 0 ? atmRow?.CE?.lastPrice - previousAtm.CE.lastPrice : 0;
   const atmPeChg = snapshotsValid && previousAtm?.PE?.lastPrice > 0 ? atmRow?.PE?.lastPrice - previousAtm.PE.lastPrice : 0;
   const candleBias = confirmedDirection({ candles: context.candles, now: context.now, spot });
-  const legChange = (r, side, field) => {
-    const old = context.prevRows?.find((p) => p.strikePrice === r.strikePrice)?.[side];
-    return snapshotsValid && old ? Number(r[side]?.[field]) - Number(old[field]) : 0;
-  };
+
+
   let priceBias = 0;
   if (atmCeChg > 0 && atmPeChg < 0) {
     priceBias = 1;
@@ -97,82 +98,38 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
     bearScore += 25;
   }
 
-  // ── Factor 2: Cluster OI Change around ATM (25 pts) ──────────────────────
-  // Evaluate ATM ± 1 pitch cluster instead of a fragile single strike
-  const nearRows = rows.filter((r) => Math.abs(r.strikePrice - atm) <= pitch);
-  const nearCeDelta = nearRows.reduce((s, r) => s + legChange(r, "CE", "openInterest"), 0);
-  const nearPeDelta = nearRows.reduce((s, r) => s + legChange(r, "PE", "openInterest"), 0);
-  const writing = (r, side) => legChange(r, side, "openInterest") > 0 && legChange(r, side, "lastPrice") < 0;
+  // Positioning is one domain: aggregate the actual classified, normalized amounts.
+  const oiChangeBias = activity.bias;
+  if (oiChangeBias === 1) bullScore += 25;
+  if (oiChangeBias === -1) bearScore += 25;
 
-  // Check Call unwinding above ATM and Put unwinding below ATM
-  const callsAbove = rows.filter((r) => r.strikePrice >= atm && r.strikePrice <= atm + pitch * 2);
-  const ceUnwindCount = callsAbove.filter((r) => legChange(r, "CE", "openInterest") < 0 && legChange(r, "CE", "lastPrice") > 0).length;
-  const putsBelow = rows.filter((r) => r.strikePrice <= atm && r.strikePrice >= atm - pitch * 2);
-  const peUnwindCount = putsBelow.filter((r) => legChange(r, "PE", "openInterest") < 0 && legChange(r, "PE", "lastPrice") > 0).length;
-
-  let oiChangeBias = 0;
-  const peDominant = nearRows.some((r) => writing(r, "PE")) && nearPeDelta > 0 && (nearCeDelta <= 0 || nearPeDelta > nearCeDelta * 1.35);
-  const ceDominant = nearRows.some((r) => writing(r, "CE")) && nearCeDelta > 0 && (nearPeDelta <= 0 || nearCeDelta > nearPeDelta * 1.35);
-  const noDominance = !peDominant && !ceDominant;
-
-  if (peDominant || (noDominance && nearRows.some((r) => writing(r, "PE")) && nearPeDelta > 0 && ceUnwindCount > peUnwindCount)) {
-    oiChangeBias = 1;
-    bullScore += 25;
-  } else if (ceDominant || (noDominance && nearRows.some((r) => writing(r, "CE")) && nearCeDelta > 0 && peUnwindCount > ceUnwindCount)) {
-    oiChangeBias = -1;
-    bearScore += 25;
+  // OI PCR is confluence only when both inferred positioning and underlying agree.
+  if (Number.isFinite(pcr) && candleBias === priceBias && priceBias === oiChangeBias) {
+    if (priceBias === 1 && pcr > 1.25) bullScore += 20;
+    if (priceBias === -1 && pcr < 0.8) bearScore += 20;
   }
 
-  // ── Factor 3: PCR Sentiment (20 pts) ─────────────────────────────────────
-  // +Infinity (CE OI = 0, PE > 0) is bullish; NaN/missing is neutral
-  let pcrBias = 0;
-  if (Number.isFinite(pcr) && pcr > 1.25) {
-    pcrBias = 1;
-    bullScore += 20;
-  } else if (Number.isFinite(pcr) && pcr > 0 && pcr < 0.80) {
-    pcrBias = -1;
-    bearScore += 20;
+  // Interval volume is participation, never evidence of trade aggressor direction.
+  const participation = activity.volumeAvailable && activity.volumeCE + activity.volumePE > 0;
+  if (participation && priceBias === candleBias) {
+    if (priceBias === 1) bullScore += 15;
+    if (priceBias === -1) bearScore += 15;
   }
 
-  // ── Factor 4: Volume & Liquidity Confirmation (15 pts) ───────────────────
-  // Volume must support the price trend or dominant OI side
-  const nearCeVol = nearRows.reduce((s, r) => s + (r.CE?.totalTradedVolume || 0), 0);
-  const nearPeVol = nearRows.reduce((s, r) => s + (r.PE?.totalTradedVolume || 0), 0);
-
-  if (priceBias === 1 && nearCeVol > 0 && nearCeVol >= nearPeVol * 0.85) {
-    bullScore += 15;
-  } else if (priceBias === -1 && nearPeVol > 0 && nearPeVol >= nearCeVol * 0.85) {
-    bearScore += 15;
-  } else if (priceBias === 0) {
-    if (oiChangeBias === 1 && nearPeVol > nearCeVol * 1.25) {
-      bullScore += 15;
-    } else if (oiChangeBias === -1 && nearCeVol > nearPeVol * 1.25) {
-      bearScore += 15;
-    }
-  }
-
-  // ── Factor 5: S/R Zone Breakout vs Rejection (15 pts) ────────────────────
-  if (distToRes != null && distToRes <= pitch * 0.5) {
-    // Testing resistance: check if breaking out with call unwinding or rejecting
-    if (priceBias === 1 && (ceUnwindCount >= 1 || nearCeDelta <= 0)) {
-      bullScore += 15; // Breakout in progress
-    } else if (nearCeDelta > 0) {
-      bearScore += 15; // Rejection wall holding
-    }
-  } else if (distToSup != null && distToSup <= pitch * 0.5) {
-    // Testing support: check if breaking down with put unwinding or holding
-    if (priceBias === -1 && (peUnwindCount >= 1 || nearPeDelta <= 0)) {
-      bearScore += 15; // Breakdown in progress
-    } else if (nearPeDelta > 0) {
-      bullScore += 15; // Support floor holding
-    }
-  } else if (distToSup != null && distToRes != null) {
-    // Between zones: reward favorable risk-reward room to run
-    if (distToSup < distToRes * 0.6) {
-      bullScore += 15;
-    } else if (distToRes < distToSup * 0.6) {
-      bearScore += 15;
-    }
+  // A breakout crosses a previous barrier in completed underlying candles AND
+  // shows aligned inferred covering at that same strike.
+  const previousLevels = nearestLevels(context.prevRows, context.prevSpot ?? spot);
+  const levelRow = (level) => rows.find(r => r.strikePrice === level);
+  const breakout = crossedLevel(context.candles, previousLevels.resistance, 1, context.now, spot) &&
+    legActivity(levelRow(previousLevels.resistance), "CE", activityContext).type === "Short Covering";
+  const breakdown = crossedLevel(context.candles, previousLevels.support, -1, context.now, spot) &&
+    legActivity(levelRow(previousLevels.support), "PE", activityContext).type === "Short Covering";
+  if (breakout) bullScore += 15;
+  if (breakdown) bearScore += 15;
+  // Geometry adds confluence only in the already confirmed direction.
+  if (!breakout && !breakdown && distToSup != null && distToRes != null) {
+    if (priceBias === 1 && oiChangeBias === 1 && distToSup < distToRes * 0.6) bullScore += 15;
+    if (priceBias === -1 && oiChangeBias === -1 && distToRes < distToSup * 0.6) bearScore += 15;
   }
 
   // ── Signal Decision & Strength ───────────────────────────────────────────
@@ -184,9 +141,9 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
   let rawSignal = "NO TRADE";
   const ready = context.marketOpen === true && beforeEntryCutoff(context.now) && snapshotsValid && Number.isFinite(spot) && spot > 0 &&
     expiryIsActive(atmRow?.CE?.expiryDate, context.now) && expiryIsActive(atmRow?.PE?.expiryDate, context.now);
-  if (ready && candleBias === 1 && priceBias === 1 && liquidQuote(atmRow?.CE).valid && bullScore >= 50 && bearScore <= 20 && netBias >= 30) {
+  if (ready && participation && oiChangeBias === 1 && candleBias === 1 && priceBias === 1 && liquidQuote(atmRow?.CE).valid && bullScore >= 50 && bearScore <= 20 && netBias >= 30) {
     rawSignal = "BUY CALL";
-  } else if (ready && candleBias === -1 && priceBias === -1 && liquidQuote(atmRow?.PE).valid && bearScore >= 50 && bullScore <= 20 && netBias <= -30) {
+  } else if (ready && participation && oiChangeBias === -1 && candleBias === -1 && priceBias === -1 && liquidQuote(atmRow?.PE).valid && bearScore >= 50 && bullScore <= 20 && netBias <= -30) {
     rawSignal = "BUY PUT";
   }
 
@@ -220,9 +177,9 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
 
   const oiChangeBiasLabel =
     oiChangeBias === 1
-      ? "Put writing / Bullish support"
+      ? "Inferred bullish positioning"
       : oiChangeBias === -1
-        ? "Call writing / Bearish resistance"
+        ? "Inferred bearish positioning"
         : "Mixed activity";
 
   return {
@@ -238,6 +195,10 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
     pcr: Number.isFinite(pcr) ? pcr.toFixed(2) : "—",
     pcrBias: pcrLabel(pcr),
     oiChangeBias: oiChangeBiasLabel,
+    activity,
+    nearestSupport: closestSup, nearestResistance: closestRes,
+    supportState: wallState(levelRow(closestSup), "PE", activityContext),
+    resistanceState: wallState(levelRow(closestRes), "CE", activityContext),
     topSupport: support,
     topResistance: resistance,
     distToRes, // number | null

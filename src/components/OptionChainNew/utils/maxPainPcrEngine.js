@@ -1,3 +1,4 @@
+import { numeric, ratio, sessionDate, sumMetric } from "./analysis.js";
 // ═══════════════════════════════════════════════════════════════
 // MAX PAIN & PCR CALCULATION AND TREND ENGINE
 // ═══════════════════════════════════════════════════════════════
@@ -15,7 +16,8 @@ export const MAX_STORAGE_AGE_MS = 48 * 60 * 60 * 1000; // 48 hours TTL
  * @returns {{ maxPainStrike: number, minLoss: number, curve: Array<{strike: number, callLoss: number, putLoss: number, totalLoss: number}> }}
  */
 export function calcMaxPainCurve(rows) {
-  if (!rows || !rows.length) {
+  const ce = sumMetric(rows, r => r.CE?.openInterest), pe = sumMetric(rows, r => r.PE?.openInterest);
+  if (ce == null || pe == null || ce + pe === 0) {
     return { maxPainStrike: 0, minLoss: 0, curve: [] };
   }
 
@@ -65,7 +67,8 @@ export function calcMaxPainCurve(rows) {
  * @returns {{ maxPainStrike: number, minLoss: number, curve: Array<{strike: number, callLoss: number, putLoss: number, totalLoss: number}> }}
  */
 export function calcMaxPainCurveFull(fullOI) {
-  if (!fullOI || !fullOI.length) {
+  const ce = sumMetric(fullOI, r => r.c), pe = sumMetric(fullOI, r => r.p);
+  if (ce == null || pe == null || ce + pe === 0) {
     return { maxPainStrike: 0, minLoss: 0, curve: [] };
   }
 
@@ -115,73 +118,15 @@ export function calcMaxPainCurveFull(fullOI) {
  * @returns {number}
  */
 export function calcVolumePCR(rows) {
-  if (!rows || !rows.length) return 0;
-  const ceVol = rows.reduce((acc, r) => acc + (Number(r.CE?.totalTradedVolume) || 0), 0);
-  const peVol = rows.reduce((acc, r) => acc + (Number(r.PE?.totalTradedVolume) || 0), 0);
-  if (ceVol === 0) return peVol === 0 ? 0 : Number.POSITIVE_INFINITY;
-  return peVol / ceVol;
+  return ratio(sumMetric(rows, r=>r.PE?.totalTradedVolume), sumMetric(rows, r=>r.CE?.totalTradedVolume));
 }
-
-/**
- * Calculates volume-based Put-Call Ratio for Index fullOI.
- *
- * @param {Array<{cVol?: number, pVol?: number}>} fullOI
- * @returns {number}
- */
-export function calcVolumePCRFull(fullOI) {
-  if (!fullOI || !fullOI.length) return 0;
-  const ceVol = fullOI.reduce((acc, r) => acc + (Number(r.cVol) || 0), 0);
-  const peVol = fullOI.reduce((acc, r) => acc + (Number(r.pVol) || 0), 0);
-  if (ceVol === 0) return peVol === 0 ? 0 : Number.POSITIVE_INFINITY;
-  return peVol / ceVol;
+export function calcVolumePCRFull(rows) {
+  return ratio(sumMetric(rows, r=>r.pVol), sumMetric(rows, r=>r.cVol));
 }
-
-/**
- * Evaluates institutional PCR sentiment regime and trading bias.
- *
- * @param {number} pcr
- * @returns {{ label: string, sentiment: "bullish"|"mild_bullish"|"neutral"|"mild_bearish"|"bearish", color: string, description: string }}
- */
 export function getPcrSentiment(pcr) {
-  const val = Number(pcr) || 0;
-  if (val >= 1.45) {
-    return {
-      label: "Very Bullish (Elevated Put OI)",
-      sentiment: "bullish",
-      color: "#3fb950",
-      description: "Put open interest substantially exceeds Call open interest. Elevated ratio reflects strong bullish market positioning, though extreme levels can signal overbought conditions.",
-    };
-  }
-  if (val >= 1.15) {
-    return {
-      label: "Bullish (Put OI Dominant)",
-      sentiment: "mild_bullish",
-      color: "#56d364",
-      description: "Put open interest is moderately higher than Call open interest, indicating positive broader market sentiment.",
-    };
-  }
-  if (val >= 0.85) {
-    return {
-      label: "Neutral (Balanced Put/Call OI)",
-      sentiment: "neutral",
-      color: "#e3b341",
-      description: "Put and Call open interest are relatively balanced, indicating neutral aggregate positioning across strikes.",
-    };
-  }
-  if (val >= 0.6) {
-    return {
-      label: "Bearish (Call OI Dominant)",
-      sentiment: "mild_bearish",
-      color: "#ff7b72",
-      description: "Call open interest is moderately higher than Put open interest, reflecting a cautious or defensive market bias.",
-    };
-  }
-  return {
-    label: "Very Bearish (Elevated Call OI)",
-    sentiment: "bearish",
-    color: "#f85149",
-    description: "Call open interest substantially exceeds Put open interest. Very low ratio reflects defensive positioning, though extreme lows can signal oversold conditions.",
-  };
+  if (!Number.isFinite(pcr) || pcr < 0) return {label:"Unavailable",sentiment:"neutral",color:"#8b949e",description:"OI PCR requires valid OI and nonzero Call OI."};
+  const label=pcr>=1.45?"High Put OI":pcr>=1.15?"Put OI dominant":pcr>=0.85?"Balanced OI":pcr>=0.6?"Call OI dominant":"High Call OI";
+  return {label,sentiment:"neutral",color:"#e3b341",description:"Relative OI concentration. Direction requires classified OI/premium activity and underlying confirmation."};
 }
 
 /**
@@ -197,117 +142,33 @@ export function getPcrSentiment(pcr) {
  * @returns {object}
  */
 export function analyzePcrTrend(snapshots, currentSpot = 0, currentMaxPain = 0) {
-  if (!snapshots || snapshots.length === 0) {
-    return {
-      direction: "Neutral",
-      velocityPerHour: 0,
-      pcrChange: 0,
-      divergence: null,
-      maxPainMigration: null,
-      gravityPull: null,
-      historyCount: 0,
-    };
+  const real=(snapshots??[]).filter(s=>!s.isSyntheticAnchor && numeric(s.ts)!=null && Number.isFinite(s.pcr) && s.pcr>=0)
+    .sort((a,b)=>a.ts-b.ts).filter((s,i,all)=>i===0 || s.ts!==all[i-1].ts);
+  const latest=real.at(-1);
+  const history=latest ? real.filter(s=>sessionDate(s.ts)===sessionDate(latest.ts)) : [];
+  const first=history[0];
+  const empty={direction:"Neutral",velocityPerHour:0,pcrChange:0,divergence:null,maxPainMigration:null,gravityPull:null,historyCount:history.length};
+  if(!latest || !first) return empty;
+  const spot=currentSpot||latest.spot, maxPain=currentMaxPain||latest.maxPain;
+  const gravityPull=spot>0&&maxPain>0 ? {distancePts:Number((spot-maxPain).toFixed(1)),
+    distancePct:Number(((spot-maxPain)/maxPain*100).toFixed(2)),targetStrike:maxPain,
+    bias:spot>maxPain+5?"Above Max Pain":spot<maxPain-5?"Below Max Pain":"Near Max Pain"} : null;
+  if(history.length<2) return {...empty,gravityPull};
+  const pcrChange=Number((latest.pcr-first.pcr).toFixed(3));
+  const spotChange=Number((latest.spot-first.spot).toFixed(2));
+  const spotChangePct=first.spot>0?Number((spotChange/first.spot*100).toFixed(2)):0;
+  const hours=(latest.ts-first.ts)/3600000;
+  let divergence=null;
+  if(Math.abs(spotChangePct)>=0.15 && Math.abs(pcrChange)>=0.03) {
+    const priceUp=spotChange>0, pcrUp=pcrChange>0;
+    divergence={type:"price_"+(priceUp?"up":"down")+"_pcr_"+(pcrUp?"up":"down"),
+      title:priceUp===pcrUp?"Price and PCR moved together":"Price/PCR divergence observed",severity:"info",
+      message:"Price changed "+spotChangePct+"% and OI PCR changed "+pcrChange+". Check classified activity before assigning a directional bias."};
   }
-
-  const first = snapshots[0];
-  const latest = snapshots[snapshots.length - 1];
-
-  const pcrChange = Number((latest.pcr - first.pcr).toFixed(3));
-  const spotChange = Number((latest.spot - first.spot).toFixed(2));
-  const spotChangePct = first.spot > 0 ? Number(((spotChange / first.spot) * 100).toFixed(2)) : 0;
-
-  // Velocity per hour
-  const timeDiffHours = (latest.ts - first.ts) / (1000 * 60 * 60);
-  const velocityPerHour = timeDiffHours > 0.05
-    ? Number((pcrChange / timeDiffHours).toFixed(3))
-    : 0;
-
-  let direction = "Neutral";
-  if (pcrChange >= 0.04) direction = "Rising";
-  else if (pcrChange <= -0.04) direction = "Falling";
-
-  // Divergence Detection
-  // Bullish Divergence: Spot falling/flat (< -0.1%) but PCR rising (>= +0.03) (Put writers stepping in during dip)
-  // Bearish Divergence: Spot rising (>= +0.1%) but PCR falling (<= -0.03) (Call writers capping the rally)
-  // Bullish Confirmation: Spot up and PCR up
-  // Bearish Confirmation: Spot down and PCR down
-  let divergence = null;
-  if (spotChangePct <= -0.15 && pcrChange >= 0.03) {
-    divergence = {
-      type: "bullish_divergence",
-      title: "🟢 Bullish Divergence Detected",
-      severity: "positive",
-      message: `Price dropped ${spotChangePct}% while PCR rose +${pcrChange}. Institutional Put writers are aggressively accumulating contracts into the dip.`,
-    };
-  } else if (spotChangePct >= 0.15 && pcrChange <= -0.03) {
-    divergence = {
-      type: "bearish_divergence",
-      title: "🔴 Bearish Divergence Detected",
-      severity: "warning",
-      message: `Price rallied +${spotChangePct}% but PCR fell ${pcrChange}. Call writers are adding heavy resistance overhead, signaling potential exhaustion.`,
-    };
-  } else if (spotChangePct >= 0.2 && pcrChange >= 0.05) {
-    divergence = {
-      type: "bullish_confirmation",
-      title: "⚡ Strong Bullish Confirmation",
-      severity: "info",
-      message: `Both price (+${spotChangePct}%) and Put-Call Ratio (+${pcrChange}) are trending higher in tandem.`,
-    };
-  } else if (spotChangePct <= -0.2 && pcrChange <= -0.05) {
-    divergence = {
-      type: "bearish_confirmation",
-      title: "⚠️ Strong Bearish Confirmation",
-      severity: "warning",
-      message: `Both price (${spotChangePct}%) and Put-Call Ratio (${pcrChange}) are sliding lower with active call writing.`,
-    };
-  }
-
-  // Max Pain migration
-  let maxPainMigration = null;
-  const initialMaxPain = first.maxPain;
-  const activeMaxPain = currentMaxPain || latest.maxPain;
-
-  if (initialMaxPain > 0 && activeMaxPain > 0 && initialMaxPain !== activeMaxPain) {
-    const shift = activeMaxPain - initialMaxPain;
-    maxPainMigration = {
-      from: initialMaxPain,
-      to: activeMaxPain,
-      shift,
-      label: shift > 0 ? `Migrated Up (+${shift} pts)` : `Migrated Down (${shift} pts)`,
-      type: shift > 0 ? "bullish_shift" : "bearish_shift",
-    };
-  }
-
-  // Gravitational pull to Max Pain
-  let gravityPull = null;
-  const spot = currentSpot || latest.spot;
-  if (spot > 0 && activeMaxPain > 0) {
-    const distancePts = Number((spot - activeMaxPain).toFixed(1));
-    const distancePct = Number(((distancePts / activeMaxPain) * 100).toFixed(2));
-    let bias = "Neutral";
-    if (distancePts > 5) bias = "Downside Gravity (Towards Max Pain)";
-    else if (distancePts < -5) bias = "Upside Gravity (Towards Max Pain)";
-    else bias = "Pinned at Max Pain";
-
-    gravityPull = {
-      distancePts,
-      distancePct,
-      bias,
-      targetStrike: activeMaxPain,
-    };
-  }
-
-  return {
-    direction,
-    pcrChange,
-    spotChange,
-    spotChangePct,
-    velocityPerHour,
-    divergence,
-    maxPainMigration,
-    gravityPull,
-    historyCount: snapshots.length,
-  };
+  const maxPainMigration=first.maxPain>0&&maxPain>0&&first.maxPain!==maxPain ? {from:first.maxPain,to:maxPain,shift:maxPain-first.maxPain,
+    label:"Payout-minimizing strike moved "+first.maxPain+" → "+maxPain,type:"observed_shift"} : null;
+  return {direction:pcrChange>=0.04?"Rising":pcrChange<=-0.04?"Falling":"Neutral",pcrChange,spotChange,spotChangePct,
+    velocityPerHour:hours>0?Number((pcrChange/hours).toFixed(3)):0,divergence,maxPainMigration,gravityPull,historyCount:history.length};
 }
 
 /**

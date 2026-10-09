@@ -27,7 +27,7 @@ export const ExpiryCards = React.memo(function ExpiryCards({
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {expiryData.map(({ ex, pcrNum, totCE, totPE }) => {
-          const pc = pcrNum > 1.2 ? C.green : pcrNum < 0.8 ? C.red : C.yellow;
+          const pc = !Number.isFinite(pcrNum) ? C.muted : pcrNum > 1.2 ? C.green : pcrNum < 0.8 ? C.red : C.yellow;
           const isActive = ex === activeExpiry;
 
           return (
