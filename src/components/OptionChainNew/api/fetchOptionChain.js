@@ -3,8 +3,9 @@
 // All network I/O lives here. Components call these indirectly
 // through the useOptionChain hook.
 // ═══════════════════════════════════════════════════════════════
-import { EMPTY_INDEX_DATA, EMPTY_STOCK_DATA } from "../constants.js";
+import { numeric } from "../utils/analysis.js";
 import { getNSEData } from "../../getIntervalData.js"; // project-level import
+import { isolateExpiry } from "../utils/tradeRules.js";
 
 /**
  * @typedef {{ type:"index"|"stock", symbol:string, lot:number, name:string }} Instrument
@@ -38,11 +39,12 @@ export async function fetchOptionChain(instrument) {
 
   if (isIndex) {
     const rec = json.records ?? json;
-    const allRows = (rec.data ?? [])
+    const chain = isolateExpiry(rec.data ?? []);
+    const allRows = chain.rows
       .filter((r) => r.CE || r.PE)
       .sort((a, b) => a.strikePrice - b.strikePrice);
 
-    const uv = rec.underlyingValue ?? 0;
+    const uv = numeric(rec.underlyingValue) ?? 0;
     const atmIdx = allRows.reduce(
       (bi, r, i) =>
         Math.abs(r.strikePrice - uv) < Math.abs(allRows[bi].strikePrice - uv)
@@ -53,14 +55,19 @@ export async function fetchOptionChain(instrument) {
     const displayData = allRows.slice(Math.max(0, atmIdx - 15), atmIdx + 16);
     const fullOI = allRows.map((r) => ({
       s: r.strikePrice,
-      c: r.CE?.openInterest ?? 0,
-      p: r.PE?.openInterest ?? 0,
+      c: r.CE ? numeric(r.CE.openInterest) : 0,
+      cVol: r.CE ? numeric(r.CE.totalTradedVolume) : 0,
+      p: r.PE ? numeric(r.PE.openInterest) : 0,
+      pVol: r.PE ? numeric(r.PE.totalTradedVolume) : 0,
     }));
 
     return {
-      timestamp: rec.timestamp ?? new Date().toLocaleString("en-IN"),
+      timestamp: rec.timestamp ?? null,
+      expiry: chain.expiry,
+      expiries: chain.expiries,
       underlyingValue: uv,
       displayData,
+      fullData: allRows,
       fullOI,
     };
   }
@@ -72,12 +79,12 @@ export async function fetchOptionChain(instrument) {
   const rows = json.data ?? [];
   const underlyingValue = rows.reduce((found, r) => {
     if (found > 0) return found;
-    const uv = Number.isFinite(r.underlyingValue) ? r.underlyingValue : 0;
+    const uv = numeric(r.underlyingValue) ?? 0;
     return uv > 0 ? uv : found;
   }, 0);
 
   return {
-    timestamp: json.timestamp ?? new Date().toLocaleString("en-IN"),
+    timestamp: json.timestamp ?? null,
     underlyingValue,
     data: rows,
   };

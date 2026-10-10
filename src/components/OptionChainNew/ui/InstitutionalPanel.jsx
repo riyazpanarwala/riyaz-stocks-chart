@@ -112,15 +112,15 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
   atm,
   maxPain,
   pcr,
-  sig,
+  sig, timestamp, prevTimestamp, expiry, prevExpiry, candles, now, marketOpen,
 }) {
   const inst = useMemo(
-    () => calcInstitutional(rows, spot, atm, pcr),
-    [rows, spot, atm, pcr],
+    () => calcInstitutional(rows, spot, atm, pcr, { mode:"intraday", prevRows, timestamp, prevTimestamp, expiry, prevExpiry, candles, now, marketOpen }),
+    [rows, spot, atm, pcr, prevRows, timestamp, prevTimestamp, expiry, prevExpiry, candles, now, marketOpen],
   );
   const diffAlerts = useMemo(
-    () => diffInstitutional(prevRows, rows, spot),
-    [prevRows, rows, spot],
+    () => diffInstitutional(prevRows, rows, spot, { timestamp, prevTimestamp, expiry, prevExpiry, now, marketOpen }),
+    [prevRows, rows, spot, timestamp, prevTimestamp, expiry, prevExpiry, now, marketOpen],
   );
 
   if (!inst) return null;
@@ -157,8 +157,8 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
   const distVote = (distSup, distRes) => {
     if (!Number.isFinite(distSup) || !Number.isFinite(distRes))
       return "NEUTRAL";
-    if (distSup < distRes) return "UP";
-    if (distRes < distSup) return "DOWN";
+    if (inst.smartBias === "BULLISH" && distSup < distRes) return "UP";
+    if (inst.smartBias === "BEARISH" && distRes < distSup) return "DOWN";
     return "NEUTRAL";
   };
 
@@ -170,8 +170,8 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
     {
       label: "Market Mood (PCR)",
       value: pcrLabel(pcr),
-      detail: `PCR ${pcr.toFixed(2)}`,
-      vote: pcr > 1.2 ? "UP" : pcr < 0.8 ? "DOWN" : "NEUTRAL",
+      detail: `PCR ${Number.isFinite(pcr) ? pcr.toFixed(2) : "—"}`,
+      vote: inst.smartBias === "BULLISH" && pcr > 1.2 ? "UP" : inst.smartBias === "BEARISH" && pcr < 0.8 ? "DOWN" : "NEUTRAL",
       color: pcr > 1.2 ? C.green : pcr < 0.8 ? C.red : C.yellow,
     },
     {
@@ -196,15 +196,15 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
       value: sig?.oiChangeBias ?? "—",
       detail: "OI change at ATM",
       vote:
-        sig?.oiChangeBias === "New buying activity"
+        sig?.oiChangeBias === "Inferred bullish positioning"
           ? "UP"
-          : sig?.oiChangeBias === "New selling activity"
+          : sig?.oiChangeBias === "Inferred bearish positioning"
             ? "DOWN"
             : "NEUTRAL",
       color:
-        sig?.oiChangeBias === "New buying activity"
+        sig?.oiChangeBias === "Inferred bullish positioning"
           ? C.green
-          : sig?.oiChangeBias === "New selling activity"
+          : sig?.oiChangeBias === "Inferred bearish positioning"
             ? C.red
             : C.yellow,
     },
@@ -389,19 +389,19 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
               l: "Max Pain",
               v: maxPain,
               c: C.yellow,
-              sub: "where price is pulled at expiry",
+              sub: "minimum intrinsic payout reference",
             },
             {
               l: "Big Moves Detected",
               v: topSpikes.length,
               c: C.blue,
-              sub: "institutional spikes",
+              sub: "classified OI changes",
             },
             {
-              l: "Danger Zones",
-              v: traps.length,
-              c: traps.length > 0 ? "#ff7b00" : C.muted,
-              sub: "strikes to avoid",
+              l: "Trader Cost Basis",
+              v: "—",
+              c: C.muted,
+              sub: "cost basis unavailable",
             },
           ].map(({ l, v, c, sub }) => (
             <div key={l} style={{ textAlign: "center" }}>
@@ -422,7 +422,7 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
             zones: topSup,
             side: "PE",
             label: "▲ SUPPORT LEVELS — Price floor below current price",
-            hint: "Big players have placed large Put positions here — these act as cushions",
+            hint: "Put OI concentrations; inferred activity determines whether support may hold",
             color: C.green,
             total: totalPeOI,
           },
@@ -430,7 +430,7 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
             zones: topRes,
             side: "CE",
             label: "▼ RESISTANCE LEVELS — Price ceiling above current price",
-            hint: "Big players have placed large Call positions here — these act as barriers",
+            hint: "Call OI concentrations; inferred activity determines whether resistance may hold",
             color: C.red,
             total: totalCeOI,
           },
@@ -484,7 +484,7 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
                         opacity: 1 - i * 0.2,
                       }}
                     >
-                      {r.strikePrice}
+                      {r.strikePrice} · {r.zoneState}
                     </span>
                   ))
                 ) : (
@@ -554,7 +554,7 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
                   }}
                 >
                   {s.highConv
-                    ? "✓ Confirmed by trading volume — likely a genuine institutional move"
+                    ? "✓ Interval trading volume confirms participation"
                     : "⚠ Low trading volume — could be a passive or misleading entry"}
                 </div>
                 <div style={{ fontSize: 9, color: C.muted, marginTop: 1 }}>
@@ -683,18 +683,18 @@ export const InstitutionalPanel = React.memo(function InstitutionalPanel({
 
       {/* ── Volume conviction ── */}
       <Card>
-        <CardTitle icon="📊">Volume Check — Real vs Noise</CardTitle>
+        <CardTitle icon="📊">Interval Volume Participation</CardTitle>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
           {[
             {
-              label: "✓ REAL MOVES — Volume confirms the position",
+              label: "✓ ACTIVE — Matching interval volume",
               zones: highConvZones,
               color: C.green,
               bg: C.greenBg,
               style: {},
             },
             {
-              label: "⚠ POSSIBLE NOISE — Position without matching volume",
+              label: "⚠ UNCONFIRMED — No matching interval volume",
               zones: lowConvNoise,
               color: C.muted,
               bg: C.surface2,

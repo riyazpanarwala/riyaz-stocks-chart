@@ -16,6 +16,8 @@ import {
   formatNextDaySignalTelegram,
 } from "../../engine/options/nextDayOptionSignalEngine.js";
 import { sendTelegramMessage } from "../notification/telegramNotifier.js";
+import { isolateExpiry } from "../../components/OptionChainNew/utils/tradeRules.js";
+import { isMarketOpen } from "../../components/utils/indianstockmarket.js";
 
 const defaultNseIndia = new NseIndia();
 const defaultYahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
@@ -198,10 +200,12 @@ export async function getNextDayOptionSignal({
 
   // Normalize rawOptionChain for the engine
   const rec = rawOptionChain.records;
-  const filteredData = (rec.data ?? []).filter((r) => r.CE || r.PE);
+  const chain = isolateExpiry(rec.data ?? []);
+  const filteredData = chain.rows;
   const normalizedChain = {
     underlyingValue: spotPrice,
-    expiry: rec.expiryDates?.[0] ?? null,
+    expiry: chain.expiry,
+    timestamp: rec.timestamp,
     displayData: filteredData,
     fullOI: filteredData.map((r) => ({
       s: r.strikePrice,
@@ -225,7 +229,10 @@ export async function getNextDayOptionSignal({
     spotData,
     intradayCandles,
     analysisDate: todayStr,
-    expiry: rec.expiryDates?.[0],
+    expiry: chain.expiry,
+    requireFreshData: true,
+    analysisTime: `${getIstTimeString()} IST`,
+    marketOpen: isMarketOpen(),
   });
 
   const fullReport = formatNextDaySignalFull(signalResult);

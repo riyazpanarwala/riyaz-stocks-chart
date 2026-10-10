@@ -74,6 +74,17 @@ function createMockOptionChain(spot = 24500, bias = "bullish") {
   };
 }
 
+function createTradableChain(bias = "bullish") {
+  const chain = createMockOptionChain(24500, bias);
+  if (bias === "bullish") {
+    const base = chain.displayData.find((r) => r.strikePrice === 24500);
+    chain.displayData.push({ ...base, strikePrice: 24550, CE: { ...base.CE }, PE: { ...base.PE, openInterest: 500_000 } });
+  } else {
+    chain.displayData.find((r) => r.strikePrice === 24400).CE.openInterest = 500_000;
+  }
+  return chain;
+}
+
 test("Data Integrity: NEVER fabricates values and returns DATA_UNAVAILABLE when data is missing", () => {
   // Null payload
   const nullRes = generate315NextDayOptionSignal({
@@ -147,10 +158,12 @@ test("OI Levels: accurately extracts Support 1/2, Resistance 1/2, PCR, and strik
   const chain = createMockOptionChain(24500, "bullish");
   const levels = analyzeOILevels(chain.displayData, 24500, 24500);
 
-  assert.equal(levels.support1, 24500);
+  assert.equal(levels.support1, 24400);
   assert.equal(levels.resistance1, 24600);
   assert.ok(levels.pcr > 1.0);
-  assert.ok(levels.changeOiPcr > 1.0);
+  assert.equal(levels.changeOiPcr, null);
+  assert.ok(levels.totalCeChgOI < 0);
+  assert.ok(levels.totalPeChgOI > 0);
 
   // Buildup classification check: strike 24600 CE has price up + negative OI change -> Short Covering
   assert.equal(levels.strikeBehaviors[24600].CE, "Short Covering");
@@ -159,7 +172,7 @@ test("OI Levels: accurately extracts Support 1/2, Resistance 1/2, PCR, and strik
 });
 
 test("Scoring System & BUY CE Rule: triggers BUY CE only when Score >= +60 with >= 3 confirmed factors", () => {
-  const chain = createMockOptionChain(24500, "bullish");
+  const chain = createTradableChain("bullish");
   const spotData = {
     spot: 24580,
     open: 24450,
@@ -188,7 +201,7 @@ test("Scoring System & BUY CE Rule: triggers BUY CE only when Score >= +60 with 
 });
 
 test("Scoring System & BUY PE Rule: triggers BUY PE only when Score <= -60 with >= 3 confirmed factors", () => {
-  const chain = createMockOptionChain(24500, "bearish");
+  const chain = createTradableChain("bearish");
   const spotData = {
     spot: 24390,
     open: 24520,
@@ -277,7 +290,7 @@ test("Option Selection: prefers ATM or 1-strike ITM with high volume and tight s
 });
 
 test("Formatting: verifies exact Section 12 full report and Section 14 Telegram specifications", () => {
-  const chain = createMockOptionChain(24500, "bullish");
+  const chain = createTradableChain("bullish");
   const spotData = {
     spot: 24580,
     open: 24450,

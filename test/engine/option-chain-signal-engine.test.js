@@ -2,9 +2,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { generateSignal, sigMeta } from "../../src/components/OptionChainNew/utils/signalEngine.js";
+import { generateSignal as engineSignal, sigMeta } from "../../src/components/OptionChainNew/utils/signalEngine.js";
 import { buildupType } from "../../src/components/OptionChainNew/utils/parsers.js";
 import { calcInstitutional } from "../../src/components/OptionChainNew/utils/institutionalAnalysis.js";
+
+function generateSignal(rows, atm, pcr, spot) {
+  const now = Date.parse("2026-10-09T05:00:00Z");
+  const bullish = rows?.find((r) => r.strikePrice === atm)?.CE.change > 0;
+  const direction = bullish ? 1 : -1;
+  const prevRows = rows?.map((r) => ({ ...r, CE: { ...r.CE, totalTradedVolume: Math.floor(r.CE.totalTradedVolume*0.8), lastPrice: r.CE.lastPrice - r.CE.change, openInterest: r.CE.openInterest - r.CE.changeinOpenInterest }, PE: { ...r.PE, totalTradedVolume: Math.floor(r.PE.totalTradedVolume*0.8), lastPrice: r.PE.lastPrice - r.PE.change, openInterest: r.PE.openInterest - r.PE.changeinOpenInterest } }));
+  return engineSignal(rows, atm, pcr, spot, { now, marketOpen: true, timestamp: now, prevTimestamp: now - 30_000, prevRows,
+    candles: [15, 10].map((minutes, i) => ({ date: new Date(now - minutes * 60_000).toISOString(), open: spot - direction * (3 - i), close: spot - direction * (2 - i), high: spot + 1, low: spot - 5 })) });
+}
 
 function buildMockRow(strikePrice, {
   ceLtp = 100, ceChg = 0, ceOi = 50000, ceOiChg = 0, ceVol = 10000,
@@ -18,6 +27,9 @@ function buildMockRow(strikePrice, {
       openInterest: ceOi,
       changeinOpenInterest: ceOiChg,
       totalTradedVolume: ceVol,
+      bidprice: ceLtp - 0.5,
+      askPrice: ceLtp + 0.5,
+      expiryDate: "13-Oct-2026",
     },
     PE: {
       lastPrice: peLtp,
@@ -25,6 +37,9 @@ function buildMockRow(strikePrice, {
       openInterest: peOi,
       changeinOpenInterest: peOiChg,
       totalTradedVolume: peVol,
+      bidprice: peLtp - 0.5,
+      askPrice: peLtp + 0.5,
+      expiryDate: "13-Oct-2026",
     },
   };
 }
@@ -55,7 +70,7 @@ test("Option Chain Signal Engine: Bullish setup triggers BUY CALL with high conv
   assert.equal(sig.rawSignal, "BUY CALL");
   assert.equal(sig.strengthLabel, "Strong");
   assert.ok(sig.strength >= 70, `Expected strength >= 70, got ${sig.strength}`);
-  assert.equal(sig.oiChangeBias, "Put writing / Bullish support");
+  assert.equal(sig.oiChangeBias, "Inferred bullish positioning");
   assert.match(sig.signal, /Consider buying a Call/);
 });
 
@@ -85,7 +100,7 @@ test("Option Chain Signal Engine: Bearish setup triggers BUY PUT with high convi
   assert.equal(sig.rawSignal, "BUY PUT");
   assert.equal(sig.strengthLabel, "Strong");
   assert.ok(sig.strength >= 70, `Expected strength >= 70, got ${sig.strength}`);
-  assert.equal(sig.oiChangeBias, "Call writing / Bearish resistance");
+  assert.equal(sig.oiChangeBias, "Inferred bearish positioning");
   assert.match(sig.signal, /Consider buying a Put/);
 });
 
@@ -146,7 +161,7 @@ test("Option Chain Signal Engine: Handles empty or invalid data gracefully", () 
   assert.equal(nullSig.strength, 0);
 });
 
-test("Option Chain Signal Engine: Breakout at resistance does not penalize bullish signal", () => {
+test("Option Chain Signal Engine: Unconfirmed breakout too near resistance is not an entry", () => {
   const atm = 24500;
   const spot = 24590; // Testing resistance at 24600
   const strikes = [24400, 24500, 24600, 24700];
@@ -166,8 +181,8 @@ test("Option Chain Signal Engine: Breakout at resistance does not penalize bulli
 
   const sig = generateSignal(rows, atm, 1.35, spot);
 
-  assert.equal(sig.rawSignal, "BUY CALL");
-  assert.ok(sig.strength >= 70);
+  assert.equal(sig.rawSignal, "NO TRADE");
+  assert.match(sig.reason, /risk\/reward/);
 });
 
 test("Strike Table Buildup: Side-aware buildup correctly differentiates CE and PE", () => {
@@ -218,11 +233,11 @@ test("Option Chain Signal Engine: Dominant Call writing with minor CE unwind abo
 
   const sig = generateSignal(rows, atm, 0.9, spot);
 
-  assert.notEqual(sig.oiChangeBias, "Put writing / Bullish support");
-  assert.equal(sig.oiChangeBias, "Call writing / Bearish resistance");
+  assert.notEqual(sig.oiChangeBias, "Inferred bullish positioning");
+  assert.equal(sig.oiChangeBias, "Inferred bearish positioning");
 });
 
-test("Institutional Analysis: Nearer zone is selected when both support and resistance are within step", () => {
+test("Institutional Analysis: OI barriers alone do not confirm direction without fresh snapshots and candles", () => {
   // Support at 90, Resistance at 100, step = 10. Spot = 91.
   // Support is 1 point away, Resistance is 9 points away.
   const rows = [
@@ -235,7 +250,8 @@ test("Institutional Analysis: Nearer zone is selected when both support and resi
   const analysis = calcInstitutional(rows, 91, 90, 1.3);
   assert.ok(analysis);
   // Spot at 91 is closer to support at 90; support floor holding should give a positive / bullish zone bias
-  assert.equal(analysis.smartBias, "BULLISH");
+  assert.equal(analysis.smartBias, "NEUTRAL");
+  assert.equal(analysis.topSup[0].zoneState, "Inferred writing");
 });
 
 test("Institutional Analysis: Reads the exact leg matching closestRes rather than topRes3[0]", () => {

@@ -13,6 +13,8 @@ import { pcrLabel } from "./utils/formatters.js";
 import { useOptionChain }     from "./hooks/useOptionChain.js";
 import { useChainDerived }    from "./hooks/useChainDerived.js";
 import { useSnapshotHistory } from "./hooks/useSnapshotHistory.js";
+import { useSignalCandles } from "./hooks/useSignalCandles.js";
+import { PositionPanel } from "./ui/PositionPanel.jsx";
 
 // ── UI components ─────────────────────────────────────────────
 import { SymbolPicker }       from "./ui/SymbolPicker.jsx";
@@ -109,10 +111,13 @@ export default function App({ initialSymbol = null }) {
   }, [instrument]);
 
   const isIndex = instrument.type === "index";
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 5000); return () => clearInterval(id); }, []);
 
   // ── Data fetching ─────────────────────────────────────────
   const { rawData, prevRawData, loading, error, fetchedAt, retry, mktStatus } =
     useOptionChain(instrument);
+  const candles = useSignalCandles(instrument, fetchedAt);
 
   // ── Reset UI state on symbol change ──────────────────────
   useEffect(() => {
@@ -129,13 +134,14 @@ export default function App({ initialSymbol = null }) {
     atm, pcr, maxPain, sig, chartData,
     straddleInfo, tYears,
     activeRange,
-  } = useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode, lotSize: instrument.lot });
+  } = useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode, lotSize: instrument.lot,
+    candles, marketOpen: mktStatus?.open && !error, now });
 
   // ── Snapshot history + breakout signals ──────────────────
   const { breakoutSignals } = useSnapshotHistory({
     rows, displayRows, prevDisplayRows,
     underlyingValue, atm, pcr, maxPain,
-    instrument, activeExpiry,
+    instrument, activeExpiry, timestamp: error ? null : rawData?.timestamp, candles, now, marketOpen: mktStatus?.open && !error,
   });
 
   // ── Handlers ─────────────────────────────────────────────
@@ -292,6 +298,8 @@ export default function App({ initialSymbol = null }) {
         {rawData && (
           <>
             {sig && <SignalBanner sig={sig} atm={atm} maxPain={maxPain} spot={underlyingValue} />}
+            <PositionPanel key={`${instrument.symbol}:${activeExpiry}`} sig={sig} rows={rows} spot={underlyingValue}
+              storageKey={`${instrument.symbol}:${activeExpiry}:main`} timestamp={error ? null : rawData.timestamp} now={now} marketOpen={mktStatus?.open} expiry={activeExpiry} />
             {sig && <ZoneBadges sig={sig} />}
             {straddleInfo && <StraddleBanner straddleInfo={straddleInfo} lotSize={instrument.lot} />}
 
@@ -357,7 +365,7 @@ export default function App({ initialSymbol = null }) {
                       atm={atm}
                       pcr={pcr}
                       maxPain={maxPain}
-                      fetchedAt={fetchedAt}
+                      fetchedAt={fetchedAt} timestamp={error ? null : rawData.timestamp} now={now} marketOpen={mktStatus?.open && !error}
                     />
                   )}
                   {activeTab === "table"   && sig && (
@@ -372,11 +380,15 @@ export default function App({ initialSymbol = null }) {
                   )}
                   {activeTab === "inst"    && (
                     <InstitutionalPanel
-                      rows={displayRows} prevRows={prevDisplayRows}
+                      rows={rows} prevRows={prevRows}
+                      timestamp={error ? null : rawData.timestamp} prevTimestamp={prevRawData?.timestamp}
+                      expiry={activeExpiry} prevExpiry={isIndex ? prevRawData?.expiry : activeExpiry}
+                      candles={candles} now={now} marketOpen={mktStatus?.open && !error}
                       spot={underlyingValue} atm={atm} maxPain={maxPain} pcr={pcr} sig={sig}
                     />
                   )}
-                  {activeTab === "nextday" && instrument.symbol === "NIFTY" && <NextDaySignalPanel />}
+                  {activeTab === "nextday" && instrument.symbol === "NIFTY" && <NextDaySignalPanel rows={rows} spot={underlyingValue}
+                    timestamp={error ? null : rawData.timestamp} candles={candles} now={now} marketOpen={mktStatus?.open} expiry={activeExpiry} sig={sig} />}
                   {activeTab === "breakout" && <BreakoutPanel signals={breakoutSignals} fetchedAt={fetchedAt} />}
                   {activeTab === "expiry" && !isIndex && (
                     <ExpiryCards

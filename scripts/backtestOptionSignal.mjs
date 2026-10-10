@@ -110,6 +110,8 @@ console.log("-------------------------------------------------------------------
 console.log("🎯 STRATEGY BACKTEST PERFORMANCE METRICS");
 console.log("-------------------------------------------------------------------------");
 console.log(`Dataset Mode:               ${metrics.datasetMode}`);
+console.log(`Execution Mode:             ${metrics.executionMode}`);
+console.log(`Limitations:                ${metrics.limitations}`);
 if (metrics.isPriceProxy) {
   console.log(`ℹ Notice: Spot Price Proxy Mode — OI & Greeks are modeled from daily price action.`);
 }

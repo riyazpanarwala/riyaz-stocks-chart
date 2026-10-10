@@ -22,25 +22,19 @@ export function fmtK(n) {
 export const fmtN = fmtK;
 
 /**
- * Convert PCR value → plain-English sentiment label.
- *
- * Thresholds (exclusive boundaries):
- *   +∞  or > 1.4  → "Very Bullish"
- *   > 1.2          → "Bullish"
- *   0.8 – 1.2      → "Neutral"
- *   < 0.8          → "Bearish"
- *   < 0.6          → "Very Bearish"
- *   NaN / invalid  → "Neutral"
+ * Describe relative OI concentration, without inferring trade direction.
+ * Missing or undefined ratios remain unavailable.
  *
  * @param {number} pcr
  * @returns {string}
  */
 export function pcrLabel(pcr) {
-  if (!Number.isFinite(pcr) || pcr > 1.4) return "Very Bullish"; // handles +Infinity
-  if (pcr > 1.2) return "Bullish";
-  if (pcr < 0.6) return "Very Bearish";
-  if (pcr < 0.8) return "Bearish";
-  return "Neutral";
+  if (!Number.isFinite(pcr) || pcr < 0) return "Unavailable";
+  if (pcr > 1.4) return "High Put OI";
+  if (pcr > 1.2) return "Put OI dominant";
+  if (pcr < 0.6) return "High Call OI";
+  if (pcr < 0.8) return "Call OI dominant";
+  return "Balanced OI";
 }
 
 /**
@@ -60,8 +54,8 @@ export function biasLabel(bias) {
  * @returns {string}
  */
 export function atmShiftLabel(shift) {
-  if (shift === "PE Dominant") return "Buyers protecting the downside (Bullish)";
-  if (shift === "CE Dominant") return "Sellers capping the upside (Bearish)";
+  if (shift === "PE Dominant") return "Inferred bullish positioning";
+  if (shift === "CE Dominant") return "Inferred bearish positioning";
   return "Both sides balanced";
 }
 
@@ -72,9 +66,9 @@ export function atmShiftLabel(shift) {
  */
 export function buildupLabel(type) {
   const MAP = {
-    "Long Build-up":  "Fresh buying (Bullish)",
-    "Short Build-up": "Sellers adding resistance/support",
-    "Short Covering": "Sellers trapped & exiting (Price may surge)",
+    "Long Build-up":  "Inferred long buildup",
+    "Short Build-up": "Inferred short buildup",
+    "Short Covering": "Inferred short covering",
     "Long Unwinding": "Buyers exiting (Momentum fading)",
     "No Change":      "No activity",
   };

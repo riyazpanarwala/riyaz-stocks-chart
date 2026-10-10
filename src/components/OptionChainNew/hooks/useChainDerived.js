@@ -23,7 +23,7 @@ import { NORMAL_RANGE, SCALP_RANGE } from "../constants.js";
  *   lotSize?:     number,
  * }} opts
  */
-export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode, lotSize = 1 }) {
+export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode, lotSize = 1, candles = [], marketOpen = false, now }) {
   // ── Parse current rows ─────────────────────────────────────
   const { rows, expiries, selectedExpiry: activeExpiry, underlyingValue } = useMemo(() => {
     if (!rawData) return { rows: [], expiries: [], selectedExpiry: null, underlyingValue: 0 };
@@ -32,7 +32,7 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
       return {
         rows: parseIndexChain(rawData),
         expiries: [],
-        selectedExpiry: null,
+        selectedExpiry: rawData.expiry ?? null,
         underlyingValue: rawData.underlyingValue ?? 0,
       };
     }
@@ -49,7 +49,7 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
   // ── Parse previous rows (for diff analysis) ────────────────
   const prevRows = useMemo(() => {
     if (!prevRawData) return [];
-    if (isIndex) return parseIndexChain(prevRawData);
+    if (isIndex) return prevRawData.expiry === activeExpiry ? parseIndexChain(prevRawData) : [];
     if (!activeExpiry) return [];
     const parsedPrev = parseStockChain(prevRawData, activeExpiry);
     return parsedPrev.selectedExpiry === activeExpiry ? parsedPrev.rows : [];
@@ -62,7 +62,7 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
   // `rows` is the full unfiltered set; `displayRows` (range-filtered) is derived
   // later, so PCR is never skewed by scalp-mode.
   const pcr = useMemo(() => {
-    if (isIndex) return calcPCRFull(rawData?.fullOI);
+    if (isIndex && rawData?.fullOI?.length) return calcPCRFull(rawData.fullOI);
     return calcPCR(rows);
   }, [isIndex, rawData, rows]);
 
@@ -107,8 +107,12 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
 
   // ── Top-level signal ───────────────────────────────────────
   const sig = useMemo(
-    () => (rows.length ? generateSignal(rows, atm, pcr, underlyingValue) : null),
-    [rows, atm, pcr, underlyingValue],
+    () => (rows.length ? generateSignal(rows, atm, pcr, underlyingValue, {
+      prevRows: prevRawData?.expiry === rawData?.expiry ? prevRows : [],
+      prevSpot: prevRawData?.underlyingValue, expiry: activeExpiry, prevExpiry: isIndex ? prevRawData?.expiry : activeExpiry,
+      timestamp: rawData?.timestamp, prevTimestamp: prevRawData?.timestamp, candles, marketOpen, now,
+    }) : null),
+    [rows, atm, pcr, underlyingValue, prevRows, rawData, prevRawData, activeExpiry, isIndex, candles, marketOpen, now],
   );
 
   // ── Chart data (memoised without `sig` — avoids spurious recomputes) ──
