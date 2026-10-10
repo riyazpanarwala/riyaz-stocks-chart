@@ -1,4 +1,5 @@
 import { numeric, ratio, sessionDate, sumMetric } from "./analysis.js";
+import { pcrLabel } from "./formatters.js";
 // ═══════════════════════════════════════════════════════════════
 // MAX PAIN & PCR CALCULATION AND TREND ENGINE
 // ═══════════════════════════════════════════════════════════════
@@ -125,7 +126,7 @@ export function calcVolumePCRFull(rows) {
 }
 export function getPcrSentiment(pcr) {
   if (!Number.isFinite(pcr) || pcr < 0) return {label:"Unavailable",sentiment:"neutral",color:"#8b949e",description:"OI PCR requires valid OI and nonzero Call OI."};
-  const label=pcr>=1.45?"High Put OI":pcr>=1.15?"Put OI dominant":pcr>=0.85?"Balanced OI":pcr>=0.6?"Call OI dominant":"High Call OI";
+  const label = pcrLabel(pcr);
   return {label,sentiment:"neutral",color:"#e3b341",description:"Relative OI concentration. Direction requires classified OI/premium activity and underlying confirmation."};
 }
 

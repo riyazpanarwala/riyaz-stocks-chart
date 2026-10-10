@@ -120,7 +120,9 @@ export const MaxPainPcrTracker = React.memo(function MaxPainPcrTracker({
   atm,
   pcr,
   maxPain,
-  fetchedAt, timestamp, now, marketOpen,
+  timestamp,
+  now,
+  marketOpen,
 }) {
   const {
     snapshots,
@@ -141,7 +143,9 @@ export const MaxPainPcrTracker = React.memo(function MaxPainPcrTracker({
     atm,
     pcr,
     maxPain,
-    fetchedAt,
+    timestamp,
+    now,
+    marketOpen,
   });
 
   const activeMaxPain = maxPain || maxPainCalculated || null;

@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { pcrLabel } from "../../src/components/OptionChainNew/utils/formatters.js";
 import {
   calcMaxPainCurve,
   calcMaxPainCurveFull,
@@ -107,6 +108,15 @@ test("getPcrSentiment: maps numeric PCR values to correct concentration without 
 
   assert.equal(getPcrSentiment(0.45).sentiment, "neutral");
   assert.equal(getPcrSentiment(0.45).label, "High Call OI");
+});
+
+test("PCR labels agree across the tracker and other panels at every boundary", () => {
+  for (const pcr of [null, NaN, Infinity, -1, 0, 0.59, 0.6, 0.79, 0.8, 0.82, 1.0, 1.15, 1.2, 1.21, 1.4, 1.42, 1.45]) {
+    assert.equal(getPcrSentiment(pcr).label, pcrLabel(pcr), `PCR ${pcr}`);
+    assert.equal(getPcrSentiment(pcr).sentiment, "neutral");
+  }
+  assert.equal(getPcrSentiment(1.42).label, "High Put OI");
+  assert.equal(getPcrSentiment(0.82).label, "Balanced OI");
 });
 
 test("analyzePcrTrend: detects price down/PCR up divergence when spot falls but PCR rises", () => {
