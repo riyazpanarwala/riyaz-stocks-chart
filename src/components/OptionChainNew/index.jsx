@@ -28,6 +28,7 @@ import { MaxPainPcrTracker }  from "./ui/MaxPainPcrTracker.jsx";
 import { NextDaySignalPanel }  from "./ui/NextDaySignalPanel.jsx";
 import { StraddleBanner }     from "./ui/StraddleBanner.jsx";
 import { OptionSpotChart }    from "./ui/OptionSpotChart.jsx";
+import { CallPutDiffTable }   from "./ui/CallPutDiffTable.jsx";
 
 // ─── Tab definition ───────────────────────────────────────────
 
@@ -309,6 +310,7 @@ export default function App({ initialSymbol = null }) {
               <Tab id="candle"   label="🕯️ Candle Chart"   activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="doi"      label="ΔOI Activity"      activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="trend"    label="🎯 Max Pain & PCR" activeTab={activeTab} setActiveTab={setActiveTab} />
+              <Tab id="cpdiff"   label="⚖️ ATM ±5 Diff"    activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="table"    label="Strike Table"       activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="inst"     label="🧠 Smart Money"    activeTab={activeTab} setActiveTab={setActiveTab} />
               {instrument.symbol === "NIFTY" && (
@@ -368,9 +370,19 @@ export default function App({ initialSymbol = null }) {
                       fetchedAt={fetchedAt} timestamp={error ? null : rawData.timestamp} now={now} marketOpen={mktStatus?.open && !error}
                     />
                   )}
+                  {activeTab === "cpdiff"  && (
+                    <CallPutDiffTable
+                      rows={rows}
+                      atm={atm}
+                      spot={underlyingValue}
+                      sig={sig}
+                      lotSize={instrument.lot}
+                    />
+                  )}
                   {activeTab === "table"   && sig && (
                     <StrikeTable
                       displayRows={displayRows}
+                      rows={rows}
                       atm={atm}
                       sig={sig}
                       spot={underlyingValue}

@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import { C } from "../constants.js";
 import { buildupType }  from "../utils/parsers.js";
 import { calcRowGreeks } from "../utils/greeksEngine.js";
+import { CallPutDiffTable } from "./CallPutDiffTable.jsx";
 
 /**
  * Determine the side-aware buildup classification for a strike row.
@@ -141,19 +142,20 @@ const StrikeRowGreeks = React.memo(function StrikeRowGreeks({ row, atm, spot, tY
 
 export const StrikeTable = React.memo(function StrikeTable({
   displayRows,
+  rows = [],
   atm,
   sig,
   spot = 0,
   tYears = 0.019,
   lotSize = 1,
 }) {
-  const [viewMode, setViewMode] = useState("oi"); // "oi" | "greeks"
+  const [viewMode, setViewMode] = useState("oi"); // "oi" | "greeks" | "diff"
 
   return (
     <div style={{ background: C.surface, borderRadius: 10, padding: 12, marginBottom: 12 }}>
       {/* Table Toolbar / View Switcher */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <button
             onClick={() => setViewMode("oi")}
             style={{
@@ -186,47 +188,75 @@ export const StrikeTable = React.memo(function StrikeTable({
           >
             🧮 Option Greeks View
           </button>
+          <button
+            onClick={() => setViewMode("diff")}
+            style={{
+              padding: "4px 10px",
+              borderRadius: 5,
+              border: `1px solid ${viewMode === "diff" ? C.yellow : C.border}`,
+              background: viewMode === "diff" ? "#2d2200" : "transparent",
+              color: viewMode === "diff" ? C.yellow : C.muted,
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: "'IBM Plex Mono',monospace",
+            }}
+          >
+            ⚖️ ATM ±5 Diff View
+          </button>
         </div>
 
         <div style={{ fontSize: 10, color: C.muted }}>
           {viewMode === "oi" ? (
-            <span>Showing active contracts, today's position changes, and plain English market action</span>
+            <span>Showing active contracts, today&apos;s position changes, and plain English market action</span>
+          ) : viewMode === "greeks" ? (
+            <span>Delta (Δ) = Price Sensitivity | Theta (Θ) = Time decay lost per day in ₹/lot (lot size: {lotSize})</span>
           ) : (
-            <span>Delta (Δ) = Price Sensitivity (approx. chance of expiring ITM) | Theta (Θ) = Time decay lost per day in ₹/lot (lot size: {lotSize})</span>
+            <span>ATM strike + 5 strikes below + 5 strikes above Call vs Put difference table</span>
           )}
         </div>
       </div>
 
-      {/* Table Container */}
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: 650 }}>
-          <thead>
-            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-              {(viewMode === "oi" ? OI_HEADERS : GREEKS_HEADERS).map((h) => (
-                <th key={h} style={{ padding: "6px 6px", color: C.muted, textAlign: "right", whiteSpace: "nowrap", fontWeight: 600 }}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {displayRows.map((r) =>
-              viewMode === "oi" ? (
-                <StrikeRowOI key={r.strikePrice} row={r} atm={atm} sig={sig} />
-              ) : (
-                <StrikeRowGreeks
-                  key={r.strikePrice}
-                  row={r}
-                  atm={atm}
-                  spot={spot}
-                  tYears={tYears}
-                  lotSize={lotSize}
-                />
-              )
-            )}
-          </tbody>
-        </table>
-      </div>
+      {viewMode === "diff" ? (
+        <CallPutDiffTable
+          rows={rows.length ? rows : displayRows}
+          atm={atm}
+          spot={spot}
+          sig={sig}
+          lotSize={lotSize}
+        />
+      ) : (
+        /* Table Container */
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: 650 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {(viewMode === "oi" ? OI_HEADERS : GREEKS_HEADERS).map((h) => (
+                  <th key={h} style={{ padding: "6px 6px", color: C.muted, textAlign: "right", whiteSpace: "nowrap", fontWeight: 600 }}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {displayRows.map((r) =>
+                viewMode === "oi" ? (
+                  <StrikeRowOI key={r.strikePrice} row={r} atm={atm} sig={sig} />
+                ) : (
+                  <StrikeRowGreeks
+                    key={r.strikePrice}
+                    row={r}
+                    atm={atm}
+                    spot={spot}
+                    tYears={tYears}
+                    lotSize={lotSize}
+                  />
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 });
