@@ -11,13 +11,15 @@ export function pushSnapshot(history, snapshot) {
   else if (last && snapshot.ts === last.ts) {
     const equal = last.spot === snapshot.spot && last.pcr === snapshot.pcr && last.rows.length === snapshot.rows.length &&
       last.rows.every((row,i) => row.strikePrice === snapshot.rows[i]?.strikePrice && ["CE","PE"].every(side =>
-        ["openInterest","changeinOpenInterest","lastPrice","totalTradedVolume","bidprice","askPrice"].every(key =>
+          ["openInterest","changeinOpenInterest","lastPrice","totalTradedVolume","bidprice","askPrice","impliedVolatility"].every(key =>
           row[side]?.[key] === snapshot.rows[i]?.[side]?.[key])));
     return equal ? history : [...history.slice(0,-1),snapshot];
   }
   // Each new exchange timestamp is useful for elapsed-time windows, even when
   // metrics are unchanged. Repeated source timestamps never advance history.
-  return [...history, snapshot].slice(-Math.max(10, THRESHOLDS.MAX_SNAPSHOTS));
+  // Keep enough intraday points for the 15/30/60-minute chain history panels.
+  // Existing breakout consumers select their own short windows from this list.
+  return [...history, snapshot].slice(-240);
 }
 
 export function detectBreakouts({ rows, spot, pcr, maxPain, snapshots = [], candles = [], timestamp, now = Date.now(), marketOpen = false }) {

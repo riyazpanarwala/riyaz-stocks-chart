@@ -14,5 +14,5 @@ export function useSnapshotHistory({ rows, underlyingValue, atm, pcr, maxPain, i
   const breakoutSignals=useMemo(()=>detectBreakouts({rows,spot:underlyingValue,pcr,maxPain,
     snapshots:history.filter(s=>s.contractKey===contractKey),candles,timestamp,now,marketOpen}),
     [rows,underlyingValue,pcr,maxPain,history,contractKey,candles,timestamp,now,marketOpen]);
-  return {breakoutSignals};
+  return {breakoutSignals, snapshots: history.filter((snapshot) => snapshot.contractKey === contractKey)};
 }
