@@ -30,6 +30,7 @@ import { StraddleBanner }     from "./ui/StraddleBanner.jsx";
 import { OptionSpotChart }    from "./ui/OptionSpotChart.jsx";
 import { CallPutDiffTable }   from "./ui/CallPutDiffTable.jsx";
 import { ExpiryGammaWatch } from "./ui/ExpiryGammaWatch.jsx";
+import { IVChangeTracker, OITimeline } from "./ui/ChainHistoryPanels.jsx";
 
 // ─── Tab definition ───────────────────────────────────────────
 
@@ -140,7 +141,7 @@ export default function App({ initialSymbol = null }) {
     candles, marketOpen: mktStatus?.open && !error, now });
 
   // ── Snapshot history + breakout signals ──────────────────
-  const { breakoutSignals } = useSnapshotHistory({
+  const { breakoutSignals, snapshots } = useSnapshotHistory({
     rows, displayRows, prevDisplayRows,
     underlyingValue, atm, pcr, maxPain,
     instrument, activeExpiry, timestamp: error ? null : rawData?.timestamp, candles, now, marketOpen: mktStatus?.open && !error,
@@ -311,6 +312,8 @@ export default function App({ initialSymbol = null }) {
               <Tab id="oi"       label="OI Chart"          activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="candle"   label="🕯️ Candle Chart"   activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="doi"      label="ΔOI Activity"      activeTab={activeTab} setActiveTab={setActiveTab} />
+              <Tab id="oiTimeline" label="OI Timeline" activeTab={activeTab} setActiveTab={setActiveTab} />
+              <Tab id="ivTracker" label="IV Tracker" activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="trend"    label="🎯 Max Pain & PCR" activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="cpdiff"   label="⚖️ ATM ±5 Diff"    activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="table"    label="Strike Table"       activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -358,6 +361,8 @@ export default function App({ initialSymbol = null }) {
                     />
                   )}
                   {activeTab === "doi"     && <DeltaOIChart chartData={chartData} atm={atm} />}
+                  {activeTab === "oiTimeline" && <OITimeline snapshots={snapshots} rows={rows} atm={atm} now={now} />}
+                  {activeTab === "ivTracker" && <IVChangeTracker snapshots={snapshots} rows={rows} atm={atm} now={now} />}
                   {activeTab === "trend"   && (
                     <MaxPainPcrTracker
                       instrument={instrument}
