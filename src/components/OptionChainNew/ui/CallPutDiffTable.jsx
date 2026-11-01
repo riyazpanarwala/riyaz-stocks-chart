@@ -69,90 +69,87 @@ export const CallPutDiffTable = React.memo(function CallPutDiffTable({
 
   // 4. Calculate Call - Put and Indication for each strike
   const strikeData = useMemo(() => {
-    return targetStrikes.map((r) => {
-      let callVal = 0;
-      let putVal = 0;
+    const valueFor = (leg) => {
+      if (!leg || leg.available === false) return null;
+      if (metric === "oi") return leg.openInterest;
+      if (metric === "doi") return leg.changeinOpenInterest;
+      return leg.lastPrice;
+    };
 
-      if (metric === "oi") {
-        callVal = r.CE?.openInterest ?? 0;
-        putVal = r.PE?.openInterest ?? 0;
-      } else if (metric === "doi") {
-        callVal = r.CE?.changeinOpenInterest ?? 0;
-        putVal = r.PE?.changeinOpenInterest ?? 0;
-      } else {
-        callVal = r.CE?.lastPrice ?? 0;
-        putVal = r.PE?.lastPrice ?? 0;
-      }
+    return targetStrikes
+      .filter((r) => Number.isFinite(valueFor(r.CE)) && Number.isFinite(valueFor(r.PE)))
+      .map((r) => {
+        const callVal = valueFor(r.CE);
+        const putVal = valueFor(r.PE);
 
-      const diff = callVal - putVal;
-      const total = Math.abs(callVal) + Math.abs(putVal);
-      // Relative difference percentage to detect neutral zone (e.g. within 8%)
-      const relDiff = total > 0 ? Math.abs(diff) / total : 0;
-      const isNeutral = total === 0 || (metric === "price" ? Math.abs(diff) < 1 : relDiff < 0.08);
+        const diff = callVal - putVal;
+        const total = Math.abs(callVal) + Math.abs(putVal);
+        // Relative difference percentage to detect neutral zone (e.g. within 8%)
+        const relDiff = total > 0 ? Math.abs(diff) / total : 0;
+        // LTP differences reflect moneyness/intrinsic value rather than sentiment.
+        const isNeutral = metric === "price" || total === 0 || relDiff < 0.08;
 
-      let indication = "NEUTRAL";
-      let indColor = C.yellow;
-      let indBg = "#1c1400";
-      let indBorder = `${C.yellow}40`;
-      let reason = "Balanced Call & Put activity";
+        let indication = "NEUTRAL";
+        let indColor = C.yellow;
+        let indBg = "#1c1400";
+        let indBorder = `${C.yellow}40`;
+        let reason = metric === "price"
+          ? "Price diff reflects option moneyness (intrinsic value)"
+          : "Balanced Call & Put activity";
 
-      if (!isNeutral) {
-        if (perspective === "institutional") {
-          // Option Writers logic (NSE industry standard):
-          // High Put OI = Support / Put Writers defend = Bullish
-          // High Call OI = Resistance / Call Writers cap = Bearish
-          if (diff < 0) {
-            // Put > Call
-            indication = "BULLISH";
-            indColor = C.green;
-            indBg = C.greenBg;
-            indBorder = `${C.green}40`;
-            reason = metric === "price"
-              ? "Put trading higher than Call (Put premium elevated)"
-              : "Put OI > Call OI (Put writers defending support)";
+        if (!isNeutral) {
+          if (perspective === "institutional") {
+            // Option Writers logic (NSE industry standard):
+            // High Put OI = Support / Put Writers defend = Bullish
+            // High Call OI = Resistance / Call Writers cap = Bearish
+            if (diff < 0) {
+              // Put > Call
+              indication = "BULLISH";
+              indColor = C.green;
+              indBg = C.greenBg;
+              indBorder = `${C.green}40`;
+              reason = "Put OI > Call OI (Put writers defending support)";
+            } else {
+              // Call > Put
+              indication = "BEARISH";
+              indColor = C.red;
+              indBg = C.redBg;
+              indBorder = `${C.red}40`;
+              reason = "Call OI > Call writers building resistance";
+            }
           } else {
-            // Call > Put
-            indication = "BEARISH";
-            indColor = C.red;
-            indBg = C.redBg;
-            indBorder = `${C.red}40`;
-            reason = metric === "price"
-              ? "Call trading higher than Put (Call premium elevated)"
-              : "Call OI > Put OI (Call writers building resistance)";
-          }
-        } else {
-          // Direct Buyer logic:
-          // Call > Put = Bullish
-          // Put > Call = Bearish
-          if (diff > 0) {
-            indication = "BULLISH";
-            indColor = C.green;
-            indBg = C.greenBg;
-            indBorder = `${C.green}40`;
-            reason = "Call > Put (Higher call volume/OI)";
-          } else {
-            indication = "BEARISH";
-            indColor = C.red;
-            indBg = C.redBg;
-            indBorder = `${C.red}40`;
-            reason = "Put > Call (Higher put volume/OI)";
+            // Direct Buyer logic:
+            // Call > Put = Bullish
+            // Put > Call = Bearish
+            if (diff > 0) {
+              indication = "BULLISH";
+              indColor = C.green;
+              indBg = C.greenBg;
+              indBorder = `${C.green}40`;
+              reason = "Call > Put (Higher call volume/OI)";
+            } else {
+              indication = "BEARISH";
+              indColor = C.red;
+              indBg = C.redBg;
+              indBorder = `${C.red}40`;
+              reason = "Put > Call (Higher put volume/OI)";
+            }
           }
         }
-      }
 
-      return {
-        ...r,
-        callVal,
-        putVal,
-        diff,
-        relDiff,
-        indication,
-        indColor,
-        indBg,
-        indBorder,
-        reason,
-      };
-    });
+        return {
+          ...r,
+          callVal,
+          putVal,
+          diff,
+          relDiff,
+          indication,
+          indColor,
+          indBg,
+          indBorder,
+          reason,
+        };
+      });
   }, [targetStrikes, metric, perspective]);
 
   // 5. Cluster Summary across the ATM ±5 window
@@ -167,8 +164,8 @@ export const CallPutDiffTable = React.memo(function CallPutDiffTable({
     });
 
     const netDiff = totalCall - totalPut;
-    const clusterPcr = totalCall > 0 ? (totalPut / totalCall) : 0;
-    const isNeutral = Math.abs(netDiff) / (Math.abs(totalCall) + Math.abs(totalPut) || 1) < 0.05;
+    const clusterPcr = metric === "oi" && totalCall > 0 ? totalPut / totalCall : null;
+    const isNeutral = metric === "price" || Math.abs(netDiff) / (Math.abs(totalCall) + Math.abs(totalPut) || 1) < 0.05;
 
     let overallBias = "NEUTRAL";
     let biasColor = C.yellow;
@@ -201,7 +198,7 @@ export const CallPutDiffTable = React.memo(function CallPutDiffTable({
       overallBias,
       biasColor,
     };
-  }, [strikeData, perspective]);
+  }, [strikeData, perspective, metric]);
 
   // Max diff for calculating skew bar width
   const maxAbsDiff = useMemo(() => {
@@ -348,7 +345,7 @@ export const CallPutDiffTable = React.memo(function CallPutDiffTable({
           <div>
             <div style={{ fontSize: 9, color: C.muted, textTransform: "uppercase" }}>ATM ±5 PCR</div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.blue, marginTop: 2 }}>
-              {clusterSummary.clusterPcr.toFixed(2)}
+              {clusterSummary.clusterPcr != null ? clusterSummary.clusterPcr.toFixed(2) : "—"}
             </div>
           </div>
         </div>
