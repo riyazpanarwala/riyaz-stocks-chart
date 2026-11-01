@@ -29,6 +29,7 @@ import { NextDaySignalPanel }  from "./ui/NextDaySignalPanel.jsx";
 import { StraddleBanner }     from "./ui/StraddleBanner.jsx";
 import { OptionSpotChart }    from "./ui/OptionSpotChart.jsx";
 import { CallPutDiffTable }   from "./ui/CallPutDiffTable.jsx";
+import { ExpiryGammaWatch } from "./ui/ExpiryGammaWatch.jsx";
 
 // ─── Tab definition ───────────────────────────────────────────
 
@@ -303,6 +304,7 @@ export default function App({ initialSymbol = null }) {
               storageKey={`${instrument.symbol}:${activeExpiry}:main`} timestamp={error ? null : rawData.timestamp} now={now} marketOpen={mktStatus?.open} expiry={activeExpiry} />
             {sig && <ZoneBadges sig={sig} />}
             {straddleInfo && <StraddleBanner straddleInfo={straddleInfo} lotSize={instrument.lot} />}
+            <ExpiryGammaWatch rows={rows} spot={underlyingValue} tYears={tYears} candles={candles} expiry={activeExpiry} />
 
             {/* Tab bar */}
             <div style={{ display: "flex", gap: 3, marginBottom: 10, borderBottom: `1px solid ${C.border}`, paddingBottom: 4, flexWrap: "wrap" }}>
