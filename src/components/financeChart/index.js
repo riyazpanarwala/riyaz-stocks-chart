@@ -584,7 +584,7 @@ const FinanceChart = ({
           <EMAChart
             emaArr={[{ id: "ema9", val: ema9Overlay }, { id: "ema20", val: ema20Overlay }]}
             isIntraday={isIntraday}
-            tooltipOffset={32}
+            tooltipOffset={indicatorName === "ema" && !isIntraday ? 48 : 32}
           />
         )}
         {indicatorName === "bolinger" ? <BolingerChart bb={bb} sma20={sma20} /> : ""}

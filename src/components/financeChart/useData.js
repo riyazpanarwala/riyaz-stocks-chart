@@ -299,11 +299,13 @@ const useData = (initialData, indicatorName, isIntraday, showEma9And20 = false) 
   if (showEma9And20) {
     ema9Overlay = ema()
       .id(91)
+      .stroke("#38bdf8")
       .options({ windowSize: 9 })
       .merge((d, value) => { d.ema9Overlay = value; })
       .accessor((d) => d?.ema9Overlay);
     ema20Overlay = ema()
       .id(92)
+      .stroke("#c084fc")
       .options({ windowSize: 20 })
       .merge((d, value) => { d.ema20Overlay = value; })
       .accessor((d) => d?.ema20Overlay);
