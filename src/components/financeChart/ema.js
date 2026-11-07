@@ -3,12 +3,12 @@ import { LineSeries } from "@riyazpanarwala/series";
 import { CurrentCoordinate } from "@riyazpanarwala/coordinates";
 import CustomTooltip from "./CustomTooltip";
 
-const EMAChart = ({ emaArr, angles, isIntraday }) => {
+const EMAChart = ({ emaArr, angles, isIntraday, tooltipOffset = 0 }) => {
   return (
     <>
       {emaArr.map((v, i) => {
         const { val } = v;
-        const yVal = (isIntraday ? 48 : 32) + i * 16;
+        const yVal = (isIntraday ? 48 : 32) + tooltipOffset + i * 16;
         return (
           <Fragment key={v.id}>
             <LineSeries yAccessor={val.accessor()} strokeStyle={val.stroke()} />
@@ -28,7 +28,7 @@ const EMAChart = ({ emaArr, angles, isIntraday }) => {
 
       {angles ? (
         <CustomTooltip
-          origin={[8, (isIntraday ? 48 : 32) + emaArr.length * 16]}
+          origin={[8, (isIntraday ? 48 : 32) + tooltipOffset + emaArr.length * 16]}
           yAccessor={(d) => angles[d.idx.index]}
           tooltipName={`Angle`}
           textFill={emaArr[0].val.stroke()}

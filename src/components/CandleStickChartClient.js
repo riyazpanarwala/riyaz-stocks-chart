@@ -38,6 +38,7 @@ const CandleStickChart = () => {
   const [measurementEnable, setMeasurementEnable] = useState(false);
   const [textEnable, setTextEnable] = useState(false);
   const [indicatorName, setIndicatorName] = useState("rsi");
+  const [showEma9And20, setShowEma9And20] = useState(false);
   const [positionName, setPositionName] = useState("");
   const [shapeName, setShapeName] = useState("");
   const [isAngleEnabled, setAngleEnabled] = useState(false);
@@ -167,6 +168,13 @@ const CandleStickChart = () => {
 
   const analysisClick = () => setModalOpen(true);
   const fundaMentalsClick = () => setModalOpen1(true);
+  const handleIndicatorClick = (id) => {
+    if (id === "ema9-20") {
+      setShowEma9And20((enabled) => !enabled);
+      return;
+    }
+    setIndicatorName(id);
+  };
 
   const addToWatchList = () => {
     setToStorage(companyObj);
@@ -269,7 +277,8 @@ const CandleStickChart = () => {
           textEnable={textEnable}
           handleTextClick={handleTextClick}
           indicatorName={indicatorName}
-          handleIndicatorClick={setIndicatorName}
+          handleIndicatorClick={handleIndicatorClick}
+          showEma9And20={showEma9And20}
           positionName={positionName}
           handlePositionClick={handlePositionClick}
           shapeName={shapeName}
@@ -468,6 +477,7 @@ const CandleStickChart = () => {
                     measurementEnable={measurementEnable}
                     textEnable={textEnable}
                     indicatorName={indicatorName}
+                    showEma9And20={showEma9And20}
                     positionName={positionName}
                     shapeName={shapeName}
                     isAngleEnabled={isAngleEnabled}
