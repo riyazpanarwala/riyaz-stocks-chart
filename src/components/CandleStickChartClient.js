@@ -221,6 +221,8 @@ const CandleStickChart = () => {
   }
 
   let periodArr = [];
+  const vwapAvailable = (intervalObj.apiUnit === "minutes" || intervalObj.apiUnit === "hours") &&
+    !companyObj?.nseIndex && !companyObj?.bseIndex;
   let isDisplayHrAndTime = true;
   if (intervalObj.apiUnit === "minutes") {
     periodArr = periodMinutes;
@@ -274,6 +276,7 @@ const CandleStickChart = () => {
           handlePatternClick={handlePatternClick}
           handleWatchListClick={handleWatchListClick}
           companyObj={companyObj}
+          vwapAvailable={vwapAvailable}
           isOpen={isSidebarOpen}
           onToggle={setSidebarOpen}
         />

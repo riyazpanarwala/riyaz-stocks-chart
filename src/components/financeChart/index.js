@@ -52,6 +52,7 @@ import SuperTrendChart from "./SuperTrendChart";
 import IndicatorChart from "./IndicatorChart";
 import STOChart from "./STOChart";
 import BolingerChart from "./BolingerChart";
+import VWAPChart from "./VWAPChart";
 import MACrossOverChart from "./MACrossOverChart";
 import CorporateEventsChart from "./CorporateEventsChart";
 import technicalAnalysis from "../technical-analysis/index.js";
@@ -558,6 +559,7 @@ const FinanceChart = ({
         ) : ""}
 
         {indicatorName === "supertrend" ? <SuperTrendChart /> : ""}
+        {indicatorName.startsWith("vwap") ? <VWAPChart bands={indicatorName === "vwap-2sd" ? 2 : indicatorName === "vwap-1sd" ? 1 : 0} /> : ""}
         {indicatorName === "bolinger" ? <BolingerChart bb={bb} sma20={sma20} /> : ""}
 
         {["5-20-sma", "20-50-sma", "50-200-sma"].includes(indicatorName) ? (
