@@ -39,6 +39,7 @@ export const getThemeColors = () => ({
   // Indicators
   indicator: getCssVar("--chart-indicator", "#00cff7"),
   vwapLine: getCssVar("--chart-vwap", "#f5a623"),
+  vwapPriceLine: getCssVar("--chart-vwap-price", "#d8dce8"),
   vwapBand: getCssVar("--chart-vwap-band", "#a78bfa"),
   vwapOuterBand: getCssVar("--chart-vwap-outer-band", "#6a7290"),
 

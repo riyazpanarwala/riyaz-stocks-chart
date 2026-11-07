@@ -21,6 +21,7 @@ const VWAPChart = ({ bands }) => {
         <LineSeries yAccessor={(d) => d.upper2} defined={defined} strokeStyle={colors.vwapOuterBand} strokeDasharray="ShortDash" />
         <LineSeries yAccessor={(d) => d.lower2} defined={defined} strokeStyle={colors.vwapOuterBand} strokeDasharray="ShortDash" />
       </>}
+      <LineSeries yAccessor={(d) => d.close} defined={defined} strokeStyle={colors.vwapPriceLine} strokeWidth={1.5} />
       <CustomTooltip origin={[8, 48]} yAccessor={(d) => d.vwap} tooltipName="VWAP" textFill={colors.vwapLine} />
     </>
   );
