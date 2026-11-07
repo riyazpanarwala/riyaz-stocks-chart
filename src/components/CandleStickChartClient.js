@@ -32,6 +32,7 @@ import StockSignalModal from "./StockSignalModal";
 import CorporateEventsModal from "./CorporateEventsModal.jsx";
 
 
+/** Render the stock chart controls and keep selected indicators valid for the active instrument and interval. */
 const CandleStickChart = () => {
   const [trendLineEnable, setTrendLineEnable] = useState(false);
   const [measurementEnable, setMeasurementEnable] = useState(false);
@@ -66,6 +67,13 @@ const CandleStickChart = () => {
     period,
     isFO,
   } = useCommonHeader();
+
+  const vwapAvailable = (intervalObj.apiUnit === "minutes" || intervalObj.apiUnit === "hours") &&
+    !companyObj?.nseIndex && !companyObj?.bseIndex;
+
+  useEffect(() => {
+    if (!vwapAvailable && indicatorName.startsWith("vwap")) setIndicatorName("rsi");
+  }, [vwapAvailable, indicatorName]);
 
   const corporateEventsCount = React.useMemo(() => {
     return (candleData || []).reduce((count, c) => {
@@ -221,8 +229,6 @@ const CandleStickChart = () => {
   }
 
   let periodArr = [];
-  const vwapAvailable = (intervalObj.apiUnit === "minutes" || intervalObj.apiUnit === "hours") &&
-    !companyObj?.nseIndex && !companyObj?.bseIndex;
   let isDisplayHrAndTime = true;
   if (intervalObj.apiUnit === "minutes") {
     periodArr = periodMinutes;

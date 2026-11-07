@@ -52,6 +52,24 @@ test("VWAP starts at 09:15 IST and ignores earlier bars", () => {
   assert.equal(result[1].vwap, 20);
 });
 
+test("VWAP excludes candles after the regular session close", () => {
+  const result = vwap([
+    vwapCandle("2026-11-06 15:30:00", 10, 1),
+    vwapCandle("2026-11-06 15:31:00", 100, 100),
+  ]);
+  assert.equal(result[0].vwap, 10);
+  assert.equal(result[1].vwap, null);
+});
+
+test("VWAP honors a configured market session close", () => {
+  const result = vwap([
+    vwapCandle("2026-11-06 14:00:00", 10, 1),
+    vwapCandle("2026-11-06 14:01:00", 20, 1),
+  ], { sessionClose: "14:00" });
+  assert.equal(result[0].vwap, 10);
+  assert.equal(result[1].vwap, null);
+});
+
 test("VWAP safely skips missing, zero, negative, and malformed volume or OHLC", () => {
   const result = vwap([
     vwapCandle("2026-11-06 09:15:00", 10, 0),

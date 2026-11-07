@@ -1,9 +1,19 @@
+import { INDIAN_MARKET_SESSION } from "../config/marketSession.js";
+
 /**
  * Calculate session VWAP and volume-weighted standard deviation bands.
  * Intraday timestamps without an offset are interpreted as Indian market time.
+ * @param {Array<object>} candles Intraday candles in ascending timestamp order.
+ * @param {{ sessionStart?: string, sessionClose?: string, bands?: number[] }} options Session rules and requested deviation bands.
+ * @returns {Array<{vwap: number|null, upper1: number|null, lower1: number|null, upper2: number|null, lower2: number|null}>} Aligned VWAP values.
  */
-export function vwap(candles, { sessionStart = "09:15", bands = [1] } = {}) {
+export function vwap(candles, {
+  sessionStart = INDIAN_MARKET_SESSION.start,
+  sessionClose = INDIAN_MARKET_SESSION.close,
+  bands = [1],
+} = {}) {
   const [startHour, startMinute] = sessionStart.split(":").map(Number);
+  const [closeHour, closeMinute] = sessionClose.split(":").map(Number);
   let sessionDate = null;
   let cumulativeVolume = 0;
   let cumulativePriceVolume = 0;
@@ -24,7 +34,8 @@ export function vwap(candles, { sessionStart = "09:15", bands = [1] } = {}) {
     }
 
     const values = { vwap: null, upper1: null, lower1: null, upper2: null, lower2: null };
-    if (invalid || date.hour * 60 + date.minute < startHour * 60 + startMinute || Number(candle.volume) <= 0) return values;
+    const minuteOfDay = date.hour * 60 + date.minute;
+    if (invalid || minuteOfDay < startHour * 60 + startMinute || minuteOfDay > closeHour * 60 + closeMinute || Number(candle.volume) <= 0) return values;
 
     const high = Number(candle.high), low = Number(candle.low), close = Number(candle.close);
     if (high < low || close < low || close > high) return values;
@@ -48,11 +59,12 @@ export function vwap(candles, { sessionStart = "09:15", bands = [1] } = {}) {
   });
 }
 
+/** Parse a candle timestamp into a market-date and time expressed in IST. */
 function parseIndianDate(value) {
   if (value instanceof Date) {
     if (!Number.isFinite(value.getTime())) return null;
     const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit",
+      timeZone: INDIAN_MARKET_SESSION.timezone, year: "numeric", month: "2-digit", day: "2-digit",
       hour: "2-digit", minute: "2-digit", hourCycle: "h23",
     }).formatToParts(value).reduce((result, part) => ({ ...result, [part.type]: part.value }), {});
     return { day: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour), minute: Number(parts.minute) };

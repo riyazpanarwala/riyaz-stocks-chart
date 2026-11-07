@@ -1,3 +1,5 @@
+import { INDIAN_MARKET_SESSION } from "../../engine/config/marketSession.js";
+
 // Function to check if the current time is between 9:15 AM and 3:30 PM IST
 const isTradingActive = () => {
   // Get the current time in UTC
@@ -9,10 +11,12 @@ const isTradingActive = () => {
 
   // Define the start and end times in IST
   const startTimeIST = new Date(nowIST);
-  startTimeIST.setHours(9, 15, 0, 0); // 9:15 AM IST
+  const [startHour, startMinute] = INDIAN_MARKET_SESSION.start.split(":").map(Number);
+  startTimeIST.setHours(startHour, startMinute, 0, 0);
 
   const endTimeIST = new Date(nowIST);
-  endTimeIST.setHours(15, 30, 0, 0); // 3:30 PM IST
+  const [closeHour, closeMinute] = INDIAN_MARKET_SESSION.close.split(":").map(Number);
+  endTimeIST.setHours(closeHour, closeMinute, 0, 0);
 
   // Check if the current time is within the range
   return nowIST >= startTimeIST && nowIST <= endTimeIST;
