@@ -52,6 +52,7 @@ import SuperTrendChart from "./SuperTrendChart";
 import IndicatorChart from "./IndicatorChart";
 import STOChart from "./STOChart";
 import BolingerChart from "./BolingerChart";
+import VWAPChart from "./VWAPChart";
 import MACrossOverChart from "./MACrossOverChart";
 import CorporateEventsChart from "./CorporateEventsChart";
 import technicalAnalysis from "../technical-analysis/index.js";
@@ -159,12 +160,23 @@ const FinanceChart = ({
 
   /* ── Accessors ── */
   const barChartExtents = (d) => [0, d.volume];
+  /** Expand the price domain for whichever overlay is currently selected. */
   const candleChartExtents = (d) => {
     let high = d.high, low = d.low;
     if (d.bb && indicatorName === "bolinger") { high = d.bb.top; low = d.bb.bottom; }
     else if (d.trend && indicatorName === "supertrend") {
       high = Math.max(high, d.trend);
       low = Math.min(low, d.trend);
+    }
+    if (indicatorName.startsWith("vwap")) {
+      const vwapValues = [d.vwap];
+      if (indicatorName === "vwap-1sd" || indicatorName === "vwap-2sd") vwapValues.push(d.upper1, d.lower1);
+      if (indicatorName === "vwap-2sd") vwapValues.push(d.upper2, d.lower2);
+      const validValues = vwapValues.filter(Number.isFinite);
+      if (validValues.length) {
+        high = Math.max(high, ...validValues);
+        low = Math.min(low, ...validValues);
+      }
     }
     return [high + (high * 0.1) / 100, low - (low * 0.1) / 100];
   };
@@ -558,6 +570,7 @@ const FinanceChart = ({
         ) : ""}
 
         {indicatorName === "supertrend" ? <SuperTrendChart /> : ""}
+        {indicatorName.startsWith("vwap") ? <VWAPChart bands={indicatorName === "vwap-2sd" ? 2 : indicatorName === "vwap-1sd" ? 1 : 0} /> : ""}
         {indicatorName === "bolinger" ? <BolingerChart bb={bb} sma20={sma20} /> : ""}
 
         {["5-20-sma", "20-50-sma", "50-200-sma"].includes(indicatorName) ? (

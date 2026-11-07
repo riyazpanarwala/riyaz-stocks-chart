@@ -17,6 +17,7 @@ import {
   sto,
   cci,
 } from "./indicator";
+import { vwap as calculateVwap } from "../../engine/indicators/vwap.js";
 
 const emaPeriod1 = 50;
 const emaPeriod2 = 200;
@@ -31,8 +32,13 @@ const useData = (initialData, indicatorName, isIntraday) => {
   let sma20, sma50, sma200;
   let ma1, ma2;
   let bb;
+  let vwapBands = [];
 
-  if (indicatorName === "ema") {
+  if (["vwap", "vwap-1sd", "vwap-2sd"].includes(indicatorName)) {
+    const bands = indicatorName === "vwap-2sd" ? [1, 2] : indicatorName === "vwap-1sd" ? [1] : [];
+    vwapBands = calculateVwap(initialData, { bands });
+    calculatedData = initialData.map((candle, index) => ({ ...candle, ...vwapBands[index] }));
+  } else if (indicatorName === "ema") {
     if (isIntraday) {
       ema5 = ema()
         .id(1)
@@ -306,6 +312,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
       ema13,
       ma1,
       ma2,
+      vwapBands,
     };
   }, [initialData, indicatorName, isIntraday]);
 };

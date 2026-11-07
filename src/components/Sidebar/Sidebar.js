@@ -37,6 +37,7 @@ const Sidebar = ({
   handlePatternClick,
   handleWatchListClick,
   companyObj,
+  vwapAvailable,
   isOpen,
   onToggle,
 }) => {
@@ -74,6 +75,11 @@ const Sidebar = ({
   const indicatorArr = [
     { id: "sma", name: "SMA(20,50,200)", isActive: indicatorName === "sma" },
     { id: "ema", name: "EMA", isActive: indicatorName === "ema" },
+    ...(vwapAvailable ? [
+      { id: "vwap", name: "VWAP", isActive: indicatorName === "vwap" },
+      { id: "vwap-1sd", name: "VWAP ±1σ Bands", isActive: indicatorName === "vwap-1sd" },
+      { id: "vwap-2sd", name: "VWAP ±1σ/±2σ Bands", isActive: indicatorName === "vwap-2sd" },
+    ] : []),
     { id: "rsi", name: "RSI", isActive: indicatorName === "rsi" },
     { id: "macd", name: "MACD(12,26,9)", isActive: indicatorName === "macd" },
     { id: "bolinger", name: "Bolinger Band(20,2)", isActive: indicatorName === "bolinger" },
