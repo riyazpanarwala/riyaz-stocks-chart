@@ -101,6 +101,7 @@ const FinanceChart = ({
   height,
   ratio,
   indicatorName,
+  showEma9And20 = false,
   positionName,
   shapeName,
   isAngleEnabled,
@@ -121,7 +122,8 @@ const FinanceChart = ({
   const {
     calculatedData, ema12, ema26, rsiCalculator, rsiYAccessor,
     angles, macdCalculator, sma20, sma50, sma200, bb, ema5, ema8, ema13, ma1, ma2,
-  } = useData(initialData, indicatorName, isIntraday);
+    ema9Overlay, ema20Overlay,
+  } = useData(initialData, indicatorName, isIntraday, showEma9And20);
 
   // Fix: never read window during render — that crashes SSR/static export.
   // Initialise to false and update after the component mounts in the browser.
@@ -176,6 +178,13 @@ const FinanceChart = ({
       if (validValues.length) {
         high = Math.max(high, ...validValues);
         low = Math.min(low, ...validValues);
+      }
+    }
+    if (showEma9And20) {
+      const emaValues = [d.ema9Overlay, d.ema20Overlay].filter(Number.isFinite);
+      if (emaValues.length) {
+        high = Math.max(high, ...emaValues);
+        low = Math.min(low, ...emaValues);
       }
     }
     return [high + (high * 0.1) / 100, low - (low * 0.1) / 100];
@@ -571,6 +580,13 @@ const FinanceChart = ({
 
         {indicatorName === "supertrend" ? <SuperTrendChart /> : ""}
         {indicatorName.startsWith("vwap") ? <VWAPChart bands={indicatorName === "vwap-2sd" ? 2 : indicatorName === "vwap-1sd" ? 1 : 0} /> : ""}
+        {showEma9And20 && (
+          <EMAChart
+            emaArr={[{ id: "ema9", val: ema9Overlay }, { id: "ema20", val: ema20Overlay }]}
+            isIntraday={isIntraday}
+            tooltipOffset={indicatorName === "ema" && !isIntraday ? 48 : 32}
+          />
+        )}
         {indicatorName === "bolinger" ? <BolingerChart bb={bb} sma20={sma20} /> : ""}
 
         {["5-20-sma", "20-50-sma", "50-200-sma"].includes(indicatorName) ? (

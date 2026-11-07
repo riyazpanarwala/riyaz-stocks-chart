@@ -24,6 +24,7 @@ const Sidebar = ({
   textEnable,
   handleTextClick,
   indicatorName,
+  showEma9And20,
   handleIndicatorClick,
   positionName,
   handlePositionClick,
@@ -75,6 +76,7 @@ const Sidebar = ({
   const indicatorArr = [
     { id: "sma", name: "SMA(20,50,200)", isActive: indicatorName === "sma" },
     { id: "ema", name: "EMA", isActive: indicatorName === "ema" },
+    { id: "ema9-20", name: "EMA 9/20 Overlay (toggle)", isActive: showEma9And20 },
     ...(vwapAvailable ? [
       { id: "vwap", name: "VWAP", isActive: indicatorName === "vwap" },
       { id: "vwap-1sd", name: "VWAP ±1σ Bands", isActive: indicatorName === "vwap-1sd" },

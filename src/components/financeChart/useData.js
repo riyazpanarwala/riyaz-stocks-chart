@@ -22,7 +22,7 @@ import { vwap as calculateVwap } from "../../engine/indicators/vwap.js";
 const emaPeriod1 = 50;
 const emaPeriod2 = 200;
 
-const useData = (initialData, indicatorName, isIntraday) => {
+const useData = (initialData, indicatorName, isIntraday, showEma9And20 = false) => {
   return useMemo(() => {
     let ema12, ema26, rsiCalculator, rsiYAccessor;
     let ema5, ema8, ema13;
@@ -33,6 +33,7 @@ const useData = (initialData, indicatorName, isIntraday) => {
   let ma1, ma2;
   let bb;
   let vwapBands = [];
+  let ema9Overlay, ema20Overlay;
 
   if (["vwap", "vwap-1sd", "vwap-2sd"].includes(indicatorName)) {
     const bands = indicatorName === "vwap-2sd" ? [1, 2] : indicatorName === "vwap-1sd" ? [1] : [];
@@ -295,6 +296,22 @@ const useData = (initialData, indicatorName, isIntraday) => {
     calculatedData = buySell(ma2(ma1(initialData)));
   }
 
+  if (showEma9And20) {
+    ema9Overlay = ema()
+      .id(91)
+      .stroke("#38bdf8")
+      .options({ windowSize: 9 })
+      .merge((d, value) => { d.ema9Overlay = value; })
+      .accessor((d) => d?.ema9Overlay);
+    ema20Overlay = ema()
+      .id(92)
+      .stroke("#c084fc")
+      .options({ windowSize: 20 })
+      .merge((d, value) => { d.ema20Overlay = value; })
+      .accessor((d) => d?.ema20Overlay);
+    calculatedData = ema20Overlay(ema9Overlay(calculatedData));
+  }
+
     return {
       calculatedData,
       ema12,
@@ -313,8 +330,10 @@ const useData = (initialData, indicatorName, isIntraday) => {
       ma1,
       ma2,
       vwapBands,
+      ema9Overlay,
+      ema20Overlay,
     };
-  }, [initialData, indicatorName, isIntraday]);
+  }, [initialData, indicatorName, isIntraday, showEma9And20]);
 };
 
 export default useData;
