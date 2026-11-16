@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { C } from "./constants.js";
 import FO_LIST from "./FOlist.js";
 import { pcrLabel } from "./utils/formatters.js";
+import { playBreakoutChime } from "./utils/soundAlerts.js";
 
 // ── Hooks ─────────────────────────────────────────────────────
 import { useOptionChain }     from "./hooks/useOptionChain.js";
@@ -18,7 +19,8 @@ import { PositionPanel } from "./ui/PositionPanel.jsx";
 
 // ── UI components ─────────────────────────────────────────────
 import { SymbolPicker }       from "./ui/SymbolPicker.jsx";
-import { SignalBanner, ZoneBadges, RefreshCountdown, LoadingSkeleton, ErrorPanel } from "./ui/StatusComponents.jsx";
+import { SignalBanner, ZoneBadges, RefreshCountdown, DataStaleWarning, LoadingSkeleton, ErrorPanel } from "./ui/StatusComponents.jsx";
+import { BreakoutActionCard } from "./ui/BreakoutActionCard.jsx";
 import { OIChart, DeltaOIChart } from "./ui/Charts.jsx";
 import { StrikeTable }        from "./ui/StrikeTable.jsx";
 import { InstitutionalPanel } from "./ui/InstitutionalPanel.jsx";
@@ -86,6 +88,27 @@ export default function App({ initialSymbol = null }) {
   const [selectedExpiry, setSelectedExpiry] = useState(null);
   const isInitializedRef = useRef(false);
 
+  // Sound alert state (Point 4)
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem("optionchain_sound_alerts") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSound = useCallback(() => {
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("optionchain_sound_alerts", String(next));
+      } catch {}
+      if (next) playBreakoutChime(); // Sound sample on enable
+      return next;
+    });
+  }, []);
+
   // Resolve URL parameter after client mount to prevent SSR hydration mismatch
   useEffect(() => {
     if (!initialSymbol) {
@@ -129,8 +152,6 @@ export default function App({ initialSymbol = null }) {
   }, [instrument]);
 
   // ── Derived chain data (all memoised in one place) ────────
-  // FIX #11: useChainDerived now returns `activeRange` so the scalpMode
-  // badge label is always consistent with the actual display slice.
   const {
     rows, prevRows, displayRows, prevDisplayRows,
     expiries, activeExpiry, underlyingValue,
@@ -146,6 +167,17 @@ export default function App({ initialSymbol = null }) {
     underlyingValue, atm, pcr, maxPain,
     instrument, activeExpiry, timestamp: error ? null : rawData?.timestamp, candles, now, marketOpen: mktStatus?.open && !error,
   });
+
+  // ── Audio alert trigger for high-strength breakouts (Point 4) ──
+  const lastAlertedBreakoutRef = useRef(null);
+  useEffect(() => {
+    if (!soundEnabled || !breakoutSignals?.length) return;
+    const topBreakout = breakoutSignals.find((s) => (s.strength ?? 0) >= 80);
+    if (topBreakout && topBreakout.id !== lastAlertedBreakoutRef.current) {
+      lastAlertedBreakoutRef.current = topBreakout.id;
+      playBreakoutChime();
+    }
+  }, [breakoutSignals, soundEnabled]);
 
   // ── Handlers ─────────────────────────────────────────────
   const handleSymbolChange = useCallback((ins) => setInstrument(ins), []);
@@ -198,6 +230,21 @@ export default function App({ initialSymbol = null }) {
               ⚡ {scalpMode ? "NEARBY ONLY" : "NEARBY STRIKES"}
             </button>
 
+            {/* Sound Toggle (Point 4) */}
+            <button
+              onClick={toggleSound}
+              title={soundEnabled ? "Breakout audio alerts: ON (Chime on >=80% strength)" : "Breakout audio alerts: OFF"}
+              style={{
+                padding: "7px 11px", borderRadius: 7, flexShrink: 0, cursor: "pointer",
+                border: `1px solid ${soundEnabled ? C.green : C.border}`,
+                background: soundEnabled ? "#0d2a16" : "transparent",
+                color: soundEnabled ? C.green : C.muted,
+                fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 600,
+              }}
+            >
+              {soundEnabled ? "🔔 Chime: ON" : "🔕 Chime: OFF"}
+            </button>
+
             <button
               onClick={retry}
               disabled={loading}
@@ -215,7 +262,7 @@ export default function App({ initialSymbol = null }) {
 
             <div style={{ marginLeft: "auto" }}>
               {loading   ? <span style={{ fontSize: 10, color: C.blue }}>● Loading…</span>
-             : fetchedAt ? <RefreshCountdown fetchedAt={fetchedAt} />
+             : fetchedAt ? <RefreshCountdown fetchedAt={fetchedAt} timestamp={error ? null : rawData?.timestamp} now={now} />
              : null}
             </div>
           </div>
@@ -283,8 +330,6 @@ export default function App({ initialSymbol = null }) {
                 Expiry: {activeExpiry}
               </span>
             )}
-            {/* FIX #11: use activeRange from the hook so this badge always
-                matches the actual display slice, even if constants change. */}
             {scalpMode && (
               <span style={{ fontSize: 10, background: "#2d2200", color: C.yellow, padding: "2px 8px", borderRadius: 4 }}>
                 Showing ±{activeRange} points from current price
@@ -293,6 +338,9 @@ export default function App({ initialSymbol = null }) {
           </div>
         </div>
 
+        {/* Data Stale Warning (Point 2) */}
+        <DataStaleWarning timestamp={error ? null : rawData?.timestamp} now={now} marketOpen={mktStatus?.open && !error} />
+
         {/* ═══ ERROR / LOADING ══════════════════════════════ */}
         {error && <ErrorPanel error={error} onRetry={retry} instrument={instrument} />}
         {loading && !rawData && <LoadingSkeleton />}
@@ -300,9 +348,30 @@ export default function App({ initialSymbol = null }) {
         {/* ═══ MAIN CONTENT ════════════════════════════════ */}
         {rawData && (
           <>
+            {/* Buyer Cockpit Action Card (Point 1) */}
+            <BreakoutActionCard
+              breakoutSignals={breakoutSignals}
+              rows={rows}
+              spot={underlyingValue}
+              atm={atm}
+              activeExpiry={activeExpiry}
+              sig={sig}
+              lotSize={instrument.lot}
+              instrument={instrument}
+            />
+
             {sig && <SignalBanner sig={sig} atm={atm} maxPain={maxPain} spot={underlyingValue} />}
-            <PositionPanel key={`${instrument.symbol}:${activeExpiry}`} sig={sig} rows={rows} spot={underlyingValue}
-              storageKey={`${instrument.symbol}:${activeExpiry}:main`} timestamp={error ? null : rawData.timestamp} now={now} marketOpen={mktStatus?.open} expiry={activeExpiry} />
+            <PositionPanel
+              key={`${instrument.symbol}:${activeExpiry}`}
+              sig={sig}
+              rows={rows}
+              spot={underlyingValue}
+              storageKey={`${instrument.symbol}:${activeExpiry}:main`}
+              timestamp={error ? null : rawData.timestamp}
+              now={now}
+              marketOpen={mktStatus?.open}
+              expiry={activeExpiry}
+            />
             {sig && <ZoneBadges sig={sig} />}
             {straddleInfo && <StraddleBanner straddleInfo={straddleInfo} lotSize={instrument.lot} />}
             <ExpiryGammaWatch rows={rows} spot={underlyingValue} tYears={tYears} candles={candles} expiry={activeExpiry} />
@@ -395,6 +464,8 @@ export default function App({ initialSymbol = null }) {
                       spot={underlyingValue}
                       tYears={tYears}
                       lotSize={instrument.lot}
+                      snapshots={snapshots}
+                      now={now}
                     />
                   )}
                   {activeTab === "inst"    && (
@@ -432,7 +503,6 @@ export default function App({ initialSymbol = null }) {
               <span>·</span>
               <span>Max Pain: <b style={{ color: C.yellow }}>{maxPain || "—"}</b></span>
               <span>·</span>
-              {/* FIX #6: distToRes/distToSup are number|null — guard here too */}
               {sig && (
                 <>
                   <span>Resistance: <b style={{ color: C.red }}>{fmtFooterDist(sig.distToRes, "+")}</b></span>

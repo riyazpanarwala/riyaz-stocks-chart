@@ -1,12 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
 // HEADER / STATUS UI COMPONENTS
-// SignalBanner · ZoneBadges · RefreshCountdown
+// SignalBanner · ZoneBadges · RefreshCountdown · DataStaleWarning
 // LoadingSkeleton · ErrorPanel
 // ═══════════════════════════════════════════════════════════════
 import React, { useState, useEffect } from "react";
 import { C, REFRESH_MS } from "../constants.js";
 import { pcrLabel } from "../utils/formatters.js";
 import { sigMeta } from "../utils/signalEngine.js";
+import { marketTimestamp } from "../utils/tradeRules.js";
 import { ShimmerBar } from "./Primitives.jsx";
 
 // ─── Signal Banner ────────────────────────────────────────────
@@ -124,9 +125,9 @@ export const ZoneBadges = React.memo(function ZoneBadges({ sig }) {
   );
 });
 
-// ─── Refresh Countdown ────────────────────────────────────────
+// ─── Refresh Countdown & Latency Pill ─────────────────────────
 
-export const RefreshCountdown = React.memo(function RefreshCountdown({ fetchedAt }) {
+export const RefreshCountdown = React.memo(function RefreshCountdown({ fetchedAt, timestamp = null, now = Date.now() }) {
   const [secs, setSecs] = useState(0);
 
   useEffect(() => {
@@ -139,19 +140,80 @@ export const RefreshCountdown = React.memo(function RefreshCountdown({ fetchedAt
 
   const pct = fetchedAt ? Math.min(100, Math.round(((Date.now() - fetchedAt) / REFRESH_MS) * 100)) : 0;
 
+  // Calculate actual exchange data latency
+  const marketTs = timestamp ? marketTimestamp(timestamp) : null;
+  const latencySecs = Number.isFinite(marketTs) && marketTs > 0 ? Math.max(0, Math.round((now - marketTs) / 1000)) : null;
+
+  const latencyColor = latencySecs == null ? C.muted
+    : latencySecs <= 60 ? C.green
+    : latencySecs <= 120 ? C.yellow
+    : C.red;
+
+  const latencyLabel = latencySecs == null ? null
+    : latencySecs < 60 ? `${latencySecs}s ago`
+    : latencySecs < 120 ? `${latencySecs}s ago (Lagging)`
+    : `${Math.floor(latencySecs / 60)}m ${latencySecs % 60}s ago (Delayed)`;
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-      <svg width={16} height={16} style={{ flexShrink: 0 }}>
-        <circle cx={8} cy={8} r={6} fill="none" stroke={C.border} strokeWidth={2} />
-        <circle cx={8} cy={8} r={6} fill="none" stroke={C.blue} strokeWidth={2}
-          strokeDasharray={`${(pct / 100) * 37.7} 37.7`}
-          strokeLinecap="round" transform="rotate(-90 8 8)"
-          style={{ transition: "stroke-dasharray 1s linear" }}
-        />
-      </svg>
-      <span style={{ fontSize: 10, color: C.muted }}>
-        {secs > 0 ? `next refresh in ${secs}s` : "refreshing…"}
-      </span>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      {latencyLabel && (
+        <span
+          title={`Exchange timestamp: ${timestamp}. Calculated feed latency.`}
+          style={{
+            fontSize: 10,
+            padding: "2px 7px",
+            borderRadius: 4,
+            background: `${latencyColor}18`,
+            border: `1px solid ${latencyColor}40`,
+            color: latencyColor,
+            fontWeight: 600,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          <span style={{ fontSize: 7 }}>●</span> Feed: {latencyLabel}
+        </span>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <svg width={16} height={16} style={{ flexShrink: 0 }}>
+          <circle cx={8} cy={8} r={6} fill="none" stroke={C.border} strokeWidth={2} />
+          <circle cx={8} cy={8} r={6} fill="none" stroke={C.blue} strokeWidth={2}
+            strokeDasharray={`${(pct / 100) * 37.7} 37.7`}
+            strokeLinecap="round" transform="rotate(-90 8 8)"
+            style={{ transition: "stroke-dasharray 1s linear" }}
+          />
+        </svg>
+        <span style={{ fontSize: 10, color: C.muted }}>
+          {secs > 0 ? `refresh in ${secs}s` : "refreshing…"}
+        </span>
+      </div>
+    </div>
+  );
+});
+
+// ─── Data Stale Warning Banner ────────────────────────────────
+
+export const DataStaleWarning = React.memo(function DataStaleWarning({ timestamp, now = Date.now(), marketOpen = true }) {
+  if (!marketOpen || !timestamp) return null;
+  const marketTs = marketTimestamp(timestamp);
+  if (!Number.isFinite(marketTs) || marketTs <= 0) return null;
+  const ageSecs = Math.max(0, Math.round((now - marketTs) / 1000));
+
+  if (ageSecs <= 120) return null;
+
+  return (
+    <div style={{
+      background: "#2a1805", border: `1px solid ${C.yellow}55`, borderRadius: 8,
+      padding: "8px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 10,
+      fontSize: 11, color: C.yellow,
+    }}>
+      <span style={{ fontSize: 16 }}>⚠️</span>
+      <div>
+        <b>NSE Data Delay Notice:</b> Exchange option chain snapshot is <b>{Math.floor(ageSecs / 60)}m {ageSecs % 60}s</b> old.
+        Institutional OI barriers and unwinding signals may lag current spot price. Confirm price on live chart before executing.
+      </div>
     </div>
   );
 });
