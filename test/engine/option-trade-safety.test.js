@@ -88,6 +88,8 @@ test("Recorded positions exit at stop, target, underlying invalidation, reversal
   }
   assert.equal(evaluatePosition(position, { ...quote, timestamp: null }).action, "CHECK QUOTE");
   assert.equal(evaluatePosition({ ...position, openedAt: now - 86400000 }, quote).action, "EXIT");
+  assert.equal(evaluatePosition({ ...position, openedAt: now - 40 * 60_000 }, quote).action, "EXIT");
+  assert.equal(evaluatePosition({ ...position, openedAt: now - 39 * 60_000 }, quote).action, "HOLD");
   assert.equal(evaluatePosition(null, quote).action, "NO POSITION");
 });
 

@@ -1,12 +1,14 @@
 // ═══════════════════════════════════════════════════════════════
 // STRIKE TABLE & OPTION GREEKS VIEW
-// Displays both Open Interest View and Black-Scholes Greeks View
-// (Delta, Gamma, Vega, and Rupee Theta Decay per lot).
+// Displays Open Interest View (Today vs 15m Velocity ΔOI),
+// Black-Scholes Greeks View (Delta, Gamma, Vega, Theta),
+// and ATM ±5 Diff View.
 // ═══════════════════════════════════════════════════════════════
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { C } from "../constants.js";
 import { buildupType }  from "../utils/parsers.js";
 import { calcRowGreeks } from "../utils/greeksEngine.js";
+import { isFresh, marketTimestamp } from "../utils/tradeRules.js";
 import { CallPutDiffTable } from "./CallPutDiffTable.jsx";
 
 /**
@@ -15,7 +17,7 @@ import { CallPutDiffTable } from "./CallPutDiffTable.jsx";
  * - Strikes below ATM: analyze PE (puts/support/breakdown)
  * - At ATM: pick the leg with dominant change in open interest
  */
-function getStrikeBuildup(row, atm) {
+function getStrikeBuildup(row, atm, oi15m = null) {
   const { strikePrice: sp, CE, PE } = row;
   const isATM = sp === atm;
 
@@ -26,6 +28,18 @@ function getStrikeBuildup(row, atm) {
     : sp > atm
       ? "CE"
       : "PE";
+
+  // If 15m delta is active, detect fast short covering in last 15m
+  if (oi15m) {
+    const ce15 = oi15m.ce;
+    const pe15 = oi15m.pe;
+    if (side === "CE" && ce15 != null && ce15 < 0) {
+      return { label: `⚡ 15m Short Covering (${ce15.toLocaleString()})`, color: C.blue };
+    }
+    if (side === "PE" && pe15 != null && pe15 < 0) {
+      return { label: `⚡ 15m Put Unwinding (${pe15.toLocaleString()})`, color: C.red };
+    }
+  }
 
   const buType = buildupType(row, side);
 
@@ -63,15 +77,16 @@ function getStrikeBuildup(row, atm) {
   }
 }
 
-const OI_HEADERS = ["Call OI (Bets)", "Call ΔOI (Today)", "Call Price", "STRIKE", "Put OI (Bets)", "Put ΔOI (Today)", "Put Price", "What's Happening"];
-const GREEKS_HEADERS = ["Call IV", "Call Delta (Δ)", "Call Theta (₹/lot)", "STRIKE", "Put Theta (₹/lot)", "Put Delta (Δ)", "Put IV", "Gamma / Vega"];
-
-const StrikeRowOI = React.memo(function StrikeRowOI({ row, atm, sig }) {
+const StrikeRowOI = React.memo(function StrikeRowOI({ row, atm, sig, oiInterval = "today", delta15m = null }) {
   const { strikePrice: sp, CE, PE } = row;
   const isATM = sp === atm;
   const isSup = sig?.topSupport?.includes(sp)    ?? false;
   const isRes = sig?.topResistance?.includes(sp) ?? false;
-  const { label: buLabel, color: buColor } = getStrikeBuildup(row, atm);
+  const { label: buLabel, color: buColor } = getStrikeBuildup(row, atm, oiInterval === "15m" ? delta15m : null);
+
+  // In 15m mode, only use 15m delta; do not fall back to today's change (Comment 8)
+  const ceDelta = oiInterval === "15m" ? (delta15m?.ce ?? null) : CE.changeinOpenInterest;
+  const peDelta = oiInterval === "15m" ? (delta15m?.pe ?? null) : PE.changeinOpenInterest;
 
   return (
     <tr style={{
@@ -79,8 +94,12 @@ const StrikeRowOI = React.memo(function StrikeRowOI({ row, atm, sig }) {
       background: isATM ? "#161e2e" : isRes ? C.redBg : isSup ? C.greenBg : "transparent",
     }}>
       <td style={{ padding: "4px 6px", textAlign: "right", color: C.red }}>{CE.openInterest?.toLocaleString() ?? "—"}</td>
-      <td style={{ padding: "4px 6px", textAlign: "right", color: CE.changeinOpenInterest >= 0 ? C.red : C.green }}>
-        {CE.changeinOpenInterest > 0 ? "+" : ""}{CE.changeinOpenInterest?.toLocaleString() ?? "—"}
+      <td style={{
+        padding: "4px 6px", textAlign: "right",
+        color: ceDelta == null ? C.muted : ceDelta >= 0 ? C.red : C.green,
+        fontWeight: oiInterval === "15m" ? 700 : 400,
+      }}>
+        {ceDelta == null ? "—" : `${ceDelta > 0 ? "+" : ""}${ceDelta.toLocaleString()}`}
       </td>
       <td style={{ padding: "4px 6px", textAlign: "right", color: C.text }}>₹{CE.lastPrice}</td>
       <td style={{ padding: "4px 8px", textAlign: "center", fontWeight: 700,
@@ -90,8 +109,12 @@ const StrikeRowOI = React.memo(function StrikeRowOI({ row, atm, sig }) {
         {sp}{isATM ? " ◆" : ""}
       </td>
       <td style={{ padding: "4px 6px", textAlign: "right", color: C.green }}>{PE.openInterest?.toLocaleString() ?? "—"}</td>
-      <td style={{ padding: "4px 6px", textAlign: "right", color: PE.changeinOpenInterest >= 0 ? C.green : C.red }}>
-        {PE.changeinOpenInterest > 0 ? "+" : ""}{PE.changeinOpenInterest?.toLocaleString() ?? "—"}
+      <td style={{
+        padding: "4px 6px", textAlign: "right",
+        color: peDelta == null ? C.muted : peDelta >= 0 ? C.green : C.red,
+        fontWeight: oiInterval === "15m" ? 700 : 400,
+      }}>
+        {peDelta == null ? "—" : `${peDelta > 0 ? "+" : ""}${peDelta.toLocaleString()}`}
       </td>
       <td style={{ padding: "4px 6px", textAlign: "right", color: C.text }}>₹{PE.lastPrice}</td>
       <td style={{ padding: "4px 6px", textAlign: "right", color: buColor, whiteSpace: "nowrap", fontSize: 10 }}>
@@ -148,26 +171,78 @@ export const StrikeTable = React.memo(function StrikeTable({
   spot = 0,
   tYears = 0.019,
   lotSize = 1,
+  snapshots = [],
+  timestamp = null,
+  now = Date.now(),
 }) {
   const [viewMode, setViewMode] = useState("oi"); // "oi" | "greeks" | "diff"
+  const [oiInterval, setOiInterval] = useState("today"); // "today" | "15m"
+
+  // Compute 15-minute delta map from snapshots nearest 15 minutes anchored to current observation
+  const delta15mMap = useMemo(() => {
+    if (!snapshots?.length) return new Map();
+    const currentTs = (timestamp ? marketTimestamp(timestamp) : null) || snapshots.at(-1)?.ts;
+    if (!currentTs || !Number.isFinite(currentTs) || !isFresh(currentTs, now)) return new Map();
+
+    const TARGET_MS = 15 * 60_000;
+    // Strictly bound eligible snapshots to [10 mins, 20 mins] age relative to current observation
+    const eligible = snapshots.filter(
+      (s) => s.ts && currentTs - s.ts >= 600_000 && currentTs - s.ts <= 1_200_000
+    );
+    if (!eligible.length) return new Map();
+
+    // Select snapshot closest to currentTs - 15m (TARGET_MS)
+    const snap15 = eligible.reduce((closest, s) => {
+      const diffCurrent = Math.abs(currentTs - s.ts - TARGET_MS);
+      const diffClosest = Math.abs(currentTs - closest.ts - TARGET_MS);
+      return diffCurrent < diffClosest ? s : closest;
+    }, eligible[0]);
+
+    if (!snap15?.rows?.length) return new Map();
+
+    const map = new Map();
+    for (const cur of rows) {
+      const past = snap15.rows.find((r) => r.strikePrice === cur.strikePrice);
+      if (past) {
+        const ceDelta = cur.CE?.openInterest != null && past.CE?.openInterest != null
+          ? cur.CE.openInterest - past.CE.openInterest : null;
+        const peDelta = cur.PE?.openInterest != null && past.PE?.openInterest != null
+          ? cur.PE.openInterest - past.PE.openInterest : null;
+        map.set(cur.strikePrice, { ce: ceDelta, pe: peDelta });
+      }
+    }
+    return map;
+  }, [snapshots, rows, timestamp, now]);
+
+  const oiHeaders = useMemo(() => [
+    "Call OI (Bets)",
+    oiInterval === "15m" ? "⚡ Call 15m ΔOI" : "Call ΔOI (Today)",
+    "Call Price",
+    "STRIKE",
+    "Put OI (Bets)",
+    oiInterval === "15m" ? "⚡ Put 15m ΔOI" : "Put ΔOI (Today)",
+    "Put Price",
+    "What's Happening",
+  ], [oiInterval]);
+
+  const greeksHeaders = [
+    "Call IV", "Call Delta (Δ)", "Call Theta (₹/lot)", "STRIKE",
+    "Put Theta (₹/lot)", "Put Delta (Δ)", "Put IV", "Gamma / Vega",
+  ];
 
   return (
     <div style={{ background: C.surface, borderRadius: 10, padding: 12, marginBottom: 12 }}>
       {/* Table Toolbar / View Switcher */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
           <button
             onClick={() => setViewMode("oi")}
             style={{
-              padding: "4px 10px",
-              borderRadius: 5,
+              padding: "4px 10px", borderRadius: 5,
               border: `1px solid ${viewMode === "oi" ? C.blue : C.border}`,
               background: viewMode === "oi" ? "#14253d" : "transparent",
               color: viewMode === "oi" ? C.blue : C.muted,
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "'IBM Plex Mono',monospace",
+              fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'IBM Plex Mono',monospace",
             }}
           >
             📊 Open Interest View
@@ -175,15 +250,11 @@ export const StrikeTable = React.memo(function StrikeTable({
           <button
             onClick={() => setViewMode("greeks")}
             style={{
-              padding: "4px 10px",
-              borderRadius: 5,
+              padding: "4px 10px", borderRadius: 5,
               border: `1px solid ${viewMode === "greeks" ? C.purple : C.border}`,
               background: viewMode === "greeks" ? "#26133a" : "transparent",
               color: viewMode === "greeks" ? C.purple : C.muted,
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "'IBM Plex Mono',monospace",
+              fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'IBM Plex Mono',monospace",
             }}
           >
             🧮 Option Greeks View
@@ -191,24 +262,56 @@ export const StrikeTable = React.memo(function StrikeTable({
           <button
             onClick={() => setViewMode("diff")}
             style={{
-              padding: "4px 10px",
-              borderRadius: 5,
+              padding: "4px 10px", borderRadius: 5,
               border: `1px solid ${viewMode === "diff" ? C.yellow : C.border}`,
               background: viewMode === "diff" ? "#2d2200" : "transparent",
               color: viewMode === "diff" ? C.yellow : C.muted,
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "'IBM Plex Mono',monospace",
+              fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'IBM Plex Mono',monospace",
             }}
           >
             ⚖️ ATM ±5 Diff View
           </button>
+
+          {/* Sub-toggle for Point 3: Today vs 15m Velocity ΔOI */}
+          {viewMode === "oi" && (
+            <div style={{
+              display: "inline-flex", gap: 2, background: C.surface2,
+              padding: 2, borderRadius: 5, border: `1px solid ${C.border}`, marginLeft: 6,
+            }}>
+              <button
+                onClick={() => setOiInterval("today")}
+                style={{
+                  padding: "3px 8px", borderRadius: 4, border: "none", cursor: "pointer",
+                  fontSize: 10, fontWeight: 600, fontFamily: "'IBM Plex Mono',monospace",
+                  background: oiInterval === "today" ? C.surface : "transparent",
+                  color: oiInterval === "today" ? C.text : C.muted,
+                }}
+              >
+                Today ΔOI
+              </button>
+              <button
+                onClick={() => setOiInterval("15m")}
+                title="Shows change in Open Interest over the last 15 minutes to reveal active short covering / unwinding"
+                style={{
+                  padding: "3px 8px", borderRadius: 4, border: "none", cursor: "pointer",
+                  fontSize: 10, fontWeight: 700, fontFamily: "'IBM Plex Mono',monospace",
+                  background: oiInterval === "15m" ? "#1e2e1a" : "transparent",
+                  color: oiInterval === "15m" ? C.green : C.muted,
+                }}
+              >
+                ⚡ 15m Velocity
+              </button>
+            </div>
+          )}
         </div>
 
         <div style={{ fontSize: 10, color: C.muted }}>
           {viewMode === "oi" ? (
-            <span>Showing active contracts, today&apos;s position changes, and plain English market action</span>
+            oiInterval === "15m" ? (
+              <span style={{ color: C.green }}>⚡ 15m Velocity active: Negative Call ΔOI = Short Covering (Bullish) | Negative Put ΔOI = Long Unwinding (Bearish)</span>
+            ) : (
+              <span>Showing active contracts, today&apos;s position changes, and plain English market action</span>
+            )
           ) : viewMode === "greeks" ? (
             <span>Delta (Δ) = Price Sensitivity | Theta (Θ) = Time decay lost per day in ₹/lot (lot size: {lotSize})</span>
           ) : (
@@ -231,7 +334,7 @@ export const StrikeTable = React.memo(function StrikeTable({
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: 650 }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                {(viewMode === "oi" ? OI_HEADERS : GREEKS_HEADERS).map((h) => (
+                {(viewMode === "oi" ? oiHeaders : greeksHeaders).map((h) => (
                   <th key={h} style={{ padding: "6px 6px", color: C.muted, textAlign: "right", whiteSpace: "nowrap", fontWeight: 600 }}>
                     {h}
                   </th>
@@ -241,7 +344,14 @@ export const StrikeTable = React.memo(function StrikeTable({
             <tbody>
               {displayRows.map((r) =>
                 viewMode === "oi" ? (
-                  <StrikeRowOI key={r.strikePrice} row={r} atm={atm} sig={sig} />
+                  <StrikeRowOI
+                    key={r.strikePrice}
+                    row={r}
+                    atm={atm}
+                    sig={sig}
+                    oiInterval={oiInterval}
+                    delta15m={delta15mMap.get(r.strikePrice)}
+                  />
                 ) : (
                   <StrikeRowGreeks
                     key={r.strikePrice}
