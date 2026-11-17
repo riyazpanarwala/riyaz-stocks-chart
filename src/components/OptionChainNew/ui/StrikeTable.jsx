@@ -83,8 +83,9 @@ const StrikeRowOI = React.memo(function StrikeRowOI({ row, atm, sig, oiInterval 
   const isRes = sig?.topResistance?.includes(sp) ?? false;
   const { label: buLabel, color: buColor } = getStrikeBuildup(row, atm, oiInterval === "15m" ? delta15m : null);
 
-  const ceDelta = oiInterval === "15m" && delta15m?.ce != null ? delta15m.ce : CE.changeinOpenInterest;
-  const peDelta = oiInterval === "15m" && delta15m?.pe != null ? delta15m.pe : PE.changeinOpenInterest;
+  // In 15m mode, only use 15m delta; do not fall back to today's change (Comment 8)
+  const ceDelta = oiInterval === "15m" ? (delta15m?.ce ?? null) : CE.changeinOpenInterest;
+  const peDelta = oiInterval === "15m" ? (delta15m?.pe ?? null) : PE.changeinOpenInterest;
 
   return (
     <tr style={{
@@ -175,12 +176,23 @@ export const StrikeTable = React.memo(function StrikeTable({
   const [viewMode, setViewMode] = useState("oi"); // "oi" | "greeks" | "diff"
   const [oiInterval, setOiInterval] = useState("today"); // "today" | "15m"
 
-  // Compute 15-minute delta map from snapshots
+  // Compute 15-minute delta map from snapshots nearest 15 minutes (bounded 10m - 20m) (Comment 9)
   const delta15mMap = useMemo(() => {
     if (!snapshots?.length) return new Map();
-    // find snapshot from approximately 15 minutes ago (10m to 20m)
-    const windowSnapshots = snapshots.filter((s) => s.ts && now - s.ts >= 480_000 && now - s.ts <= 1320_000);
-    const snap15 = windowSnapshots.at(-1) || snapshots.filter((s) => s.ts && now - s.ts >= 300_000).at(0);
+    const TARGET_MS = 15 * 60_000;
+    // Strictly bound eligible snapshots to [10 mins, 20 mins] age
+    const eligible = snapshots.filter(
+      (s) => s.ts && now - s.ts >= 600_000 && now - s.ts <= 1_200_000
+    );
+    if (!eligible.length) return new Map();
+
+    // Select snapshot closest to now - 15m (TARGET_MS)
+    const snap15 = eligible.reduce((closest, s) => {
+      const diffCurrent = Math.abs(now - s.ts - TARGET_MS);
+      const diffClosest = Math.abs(now - closest.ts - TARGET_MS);
+      return diffCurrent < diffClosest ? s : closest;
+    }, eligible[0]);
+
     if (!snap15?.rows?.length) return new Map();
 
     const map = new Map();

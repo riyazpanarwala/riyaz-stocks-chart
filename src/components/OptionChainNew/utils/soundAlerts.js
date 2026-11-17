@@ -1,18 +1,25 @@
 // ═══════════════════════════════════════════════════════════════
 // BROWSER AUDIO CHIME FOR BREAKOUT SIGNALS
 // Synthesizes a clean two-tone chime via Web Audio API (no external mp3).
+// Reuses a single module-level AudioContext to prevent context exhaustion.
 // ═══════════════════════════════════════════════════════════════
+
+let sharedAudioCtx = null;
 
 export function playBreakoutChime() {
   if (typeof window === "undefined") return;
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    if (ctx.state === "suspended") {
-      ctx.resume().catch(() => {});
+
+    if (!sharedAudioCtx || sharedAudioCtx.state === "closed") {
+      sharedAudioCtx = new AudioCtx();
+    }
+    if (sharedAudioCtx.state === "suspended") {
+      sharedAudioCtx.resume().catch(() => {});
     }
 
+    const ctx = sharedAudioCtx;
     const startTime = ctx.currentTime;
 
     // Tone 1: D5 (587.33 Hz)
@@ -38,7 +45,7 @@ export function playBreakoutChime() {
     gain2.connect(ctx.destination);
     osc2.start(startTime + 0.12);
     osc2.stop(startTime + 0.55);
-  } catch (err) {
+  } catch {
     // Audio autoplay restrictions or browser denial; ignore safely
   }
 }

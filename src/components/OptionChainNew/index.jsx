@@ -89,25 +89,23 @@ export default function App({ initialSymbol = null }) {
   const isInitializedRef = useRef(false);
 
   // Sound alert state (Point 4)
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    if (typeof window === "undefined") return false;
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  useEffect(() => {
     try {
-      return localStorage.getItem("optionchain_sound_alerts") === "true";
-    } catch {
-      return false;
-    }
-  });
+      if (localStorage.getItem("optionchain_sound_alerts") === "true") {
+        setSoundEnabled(true);
+      }
+    } catch {}
+  }, []);
 
   const toggleSound = useCallback(() => {
-    setSoundEnabled((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem("optionchain_sound_alerts", String(next));
-      } catch {}
-      if (next) playBreakoutChime(); // Sound sample on enable
-      return next;
-    });
-  }, []);
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    try {
+      localStorage.setItem("optionchain_sound_alerts", String(next));
+    } catch {}
+    if (next) playBreakoutChime(); // Sound sample on enable
+  }, [soundEnabled]);
 
   // Resolve URL parameter after client mount to prevent SSR hydration mismatch
   useEffect(() => {
@@ -171,13 +169,18 @@ export default function App({ initialSymbol = null }) {
   // ── Audio alert trigger for high-strength breakouts (Point 4) ──
   const lastAlertedBreakoutRef = useRef(null);
   useEffect(() => {
-    if (!soundEnabled || !breakoutSignals?.length) return;
-    const topBreakout = breakoutSignals.find((s) => (s.strength ?? 0) >= 80);
-    if (topBreakout && topBreakout.id !== lastAlertedBreakoutRef.current) {
-      lastAlertedBreakoutRef.current = topBreakout.id;
+    const topBreakout = breakoutSignals?.find((s) => (s.strength ?? 0) >= 80);
+    if (!topBreakout) {
+      lastAlertedBreakoutRef.current = null;
+      return;
+    }
+    if (!soundEnabled) return;
+    const key = `${instrument?.symbol}:${activeExpiry}:${topBreakout.id}`;
+    if (key !== lastAlertedBreakoutRef.current) {
+      lastAlertedBreakoutRef.current = key;
       playBreakoutChime();
     }
-  }, [breakoutSignals, soundEnabled]);
+  }, [breakoutSignals, soundEnabled, instrument?.symbol, activeExpiry]);
 
   // ── Handlers ─────────────────────────────────────────────
   const handleSymbolChange = useCallback((ins) => setInstrument(ins), []);

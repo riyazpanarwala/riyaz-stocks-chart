@@ -3,7 +3,7 @@
 // Provides instant, 1-click executable strike, spot invalidation,
 // target levels, and 40-minute time-stop guidance for option buyers.
 // ═══════════════════════════════════════════════════════════════
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { C } from "../constants.js";
 import { strikePitch } from "../utils/parsers.js";
 import { liquidQuote } from "../utils/tradeRules.js";
@@ -19,11 +19,18 @@ export const BreakoutActionCard = React.memo(function BreakoutActionCard({
   instrument = { symbol: "NIFTY", type: "index" },
 }) {
   const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef(null);
 
-  // Find the highest strength active breakout signal
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
+
+  // Find the highest strength directional breakout signal (do not fall back to weak non-directional signals)
   const activeBreakout = breakoutSignals.find(
     (s) => (s.strength ?? 0) >= 65 && ["BULLISH_BREAKOUT", "BEARISH_BREAKDOWN", "BULLISH_MOMENTUM", "BEARISH_MOMENTUM"].includes(s.type)
-  ) || breakoutSignals[0];
+  );
 
   const pitch = strikePitch(rows, spot) || (instrument.type === "index" ? 50 : 10);
   const isBull = activeBreakout
@@ -33,8 +40,6 @@ export const BreakoutActionCard = React.memo(function BreakoutActionCard({
     ? activeBreakout.type.includes("BEARISH")
     : sig?.rawSignal === "BUY PUT";
 
-  const hasAction = (isBull || isBear) && (activeBreakout?.strength >= 65 || (sig?.strength ?? 0) >= 65);
-
   // Select ITM Strike (1 to 2 strikes ITM for delta ~0.70 - 0.80)
   const itmOffset = 2 * pitch;
   const recommendedStrike = isBull
@@ -42,10 +47,16 @@ export const BreakoutActionCard = React.memo(function BreakoutActionCard({
     : (activeBreakout?.strike ? activeBreakout.strike + pitch : atm + itmOffset);
 
   const side = isBull ? "CE" : "PE";
-  const row = rows.find((r) => r.strikePrice === recommendedStrike) || rows.find((r) => r.strikePrice === atm);
+  // Strict row lookup: do not fall back to ATM row if recommended strike is missing
+  const row = rows.find((r) => r.strikePrice === recommendedStrike);
   const leg = row?.[side];
   const quote = liquidQuote(leg);
   const ltp = leg?.lastPrice ?? 0;
+
+  // Only activate action card if directional signal is strong AND row exists with liquid quote
+  const hasAction = (isBull || isBear) &&
+    (activeBreakout ? activeBreakout.strength >= 65 : (sig?.strength ?? 0) >= 65) &&
+    Boolean(row && quote.valid);
 
   // Spot Risk & Target Plan
   const spotRisk = Math.round(pitch * 0.45); // ~20-25 pts on Nifty
@@ -66,10 +77,14 @@ export const BreakoutActionCard = React.memo(function BreakoutActionCard({
       `Spot TGT: ${spotTgt1} / ${spotTgt2} (+${Math.round(spotRisk * 1.5)} pts) | Option TGT: ₹${optTgt1}\n` +
       `Max Holding Time: 40 Minutes (Exit if stalled)`;
 
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          setCopied(true);
+          if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+          copyTimeoutRef.current = setTimeout(() => setCopied(false), 2500);
+        })
+        .catch(() => {});
     }
   };
 

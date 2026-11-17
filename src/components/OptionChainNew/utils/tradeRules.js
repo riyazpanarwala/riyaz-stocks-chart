@@ -96,6 +96,9 @@ export function evaluatePosition(position, { bid, spot, timestamp, now = Date.no
   if (!position) return { action: "NO POSITION", reason: "Record an actual fill to monitor exits." };
   const dayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" });
   if (position.openedAt && dayFormat.format(position.openedAt) !== dayFormat.format(now)) return { action: "EXIT", reason: "Recorded intraday position remains open from an earlier session." };
+  if (position.openedAt && Number.isFinite(position.openedAt) && now - position.openedAt >= 40 * 60_000) {
+    return { action: "EXIT", reason: "Intraday 40-minute holding limit reached; exit the position." };
+  }
   const time = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false }).format(now);
   if (time >= "15:20" || !marketOpen) return { action: "EXIT", reason: "Intraday time exit; close the recorded position." };
   if (!isFresh(timestamp, now) || !Number.isFinite(bid) || bid <= 0 || !Number.isFinite(spot) || spot <= 0) return { action: "CHECK QUOTE", reason: "Fresh bid and spot required to evaluate exits." };
