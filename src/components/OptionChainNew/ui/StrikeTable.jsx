@@ -8,6 +8,7 @@ import React, { useState, useMemo } from "react";
 import { C } from "../constants.js";
 import { buildupType }  from "../utils/parsers.js";
 import { calcRowGreeks } from "../utils/greeksEngine.js";
+import { isFresh, marketTimestamp } from "../utils/tradeRules.js";
 import { CallPutDiffTable } from "./CallPutDiffTable.jsx";
 
 /**
@@ -171,25 +172,29 @@ export const StrikeTable = React.memo(function StrikeTable({
   tYears = 0.019,
   lotSize = 1,
   snapshots = [],
+  timestamp = null,
   now = Date.now(),
 }) {
   const [viewMode, setViewMode] = useState("oi"); // "oi" | "greeks" | "diff"
   const [oiInterval, setOiInterval] = useState("today"); // "today" | "15m"
 
-  // Compute 15-minute delta map from snapshots nearest 15 minutes (bounded 10m - 20m) (Comment 9)
+  // Compute 15-minute delta map from snapshots nearest 15 minutes anchored to current observation
   const delta15mMap = useMemo(() => {
     if (!snapshots?.length) return new Map();
+    const currentTs = (timestamp ? marketTimestamp(timestamp) : null) || snapshots.at(-1)?.ts;
+    if (!currentTs || !Number.isFinite(currentTs) || !isFresh(currentTs, now)) return new Map();
+
     const TARGET_MS = 15 * 60_000;
-    // Strictly bound eligible snapshots to [10 mins, 20 mins] age
+    // Strictly bound eligible snapshots to [10 mins, 20 mins] age relative to current observation
     const eligible = snapshots.filter(
-      (s) => s.ts && now - s.ts >= 600_000 && now - s.ts <= 1_200_000
+      (s) => s.ts && currentTs - s.ts >= 600_000 && currentTs - s.ts <= 1_200_000
     );
     if (!eligible.length) return new Map();
 
-    // Select snapshot closest to now - 15m (TARGET_MS)
+    // Select snapshot closest to currentTs - 15m (TARGET_MS)
     const snap15 = eligible.reduce((closest, s) => {
-      const diffCurrent = Math.abs(now - s.ts - TARGET_MS);
-      const diffClosest = Math.abs(now - closest.ts - TARGET_MS);
+      const diffCurrent = Math.abs(currentTs - s.ts - TARGET_MS);
+      const diffClosest = Math.abs(currentTs - closest.ts - TARGET_MS);
       return diffCurrent < diffClosest ? s : closest;
     }, eligible[0]);
 
@@ -207,7 +212,7 @@ export const StrikeTable = React.memo(function StrikeTable({
       }
     }
     return map;
-  }, [snapshots, rows, now]);
+  }, [snapshots, rows, timestamp, now]);
 
   const oiHeaders = useMemo(() => [
     "Call OI (Bets)",

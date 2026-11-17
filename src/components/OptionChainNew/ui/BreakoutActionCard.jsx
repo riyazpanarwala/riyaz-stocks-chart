@@ -19,6 +19,7 @@ export const BreakoutActionCard = React.memo(function BreakoutActionCard({
   instrument = { symbol: "NIFTY", type: "index" },
 }) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const copyTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -77,14 +78,24 @@ export const BreakoutActionCard = React.memo(function BreakoutActionCard({
       `Spot TGT: ${spotTgt1} / ${spotTgt2} (+${Math.round(spotRisk * 1.5)} pts) | Option TGT: ₹${optTgt1}\n` +
       `Max Holding Time: 40 Minutes (Exit if stalled)`;
 
+    const handleFailure = () => {
+      setCopied(false);
+      setCopyFailed(true);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopyFailed(false), 2500);
+    };
+
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(text)
         .then(() => {
+          setCopyFailed(false);
           setCopied(true);
           if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
           copyTimeoutRef.current = setTimeout(() => setCopied(false), 2500);
         })
-        .catch(() => {});
+        .catch(handleFailure);
+    } else {
+      handleFailure();
     }
   };
 
@@ -136,12 +147,14 @@ export const BreakoutActionCard = React.memo(function BreakoutActionCard({
           onClick={copyOrder}
           style={{
             padding: "5px 12px", borderRadius: 6, cursor: "pointer",
-            border: `1px solid ${badgeColor}`, background: badgeColor, color: "#fff",
+            border: `1px solid ${copyFailed ? C.red : badgeColor}`,
+            background: copyFailed ? C.red : badgeColor,
+            color: "#fff",
             fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 700,
             display: "inline-flex", alignItems: "center", gap: 5,
           }}
         >
-          {copied ? "✔ Copied to Clipboard!" : "📋 Copy Order Details"}
+          {copied ? "✔ Copied to Clipboard!" : copyFailed ? "✖ Copy Failed" : "📋 Copy Order Details"}
         </button>
       </div>
 

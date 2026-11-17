@@ -468,6 +468,7 @@ export default function App({ initialSymbol = null }) {
                       tYears={tYears}
                       lotSize={instrument.lot}
                       snapshots={snapshots}
+                      timestamp={error ? null : rawData?.timestamp}
                       now={now}
                     />
                   )}
