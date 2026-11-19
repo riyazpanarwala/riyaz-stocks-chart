@@ -253,7 +253,8 @@ export async function GET(request) {
         high: Number(row.inth),
         low: Number(row.intl),
         close: Number(row.intc),
-        volume: Number(row.intv ?? row.v ?? 0),
+        volume: Number(row.intv != null ? row.intv : 0),
+        dayVolume: Number(row.v != null ? row.v : 0),
         oi: Number(row.oi ?? 0),
       }))
       .filter((candle) => candle.date && Number.isFinite(candle.close) && candle.close > 0)
@@ -270,6 +271,7 @@ export async function GET(request) {
         expiry: contract.exd || expiry,
         availableExpiries: availableExpiries.length > 0 ? availableExpiries : [contract.exd].filter(Boolean),
         interval: intervalId,
+        dayVolume: Number(series.at(-1)?.v ?? 0),
         candles,
       },
       { headers: { "Cache-Control": "private, no-store" } },

@@ -112,6 +112,8 @@ export default function OptionPremiumChart({
   const [priceFlash, setPriceFlash] = useState(null); // "up" | "down" | null
   const prevPriceRef = useRef(null);
   const flashTimeoutRef = useRef(null);
+  const candleBaseDayVolumeRef = useRef(null);
+  const candleInitialBarVolumeRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -323,9 +325,19 @@ export default function OptionPremiumChart({
         throw new Error(result.error || "Unable to load option candles.");
       }
       setData(result);
+      const lastCandle = result.candles?.at(-1);
+      if (lastCandle) {
+        candleBaseDayVolumeRef.current = lastCandle.dayVolume || result.dayVolume || null;
+        candleInitialBarVolumeRef.current = lastCandle.volume || 0;
+      } else {
+        candleBaseDayVolumeRef.current = null;
+        candleInitialBarVolumeRef.current = 0;
+      }
       return (result.candles?.length ?? 0) > 0;
     } catch (err) {
       setData(null);
+      candleBaseDayVolumeRef.current = null;
+      candleInitialBarVolumeRef.current = 0;
       setError(err.message || "Unable to load option candles.");
       return false;
     } finally {
@@ -374,20 +386,34 @@ export default function OptionPremiumChart({
         const intervalMs = intervalMinutes * 60 * 1000;
         const lastTime = new Date(lastCandle.date).getTime();
         const tickTime = tick.time || Date.now();
+        const tickDayVolume = tick.volume;
 
         if (Number.isFinite(lastTime) && tickTime >= lastTime && tickTime < lastTime + intervalMs) {
           lastCandle.close = ltp;
           lastCandle.high = Math.max(lastCandle.high, ltp);
           lastCandle.low = Math.min(lastCandle.low, ltp);
-          if (tick.volume != null && tick.volume > 0) {
-            lastCandle.volume = Math.max(lastCandle.volume, tick.volume);
+
+          // Update interval bar volume incrementally from cumulative day volume delta
+          if (tickDayVolume != null && tickDayVolume > 0) {
+            if (candleBaseDayVolumeRef.current == null) {
+              candleBaseDayVolumeRef.current = tickDayVolume;
+              candleInitialBarVolumeRef.current = lastCandle.volume || 0;
+            }
+            const delta = Math.max(0, tickDayVolume - candleBaseDayVolumeRef.current);
+            lastCandle.volume = (candleInitialBarVolumeRef.current || 0) + delta;
           }
+
           if (tick.oi != null && tick.oi > 0) {
             lastCandle.oi = tick.oi;
           }
           candles[lastIdx] = lastCandle;
         } else if (Number.isFinite(lastTime) && tickTime >= lastTime + intervalMs) {
-          // New candle boundary reached
+          // New candle boundary reached -> reset baseline day volume for the new candle
+          if (tickDayVolume != null && tickDayVolume > 0) {
+            candleBaseDayVolumeRef.current = tickDayVolume;
+          }
+          candleInitialBarVolumeRef.current = 0;
+
           const newTime = new Date(lastTime + intervalMs).toISOString();
           const newCandle = {
             date: newTime,
@@ -396,6 +422,7 @@ export default function OptionPremiumChart({
             low: ltp,
             close: ltp,
             volume: 0,
+            dayVolume: tickDayVolume || lastCandle.dayVolume,
             oi: tick.oi || lastCandle.oi,
           };
           candles.push(newCandle);
@@ -431,7 +458,8 @@ export default function OptionPremiumChart({
       ? Math.min(liveQuote.low, latest.low)
       : (liveQuote?.low ?? latest?.low);
   const currentOpen = latest?.open;
-  const currentVolume = liveQuote?.volume ?? latest?.volume;
+  const currentVolume =
+    liveQuote?.volume ?? data?.dayVolume ?? latest?.dayVolume ?? latest?.volume;
   const currentOi = liveQuote?.oi ?? latest?.oi;
 
   const change = currentPrice != null && previous ? currentPrice - previous.close : null;
