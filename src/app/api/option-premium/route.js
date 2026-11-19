@@ -169,19 +169,46 @@ export async function GET(request) {
   const rawSymbol = searchParams.get("symbol") || "NIFTY";
   const cleanSymbol = rawSymbol.trim().toUpperCase();
 
-  // Exchange detection: SENSEX and BANKEX trade on BSE (BFO)
-  const exch = (cleanSymbol === "SENSEX" || cleanSymbol === "BANKEX" || searchParams.get("exch")?.toUpperCase() === "BFO")
-    ? "BFO"
-    : "NFO";
+  const MCX_SYMBOLS = new Set([
+    "CRUDEOIL",
+    "CRUDEOILM",
+    "NATURALGAS",
+    "GOLD",
+    "GOLDM",
+    "SILVER",
+    "SILVERM",
+    "SILVERMIC",
+    "COPPER",
+    "ZINC",
+    "ALUMINIUM",
+    "LEAD",
+    "NICKEL",
+  ]);
 
-  // Appropriate strike defaults based on index
+  // Exchange detection: BSE (BFO), MCX, or NSE (NFO)
+  let exch = "NFO";
+  if (cleanSymbol === "SENSEX" || cleanSymbol === "BANKEX" || searchParams.get("exch")?.toUpperCase() === "BFO") {
+    exch = "BFO";
+  } else if (MCX_SYMBOLS.has(cleanSymbol) || searchParams.get("exch")?.toUpperCase() === "MCX") {
+    exch = "MCX";
+  }
+
+  // Appropriate strike defaults based on index / commodity
   let strike = searchParams.get("strike") ? Number(searchParams.get("strike")) : null;
   if (!strike) {
     if (cleanSymbol === "SENSEX") strike = 80000;
     else if (cleanSymbol === "BANKNIFTY") strike = 52000;
+    else if (cleanSymbol === "CRUDEOIL" || cleanSymbol === "CRUDEOILM") strike = 7800;
+    else if (cleanSymbol === "NATURALGAS") strike = 310;
+    else if (cleanSymbol === "GOLD" || cleanSymbol === "GOLDM") strike = 78000;
+    else if (cleanSymbol.startsWith("SILVER")) strike = 90000;
     else strike = 25200;
   } else if (cleanSymbol === "SENSEX" && strike < 30000) {
     strike = 80000;
+  } else if ((cleanSymbol === "CRUDEOIL" || cleanSymbol === "CRUDEOILM") && (strike < 2000 || strike > 20000)) {
+    strike = 7800;
+  } else if (cleanSymbol === "NATURALGAS" && strike > 1000) {
+    strike = 310;
   }
 
   const optionType = searchParams.get("optionType") || "CE";

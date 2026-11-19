@@ -29,6 +29,10 @@ const POPULAR_SYMBOLS = [
   { symbol: "SENSEX", name: "BSE SENSEX (BFO)" },
   { symbol: "FINNIFTY", name: "FIN NIFTY (NSE)" },
   { symbol: "MIDCPNIFTY", name: "MIDCAP NIFTY (NSE)" },
+  { symbol: "CRUDEOIL", name: "CRUDE OIL (MCX)" },
+  { symbol: "NATURALGAS", name: "NATURAL GAS (MCX)" },
+  { symbol: "GOLD", name: "GOLD (MCX)" },
+  { symbol: "SILVER", name: "SILVER (MCX)" },
 ];
 
 function timeLabel(value) {
@@ -181,6 +185,47 @@ export default function OptionPremiumChart({
       return Array.from(new Set(list)).sort((a, b) => a - b);
     }
 
+    // For MCX Commodities
+    if (activeSymbol === "CRUDEOIL" || activeSymbol === "CRUDEOILM") {
+      const base = Number(selectedStrike >= 2000 && selectedStrike <= 20000 ? selectedStrike : 7800);
+      const list = [];
+      for (let i = -15; i <= 15; i++) {
+        list.push(base + i * 50);
+      }
+      if (!list.includes(Number(selectedStrike))) list.push(Number(selectedStrike));
+      return Array.from(new Set(list)).sort((a, b) => a - b);
+    }
+
+    if (activeSymbol === "NATURALGAS") {
+      const base = Number(selectedStrike >= 50 && selectedStrike <= 1000 ? selectedStrike : 310);
+      const list = [];
+      for (let i = -15; i <= 15; i++) {
+        list.push(base + i * 5);
+      }
+      if (!list.includes(Number(selectedStrike))) list.push(Number(selectedStrike));
+      return Array.from(new Set(list)).sort((a, b) => a - b);
+    }
+
+    if (activeSymbol === "GOLD" || activeSymbol === "GOLDM") {
+      const base = Number(selectedStrike >= 40000 ? selectedStrike : 78000);
+      const list = [];
+      for (let i = -15; i <= 15; i++) {
+        list.push(base + i * 500);
+      }
+      if (!list.includes(Number(selectedStrike))) list.push(Number(selectedStrike));
+      return Array.from(new Set(list)).sort((a, b) => a - b);
+    }
+
+    if (activeSymbol.startsWith("SILVER")) {
+      const base = Number(selectedStrike >= 50000 ? selectedStrike : 90000);
+      const list = [];
+      for (let i = -15; i <= 15; i++) {
+        list.push(base + i * 500);
+      }
+      if (!list.includes(Number(selectedStrike))) list.push(Number(selectedStrike));
+      return Array.from(new Set(list)).sort((a, b) => a - b);
+    }
+
     let list = (rows ?? [])
       .map((r) => Number(r.strikePrice ?? r.strike))
       .filter((s) => Number.isFinite(s) && s > 0);
@@ -224,6 +269,14 @@ export default function OptionPremiumChart({
       setSelectedStrike(80000);
     } else if (nextSym === "BANKNIFTY") {
       setSelectedStrike(52000);
+    } else if (nextSym === "CRUDEOIL" || nextSym === "CRUDEOILM") {
+      setSelectedStrike(7800);
+    } else if (nextSym === "NATURALGAS") {
+      setSelectedStrike(310);
+    } else if (nextSym === "GOLD" || nextSym === "GOLDM") {
+      setSelectedStrike(78000);
+    } else if (nextSym.startsWith("SILVER")) {
+      setSelectedStrike(90000);
     } else if (nextSym === "NIFTY") {
       setSelectedStrike(atm || 25200);
     }
@@ -462,12 +515,22 @@ export default function OptionPremiumChart({
                   padding: "2px 6px",
                   borderRadius: 4,
                   fontWeight: 600,
-                  background: data.exch === "BFO" ? "#1a2538" : C.surface2,
-                  color: data.exch === "BFO" ? C.blue : C.muted,
-                  border: `1px solid ${C.border}`,
+                  background:
+                    data.exch === "MCX"
+                      ? "#3a2505"
+                      : data.exch === "BFO"
+                      ? "#1a2538"
+                      : C.surface2,
+                  color:
+                    data.exch === "MCX"
+                      ? "#f59e0b"
+                      : data.exch === "BFO"
+                      ? C.blue
+                      : C.muted,
+                  border: `1px solid ${data.exch === "MCX" ? "#f59e0b55" : C.border}`,
                 }}
               >
-                {data.exch === "BFO" ? "BSE · BFO" : "NSE · NFO"}
+                {data.exch === "MCX" ? "MCX · MCX" : data.exch === "BFO" ? "BSE · BFO" : "NSE · NFO"}
               </span>
             )}
             {data?.contract && (
@@ -623,7 +686,15 @@ export default function OptionPremiumChart({
                   type="number"
                   value={customInput}
                   onChange={(e) => setCustomInput(e.target.value)}
-                  placeholder={activeSymbol === "SENSEX" ? "e.g. 80000" : "e.g. 25500"}
+                  placeholder={
+                    activeSymbol === "NATURALGAS"
+                      ? "e.g. 310"
+                      : activeSymbol === "CRUDEOIL"
+                      ? "e.g. 7800"
+                      : activeSymbol === "SENSEX"
+                      ? "e.g. 80000"
+                      : "e.g. 25500"
+                  }
                   autoFocus
                   style={{
                     width: 80,

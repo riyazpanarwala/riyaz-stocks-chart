@@ -12,6 +12,11 @@ const FO_LIST = [
   { name: "NIFTY FIN SERVICES",symbol: "FINNIFTY",    lot: 60,    type: "index" },
   { name: "NIFTY MID SELECT",  symbol: "MIDCPNIFTY",  lot: 120,   type: "index" },
   { name: "NIFTY NEXT 50",     symbol: "NIFTYNXT50",  lot: 25,    type: "index" },
+  // ── MCX Commodities ───────────────────────────────────────
+  { name: "CRUDE OIL (MCX)",   symbol: "CRUDEOIL",    lot: 100,   type: "commodity" },
+  { name: "NATURAL GAS (MCX)", symbol: "NATURALGAS",  lot: 1250,  type: "commodity" },
+  { name: "GOLD (MCX)",        symbol: "GOLD",        lot: 100,   type: "commodity" },
+  { name: "SILVER (MCX)",      symbol: "SILVER",      lot: 30,    type: "commodity" },
   // ── Stocks (A-Z) ──────────────────────────────────────────
   { name: "360 ONE WAM",             symbol: "360ONE",      lot: 500,   type: "stock" },
   { name: "ABB INDIA",               symbol: "ABB",         lot: 125,   type: "stock" },
