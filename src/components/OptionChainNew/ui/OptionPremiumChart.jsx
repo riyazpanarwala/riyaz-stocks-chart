@@ -104,12 +104,13 @@ export default function OptionPremiumChart({
   rows = [],
   spot,
 }) {
+  const [activeSymbol, setActiveSymbol] = useState(() => instrument?.symbol || "NIFTY");
+
   const currentAtm = useMemo(() => {
     if (activeSymbol === instrument?.symbol && atm) return atm;
     return DEFAULT_ATM[activeSymbol] || (atm || 25500);
   }, [activeSymbol, instrument?.symbol, atm]);
 
-  const [activeSymbol, setActiveSymbol] = useState(() => instrument?.symbol || "NIFTY");
   const [selectedStrike, setSelectedStrike] = useState(() => {
     const sym = instrument?.symbol || "NIFTY";
     if (sym === instrument?.symbol && atm) return atm;
