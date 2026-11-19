@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -12,14 +12,15 @@ import {
 } from "recharts";
 import { C } from "../constants.js";
 import OptionCandlestickChart from "./OptionCandlestickChart.jsx";
+import { useShoonyaWebSocket } from "../hooks/useShoonyaWebSocket.js";
 
 const INTERVALS = [
-  { id: "1m", label: "1m" },
-  { id: "3m", label: "3m" },
-  { id: "5m", label: "5m" },
-  { id: "15m", label: "15m" },
-  { id: "30m", label: "30m" },
-  { id: "60m", label: "1h" },
+  { id: "1m", label: "1m", minutes: 1 },
+  { id: "3m", label: "3m", minutes: 3 },
+  { id: "5m", label: "5m", minutes: 5 },
+  { id: "15m", label: "15m", minutes: 15 },
+  { id: "30m", label: "30m", minutes: 30 },
+  { id: "60m", label: "1h", minutes: 60 },
 ];
 
 const POPULAR_SYMBOLS = [
@@ -101,6 +102,18 @@ export default function OptionPremiumChart({
   const [authCode, setAuthCode] = useState("");
   const [authMessage, setAuthMessage] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+
+  // Live WebSocket state & price flash
+  const [liveQuote, setLiveQuote] = useState(null);
+  const [priceFlash, setPriceFlash] = useState(null); // "up" | "down" | null
+  const prevPriceRef = useRef(null);
+  const flashTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    };
+  }, []);
 
   // Custom strike input mode toggle
   const [isCustomMode, setIsCustomMode] = useState(false);
@@ -236,6 +249,8 @@ export default function OptionPremiumChart({
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setLiveQuote(null);
+    prevPriceRef.current = null;
     try {
       const params = new URLSearchParams({
         symbol: activeSymbol,
@@ -269,12 +284,108 @@ export default function OptionPremiumChart({
     load();
   }, [load]);
 
+  // Handle incoming live tick from Shoonya WebSocket
+  const handleLiveTick = useCallback(
+    (tick) => {
+      if (!tick) return;
+      const ltp = tick.ltp;
+      if (ltp == null || !Number.isFinite(ltp) || ltp <= 0) return;
+
+      // Price flash animation
+      if (prevPriceRef.current != null && ltp !== prevPriceRef.current) {
+        setPriceFlash(ltp > prevPriceRef.current ? "up" : "down");
+        if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+        flashTimeoutRef.current = setTimeout(() => setPriceFlash(null), 600);
+      }
+      prevPriceRef.current = ltp;
+
+      setLiveQuote((prev) => ({
+        ltp,
+        high: tick.high != null ? tick.high : prev?.high != null ? Math.max(prev.high, ltp) : ltp,
+        low: tick.low != null ? tick.low : prev?.low != null ? Math.min(prev.low, ltp) : ltp,
+        volume: tick.volume != null ? tick.volume : prev?.volume,
+        oi: tick.oi != null ? tick.oi : prev?.oi,
+        time: tick.time || Date.now(),
+      }));
+
+      // Update or append candle
+      setData((currentData) => {
+        if (!currentData?.candles || currentData.candles.length === 0) return currentData;
+
+        const candles = [...currentData.candles];
+        const lastIdx = candles.length - 1;
+        const lastCandle = { ...candles[lastIdx] };
+
+        const intervalObj = INTERVALS.find((i) => i.id === interval);
+        const intervalMinutes = intervalObj?.minutes || 5;
+        const intervalMs = intervalMinutes * 60 * 1000;
+        const lastTime = new Date(lastCandle.date).getTime();
+        const tickTime = tick.time || Date.now();
+
+        if (Number.isFinite(lastTime) && tickTime >= lastTime && tickTime < lastTime + intervalMs) {
+          lastCandle.close = ltp;
+          lastCandle.high = Math.max(lastCandle.high, ltp);
+          lastCandle.low = Math.min(lastCandle.low, ltp);
+          if (tick.volume != null && tick.volume > 0) {
+            lastCandle.volume = Math.max(lastCandle.volume, tick.volume);
+          }
+          if (tick.oi != null && tick.oi > 0) {
+            lastCandle.oi = tick.oi;
+          }
+          candles[lastIdx] = lastCandle;
+        } else if (Number.isFinite(lastTime) && tickTime >= lastTime + intervalMs) {
+          // New candle boundary reached
+          const newTime = new Date(lastTime + intervalMs).toISOString();
+          const newCandle = {
+            date: newTime,
+            open: ltp,
+            high: ltp,
+            low: ltp,
+            close: ltp,
+            volume: 0,
+            oi: tick.oi || lastCandle.oi,
+          };
+          candles.push(newCandle);
+        } else {
+          lastCandle.close = ltp;
+          lastCandle.high = Math.max(lastCandle.high, ltp);
+          lastCandle.low = Math.min(lastCandle.low, ltp);
+          candles[lastIdx] = lastCandle;
+        }
+
+        return { ...currentData, candles };
+      });
+    },
+    [interval],
+  );
+
+  const { status: wsStatus } = useShoonyaWebSocket({
+    enabled: Boolean(data?.token && data?.exch),
+    exchange: data?.exch,
+    token: data?.token,
+    onTick: handleLiveTick,
+  });
+
   const latest = data?.candles?.at(-1);
   const previous = data?.candles?.at(-2);
-  const change = latest && previous ? latest.close - previous.close : null;
-  const pctChange = latest && previous && previous.close > 0
-    ? ((latest.close - previous.close) / previous.close) * 100
-    : null;
+  const currentPrice = liveQuote?.ltp ?? latest?.close;
+  const currentHigh =
+    liveQuote?.high != null && latest?.high != null
+      ? Math.max(liveQuote.high, latest.high)
+      : (liveQuote?.high ?? latest?.high);
+  const currentLow =
+    liveQuote?.low != null && latest?.low != null
+      ? Math.min(liveQuote.low, latest.low)
+      : (liveQuote?.low ?? latest?.low);
+  const currentOpen = latest?.open;
+  const currentVolume = liveQuote?.volume ?? latest?.volume;
+  const currentOi = liveQuote?.oi ?? latest?.oi;
+
+  const change = currentPrice != null && previous ? currentPrice - previous.close : null;
+  const pctChange =
+    currentPrice != null && previous && previous.close > 0
+      ? ((currentPrice - previous.close) / previous.close) * 100
+      : null;
 
   const connectShoonya = async (event) => {
     event.preventDefault();
@@ -762,8 +873,14 @@ export default function OptionPremiumChart({
         >
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
             <span style={{ color: C.muted, fontSize: 11 }}>LTP:</span>
-            <strong style={{ color: C.text, fontSize: 22 }}>
-              ₹{Number(latest.close).toFixed(2)}
+            <strong
+              style={{
+                color: priceFlash === "up" ? C.green : priceFlash === "down" ? C.red : C.text,
+                fontSize: 22,
+                transition: "color 0.25s ease",
+              }}
+            >
+              ₹{Number(currentPrice).toFixed(2)}
             </strong>
           </div>
           {change != null && (
@@ -779,19 +896,54 @@ export default function OptionPremiumChart({
             </span>
           )}
           <span style={{ color: C.muted, fontSize: 11 }}>
-            High: ₹{latest.high} · Low: ₹{latest.low} · Open: ₹{latest.open}
+            High: ₹{currentHigh} · Low: ₹{currentLow} · Open: ₹{currentOpen}
           </span>
-          {latest.volume > 0 && (
+          {currentVolume > 0 && (
             <span style={{ color: C.muted, fontSize: 11 }}>
-              Volume: {latest.volume.toLocaleString("en-IN")}
+              Volume: {Number(currentVolume).toLocaleString("en-IN")}
             </span>
           )}
-          {latest.oi > 0 && (
+          {currentOi > 0 && (
             <span style={{ color: C.muted, fontSize: 11 }}>
-              OI: {latest.oi.toLocaleString("en-IN")}
+              OI: {Number(currentOi).toLocaleString("en-IN")}
             </span>
           )}
-          <span style={{ color: C.muted, fontSize: 10, marginLeft: "auto" }}>
+
+          {/* WebSocket Live Badge */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "2px 8px",
+              borderRadius: 12,
+              fontSize: 10,
+              fontWeight: 700,
+              background: wsStatus === "connected" ? "rgba(34, 197, 94, 0.12)" : "rgba(148, 163, 184, 0.1)",
+              border: `1px solid ${wsStatus === "connected" ? "rgba(34, 197, 94, 0.3)" : C.border}`,
+              color: wsStatus === "connected" ? "#4ade80" : C.muted,
+              marginLeft: "auto",
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background:
+                  wsStatus === "connected" ? "#22c55e" : wsStatus === "connecting" ? "#eab308" : "#64748b",
+                boxShadow: wsStatus === "connected" ? "0 0 6px #22c55e" : "none",
+                display: "inline-block",
+              }}
+            />
+            {wsStatus === "connected"
+              ? "LIVE STREAM"
+              : wsStatus === "connecting"
+              ? "CONNECTING WS..."
+              : "STREAM IDLE"}
+          </div>
+
+          <span style={{ color: C.muted, fontSize: 10 }}>
             {data.candles.length} candles
           </span>
         </div>
