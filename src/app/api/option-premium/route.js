@@ -198,17 +198,21 @@ export async function GET(request) {
   if (!strike) {
     if (cleanSymbol === "SENSEX") strike = 80000;
     else if (cleanSymbol === "BANKNIFTY") strike = 52000;
-    else if (cleanSymbol === "CRUDEOIL" || cleanSymbol === "CRUDEOILM") strike = 7800;
+    else if (cleanSymbol === "CRUDEOIL" || cleanSymbol === "CRUDEOILM") strike = 7850;
     else if (cleanSymbol === "NATURALGAS") strike = 310;
-    else if (cleanSymbol === "GOLD" || cleanSymbol === "GOLDM") strike = 78000;
-    else if (cleanSymbol.startsWith("SILVER")) strike = 90000;
-    else strike = 25200;
+    else if (cleanSymbol === "GOLD" || cleanSymbol === "GOLDM") strike = 127500;
+    else if (cleanSymbol.startsWith("SILVER")) strike = 158000;
+    else strike = 25500;
   } else if (cleanSymbol === "SENSEX" && strike < 30000) {
     strike = 80000;
   } else if ((cleanSymbol === "CRUDEOIL" || cleanSymbol === "CRUDEOILM") && (strike < 2000 || strike > 20000)) {
-    strike = 7800;
+    strike = 7850;
   } else if (cleanSymbol === "NATURALGAS" && strike > 1000) {
     strike = 310;
+  } else if ((cleanSymbol === "GOLD" || cleanSymbol === "GOLDM") && strike < 50000) {
+    strike = 127500;
+  } else if (cleanSymbol.startsWith("SILVER") && strike < 60000) {
+    strike = 158000;
   }
 
   const optionType = searchParams.get("optionType") || "CE";

@@ -35,6 +35,22 @@ const POPULAR_SYMBOLS = [
   { symbol: "SILVER", name: "SILVER (MCX)" },
 ];
 
+const DEFAULT_ATM = {
+  NIFTY: 25500,
+  BANKNIFTY: 52000,
+  SENSEX: 80000,
+  FINNIFTY: 24000,
+  MIDCPNIFTY: 12500,
+  CRUDEOIL: 7850,
+  CRUDEOILM: 7850,
+  NATURALGAS: 310,
+  GOLD: 127500,
+  GOLDM: 127500,
+  SILVER: 158000,
+  SILVERM: 158000,
+  SILVERMIC: 158000,
+};
+
 function timeLabel(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
@@ -88,10 +104,16 @@ export default function OptionPremiumChart({
   rows = [],
   spot,
 }) {
+  const currentAtm = useMemo(() => {
+    if (activeSymbol === instrument?.symbol && atm) return atm;
+    return DEFAULT_ATM[activeSymbol] || (atm || 25500);
+  }, [activeSymbol, instrument?.symbol, atm]);
+
   const [activeSymbol, setActiveSymbol] = useState(() => instrument?.symbol || "NIFTY");
   const [selectedStrike, setSelectedStrike] = useState(() => {
-    if (instrument?.symbol === "SENSEX") return 80000;
-    return atm || 25200;
+    const sym = instrument?.symbol || "NIFTY";
+    if (sym === instrument?.symbol && atm) return atm;
+    return DEFAULT_ATM[sym] || 25500;
   });
   const [optionType, setOptionType] = useState("CE");
   const [selectedExpiry, setSelectedExpiry] = useState(() => activeExpiry || null);
@@ -129,17 +151,16 @@ export default function OptionPremiumChart({
   useEffect(() => {
     if (instrument?.symbol) {
       setActiveSymbol(instrument.symbol);
-      if (instrument.symbol === "SENSEX") {
-        setSelectedStrike((prev) => (prev < 30000 ? 80000 : prev));
-      }
+      const parentAtm = (atm && instrument.symbol !== "SENSEX") ? atm : (DEFAULT_ATM[instrument.symbol] || 25500);
+      setSelectedStrike(parentAtm);
     }
-  }, [instrument?.symbol]);
+  }, [instrument?.symbol, atm]);
 
   useEffect(() => {
-    if (atm && activeSymbol !== "SENSEX") {
+    if (atm && activeSymbol === instrument?.symbol) {
       setSelectedStrike(atm);
     }
-  }, [atm, activeSymbol]);
+  }, [atm, activeSymbol, instrument?.symbol]);
 
   useEffect(() => {
     if (activeExpiry && activeSymbol === instrument?.symbol) {
@@ -178,7 +199,7 @@ export default function OptionPremiumChart({
   const strikes = useMemo(() => {
     // For SENSEX (BFO), generate strikes with step 100
     if (activeSymbol === "SENSEX") {
-      const base = Number(selectedStrike >= 70000 ? selectedStrike : 80000);
+      const base = Number(selectedStrike >= 60000 && selectedStrike <= 100000 ? selectedStrike : 80000);
       const list = [];
       for (let i = -15; i <= 15; i++) {
         list.push(base + i * 100);
@@ -189,7 +210,7 @@ export default function OptionPremiumChart({
 
     // For MCX Commodities
     if (activeSymbol === "CRUDEOIL" || activeSymbol === "CRUDEOILM") {
-      const base = Number(selectedStrike >= 2000 && selectedStrike <= 20000 ? selectedStrike : 7800);
+      const base = Number(selectedStrike >= 2000 && selectedStrike <= 20000 ? selectedStrike : 7850);
       const list = [];
       for (let i = -15; i <= 15; i++) {
         list.push(base + i * 50);
@@ -209,7 +230,7 @@ export default function OptionPremiumChart({
     }
 
     if (activeSymbol === "GOLD" || activeSymbol === "GOLDM") {
-      const base = Number(selectedStrike >= 40000 ? selectedStrike : 78000);
+      const base = Number(selectedStrike >= 80000 && selectedStrike <= 180000 ? selectedStrike : 127500);
       const list = [];
       for (let i = -15; i <= 15; i++) {
         list.push(base + i * 500);
@@ -219,7 +240,7 @@ export default function OptionPremiumChart({
     }
 
     if (activeSymbol.startsWith("SILVER")) {
-      const base = Number(selectedStrike >= 50000 ? selectedStrike : 90000);
+      const base = Number(selectedStrike >= 100000 && selectedStrike <= 220000 ? selectedStrike : 158000);
       const list = [];
       for (let i = -15; i <= 15; i++) {
         list.push(base + i * 500);
@@ -234,7 +255,7 @@ export default function OptionPremiumChart({
 
     // If rows is empty or not yet loaded, generate strikes around ATM or current strike
     if (list.length === 0) {
-      const base = Number(atm || selectedStrike || 25500);
+      const base = Number(currentAtm || selectedStrike || 25500);
       const step = activeSymbol === "BANKNIFTY" ? 100 : activeSymbol === "MIDCPNIFTY" ? 25 : 50;
       list = [];
       for (let i = -15; i <= 15; i++) {
@@ -245,12 +266,12 @@ export default function OptionPremiumChart({
     if (selectedStrike && !list.includes(Number(selectedStrike))) {
       list.push(Number(selectedStrike));
     }
-    if (atm && !list.includes(Number(atm))) {
-      list.push(Number(atm));
+    if (currentAtm && !list.includes(Number(currentAtm))) {
+      list.push(Number(currentAtm));
     }
 
     return Array.from(new Set(list)).sort((a, b) => a - b);
-  }, [rows, atm, activeSymbol, selectedStrike]);
+  }, [rows, currentAtm, activeSymbol, selectedStrike]);
 
   // Next / Prev strike navigation
   const currentIdx = strikes.indexOf(Number(selectedStrike));
@@ -267,21 +288,8 @@ export default function OptionPremiumChart({
   const handleSymbolChange = (nextSym) => {
     setActiveSymbol(nextSym);
     setSelectedExpiry(null); // Reset expiry to pick nearest for the new instrument
-    if (nextSym === "SENSEX") {
-      setSelectedStrike(80000);
-    } else if (nextSym === "BANKNIFTY") {
-      setSelectedStrike(52000);
-    } else if (nextSym === "CRUDEOIL" || nextSym === "CRUDEOILM") {
-      setSelectedStrike(7800);
-    } else if (nextSym === "NATURALGAS") {
-      setSelectedStrike(310);
-    } else if (nextSym === "GOLD" || nextSym === "GOLDM") {
-      setSelectedStrike(78000);
-    } else if (nextSym.startsWith("SILVER")) {
-      setSelectedStrike(90000);
-    } else if (nextSym === "NIFTY") {
-      setSelectedStrike(atm || 25200);
-    }
+    const nextAtm = (nextSym === instrument?.symbol && atm) ? atm : (DEFAULT_ATM[nextSym] || 25500);
+    setSelectedStrike(nextAtm);
   };
 
   const applyCustomStrike = (e) => {
@@ -800,8 +808,8 @@ export default function OptionPremiumChart({
                   }}
                 >
                   {strikes.map((s) => {
-                    const diff = atm && activeSymbol === instrument?.symbol ? s - atm : 0;
-                    const diffText = s === atm && activeSymbol === instrument?.symbol
+                    const diff = currentAtm ? s - currentAtm : 0;
+                    const diffText = s === currentAtm
                       ? "ATM"
                       : diff !== 0
                         ? diff > 0 ? `+${diff}` : `${diff}`
@@ -854,11 +862,11 @@ export default function OptionPremiumChart({
               </>
             )}
 
-            {atm && selectedStrike !== atm && activeSymbol === instrument?.symbol && (
+            {currentAtm && Number(selectedStrike) !== Number(currentAtm) && (
               <button
                 type="button"
-                onClick={() => setSelectedStrike(atm)}
-                title="Reset to ATM strike"
+                onClick={() => setSelectedStrike(currentAtm)}
+                title={`Reset to ATM strike (${currentAtm})`}
                 style={{
                   border: `1px solid ${C.yellow}66`,
                   background: "#2a2200",
