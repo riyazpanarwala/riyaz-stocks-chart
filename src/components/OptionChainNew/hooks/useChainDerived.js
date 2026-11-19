@@ -29,10 +29,15 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
     if (!rawData) return { rows: [], expiries: [], selectedExpiry: null, underlyingValue: 0 };
 
     if (isIndex) {
+      const allExpiries = rawData.expiries ?? [];
+      const currentExpiry = (selectedExpiry && allExpiries.includes(selectedExpiry))
+        ? selectedExpiry
+        : rawData.expiry ?? allExpiries[0] ?? null;
+
       return {
         rows: parseIndexChain(rawData),
-        expiries: [],
-        selectedExpiry: rawData.expiry ?? null,
+        expiries: allExpiries,
+        selectedExpiry: currentExpiry,
         underlyingValue: rawData.underlyingValue ?? 0,
       };
     }

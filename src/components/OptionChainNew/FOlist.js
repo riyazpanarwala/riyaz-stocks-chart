@@ -6,6 +6,7 @@
 //          instrument.lot * price never silently produces NaN.
 const FO_LIST = [
   // ── Indices ───────────────────────────────────────────────
+  { name: "BSE SENSEX",        symbol: "SENSEX",      lot: 20,    type: "index" },
   { name: "NIFTY 50",          symbol: "NIFTY",       lot: 65,    type: "index" },
   { name: "NIFTY BANK",        symbol: "BANKNIFTY",   lot: 30,    type: "index" },
   { name: "NIFTY FIN SERVICES",symbol: "FINNIFTY",    lot: 60,    type: "index" },

@@ -33,6 +33,7 @@ import { OptionSpotChart }    from "./ui/OptionSpotChart.jsx";
 import { CallPutDiffTable }   from "./ui/CallPutDiffTable.jsx";
 import { ExpiryGammaWatch } from "./ui/ExpiryGammaWatch.jsx";
 import { IVChangeTracker, OITimeline } from "./ui/ChainHistoryPanels.jsx";
+import OptionPremiumChart from "./ui/OptionPremiumChart.jsx";
 
 // ─── Tab definition ───────────────────────────────────────────
 
@@ -206,8 +207,9 @@ export default function App({ initialSymbol = null }) {
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
             <SymbolPicker selected={instrument} onChange={handleSymbolChange} />
 
-            {!isIndex && expiries.length > 0 && (
+            {expiries.length > 0 && (
               <select
+                aria-label="Select Expiry"
                 value={activeExpiry || ""}
                 onChange={(e) => setSelectedExpiry(e.target.value)}
                 style={{
@@ -328,7 +330,7 @@ export default function App({ initialSymbol = null }) {
             <span style={{ fontSize: 10, background: C.surface2, color: C.muted, padding: "2px 8px", borderRadius: 4 }}>
               Lot size: <b style={{ color: C.text }}>{instrument.lot}</b>
             </span>
-            {!isIndex && activeExpiry && (
+            {activeExpiry && (
               <span style={{ fontSize: 10, background: "#1a0a1a", color: C.purple, padding: "2px 8px", borderRadius: 4 }}>
                 Expiry: {activeExpiry}
               </span>
@@ -383,6 +385,7 @@ export default function App({ initialSymbol = null }) {
             <div style={{ display: "flex", gap: 3, marginBottom: 10, borderBottom: `1px solid ${C.border}`, paddingBottom: 4, flexWrap: "wrap" }}>
               <Tab id="oi"       label="OI Chart"          activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="candle"   label="🕯️ Candle Chart"   activeTab={activeTab} setActiveTab={setActiveTab} />
+              <Tab id="optionPremium" label="Option Premium" activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="doi"      label="ΔOI Activity"      activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="oiTimeline" label="OI Timeline" activeTab={activeTab} setActiveTab={setActiveTab} />
               <Tab id="ivTracker" label="IV Tracker" activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -430,6 +433,16 @@ export default function App({ initialSymbol = null }) {
                       maxPain={maxPain}
                       sig={sig}
                       straddleInfo={straddleInfo}
+                    />
+                  )}
+                  {activeTab === "optionPremium" && (
+                    <OptionPremiumChart
+                      instrument={instrument}
+                      activeExpiry={activeExpiry}
+                      expiries={expiries}
+                      atm={atm}
+                      rows={rows}
+                      spot={underlyingValue}
                     />
                   )}
                   {activeTab === "doi"     && <DeltaOIChart chartData={chartData} atm={atm} />}
