@@ -27,6 +27,7 @@ const useCommonHeader = () => {
   const [newIndexArr, setNewIndexArr] = useState([]);
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
+  const [dataSource, setDataSource] = useState("shoonya");
   const { companyArr, companyObj, setCompany, isFO } = useParseCsv();
   const timerRef = useRef(null);
   const lastLoadedSymbolRef = useRef(null);
@@ -46,7 +47,7 @@ const useCommonHeader = () => {
     const intervalVal = intervalObj.apiUnit;
     const indexName = indexObj.value;
 
-    const { candles } = await fetchHistoricData(
+    const { candles, source } = await fetchHistoricData(
       intervalVal,
       interval,
       indexName,
@@ -56,6 +57,7 @@ const useCommonHeader = () => {
     );
 
     setCandleData(candles);
+    if (source) setDataSource(source);
   };
 
   const callIntradayApi = async () => {
@@ -70,6 +72,7 @@ const useCommonHeader = () => {
 
     const { dataArr } = getCandleArr(arr);
     setCandleData(dataArr);
+    if (arr?.source) setDataSource(arr.source);
   };
 
   const setPeriodOnIntervalChange = (obj) => {
@@ -217,6 +220,7 @@ const useCommonHeader = () => {
     companyArr,
     newIndexArr,
     candleData,
+    dataSource,
     period,
     isFO,
   };

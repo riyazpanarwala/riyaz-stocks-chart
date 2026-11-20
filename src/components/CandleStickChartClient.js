@@ -65,6 +65,7 @@ const CandleStickChart = () => {
     companyArr,
     newIndexArr,
     candleData,
+    dataSource,
     period,
     isFO,
   } = useCommonHeader();
@@ -267,6 +268,7 @@ const CandleStickChart = () => {
           intradayObj.value === "intraday" ? intervalArr : intervalArr1
         }
         indexArr={newIndexArr}
+        dataSource={dataSource}
       />
       <div className="app-layout">
         <Sidebar

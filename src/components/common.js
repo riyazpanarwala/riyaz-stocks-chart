@@ -235,5 +235,6 @@ export const fetchHistoricData = async (
 
   return {
     candles: dataArr,
+    source: arr?.source || (isYFinanceEnable ? "yahoo" : "upstox"),
   };
 };

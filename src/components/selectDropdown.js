@@ -14,11 +14,12 @@ const HeaderWithDropdowns = ({
   intraArr,
   intervalArr,
   indexArr,
+  dataSource = "shoonya",
 }) => {
   return (
     <header className="app-header">
       <div className="dropdown-container">
-        <div className="grid-container">
+        <div className="grid-container" style={{ alignItems: "center" }}>
           <div className="grid-item">
             <ReactSelect
               options={companyArr}
@@ -51,6 +52,41 @@ const HeaderWithDropdowns = ({
               value={intradayObj}
               width="auto"
             />
+          </div>
+          <div className="grid-item" style={{ display: "flex", alignItems: "center" }}>
+            <span
+              title={
+                dataSource === "shoonya"
+                  ? "Streaming candlestick data from Shoonya API"
+                  : "Operating on Upstox / Yahoo Finance fallback"
+              }
+              style={{
+                fontSize: 10,
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontWeight: 600,
+                padding: "4px 8px",
+                borderRadius: 4,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                background: dataSource === "shoonya" ? "#052e16" : "#2a1e05",
+                color: dataSource === "shoonya" ? "#22c55e" : "#eab308",
+                border: `1px solid ${dataSource === "shoonya" ? "#14532d" : "#713f12"}`,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: dataSource === "shoonya" ? "#22c55e" : "#eab308",
+                  boxShadow: dataSource === "shoonya" ? "0 0 6px #22c55e" : "none",
+                  display: "inline-block",
+                }}
+              />
+              {dataSource === "shoonya" ? "Shoonya API" : "Upstox Fallback"}
+            </span>
           </div>
         </div>
       </div>

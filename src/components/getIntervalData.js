@@ -2,6 +2,7 @@ import { dateObj } from "./utils/data.js";
 import { getNseEquityAction } from "../app/actions/nseEquity.js";
 import { getFinanceDataAction } from "../app/actions/finance.js";
 import { getUpstoxCandlesAction } from "../app/actions/upstox.js";
+import { getShoonyaCandlesAction } from "../app/actions/shoonyaCandles.js";
 
 const logError = (context, error) => {
   const status = error?.response?.status ?? "Server Action Error";
@@ -127,7 +128,7 @@ export const getHistoricData = async (
   let fromDate = resolveFromDate(isFrom).toISOString().split("T")[0];
 
   try {
-    const data = await getUpstoxCandlesAction({
+    const data = await getShoonyaCandlesAction({
       type: "historical",
       instrumentKey,
       interval,
@@ -151,7 +152,7 @@ export const getIntradayData = async (
   const instrumentKey = `${indexName}|${companyName}`;
 
   try {
-    const data = await getUpstoxCandlesAction({
+    const data = await getShoonyaCandlesAction({
       type: "intraday",
       instrumentKey,
       interval,
