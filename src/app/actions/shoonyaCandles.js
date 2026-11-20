@@ -3,13 +3,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import { getUpstoxCandlesAction } from "./upstox.js";
+import { getFinanceDataAction } from "./finance.js";
 
 const SHOONYA_API = "https://api.shoonya.com/NorenWClientAPI";
 
-// Cached ISIN-to-Symbol mappings
+// Cached ISIN-to-Symbol mappings (supports INE... equities and INF... ETFs)
 let isinMap = null;
-function getSymbolFromIsin(isin) {
-  if (!isin || typeof isin !== "string" || !isin.startsWith("INE")) return null;
+function getInstrumentByValue(value) {
+  if (!value || typeof value !== "string") return null;
+  const clean = value.trim();
+
   if (!isinMap) {
     try {
       const filePath = path.join(process.cwd(), "data", "instruments.json");
@@ -19,7 +22,12 @@ function getSymbolFromIsin(isin) {
       if (Array.isArray(parsed?.instruments)) {
         for (const inst of parsed.instruments) {
           if (inst.value && inst.symbol) {
-            isinMap.set(inst.value, { symbol: inst.symbol, bseCode: inst.bseCode });
+            isinMap.set(inst.value.trim().toUpperCase(), {
+              symbol: inst.symbol.toUpperCase(),
+              bseCode: inst.bseCode,
+              label: inst.label,
+              etf: inst.etf,
+            });
           }
         }
       }
@@ -28,24 +36,27 @@ function getSymbolFromIsin(isin) {
       isinMap = new Map();
     }
   }
-  return isinMap.get(isin) || null;
+
+  return isinMap.get(clean.toUpperCase()) || null;
 }
 
 // In-memory token lookup cache to eliminate redundant SearchScrip calls
 const scripTokenCache = new Map();
 
 const KNOWN_INDICES = Object.freeze({
-  "NIFTY 50": { exch: "NSE", token: "26000", sym: "NSE:Nifty 50" },
-  NIFTY: { exch: "NSE", token: "26000", sym: "NSE:Nifty 50" },
-  "NIFTY BANK": { exch: "NSE", token: "26009", sym: "NSE:Nifty Bank" },
-  BANKNIFTY: { exch: "NSE", token: "26009", sym: "NSE:Nifty Bank" },
-  "NIFTY MIDCAP 100": { exch: "NSE", token: "26014", sym: "NSE:NIFTY MIDCAP 100" },
-  "NIFTY SMLCAP 100": { exch: "NSE", token: "26015", sym: "NSE:NIFTY SMLCAP 100" },
-  "NIFTY NEXT 50": { exch: "NSE", token: "26013", sym: "NSE:NIFTY NEXT 50" },
-  "NIFTY FINANCIAL SERVICES": { exch: "NSE", token: "26037", sym: "NSE:Nifty Financial Services" },
-  FINNIFTY: { exch: "NSE", token: "26037", sym: "NSE:Nifty Financial Services" },
-  SENSEX: { exch: "BSE", token: "1", sym: "BSE:SENSEX" },
-  BANKEX: { exch: "BSE", token: "12", sym: "BSE:BANKEX" },
+  "NIFTY 50": { exch: "NSE", token: "26000", sym: "NSE:Nifty 50", yahooSymbol: "^NSEI" },
+  NIFTY: { exch: "NSE", token: "26000", sym: "NSE:Nifty 50", yahooSymbol: "^NSEI" },
+  "NIFTY BANK": { exch: "NSE", token: "26009", sym: "NSE:Nifty Bank", yahooSymbol: "^NSEBANK" },
+  BANKNIFTY: { exch: "NSE", token: "26009", sym: "NSE:Nifty Bank", yahooSymbol: "^NSEBANK" },
+  "NIFTY MIDCAP 100": { exch: "NSE", token: "26014", sym: "NSE:NIFTY MIDCAP 100", yahooSymbol: "NIFTY_MIDCAP_100.NS" },
+  "NIFTY SMLCAP 100": { exch: "NSE", token: "26015", sym: "NSE:NIFTY SMLCAP 100", yahooSymbol: "NIFTY_SMALLCAP_100.NS" },
+  "NIFTY NEXT 50": { exch: "NSE", token: "26013", sym: "NSE:NIFTY NEXT 50", yahooSymbol: "NIFTY_NEXT_50.NS" },
+  "NIFTY FINANCIAL SERVICES": { exch: "NSE", token: "26037", sym: "NSE:Nifty Financial Services", yahooSymbol: "NIFTY_FIN_SERVICE.NS" },
+  FINNIFTY: { exch: "NSE", token: "26037", sym: "NSE:Nifty Financial Services", yahooSymbol: "NIFTY_FIN_SERVICE.NS" },
+  "NIFTY ENERGY": { exch: "NSE", token: "26018", sym: "NSE:Nifty Energy", yahooSymbol: "^CNXENERGY" },
+  "INDIA VIX": { exch: "NSE", token: "26017", sym: "NSE:India VIX", yahooSymbol: "^INDIAVIX" },
+  SENSEX: { exch: "BSE", token: "1", sym: "BSE:SENSEX", yahooSymbol: "^BSESN" },
+  BANKEX: { exch: "BSE", token: "12", sym: "BSE:BANKEX", yahooSymbol: "^BSEBANK" },
 });
 
 async function callShoonya(endpoint, payload, accessToken, timeoutMs = 15000) {
@@ -76,29 +87,29 @@ async function resolveShoonyaTarget(rawKey, uid, accessToken) {
     return KNOWN_INDICES[upperVal];
   }
 
-  // 2. Resolve Stock Symbol
+  // 2. Resolve Stock / ETF Symbol from ISIN (INE... or INF...)
   let symbol = upperVal;
   let bseCode = null;
+  let yahooSymbol = null;
 
-  if (symbol.startsWith("INE")) {
-    const isinInfo = getSymbolFromIsin(companyValue.trim());
-    if (isinInfo?.symbol) {
-      symbol = isinInfo.symbol.toUpperCase();
-      bseCode = isinInfo.bseCode;
-    }
+  const instInfo = getInstrumentByValue(companyValue);
+  if (instInfo?.symbol) {
+    symbol = instInfo.symbol;
+    bseCode = instInfo.bseCode;
   }
 
   const exch = upperIdx.startsWith("BSE") ? "BSE" : "NSE";
+  yahooSymbol = exch === "BSE" ? `${bseCode || symbol}.BO` : `${symbol}.NS`;
+
   const cacheKey = `${exch}|${symbol}`;
   if (scripTokenCache.has(cacheKey)) {
-    return scripTokenCache.get(cacheKey);
+    return { ...scripTokenCache.get(cacheKey), yahooSymbol };
   }
 
   // 3. SearchScrip on Shoonya
   try {
     const searchRes = await callShoonya("SearchScrip", { uid, exch, stext: symbol }, accessToken, 7000);
     if (searchRes?.stat === "Ok" && Array.isArray(searchRes.values) && searchRes.values.length > 0) {
-      // Find equity match e.g. "RELIANCE-EQ" or bseCode
       const match =
         searchRes.values.find((v) => v.tsym === `${symbol}-EQ`) ||
         (bseCode ? searchRes.values.find((v) => v.token === String(bseCode)) : null) ||
@@ -111,6 +122,7 @@ async function resolveShoonyaTarget(rawKey, uid, accessToken) {
           token: String(match.token),
           tsym: match.tsym,
           sym: `${exch}:${match.tsym}`,
+          yahooSymbol,
         };
         scripTokenCache.set(cacheKey, resolved);
         return resolved;
@@ -126,6 +138,7 @@ async function resolveShoonyaTarget(rawKey, uid, accessToken) {
     token: null,
     tsym: `${symbol}-EQ`,
     sym: `${exch}:${symbol}-EQ`,
+    yahooSymbol,
   };
 }
 
@@ -149,9 +162,106 @@ function toIsoFromShoonyaTime(timeStr) {
 }
 
 /**
+ * Fallback to Yahoo Finance when Shoonya and Upstox both have incomplete or missing data.
+ */
+async function fallbackToYahooFinance(yahooSymbol, { interval, fromDate, toDate } = {}) {
+  if (!yahooSymbol) return null;
+
+  try {
+    const yfInterval = interval === "days" ? "1d" : interval === "weeks" ? "1wk" : interval === "months" ? "1mo" : "1d";
+    const rawData = await getFinanceDataAction({
+      symbol: yahooSymbol,
+      interval: yfInterval,
+      fromDate,
+      toDate,
+    });
+
+    if (Array.isArray(rawData) && rawData.length > 0) {
+      // Convert to Upstox/Shoonya compatible format (descending order, newest first)
+      const candles = rawData
+        .filter((q) => q && q.date && Number.isFinite(q.close))
+        .map((q) => {
+          const d = new Date(q.date);
+          const iso = !Number.isNaN(d.getTime())
+            ? d.toISOString().slice(0, 10) + "T00:00:00+05:30"
+            : String(q.date);
+          return [
+            iso,
+            Number(q.open),
+            Number(q.high),
+            Number(q.low),
+            Number(q.close),
+            Number(q.volume || 0),
+            q.dividends ?? (q.dividend ? [q.dividend] : null),
+            q.splits ?? (q.split ? [q.split] : null),
+          ];
+        })
+        .reverse();
+
+      return {
+        status: "success",
+        source: "yahoo",
+        data: { candles },
+      };
+    }
+  } catch (err) {
+    console.warn(`[shoonyaCandles] Yahoo fallback failed for ${yahooSymbol}:`, err.message);
+  }
+
+  return null;
+}
+
+/**
+ * Multi-Tier Fallback: Upstox ➔ Yahoo Finance
+ */
+async function executeFallback({
+  type,
+  instrumentKey,
+  interval,
+  apiInterval,
+  toDate,
+  fromDate,
+  yahooSymbol,
+}) {
+  // 1. Try Upstox
+  try {
+    const upstoxRes = await getUpstoxCandlesAction({
+      type,
+      instrumentKey,
+      interval,
+      apiInterval,
+      toDate,
+      fromDate,
+    });
+
+    if (upstoxRes?.data?.candles && upstoxRes.data.candles.length > 0) {
+      return {
+        status: "success",
+        source: "upstox",
+        data: upstoxRes.data,
+      };
+    }
+  } catch (err) {
+    console.warn(`[shoonyaCandles] Upstox fallback failed:`, err.message);
+  }
+
+  // 2. Try Yahoo Finance
+  const yahooRes = await fallbackToYahooFinance(yahooSymbol, { interval, fromDate, toDate });
+  if (yahooRes?.data?.candles && yahooRes.data.candles.length > 0) {
+    return yahooRes;
+  }
+
+  return {
+    error: true,
+    message: "No candle data available from Shoonya, Upstox, or Yahoo Finance.",
+    data: { candles: [] },
+  };
+}
+
+/**
  * Server Action: getShoonyaCandlesAction
  * Serves candlestick chart data for the Home Page from Shoonya API.
- * Automatically falls back to getUpstoxCandlesAction if Shoonya is unconfigured or fails.
+ * Performs data density validation and falls back seamlessly to Upstox / Yahoo Finance.
  */
 export async function getShoonyaCandlesAction({
   type = "historical",
@@ -164,20 +274,17 @@ export async function getShoonyaCandlesAction({
   const uid = process.env.SHOONYA_UID?.trim();
   const accessToken = process.env.SHOONYA_ACCESS_TOKEN?.trim();
 
-  // If Shoonya credentials are not present, transparently fallback to Upstox
+  // If Shoonya credentials are not present, trigger fallback
   if (!uid || !accessToken) {
-    return getUpstoxCandlesAction({
-      type,
-      instrumentKey,
-      interval,
-      apiInterval,
-      toDate,
-      fromDate,
-    });
+    const [indexName = "", companyValue = ""] = String(instrumentKey || "").split("|");
+    const upperVal = companyValue.trim().toUpperCase();
+    const yahooSymbol = KNOWN_INDICES[upperVal]?.yahooSymbol || (indexName.startsWith("BSE") ? `${upperVal}.BO` : `${upperVal}.NS`);
+    return executeFallback({ type, instrumentKey, interval, apiInterval, toDate, fromDate, yahooSymbol });
   }
 
+  let resolvedTarget = null;
   try {
-    const target = await resolveShoonyaTarget(instrumentKey, uid, accessToken);
+    resolvedTarget = await resolveShoonyaTarget(instrumentKey, uid, accessToken);
 
     const isIntradayType =
       type === "intraday" ||
@@ -186,8 +293,9 @@ export async function getShoonyaCandlesAction({
       interval === "1minute" ||
       interval === "30minute";
 
+    // ── 1. Intraday Mode via Shoonya TPSeries ─────────────────
     if (isIntradayType) {
-      if (!target?.token) {
+      if (!resolvedTarget?.token) {
         throw new Error(`Shoonya instrument token could not be resolved for ${instrumentKey}`);
       }
 
@@ -200,8 +308,8 @@ export async function getShoonyaCandlesAction({
         "TPSeries",
         {
           uid,
-          exch: target.exch,
-          token: target.token,
+          exch: resolvedTarget.exch,
+          token: resolvedTarget.token,
           st: String(startTime),
           et: String(endTime),
           intrv,
@@ -214,8 +322,7 @@ export async function getShoonyaCandlesAction({
         throw new Error("Shoonya TPSeries returned no candles");
       }
 
-      // Convert to Upstox-compatible candle arrays: [isoDate, open, high, low, close, volume, null, null]
-      // Upstox provides candles in descending order (newest first)
+      // Convert to Upstox-compatible candle arrays (descending order, newest first)
       const candles = series
         .filter((row) => (row.stat == null || row.stat === "Ok") && row.time && row.intc != null)
         .map((row) => [
@@ -230,6 +337,10 @@ export async function getShoonyaCandlesAction({
         ])
         .filter((c) => c[0] && Number.isFinite(c[4]));
 
+      if (candles.length === 0) {
+        throw new Error("No valid intraday candles parsed from Shoonya TPSeries");
+      }
+
       return {
         status: "success",
         source: "shoonya",
@@ -237,7 +348,7 @@ export async function getShoonyaCandlesAction({
       };
     }
 
-    // Historical Daily Data (EODChartData)
+    // ── 2. Historical Daily Mode via Shoonya EODChartData ─────
     const nowSec = Math.floor(Date.now() / 1000);
     let fromSec = fromDate ? Math.floor(new Date(`${fromDate}T00:00:00Z`).getTime() / 1000) : nowSec - 365 * 24 * 3600;
     let toSec = toDate ? Math.floor(new Date(`${toDate}T23:59:59Z`).getTime() / 1000) : nowSec;
@@ -245,11 +356,13 @@ export async function getShoonyaCandlesAction({
     if (Number.isNaN(fromSec)) fromSec = nowSec - 365 * 24 * 3600;
     if (Number.isNaN(toSec)) toSec = nowSec;
 
+    const requestedSpanDays = Math.max(1, (toSec - fromSec) / (24 * 3600));
+
     const eodList = await callShoonya(
       "EODChartData",
       {
         uid,
-        sym: target.sym,
+        sym: resolvedTarget.sym,
         from: String(fromSec),
         to: String(toSec),
       },
@@ -258,7 +371,7 @@ export async function getShoonyaCandlesAction({
     );
 
     if (!Array.isArray(eodList) || eodList.length === 0) {
-      throw new Error(`Shoonya EODChartData returned no candles for ${target.sym}`);
+      throw new Error(`Shoonya EODChartData returned no candles for ${resolvedTarget.sym}`);
     }
 
     const candles = eodList
@@ -285,21 +398,35 @@ export async function getShoonyaCandlesAction({
       })
       .filter((c) => c && c[0] && Number.isFinite(c[4]));
 
+    // ── DATA DENSITY VALIDATION ──────────────────────────────
+    // If user requested >60 days of history but Shoonya returned <20 candles (e.g. SENSEX 5 candles),
+    // or if user requested >200 days (>6 months / 1 year) but Shoonya returned <60 candles:
+    // Shoonya's historical coverage for this symbol is incomplete. Automatically trigger fallback!
+    if ((requestedSpanDays > 60 && candles.length < 20) || (requestedSpanDays > 200 && candles.length < 60)) {
+      throw new Error(
+        `Shoonya historical depth incomplete (${candles.length} candles returned for span of ${Math.round(requestedSpanDays)} days). Triggering fallback.`,
+      );
+    }
+
     return {
       status: "success",
       source: "shoonya",
       data: { candles },
     };
   } catch (shoonyaError) {
-    console.warn(`[getShoonyaCandlesAction] Shoonya failed for ${instrumentKey}, falling back to Upstox:`, shoonyaError.message);
-    // Seamless fallback to Upstox
-    return getUpstoxCandlesAction({
+    console.warn(
+      `[getShoonyaCandlesAction] Shoonya fallback for ${instrumentKey}:`,
+      shoonyaError.message,
+    );
+
+    return executeFallback({
       type,
       instrumentKey,
       interval,
       apiInterval,
       toDate,
       fromDate,
+      yahooSymbol: resolvedTarget?.yahooSymbol,
     });
   }
 }
