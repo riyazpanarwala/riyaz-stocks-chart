@@ -28,7 +28,7 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
   const { rows, expiries, selectedExpiry: activeExpiry, underlyingValue } = useMemo(() => {
     if (!rawData) return { rows: [], expiries: [], selectedExpiry: null, underlyingValue: 0 };
 
-    if (isIndex) {
+    if (isIndex || rawData.source === "shoonya") {
       const allExpiries = rawData.expiries ?? [];
       const currentExpiry = (selectedExpiry && allExpiries.includes(selectedExpiry))
         ? selectedExpiry
@@ -54,7 +54,7 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
   // ── Parse previous rows (for diff analysis) ────────────────
   const prevRows = useMemo(() => {
     if (!prevRawData) return [];
-    if (isIndex) return prevRawData.expiry === activeExpiry ? parseIndexChain(prevRawData) : [];
+    if (isIndex || prevRawData.source === "shoonya") return prevRawData.expiry === activeExpiry ? parseIndexChain(prevRawData) : [];
     if (!activeExpiry) return [];
     const parsedPrev = parseStockChain(prevRawData, activeExpiry);
     return parsedPrev.selectedExpiry === activeExpiry ? parsedPrev.rows : [];
@@ -67,30 +67,21 @@ export function useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry,
   // `rows` is the full unfiltered set; `displayRows` (range-filtered) is derived
   // later, so PCR is never skewed by scalp-mode.
   const pcr = useMemo(() => {
-    if (isIndex && rawData?.fullOI?.length) return calcPCRFull(rawData.fullOI);
+    if ((isIndex || rawData?.source === "shoonya") && rawData?.fullOI?.length) return calcPCRFull(rawData.fullOI);
     return calcPCR(rows);
   }, [isIndex, rawData, rows]);
 
-  // FIX #1: the original memo listed `rawData` as a dep for both index and
-  // stock paths.  For the stock path only `rows` is used, so listing `rawData`
-  // caused unnecessary recomputes when unrelated fields changed.  Now:
-  //   • index path depends on `rawData?.fullOI` (the only field actually read)
-  //   • stock path depends only on `rows`
-  // Both are still wrapped in a single useMemo; the deps array is split via
-  // separate inner variables to keep the logic readable.
   const fullOI = rawData?.fullOI;  // stable reference used in dep array below
   const maxPain = useMemo(() => {
     try {
-      return isIndex ? calcMaxPainFull(fullOI) : calcMaxPain(rows);
+      return (isIndex || rawData?.source === "shoonya") ? calcMaxPainFull(fullOI) : calcMaxPain(rows);
     } catch (err) {
-      // Surface failures during development; stay silent in production to avoid
-      // polluting user consoles.  The app renders fine with maxPain = 0.
       if (process.env.NODE_ENV !== "production") {
         console.warn("[useChainDerived] maxPain calculation failed:", err, { isIndex, rows });
       }
       return 0;
     }
-  }, [isIndex, fullOI, rows]);   // FIX #1: `fullOI` replaces `rawData`
+  }, [isIndex, fullOI, rows, rawData?.source]);
 
   // ── Range filter (scalp vs normal) ────────────────────────
   // FIX #11: range constants are used symmetrically — both scalpMode and

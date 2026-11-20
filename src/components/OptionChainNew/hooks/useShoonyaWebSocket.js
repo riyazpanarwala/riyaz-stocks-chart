@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // Cached session across renders and hook re-mounts
 let sessionCache = null;
@@ -32,17 +32,21 @@ async function getShoonyaWsSession() {
 
 /**
  * Custom React hook for live streaming market ticks via Shoonya WebSocket.
+ * Supports both single instrument subscription (exchange + token)
+ * and multi-instrument subscriptions (tokenKeys array or # separated string).
  *
  * @param {Object} options
  * @param {boolean} [options.enabled=true] - Whether the socket should be active
  * @param {string} [options.exchange] - e.g. "NFO", "BFO", "MCX", "NSE"
- * @param {string|number} [options.token] - Instrument token e.g. "64451", "573423"
+ * @param {string|number} [options.token] - Instrument token e.g. "64451"
+ * @param {string[]|string} [options.tokenKeys] - Multi-token keys e.g. ["NFO|64451", "NFO|64452", "NSE|26000"]
  * @param {Function} [options.onTick] - Callback fired on each tick
  */
 export function useShoonyaWebSocket({
   enabled = true,
   exchange,
   token,
+  tokenKeys,
   onTick,
 } = {}) {
   const [status, setStatus] = useState("idle"); // "idle" | "connecting" | "connected" | "disconnected" | "error"
@@ -58,10 +62,22 @@ export function useShoonyaWebSocket({
   const heartbeatTimerRef = useRef(null);
   const reconnectTimerRef = useRef(null);
   const reconnectAttemptsRef = useRef(0);
-  const activeSubRef = useRef(null); // `${exchange}|${token}`
+  const activeSubRef = useRef(null);
   const isAuthenticatedRef = useRef(false);
 
-  const targetKey = exchange && token ? `${exchange}|${token}` : null;
+  // Normalize single token or multi-token keys into Shoonya's hash-separated format
+  const targetKey = useMemo(() => {
+    if (Array.isArray(tokenKeys) && tokenKeys.length > 0) {
+      return tokenKeys.filter(Boolean).join("#");
+    }
+    if (typeof tokenKeys === "string" && tokenKeys.trim()) {
+      return tokenKeys.trim();
+    }
+    if (exchange && token) {
+      return `${exchange}|${token}`;
+    }
+    return null;
+  }, [tokenKeys, exchange, token]);
 
   useEffect(() => {
     if (!enabled || typeof window === "undefined" || !targetKey) {
@@ -155,7 +171,7 @@ export function useShoonyaWebSocket({
               if (data.s === "OK") {
                 isAuthenticatedRef.current = true;
                 setStatus("connected");
-                // Subscribe to active instrument
+                // Subscribe to active instruments
                 if (targetKey) {
                   ws.send(JSON.stringify({ t: "t", k: targetKey }));
                   activeSubRef.current = targetKey;
@@ -175,7 +191,6 @@ export function useShoonyaWebSocket({
 
             // Market ticks: 'tk' (snapshot quote) or 'tf' (touchline feed update)
             if (data.t === "tk" || data.t === "tf") {
-              // Parse numeric fields safely
               const parsed = {
                 type: data.t,
                 exchange: data.e,
@@ -188,6 +203,8 @@ export function useShoonyaWebSocket({
                 close: data.c != null ? parseFloat(data.c) : undefined,
                 volume: data.v != null ? parseInt(data.v, 10) : undefined,
                 oi: data.oi != null ? parseInt(data.oi, 10) : undefined,
+                bid: data.bp1 != null ? parseFloat(data.bp1) : undefined,
+                ask: data.sp1 != null ? parseFloat(data.sp1) : undefined,
                 time: data.ft ? Number(data.ft) * 1000 : Date.now(),
                 percentChange: data.pc != null ? parseFloat(data.pc) : undefined,
                 raw: data,
@@ -209,7 +226,7 @@ export function useShoonyaWebSocket({
           setStatus("error");
         };
 
-        ws.onclose = (event) => {
+        ws.onclose = () => {
           isAuthenticatedRef.current = false;
           activeSubRef.current = null;
           if (heartbeatTimerRef.current) clearInterval(heartbeatTimerRef.current);

@@ -1,39 +1,76 @@
 // ═══════════════════════════════════════════════════════════════
-// NSE API FETCH HELPERS
-// All network I/O lives here. Components call these indirectly
-// through the useOptionChain hook.
+// OPTION CHAIN DATA FETCHER (SHOONYA PRIMARY + NSE FALLBACK)
+// Prioritizes Shoonya API with real-time WebSocket readiness.
+// Gracefully falls back to NSE API if Shoonya is unavailable.
 // ═══════════════════════════════════════════════════════════════
 import { numeric } from "../utils/analysis.js";
-import { getNSEData } from "../../getIntervalData.js"; // project-level import
+import { getNSEData } from "../../getIntervalData.js";
 import { isolateExpiry } from "../utils/tradeRules.js";
 
 /**
- * @typedef {{ type:"index"|"stock", symbol:string, lot:number, name:string }} Instrument
+ * @typedef {{ type:"index"|"stock"|"commodity", symbol:string, lot:number, name:string }} Instrument
  */
 
 /**
+ * Fetches option chain from Shoonya API route.
+ * Returns null if Shoonya is unconfigured, returned fallback flag, or failed.
+ */
+async function fetchShoonyaOptionChain(instrument, selectedExpiry) {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const url = new URL("/api/shoonya-chain", window.location.origin);
+    url.searchParams.set("symbol", instrument.symbol);
+    url.searchParams.set("type", instrument.type || "index");
+    if (selectedExpiry) {
+      url.searchParams.set("expiry", selectedExpiry);
+    }
+
+    const res = await fetch(url.toString(), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(12_000),
+    });
+
+    if (!res.ok) return null;
+    const json = await res.json();
+
+    if (json?.ok && json.source === "shoonya" && Array.isArray(json.displayData) && json.displayData.length > 0) {
+      return json;
+    }
+    return null;
+  } catch (err) {
+    console.warn(`[fetchOptionChain] Shoonya attempt failed for ${instrument.symbol}, falling back to NSE:`, err.message);
+    return null;
+  }
+}
+
+/**
  * Fetch and normalise option-chain data for any instrument.
+ * Attempts Shoonya API first; if unavailable, falls back to NSE.
  *
- * For indices : returns { timestamp, underlyingValue, displayData, fullOI }
- * For stocks  : returns { timestamp, underlyingValue, data[] }
- *
- * Throws on network / parsing failures so the hook can surface errors cleanly.
+ * For indices : returns { source, timestamp, underlyingValue, displayData, fullOI, fullData, expiry, expiries, ... }
+ * For stocks  : returns { source, timestamp, underlyingValue, data[] }
  *
  * @param {Instrument} instrument
+ * @param {string|null} [selectedExpiry]
  * @returns {Promise<object>}
  */
-export async function fetchOptionChain(instrument) {
+export async function fetchOptionChain(instrument, selectedExpiry = null) {
+  // ── 1. Attempt Primary: Shoonya API ───────────────────────
+  const shoonyaData = await fetchShoonyaOptionChain(instrument, selectedExpiry);
+  if (shoonyaData) {
+    return shoonyaData;
+  }
+
+  // ── 2. Fallback: Existing NSE API ──────────────────────────
   const isIndex = instrument.type === "index";
   const apiName = isIndex ? "F&O" : "optionChain";
 
   const json = await getNSEData(apiName, instrument.symbol);
 
-  // getNSEData signals network/parse failure via { error: true }.
-  // Throw immediately so the hook surfaces a clean error message instead of
-  // silently mis-reading the error envelope as option-chain data.
   if (!json || json.error) {
     throw new Error(
-      json?.message ?? "Failed to fetch option chain data from NSE",
+      json?.message ?? `Failed to fetch option chain data for ${instrument.symbol} from both Shoonya and NSE`,
     );
   }
 
@@ -62,6 +99,7 @@ export async function fetchOptionChain(instrument) {
     }));
 
     return {
+      source: "nse",
       timestamp: rec.timestamp ?? null,
       expiry: chain.expiry,
       expiries: chain.expiries,
@@ -72,10 +110,7 @@ export async function fetchOptionChain(instrument) {
     };
   }
 
-  // Stock — FIX #5: data[0] may be any row (PE/CE/any expiry) and its
-  // underlyingValue can be 0 or missing.  Scan all rows for the first
-  // finite, positive value so ATM / signal / support-resistance never
-  // silently base themselves on 0.
+  // Stock fallback
   const rows = json.data ?? [];
   const underlyingValue = rows.reduce((found, r) => {
     if (found > 0) return found;
@@ -84,6 +119,7 @@ export async function fetchOptionChain(instrument) {
   }, 0);
 
   return {
+    source: "nse",
     timestamp: json.timestamp ?? null,
     underlyingValue,
     data: rows,

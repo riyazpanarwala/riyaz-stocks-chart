@@ -1,12 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
 // useOptionChain HOOK
-// Encapsulates all data-fetching, refresh-cycle, and state for
-// a single option-chain instrument.
+// Encapsulates data fetching, Shoonya WebSocket live ticks,
+// auto-refresh cycle, and graceful NSE fallback.
 // ═══════════════════════════════════════════════════════════════
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { REFRESH_MS } from "../constants.js";
 import { isMarketOpen, isHoliday } from "../../utils/indianstockmarket.js";
 import { fetchOptionChain } from "../api/fetchOptionChain.js";
+import { useShoonyaWebSocket } from "./useShoonyaWebSocket.js";
 
 /**
  * @typedef {{ open:boolean, label:string }} MarketStatus
@@ -20,17 +21,21 @@ function getMarketStatusLabel() {
 
 /**
  * @param {import("../constants.js").Instrument} instrument
+ * @param {string|null} [selectedExpiry]
  * @returns {{
- *   rawData:    object|null,
- *   prevRawData:object|null,
- *   loading:    boolean,
- *   error:      string|null,
- *   fetchedAt:  number|null,
- *   retry:      () => void,
- *   mktStatus:  MarketStatus,
+ *   rawData:       object|null,
+ *   prevRawData:   object|null,
+ *   loading:       boolean,
+ *   error:         string|null,
+ *   fetchedAt:     number|null,
+ *   retry:         () => void,
+ *   mktStatus:     MarketStatus,
+ *   dataSource:    "shoonya" | "nse",
+ *   isWsConnected: boolean,
+ *   wsStatus:      string,
  * }}
  */
-export function useOptionChain(instrument) {
+export function useOptionChain(instrument, selectedExpiry = null) {
   const [rawData, setRawData] = useState(null);
   const [prevRawData, setPrevRawData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,29 +43,21 @@ export function useOptionChain(instrument) {
   const [fetchedAt, setFetchedAt] = useState(null);
   const [mktStatus, setMktStatus] = useState(() => getMarketStatusLabel());
 
-  /**
-   * Monotonically-increasing counter — any response with an ID less than the
-   * current value is stale and must be discarded.
-   */
   const latestRequestRef = useRef(0);
   const closedFetchDone = useRef(false);
-  /**
-   * Mirror of rawData kept in a ref so the load callback can read the current
-   * value without capturing a stale closure.  Calling setPrevRawData inside
-   * setRawData's updater function is a side-effect in a state updater, which
-   * is unsafe under React 19's concurrent renderer.
-   */
   const rawDataRef = useRef(null);
 
-  const load = useCallback(async (inst, resetPrev = false) => {
+  const dataSource = rawData?.source || "nse";
+  const isShoonya = dataSource === "shoonya";
+
+  // ── Load Option Chain ──────────────────────────────────────
+  const load = useCallback(async (inst, resetPrev = false, expiryOverride = null) => {
     const requestId = ++latestRequestRef.current;
 
     if (resetPrev) {
       rawDataRef.current = null;
       setRawData(null);
       setPrevRawData(null);
-
-      // ✅ Reset here explicitly for new instrument
       closedFetchDone.current = false;
     }
 
@@ -68,62 +65,188 @@ export function useOptionChain(instrument) {
     setError(null);
 
     try {
-      const data = await fetchOptionChain(inst);
+      const data = await fetchOptionChain(inst, expiryOverride);
 
       if (latestRequestRef.current !== requestId) return; // stale
 
-      // Capture previous snapshot from the ref (always up-to-date) and update
-      // both state values in two separate, sequential calls — no side-effects
-      // inside an updater function.
       if (rawDataRef.current?.timestamp) {
         setPrevRawData(rawDataRef.current);
       }
       rawDataRef.current = data;
       setRawData(data);
       setFetchedAt(Date.now());
-      // ✅ CRITICAL FIX: mark closed fetch as done ONLY after success
+
       if (!isMarketOpen()) {
         closedFetchDone.current = true;
       }
       setError(null);
     } catch (err) {
       if (latestRequestRef.current !== requestId) return; // stale
-      // ❗ DO NOT mark as done on failure
       closedFetchDone.current = false;
       setError(err?.message ?? "Failed to fetch option chain");
     } finally {
       if (latestRequestRef.current === requestId) setLoading(false);
     }
-  }, []); // stable — no reactive deps needed
+  }, []);
 
   // ── Initial load + symbol change ──────────────────────────
   useEffect(() => {
     closedFetchDone.current = false;
-    load(instrument, true);
+    load(instrument, true, null);
   }, [instrument, load]);
 
-  // ── Auto-refresh cycle ─────────────────────────────────────
+  // ── Expiry change re-fetch for Shoonya ─────────────────────
+  const prevSelectedExpiryRef = useRef(selectedExpiry);
+  useEffect(() => {
+    if (prevSelectedExpiryRef.current === selectedExpiry) return;
+    prevSelectedExpiryRef.current = selectedExpiry;
+
+    if (selectedExpiry && rawDataRef.current?.source === "shoonya" && rawDataRef.current?.expiry !== selectedExpiry) {
+      load(instrument, false, selectedExpiry);
+    }
+  }, [selectedExpiry, instrument, load]);
+
+  // ── Shoonya WebSocket Integration (Real-Time Ticks) ──────
+  // Extract token subscription keys only if source is Shoonya
+  const tokenKeys = useMemo(() => {
+    if (isShoonya && Array.isArray(rawData?.tokenKeys)) {
+      return rawData.tokenKeys;
+    }
+    return [];
+  }, [isShoonya, rawData?.tokenKeys]);
+
+  // Batched tick buffer to keep React UI smooth under heavy tick load
+  const tickBufferRef = useRef([]);
+  const throttleTimerRef = useRef(null);
+
+  const applyBatchedTicks = useCallback(() => {
+    throttleTimerRef.current = null;
+    const ticks = tickBufferRef.current;
+    if (ticks.length === 0 || !rawDataRef.current) return;
+    tickBufferRef.current = [];
+
+    const current = rawDataRef.current;
+    if (current.source !== "shoonya") return;
+
+    let hasChanges = false;
+    const rows = current.fullData || current.displayData || [];
+    const fullOI = current.fullOI || [];
+
+    for (const tick of ticks) {
+      // 1. Check if tick is for underlying spot
+      if (current.spotKey && `${tick.exchange}|${tick.token}` === current.spotKey) {
+        if (tick.ltp != null && tick.ltp > 0 && current.underlyingValue !== tick.ltp) {
+          current.underlyingValue = tick.ltp;
+          hasChanges = true;
+        }
+      }
+
+      // 2. Check if tick is an option strike token
+      const meta = current.tokenMap?.[tick.token];
+      if (meta) {
+        const { strikePrice, optt } = meta;
+        const row = rows.find((r) => r.strikePrice === strikePrice);
+        if (row && row[optt]) {
+          const leg = row[optt];
+          if (tick.ltp != null) {
+            leg.lastPrice = tick.ltp;
+            if (tick.close != null) leg.change = tick.ltp - tick.close;
+            hasChanges = true;
+          }
+          if (tick.volume != null) { leg.totalTradedVolume = tick.volume; hasChanges = true; }
+          if (tick.oi != null) { leg.openInterest = tick.oi; hasChanges = true; }
+          if (tick.bid != null) leg.bidprice = tick.bid;
+          if (tick.ask != null) leg.askPrice = tick.ask;
+        }
+
+        // Update fullOI record
+        const oiItem = fullOI.find((item) => item.s === strikePrice);
+        if (oiItem) {
+          if (optt === "CE") {
+            if (tick.oi != null) oiItem.c = tick.oi;
+            if (tick.volume != null) oiItem.cVol = tick.volume;
+          } else if (optt === "PE") {
+            if (tick.oi != null) oiItem.p = tick.oi;
+            if (tick.volume != null) oiItem.pVol = tick.volume;
+          }
+        }
+      }
+    }
+
+    if (hasChanges) {
+      setRawData({
+        ...current,
+        timestamp: new Date().toISOString(),
+        underlyingValue: current.underlyingValue,
+        displayData: [...(current.fullData || current.displayData || [])],
+        fullData: [...(current.fullData || [])],
+        fullOI: [...fullOI],
+      });
+      setFetchedAt(Date.now());
+    }
+  }, []);
+
+  const handleTick = useCallback((tick) => {
+    tickBufferRef.current.push(tick);
+    if (!throttleTimerRef.current) {
+      throttleTimerRef.current = setTimeout(applyBatchedTicks, 150);
+    }
+  }, [applyBatchedTicks]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (throttleTimerRef.current) clearTimeout(throttleTimerRef.current);
+    };
+  }, []);
+
+  // WebSocket active only when Shoonya is the active data source
+  const { isConnected: isWsConnected, status: wsStatus } = useShoonyaWebSocket({
+    enabled: isShoonya && tokenKeys.length > 0,
+    tokenKeys,
+    onTick: handleTick,
+  });
+
+  // ── Auto-refresh cycle (Polling for NSE fallback) ────────
   useEffect(() => {
     const tick = () => {
       setMktStatus(getMarketStatusLabel());
-      if (isMarketOpen()) {
-        closedFetchDone.current = false;
-        load(instrument);
-      } else if (!closedFetchDone.current) {
-        load(instrument); // no pre-marking
+
+      // If Shoonya WebSocket is healthy and actively connected, bypass REST polling
+      // If running on NSE fallback (or Shoonya WS is disconnected), poll via REFRESH_MS
+      const isShoonyaWsLive = isShoonya && isWsConnected;
+      if (!isShoonyaWsLive) {
+        if (isMarketOpen()) {
+          closedFetchDone.current = false;
+          load(instrument, false, selectedExpiry);
+        } else if (!closedFetchDone.current) {
+          load(instrument, false, selectedExpiry);
+        }
       }
     };
+
     const id = setInterval(tick, REFRESH_MS);
     return () => clearInterval(id);
-  }, [instrument, load]);
+  }, [instrument, load, selectedExpiry, isShoonya, isWsConnected]);
 
-  // ── Market-status ticker (independent of data refresh) ────
+  // ── Market-status ticker ──────────────────────────────────
   useEffect(() => {
     const id = setInterval(() => setMktStatus(getMarketStatusLabel()), 60_000);
     return () => clearInterval(id);
   }, []);
 
-  const retry = useCallback(() => load(instrument), [instrument, load]);
+  const retry = useCallback(() => load(instrument, false, selectedExpiry), [instrument, load, selectedExpiry]);
 
-  return { rawData, prevRawData, loading, error, fetchedAt, retry, mktStatus };
+  return {
+    rawData,
+    prevRawData,
+    loading,
+    error,
+    fetchedAt,
+    retry,
+    mktStatus,
+    dataSource,
+    isWsConnected,
+    wsStatus,
+  };
 }

@@ -140,8 +140,18 @@ export default function App({ initialSymbol = null }) {
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 5000); return () => clearInterval(id); }, []);
 
   // ── Data fetching ─────────────────────────────────────────
-  const { rawData, prevRawData, loading, error, fetchedAt, retry, mktStatus } =
-    useOptionChain(instrument);
+  const {
+    rawData,
+    prevRawData,
+    loading,
+    error,
+    fetchedAt,
+    retry,
+    mktStatus,
+    dataSource,
+    isWsConnected,
+    wsStatus,
+  } = useOptionChain(instrument, selectedExpiry);
   const candles = useSignalCandles(instrument, fetchedAt);
 
   // ── Reset UI state on symbol change ──────────────────────
@@ -326,7 +336,60 @@ export default function App({ initialSymbol = null }) {
           </div>
 
           {/* Meta pills */}
-          <div style={{ marginTop: 4, display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ marginTop: 4, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            {/* Live Data Source / Fallback indicator */}
+            <span
+              title={
+                dataSource === "shoonya"
+                  ? (isWsConnected
+                      ? "Streaming live ticks via Shoonya WebSocket"
+                      : `Shoonya WebSocket: ${wsStatus}`)
+                  : "Shoonya offline or unconfigured. Operating on NSE fallback with 30s auto-refresh."
+              }
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                padding: "2px 8px",
+                borderRadius: 4,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                background:
+                  dataSource === "shoonya"
+                    ? (isWsConnected ? "#052e16" : "#2d2200")
+                    : "#2a1e05",
+                color:
+                  dataSource === "shoonya"
+                    ? (isWsConnected ? C.green : C.yellow)
+                    : C.yellow,
+                border: `1px solid ${
+                  dataSource === "shoonya"
+                    ? (isWsConnected ? "#14532d" : "#713f12")
+                    : "#713f12"
+                }`,
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background:
+                    dataSource === "shoonya"
+                      ? (isWsConnected ? C.green : C.yellow)
+                      : C.yellow,
+                  boxShadow:
+                    dataSource === "shoonya" && isWsConnected
+                      ? `0 0 6px ${C.green}`
+                      : "none",
+                  display: "inline-block",
+                }}
+              />
+              {dataSource === "shoonya"
+                ? (isWsConnected ? "Shoonya (Live WS)" : "Shoonya (Connecting…)")
+                : "NSE (Fallback · 30s)"}
+            </span>
+
             <span style={{ fontSize: 10, background: C.surface2, color: C.muted, padding: "2px 8px", borderRadius: 4 }}>
               Lot size: <b style={{ color: C.text }}>{instrument.lot}</b>
             </span>
