@@ -25,33 +25,33 @@
     "schedule:315": "node --env-file-if-exists=.env scripts/schedule315Signal.mjs"
   },
   "dependencies": {
-    "@google/genai": "^2.24.0",
+    "@google/genai": "^2.32.0",
     "@riyazpanarwala/react-financial-charts": "^3.0.0",
     "@vercel/analytics": "^2.0.1",
     "@zero65tech/indian-stock-market": "^4.5.3",
-    "axios": "^1.20.0",
+    "axios": "^1.21.1",
     "classnames": "^2.5.1",
-    "d3-format": "^3.1.2",
-    "d3-time-format": "^4.1.0",
+    "d3-format": "^3.1.3",
+    "d3-time-format": "^4.1.1",
     "file-saver": "^2.0.5",
-    "framer-motion": "^13.4.6",
-    "next": "^16.3.7",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "framer-motion": "^14.14.0",
+    "next": "^16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "react-full-screen": "^1.1.1",
     "react-icons": "^5.7.0",
     "react-papaparse": "^4.4.0",
     "react-select": "^5.10.2",
     "react-window": "^1.8.11",
-    "recharts": "^3.10.1",
-    "sass": "^1.105.1",
+    "recharts": "^3.11.0",
+    "sass": "^1.108.2",
     "stock-nse-india": "^1.4.0",
     "technicalindicators": "^3.1.0",
-    "yahoo-finance2": "^4.0.2"
+    "yahoo-finance2": "^4.0.6"
   },
   "devDependencies": {
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.7"
+    "eslint-config-next": "^16.4.6"
   },
   "engines": {
     "node": "24.11.1",
