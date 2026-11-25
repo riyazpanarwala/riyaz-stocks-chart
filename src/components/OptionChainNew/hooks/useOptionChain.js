@@ -13,6 +13,24 @@ import { useShoonyaWebSocket } from "./useShoonyaWebSocket.js";
  * @typedef {{ open:boolean, label:string }} MarketStatus
  */
 
+function cloneChainSnapshot(snapshot) {
+  if (!snapshot) return null;
+  const cloneRows = (list) =>
+    Array.isArray(list)
+      ? list.map((r) => ({
+          ...r,
+          CE: r.CE ? { ...r.CE } : r.CE,
+          PE: r.PE ? { ...r.PE } : r.PE,
+        }))
+      : list;
+  return {
+    ...snapshot,
+    displayData: cloneRows(snapshot.displayData),
+    fullData: cloneRows(snapshot.fullData),
+    fullOI: Array.isArray(snapshot.fullOI) ? snapshot.fullOI.map((item) => ({ ...item })) : snapshot.fullOI,
+  };
+}
+
 function getMarketStatusLabel() {
   if (isHoliday()) return { open: false, label: "Holiday" };
   if (isMarketOpen()) return { open: true, label: "Market open · live" };
@@ -46,6 +64,8 @@ export function useOptionChain(instrument, selectedExpiry = null) {
   const latestRequestRef = useRef(0);
   const closedFetchDone = useRef(false);
   const rawDataRef = useRef(null);
+  const hasPrevRef = useRef(false);
+  const prevSnapshotAtRef = useRef(0);
 
   const dataSource = rawData?.source || "nse";
   const isShoonya = dataSource === "shoonya";
@@ -56,6 +76,8 @@ export function useOptionChain(instrument, selectedExpiry = null) {
 
     if (resetPrev) {
       rawDataRef.current = null;
+      hasPrevRef.current = false;
+      prevSnapshotAtRef.current = 0;
       setRawData(null);
       setPrevRawData(null);
       closedFetchDone.current = false;
@@ -70,7 +92,9 @@ export function useOptionChain(instrument, selectedExpiry = null) {
       if (latestRequestRef.current !== requestId) return; // stale
 
       if (rawDataRef.current?.timestamp) {
-        setPrevRawData(rawDataRef.current);
+        setPrevRawData(cloneChainSnapshot(rawDataRef.current));
+        hasPrevRef.current = true;
+        prevSnapshotAtRef.current = Date.now();
       }
       rawDataRef.current = data;
       setRawData(data);
@@ -128,21 +152,22 @@ export function useOptionChain(instrument, selectedExpiry = null) {
     const current = rawDataRef.current;
     if (current.source !== "shoonya") return;
 
+    const next = cloneChainSnapshot(current);
     let hasChanges = false;
-    const rows = current.fullData || current.displayData || [];
-    const fullOI = current.fullOI || [];
+    const rows = next.fullData || next.displayData || [];
+    const fullOI = next.fullOI || [];
 
     for (const tick of ticks) {
       // 1. Check if tick is for underlying spot
-      if (current.spotKey && `${tick.exchange}|${tick.token}` === current.spotKey) {
-        if (tick.ltp != null && tick.ltp > 0 && current.underlyingValue !== tick.ltp) {
-          current.underlyingValue = tick.ltp;
+      if (next.spotKey && `${tick.exchange}|${tick.token}` === next.spotKey) {
+        if (tick.ltp != null && tick.ltp > 0 && next.underlyingValue !== tick.ltp) {
+          next.underlyingValue = tick.ltp;
           hasChanges = true;
         }
       }
 
       // 2. Check if tick is an option strike token
-      const meta = current.tokenMap?.[tick.token];
+      const meta = next.tokenMap?.[tick.token];
       if (meta) {
         const { strikePrice, optt } = meta;
         const row = rows.find((r) => r.strikePrice === strikePrice);
@@ -174,15 +199,20 @@ export function useOptionChain(instrument, selectedExpiry = null) {
     }
 
     if (hasChanges) {
-      setRawData({
-        ...current,
-        timestamp: new Date().toISOString(),
-        underlyingValue: current.underlyingValue,
-        displayData: [...(current.fullData || current.displayData || [])],
-        fullData: [...(current.fullData || [])],
-        fullOI: [...fullOI],
-      });
-      setFetchedAt(Date.now());
+      const nowMs = Date.now();
+      if (current.timestamp && (!hasPrevRef.current || nowMs - prevSnapshotAtRef.current >= REFRESH_MS)) {
+        setPrevRawData(cloneChainSnapshot(current));
+        hasPrevRef.current = true;
+        prevSnapshotAtRef.current = nowMs;
+      }
+
+      next.timestamp = new Date(nowMs).toISOString();
+      next.displayData = [...rows];
+      next.fullData = next.fullData ? [...next.fullData] : next.fullData;
+      next.fullOI = [...fullOI];
+      rawDataRef.current = next;
+      setRawData(next);
+      setFetchedAt(nowMs);
     }
   }, []);
 

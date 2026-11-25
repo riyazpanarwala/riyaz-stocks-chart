@@ -150,9 +150,12 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
   const side = rawSignal === "BUY CALL" ? "CE" : rawSignal === "BUY PUT" ? "PE" : null;
   const reversalSignal = rawSignal;
   const contract = side ? { strike: atm, side, expiry: atmRow?.[side]?.expiryDate, ...liquidQuote(atmRow?.[side]) } : null;
+  const target1Spot = side === "CE" ? (resistance[0] ?? closestRes) : (support[0] ?? closestSup);
+  const target2Spot = side === "CE" ? (resistance[1] ?? target1Spot) : (support[1] ?? target1Spot);
   const plan = side ? buildPositionPlan({ side, entryPrice: contract.ask, spot,
     invalidationSpot: side === "CE" ? closestSup : closestRes,
-    targetSpot: side === "CE" ? closestRes : closestSup }) : null;
+    targetSpot: target1Spot,
+    target2Spot }) : null;
   const reason = !ready ? "Waiting for fresh market snapshots during the session." :
     !candleBias || candleBias !== priceBias ? "Waiting for two completed 5-minute candles and matching premium movement." :
     side && !plan?.eligible ? "Available support/resistance room does not meet 1:1.5 risk/reward." :
