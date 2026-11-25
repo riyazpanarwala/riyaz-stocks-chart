@@ -148,17 +148,33 @@ export default function OptionPremiumChart({
   const [isCustomMode, setIsCustomMode] = useState(false);
   const [customInput, setCustomInput] = useState("");
 
-  // Sync state when parent instrument, ATM, or activeExpiry changes
+  // Track whether the user has manually chosen a strike/symbol or ATM was already initialized.
+  // Background ATM updates from parent polling must not overwrite the user's selected chart.
+  const userSelectedStrikeRef = useRef(false);
+  const initializedAtmRef = useRef(Boolean(atm));
+  const prevParentSymbolRef = useRef(instrument?.symbol);
+
+  // Sync state only when the parent instrument symbol itself changes
   useEffect(() => {
-    if (instrument?.symbol) {
+    if (instrument?.symbol && instrument.symbol !== prevParentSymbolRef.current) {
+      prevParentSymbolRef.current = instrument.symbol;
       setActiveSymbol(instrument.symbol);
-      const parentAtm = (atm && instrument.symbol !== "SENSEX") ? atm : (DEFAULT_ATM[instrument.symbol] || 25500);
+      userSelectedStrikeRef.current = false;
+      const parentAtm = atm || DEFAULT_ATM[instrument.symbol] || 25500;
       setSelectedStrike(parentAtm);
+      initializedAtmRef.current = Boolean(atm);
     }
   }, [instrument?.symbol, atm]);
 
+  // Initialize to ATM once on initial load if atm was not yet available at mount
   useEffect(() => {
-    if (atm && activeSymbol === instrument?.symbol) {
+    if (
+      atm &&
+      !initializedAtmRef.current &&
+      !userSelectedStrikeRef.current &&
+      activeSymbol === instrument?.symbol
+    ) {
+      initializedAtmRef.current = true;
       setSelectedStrike(atm);
     }
   }, [atm, activeSymbol, instrument?.symbol]);
@@ -280,13 +296,20 @@ export default function OptionPremiumChart({
   const canNext = currentIdx !== -1 && currentIdx < strikes.length - 1;
 
   const handlePrevStrike = () => {
-    if (canPrev) setSelectedStrike(strikes[currentIdx - 1]);
+    if (canPrev) {
+      userSelectedStrikeRef.current = true;
+      setSelectedStrike(strikes[currentIdx - 1]);
+    }
   };
   const handleNextStrike = () => {
-    if (canNext) setSelectedStrike(strikes[currentIdx + 1]);
+    if (canNext) {
+      userSelectedStrikeRef.current = true;
+      setSelectedStrike(strikes[currentIdx + 1]);
+    }
   };
 
   const handleSymbolChange = (nextSym) => {
+    userSelectedStrikeRef.current = true;
     setActiveSymbol(nextSym);
     setSelectedExpiry(null); // Reset expiry to pick nearest for the new instrument
     const nextAtm = (nextSym === instrument?.symbol && atm) ? atm : (DEFAULT_ATM[nextSym] || 25500);
@@ -297,6 +320,7 @@ export default function OptionPremiumChart({
     e?.preventDefault();
     const val = Number(customInput.trim());
     if (Number.isFinite(val) && val > 0) {
+      userSelectedStrikeRef.current = true;
       setSelectedStrike(val);
       setIsCustomMode(false);
       setCustomInput("");
@@ -796,7 +820,10 @@ export default function OptionPremiumChart({
                 <select
                   aria-label="Select Strike Price"
                   value={selectedStrike}
-                  onChange={(e) => setSelectedStrike(Number(e.target.value))}
+                  onChange={(e) => {
+                    userSelectedStrikeRef.current = true;
+                    setSelectedStrike(Number(e.target.value));
+                  }}
                   style={{
                     background: "transparent",
                     color: C.text,
