@@ -105,6 +105,13 @@ export const OptionSpotChart = React.memo(function OptionSpotChart({
     setError(null);
     try {
       const ticker = resolveYahooTicker(instrument);
+      if (!ticker) {
+        setCandles([]);
+        setHoverIdx(null);
+        setError("Spot chart is not available for MCX commodities");
+        setLoading(false);
+        return;
+      }
       const conf = INTERVAL_CONFIGS.find((c) => c.id === interval) || INTERVAL_CONFIGS[1];
       const fromDate = new Date(Date.now() - conf.days * 24 * 3600 * 1000)
         .toISOString()

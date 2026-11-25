@@ -21,7 +21,7 @@ export async function getFinanceDataAction({
   try {
     const symbol = typeof rawSymbol === "string" ? rawSymbol.trim() : "";
 
-    if (!symbol || !/^[A-Za-z0-9.\-^=]+$/.test(symbol)) {
+    if (!symbol || !/^[A-Za-z0-9.\-^=&]+$/.test(symbol)) {
       return { error: "Invalid or missing symbol." };
     }
 

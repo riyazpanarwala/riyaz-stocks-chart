@@ -70,6 +70,7 @@ export const EMPTY_OPTION_LEG = Object.freeze({
 // ═══════════════════════════════════════════════════════════════
 export const YAHOO_INDEX_TICKERS = Object.freeze({
   SENSEX:     "^BSESN",
+  BANKEX:     "^BSEBANK",
   NIFTY:      "^NSEI",
   BANKNIFTY:  "^NSEBANK",
   FINNIFTY:   "NIFTY_FIN_SERVICE.NS",
@@ -77,13 +78,22 @@ export const YAHOO_INDEX_TICKERS = Object.freeze({
   NIFTYNXT50: "NIFTY_NEXT_50.NS",
 });
 
+const MCX_COMMODITY_SYMBOLS = new Set([
+  "CRUDEOIL", "CRUDEOILM", "NATURALGAS", "GOLD", "GOLDM",
+  "SILVER", "SILVERM", "SILVERMIC", "COPPER", "ZINC",
+  "ALUMINIUM", "LEAD", "NICKEL",
+]);
+
 /**
- * Resolves the Yahoo Finance ticker for an F&O instrument.
+ * Resolves the Yahoo Finance ticker for an F&O instrument, or null when
+ * no Yahoo Finance `.NS` spot ticker exists (e.g. MCX commodities).
  * @param {object} instrument - Instrument from FO_LIST
- * @returns {string} Yahoo Finance ticker
+ * @returns {string|null} Yahoo Finance ticker, or null if unsupported
  */
 export function resolveYahooTicker(instrument) {
   if (!instrument?.symbol) return "^NSEI";
+  if (instrument.type === "commodity") return null;
   const sym = instrument.symbol.toUpperCase();
+  if (MCX_COMMODITY_SYMBOLS.has(sym)) return null;
   return YAHOO_INDEX_TICKERS[sym] ?? `${sym}.NS`;
 }

@@ -7,6 +7,10 @@ export function useSignalCandles(instrument, fetchedAt) {
   useEffect(() => {
     let cancelled = false;
     const symbol = resolveYahooTicker(instrument);
+    if (!symbol) {
+      setData({ symbol: instrument.symbol, candles: [] });
+      return;
+    }
     getFinanceDataAction({ symbol, interval: "5m", fromDate: new Date(Date.now() - 86400000).toISOString().slice(0, 10) })
       .then((result) => { if (!cancelled) setData({ symbol: instrument.symbol, candles: Array.isArray(result) ? result : [] }); })
       .catch(() => { if (!cancelled) setData({ symbol: instrument.symbol, candles: [] }); });
