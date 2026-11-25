@@ -10,27 +10,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { C } from "../constants.js";
+import { C, resolveYahooTicker } from "../constants.js";
 import { getFinanceDataAction } from "../../../app/actions/finance.js";
-
-/**
- * Resolves the Yahoo Finance symbol for an instrument.
- * @param {object} instrument - Instrument from FO_LIST
- * @returns {string} Yahoo Finance ticker
- */
-function resolveYahooTicker(instrument) {
-  if (!instrument?.symbol) return "^NSEI";
-  const sym = instrument.symbol.toUpperCase();
-  const INDEX_MAP = {
-    NIFTY: "^NSEI",
-    BANKNIFTY: "^NSEBANK",
-    FINNIFTY: "NIFTY_FIN_SERVICE.NS",
-    MIDCPNIFTY: "NIFTY_MID_SELECT.NS",
-    NIFTYNXT50: "NIFTY_NEXT_50.NS",
-  };
-  if (INDEX_MAP[sym]) return INDEX_MAP[sym];
-  return `${sym}.NS`;
-}
 
 /**
  * Formats timestamps nicely for X-axis labels.

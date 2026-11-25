@@ -64,3 +64,26 @@ export const EMPTY_OPTION_LEG = Object.freeze({
   totalTradedVolume: 0, lastPrice: 0, change: 0,
   impliedVolatility: 0,
 });
+
+// ═══════════════════════════════════════════════════════════════
+// YAHOO FINANCE TICKER RESOLUTION
+// ═══════════════════════════════════════════════════════════════
+export const YAHOO_INDEX_TICKERS = Object.freeze({
+  SENSEX:     "^BSESN",
+  NIFTY:      "^NSEI",
+  BANKNIFTY:  "^NSEBANK",
+  FINNIFTY:   "NIFTY_FIN_SERVICE.NS",
+  MIDCPNIFTY: "NIFTY_MID_SELECT.NS",
+  NIFTYNXT50: "NIFTY_NEXT_50.NS",
+});
+
+/**
+ * Resolves the Yahoo Finance ticker for an F&O instrument.
+ * @param {object} instrument - Instrument from FO_LIST
+ * @returns {string} Yahoo Finance ticker
+ */
+export function resolveYahooTicker(instrument) {
+  if (!instrument?.symbol) return "^NSEI";
+  const sym = instrument.symbol.toUpperCase();
+  return YAHOO_INDEX_TICKERS[sym] ?? `${sym}.NS`;
+}
