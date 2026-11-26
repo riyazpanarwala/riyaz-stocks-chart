@@ -98,8 +98,8 @@ async function resolveShoonyaTarget(rawKey, uid, accessToken) {
     bseCode = instInfo.bseCode;
   }
 
-  const exch = upperIdx.startsWith("BSE") ? "BSE" : "NSE";
-  yahooSymbol = exch === "BSE" ? `${bseCode || symbol}.BO` : `${symbol}.NS`;
+  const exch = upperIdx.startsWith("MCX") ? "MCX" : upperIdx.startsWith("BSE") ? "BSE" : "NSE";
+  yahooSymbol = exch === "MCX" ? null : exch === "BSE" ? `${bseCode || symbol}.BO` : `${symbol}.NS`;
 
   const cacheKey = `${exch}|${symbol}`;
   if (scripTokenCache.has(cacheKey)) {
@@ -108,13 +108,22 @@ async function resolveShoonyaTarget(rawKey, uid, accessToken) {
 
   // 3. SearchScrip on Shoonya
   try {
-    const searchRes = await callShoonya("SearchScrip", { uid, exch, stext: symbol }, accessToken, 7000);
+    const stext = exch === "MCX" ? `${symbol} FUT` : symbol;
+    const searchRes = await callShoonya("SearchScrip", { uid, exch, stext }, accessToken, 7000);
     if (searchRes?.stat === "Ok" && Array.isArray(searchRes.values) && searchRes.values.length > 0) {
-      const match =
-        searchRes.values.find((v) => v.tsym === `${symbol}-EQ`) ||
-        (bseCode ? searchRes.values.find((v) => v.token === String(bseCode)) : null) ||
-        searchRes.values.find((v) => v.tsym?.startsWith(symbol)) ||
-        searchRes.values[0];
+      let match = null;
+      if (exch === "MCX") {
+        const futMatches = searchRes.values
+          .filter((v) => v.instname === "FUTCOM" && v.symname?.toUpperCase() === symbol && v.token)
+          .sort((a, b) => Date.parse(a.exd || "") - Date.parse(b.exd || ""));
+        match = futMatches[0] || searchRes.values.find((v) => v.symname?.toUpperCase() === symbol) || searchRes.values[0];
+      } else {
+        match =
+          searchRes.values.find((v) => v.tsym === `${symbol}-EQ`) ||
+          (bseCode ? searchRes.values.find((v) => v.token === String(bseCode)) : null) ||
+          searchRes.values.find((v) => v.tsym?.startsWith(symbol)) ||
+          searchRes.values[0];
+      }
 
       if (match?.token) {
         const resolved = {

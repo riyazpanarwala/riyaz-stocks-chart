@@ -112,6 +112,29 @@ export async function GET(request) {
       } catch (err) {
         console.warn(`[shoonya-chain] Could not fetch spot quote for ${cleanSymbol}:`, err.message);
       }
+    } else if (exch === "MCX") {
+      try {
+        const futSearch = await callShoonya("SearchScrip", {
+          uid,
+          exch: "MCX",
+          stext: `${cleanSymbol} FUT`,
+        }, accessToken, 6000);
+        const futCandidates = (futSearch?.values ?? [])
+          .filter((v) => v.instname === "FUTCOM" && v.symname?.toUpperCase() === cleanSymbol && v.token)
+          .sort((a, b) => parseShoonyaExpiry(a.exd) - parseShoonyaExpiry(b.exd));
+        const activeFut = futCandidates[0];
+        if (activeFut?.token) {
+          spotKey = `MCX|${activeFut.token}`;
+          const futQuote = await callShoonya("GetQuotes", {
+            uid,
+            exch: "MCX",
+            token: String(activeFut.token),
+          }, accessToken, 6000);
+          if (futQuote?.lp) underlyingValue = parseFloat(futQuote.lp);
+        }
+      } catch (err) {
+        console.warn(`[shoonya-chain] Could not fetch MCX future spot for ${cleanSymbol}:`, err.message);
+      }
     }
 
     // 2. Discover active option contracts and expiries via SearchScrip

@@ -6,6 +6,7 @@ import { REFRESH_MS, resolveYahooTicker } from "../constants.js";
 function toShoonyaInstrumentKey(instrument) {
   if (!instrument?.symbol) return "NSE_INDEX|NIFTY";
   const sym = instrument.symbol.toUpperCase();
+  if (instrument.type === "commodity") return `MCX_FO|${sym}`;
   if (sym === "SENSEX" || sym === "BANKEX") return `BSE_INDEX|${sym}`;
   if (instrument.type === "index") return `NSE_INDEX|${sym}`;
   return `NSE_EQ|${sym}`;
@@ -32,7 +33,8 @@ export function useSignalCandles(instrument, intervalMinutes = 5, { spot = 0, is
   useEffect(() => {
     let cancelled = false;
     const yahooSymbol = resolveYahooTicker(instrument);
-    if (!yahooSymbol) {
+    const isCommodity = instrument?.type === "commodity";
+    if (!yahooSymbol && !isCommodity) {
       setData({ symbol: instrument.symbol, intervalMinutes: normalizedInterval, loaded: true, candles: [] });
       return;
     }
@@ -56,6 +58,17 @@ export function useSignalCandles(instrument, intervalMinutes = 5, { spot = 0, is
         }
       } catch {
         // Fall through to Yahoo Finance
+      }
+
+      if (!yahooSymbol) {
+        if (!cancelled) {
+          setData((prev) =>
+            prev.symbol === instrument.symbol && prev.intervalMinutes === normalizedInterval
+              ? { ...prev, loaded: true }
+              : { symbol: instrument.symbol, intervalMinutes: normalizedInterval, loaded: true, candles: [] },
+          );
+        }
+        return;
       }
 
       try {

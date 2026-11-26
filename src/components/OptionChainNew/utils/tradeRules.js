@@ -17,13 +17,14 @@ export function isFresh(value, now = Date.now(), maxAge = 120_000) {
   return Number.isFinite(ts) && ts <= now + 5000 && now - ts <= maxAge;
 }
 
-export function expiryIsActive(expiry, now = Date.now()) {
-  return marketTimestamp(`${expiry} 15:30:00`) > now;
+export function expiryIsActive(expiry, now = Date.now(), isCommodity = false) {
+  const closeTime = isCommodity ? "23:30:00" : "15:30:00";
+  return marketTimestamp(`${expiry} ${closeTime}`) > now;
 }
 
-export function beforeEntryCutoff(now = Date.now()) {
+export function beforeEntryCutoff(now = Date.now(), isCommodity = false) {
   const time = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false }).format(now);
-  return time >= "09:15" && time < "15:20";
+  return isCommodity ? (time >= "09:00" && time < "23:20") : (time >= "09:15" && time < "15:20");
 }
 
 export function isolateExpiry(rows = [], selectedExpiry = null) {
@@ -95,7 +96,7 @@ export function buildPositionPlan({ side, entryPrice, spot, invalidationSpot, ta
     eligible: riskRewardRatio >= 1.5, delta, roundTripCost };
 }
 
-export function evaluatePosition(position, { bid, spot, timestamp, now = Date.now(), marketOpen = true, rawSignal, confirmed = false }) {
+export function evaluatePosition(position, { bid, spot, timestamp, now = Date.now(), marketOpen = true, rawSignal, confirmed = false, isCommodity = false }) {
   if (!position) return { action: "NO POSITION", reason: "Record an actual fill to monitor exits." };
   const dayFormat = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" });
   if (position.openedAt && dayFormat.format(position.openedAt) !== dayFormat.format(now)) return { action: "EXIT", reason: "Recorded intraday position remains open from an earlier session." };
@@ -103,7 +104,8 @@ export function evaluatePosition(position, { bid, spot, timestamp, now = Date.no
     return { action: "EXIT", reason: "Intraday 40-minute holding limit reached; exit the position." };
   }
   const time = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: false }).format(now);
-  if (time >= "15:20" || !marketOpen) return { action: "EXIT", reason: "Intraday time exit; close the recorded position." };
+  const exitCutoff = isCommodity ? "23:20" : "15:20";
+  if (time >= exitCutoff || !marketOpen) return { action: "EXIT", reason: "Intraday time exit; close the recorded position." };
   if (!isFresh(timestamp, now) || !Number.isFinite(bid) || bid <= 0 || !Number.isFinite(spot) || spot <= 0) return { action: "CHECK QUOTE", reason: "Fresh bid and spot required to evaluate exits." };
   if (bid <= position.stopLoss || (position.side === "CE" ? spot <= position.invalidationSpot : spot >= position.invalidationSpot)) return { action: "EXIT", reason: "Stop loss or underlying invalidation reached." };
   if (bid >= position.target2) return { action: "EXIT", reason: "Final premium target reached." };

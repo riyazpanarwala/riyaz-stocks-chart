@@ -137,6 +137,7 @@ export default function App({ initialSymbol = null }) {
   }, [instrument]);
 
   const isIndex = instrument.type === "index";
+  const isCommodity = instrument.type === "commodity";
   const [now, setNow] = useState(Date.now);
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 5000); return () => clearInterval(id); }, []);
 
@@ -171,7 +172,7 @@ export default function App({ initialSymbol = null }) {
     atm, pcr, maxPain, sig, chartData,
     straddleInfo, tYears,
     activeRange,
-  } = useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode, lotSize: instrument.lot,
+  } = useChainDerived({ rawData, prevRawData, isIndex, isCommodity, selectedExpiry, scalpMode, lotSize: instrument.lot,
     candles, marketOpen: mktStatus?.open && !error, now, signalInterval });
 
   // ── Snapshot history + breakout signals ──────────────────

@@ -140,17 +140,19 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
 
   // Disciplined rules: require strong score on the winning side, minimal conflicting evidence
   let rawSignal = "NO TRADE";
-  const ready = context.marketOpen === true && beforeEntryCutoff(context.now) && snapshotsValid && Number.isFinite(spot) && spot > 0 &&
-    expiryIsActive(atmRow?.CE?.expiryDate, context.now) && expiryIsActive(atmRow?.PE?.expiryDate, context.now);
-  if (ready && participation && oiChangeBias === 1 && candleBias === 1 && priceBias === 1 && liquidQuote(atmRow?.CE).valid && bullScore >= 50 && bearScore <= 20 && netBias >= 30) {
+  const isCommodity = Boolean(context.isCommodity);
+  const minVolume = isCommodity ? 50 : 1000;
+  const ready = context.marketOpen === true && beforeEntryCutoff(context.now, isCommodity) && snapshotsValid && Number.isFinite(spot) && spot > 0 &&
+    expiryIsActive(atmRow?.CE?.expiryDate, context.now, isCommodity) && expiryIsActive(atmRow?.PE?.expiryDate, context.now, isCommodity);
+  if (ready && participation && oiChangeBias === 1 && candleBias === 1 && priceBias === 1 && liquidQuote(atmRow?.CE, minVolume).valid && bullScore >= 50 && bearScore <= 20 && netBias >= 30) {
     rawSignal = "BUY CALL";
-  } else if (ready && participation && oiChangeBias === -1 && candleBias === -1 && priceBias === -1 && liquidQuote(atmRow?.PE).valid && bearScore >= 50 && bullScore <= 20 && netBias <= -30) {
+  } else if (ready && participation && oiChangeBias === -1 && candleBias === -1 && priceBias === -1 && liquidQuote(atmRow?.PE, minVolume).valid && bearScore >= 50 && bullScore <= 20 && netBias <= -30) {
     rawSignal = "BUY PUT";
   }
 
   const side = rawSignal === "BUY CALL" ? "CE" : rawSignal === "BUY PUT" ? "PE" : null;
   const reversalSignal = rawSignal;
-  const contract = side ? { strike: atm, side, expiry: atmRow?.[side]?.expiryDate, ...liquidQuote(atmRow?.[side]) } : null;
+  const contract = side ? { strike: atm, side, expiry: atmRow?.[side]?.expiryDate, ...liquidQuote(atmRow?.[side], minVolume) } : null;
   const target1Spot = side === "CE" ? (resistance[0] ?? closestRes) : (support[0] ?? closestSup);
   const target2Spot = side === "CE" ? (resistance[1] ?? target1Spot) : (support[1] ?? target1Spot);
   const plan = side ? buildPositionPlan({ side, entryPrice: contract.ask, spot,

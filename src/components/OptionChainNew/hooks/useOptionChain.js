@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { REFRESH_MS } from "../constants.js";
-import { isMarketOpen, isHoliday } from "../../utils/indianstockmarket.js";
+import { isMarketOpen, isMcxMarketOpen, isHoliday } from "../../utils/indianstockmarket.js";
 import { fetchOptionChain } from "../api/fetchOptionChain.js";
 import { useShoonyaWebSocket } from "./useShoonyaWebSocket.js";
 
@@ -31,9 +31,13 @@ function cloneChainSnapshot(snapshot) {
   };
 }
 
-function getMarketStatusLabel() {
+function checkMarketOpen(isCommodity) {
+  return isCommodity ? isMcxMarketOpen() : isMarketOpen();
+}
+
+function getMarketStatusLabel(isCommodity = false) {
   if (isHoliday()) return { open: false, label: "Holiday" };
-  if (isMarketOpen()) return { open: true, label: "Market open · live" };
+  if (checkMarketOpen(isCommodity)) return { open: true, label: isCommodity ? "MCX open · live" : "Market open · live" };
   return { open: false, label: "Market closed" };
 }
 
@@ -59,7 +63,8 @@ export function useOptionChain(instrument, selectedExpiry = null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [fetchedAt, setFetchedAt] = useState(null);
-  const [mktStatus, setMktStatus] = useState(() => getMarketStatusLabel());
+  const isCommodity = instrument?.type === "commodity";
+  const [mktStatus, setMktStatus] = useState(() => getMarketStatusLabel(isCommodity));
 
   const latestRequestRef = useRef(0);
   const closedFetchDone = useRef(false);
@@ -109,7 +114,7 @@ export function useOptionChain(instrument, selectedExpiry = null) {
       setRawData(data);
       setFetchedAt(nowMs);
 
-      if (!isMarketOpen()) {
+      if (!checkMarketOpen(inst?.type === "commodity")) {
         closedFetchDone.current = true;
       }
       setError(null);
@@ -127,6 +132,7 @@ export function useOptionChain(instrument, selectedExpiry = null) {
   // ── Initial load + symbol change ──────────────────────────
   useEffect(() => {
     closedFetchDone.current = false;
+    setMktStatus(getMarketStatusLabel(instrument?.type === "commodity"));
     load(instrument, true, null);
   }, [instrument, load]);
 
@@ -254,13 +260,13 @@ export function useOptionChain(instrument, selectedExpiry = null) {
   // ── Auto-refresh cycle (Polling for NSE fallback) ────────
   useEffect(() => {
     const tick = () => {
-      setMktStatus(getMarketStatusLabel());
+      setMktStatus(getMarketStatusLabel(isCommodity));
 
       // If Shoonya WebSocket is live, only sync REST quotes (at most every 90s) if the current ATM strike is missing bid/ask
       // If running on NSE fallback (or Shoonya WS is disconnected), poll via REFRESH_MS
       const isShoonyaWsLive = isShoonya && isWsConnected;
       if (isShoonyaWsLive) {
-        if (isMarketOpen() && Date.now() - lastRestSyncAtRef.current >= 90_000) {
+        if (checkMarketOpen(isCommodity) && Date.now() - lastRestSyncAtRef.current >= 90_000) {
           const cur = rawDataRef.current;
           const curRows = cur?.fullData || cur?.displayData || [];
           const spot = cur?.underlyingValue || 0;
@@ -278,7 +284,7 @@ export function useOptionChain(instrument, selectedExpiry = null) {
           }
         }
       } else {
-        if (isMarketOpen()) {
+        if (checkMarketOpen(isCommodity)) {
           closedFetchDone.current = false;
           load(instrument, false, selectedExpiry);
         } else if (!closedFetchDone.current) {
@@ -289,13 +295,13 @@ export function useOptionChain(instrument, selectedExpiry = null) {
 
     const id = setInterval(tick, REFRESH_MS);
     return () => clearInterval(id);
-  }, [instrument, load, selectedExpiry, isShoonya, isWsConnected]);
+  }, [instrument, load, selectedExpiry, isShoonya, isWsConnected, isCommodity]);
 
   // ── Market-status ticker ──────────────────────────────────
   useEffect(() => {
-    const id = setInterval(() => setMktStatus(getMarketStatusLabel()), 60_000);
+    const id = setInterval(() => setMktStatus(getMarketStatusLabel(isCommodity)), 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [isCommodity]);
 
   const retry = useCallback(() => load(instrument, false, selectedExpiry), [instrument, load, selectedExpiry]);
 
