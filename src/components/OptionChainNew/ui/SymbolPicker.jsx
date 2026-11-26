@@ -7,14 +7,15 @@ import FO_LIST from "../FOlist.js";
 
 const TypeBadge = React.memo(function TypeBadge({ type }) {
   const isIndex = type === "index";
+  const isCommodity = type === "commodity";
   return (
     <span style={{
       fontSize: 9, fontWeight: 700, padding: "2px 5px", borderRadius: 3, flexShrink: 0,
-      background: isIndex ? "#0d1e2e" : "#1a0a1a",
-      color:      isIndex ? C.blue    : C.purple,
+      background: isCommodity ? "#2d2200" : isIndex ? "#0d1e2e" : "#1a0a1a",
+      color:      isCommodity ? C.yellow  : isIndex ? C.blue    : C.purple,
       letterSpacing: 0.5,
     }}>
-      {isIndex ? "IDX" : "STK"}
+      {isCommodity ? "MCX" : isIndex ? "IDX" : "STK"}
     </span>
   );
 });
@@ -65,8 +66,9 @@ export const SymbolPicker = React.memo(function SymbolPicker({ selected, onChang
     );
   }, [query]);
 
-  const indices = useMemo(() => filtered.filter((i) => i.type === "index"), [filtered]);
-  const stocks  = useMemo(() => filtered.filter((i) => i.type === "stock"),  [filtered]);
+  const indices     = useMemo(() => filtered.filter((i) => i.type === "index"),     [filtered]);
+  const commodities = useMemo(() => filtered.filter((i) => i.type === "commodity"), [filtered]);
+  const stocks      = useMemo(() => filtered.filter((i) => i.type === "stock"),     [filtered]);
 
   // Close on outside click
   useEffect(() => {
@@ -143,6 +145,14 @@ export const SymbolPicker = React.memo(function SymbolPicker({ selected, onChang
               <>
                 <div style={{ fontSize: 9, color: C.muted, padding: "6px 6px 3px", letterSpacing: 1 }}>── INDICES</div>
                 {indices.map((i) => (
+                  <PickerItem key={i.symbol} item={i} isSelected={selected?.symbol === i.symbol} onSelect={handleSelect} />
+                ))}
+              </>
+            )}
+            {commodities.length > 0 && (
+              <>
+                <div style={{ fontSize: 9, color: C.yellow, padding: "6px 6px 3px", letterSpacing: 1 }}>── MCX COMMODITIES</div>
+                {commodities.map((i) => (
                   <PickerItem key={i.symbol} item={i} isSelected={selected?.symbol === i.symbol} onSelect={handleSelect} />
                 ))}
               </>
