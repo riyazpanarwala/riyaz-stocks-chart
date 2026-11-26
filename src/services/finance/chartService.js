@@ -1,11 +1,29 @@
 import YahooFinance from "yahoo-finance2";
 const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
+const INTRADAY_INTERVALS = new Set(["1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h"]);
+
+function resolvePeriod1(fromDate, interval) {
+  if (fromDate !== undefined && fromDate !== null && fromDate !== "") {
+    if (fromDate instanceof Date) {
+      if (!Number.isNaN(fromDate.getTime())) return fromDate;
+    } else if (typeof fromDate === "number" && Number.isFinite(fromDate)) {
+      return fromDate;
+    } else if (typeof fromDate === "string" && fromDate.trim()) {
+      const parsed = new Date(fromDate);
+      if (!Number.isNaN(parsed.getTime())) return fromDate.trim();
+    }
+  }
+
+  const lookbackDays = INTRADAY_INTERVALS.has(interval) ? 5 : 365;
+  return new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 // Corporate actions are independent of the provider used for chart prices.
 export async function getCorporateActions(symbol, { fromDate, toDate } = {}) {
   const result = await yahooFinance.chart(symbol, {
     interval: "1d",
-    period1: fromDate,
+    period1: resolvePeriod1(fromDate, "1d"),
     ...(toDate ? { period2: toDate } : {}),
     events: "div|split",
   });
@@ -30,9 +48,10 @@ export async function getCorporateActions(symbol, { fromDate, toDate } = {}) {
  * @returns {Promise<Array<object>>} Filtered quote candles with corporate actions
  */
 export async function getChartData(symbol, { interval, fromDate, toDate } = {}) {
+  const resolvedInterval = interval || "1d";
   const queryObj = {
-    interval,
-    period1: fromDate,
+    interval: resolvedInterval,
+    period1: resolvePeriod1(fromDate, resolvedInterval),
     events: "capitalGain|div|split",
   };
 
@@ -122,7 +141,11 @@ export async function getOptionData(symbol) {
  * @returns {Promise<Array<object>>} Historical quotes array
  */
 export async function getHistoricalData(symbol, { interval, fromDate, toDate } = {}) {
-  const queryObj = { interval, period1: fromDate };
+  const resolvedInterval = interval || "1d";
+  const queryObj = {
+    interval: resolvedInterval,
+    period1: resolvePeriod1(fromDate, resolvedInterval),
+  };
 
   if (toDate) {
     queryObj.period2 = toDate;

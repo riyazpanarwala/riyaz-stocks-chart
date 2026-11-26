@@ -169,10 +169,18 @@ async function fallbackToYahooFinance(yahooSymbol, { interval, fromDate, toDate 
 
   try {
     const yfInterval = interval === "days" ? "1d" : interval === "weeks" ? "1wk" : interval === "months" ? "1mo" : "1d";
+    const isIntraday =
+      interval === "minutes" ||
+      interval === "hours" ||
+      interval === "1minute" ||
+      interval === "30minute";
+    const resolvedFromDate =
+      fromDate ||
+      new Date(Date.now() - (isIntraday ? 5 : 365) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const rawData = await getFinanceDataAction({
       symbol: yahooSymbol,
       interval: yfInterval,
-      fromDate,
+      fromDate: resolvedFromDate,
       toDate,
     });
 
