@@ -84,9 +84,10 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
   const snapshotsValid = matchedSnapshots(context);
   const activityContext = { ...context, mode: "intraday" };
   const activity = aggregateActivity(rows, atm, pitch, activityContext);
+  const intervalMinutes = Math.max(1, Number(context.intervalMinutes) || 5);
   const atmCeChg = snapshotsValid && previousAtm?.CE?.lastPrice > 0 ? atmRow?.CE?.lastPrice - previousAtm.CE.lastPrice : 0;
   const atmPeChg = snapshotsValid && previousAtm?.PE?.lastPrice > 0 ? atmRow?.PE?.lastPrice - previousAtm.PE.lastPrice : 0;
-  const candleBias = confirmedDirection({ candles: context.candles, now: context.now, spot });
+  const candleBias = confirmedDirection({ candles: context.candles, now: context.now, spot, intervalMinutes });
 
 
   let priceBias = 0;
@@ -120,9 +121,9 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
   // shows aligned inferred covering at that same strike.
   const previousLevels = nearestLevels(context.prevRows, context.prevSpot ?? spot);
   const levelRow = (level) => rows.find(r => r.strikePrice === level);
-  const breakout = crossedLevel(context.candles, previousLevels.resistance, 1, context.now, spot) &&
+  const breakout = crossedLevel(context.candles, previousLevels.resistance, 1, context.now, spot, intervalMinutes) &&
     legActivity(levelRow(previousLevels.resistance), "CE", activityContext).type === "Short Covering";
-  const breakdown = crossedLevel(context.candles, previousLevels.support, -1, context.now, spot) &&
+  const breakdown = crossedLevel(context.candles, previousLevels.support, -1, context.now, spot, intervalMinutes) &&
     legActivity(levelRow(previousLevels.support), "PE", activityContext).type === "Short Covering";
   if (breakout) bullScore += 15;
   if (breakdown) bearScore += 15;
@@ -157,7 +158,7 @@ export function generateSignal(rows, atm, pcr, spot, context = {}) {
     targetSpot: target1Spot,
     target2Spot }) : null;
   const reason = !ready ? "Waiting for fresh market snapshots during the session." :
-    !candleBias || candleBias !== priceBias ? "Waiting for two completed 5-minute candles and matching premium movement." :
+    !candleBias || candleBias !== priceBias ? `Waiting for two completed ${intervalMinutes}-minute candles and matching premium movement.` :
     side && !plan?.eligible ? "Available support/resistance room does not meet 1:1.5 risk/reward." :
     !side ? "Price, OI or executable liquidity does not confirm an entry." : "Entry confirmed; recheck the quote before recording a fill.";
   if (side && !plan?.eligible) rawSignal = "NO TRADE";

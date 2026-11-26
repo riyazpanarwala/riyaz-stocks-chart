@@ -57,17 +57,20 @@ export function liquidQuote(leg, minVolume = 1000) {
   return { bid, ask, spreadPct, valid: valid && spreadPct <= 3 };
 }
 
-export function completedSignalCandles(candles = [], now = Date.now()) {
+export function completedSignalCandles(candles = [], now = Date.now(), intervalMinutes = 5) {
+  const intervalMs = Math.max(1, Number(intervalMinutes) || 5) * 60_000;
+  const maxAgeMs = intervalMs * 3;
   return (candles ?? []).filter((c) => {
     const ts = marketTimestamp(c.date);
-    return Number.isFinite(ts) && ts + 300_000 <= now && now - (ts + 300_000) <= 900_000 &&
+    return Number.isFinite(ts) && ts + intervalMs <= now && now - (ts + intervalMs) <= maxAgeMs &&
       [c.open, c.high, c.low, c.close].every(Number.isFinite);
   }).sort((a, b) => marketTimestamp(a.date) - marketTimestamp(b.date)).slice(-2);
 }
 
-export function confirmedDirection({ candles = [], now = Date.now(), spot }) {
-  const [a, b] = completedSignalCandles(candles, now);
-  if (!a || !b || marketTimestamp(b.date) - marketTimestamp(a.date) !== 300_000) return 0;
+export function confirmedDirection({ candles = [], now = Date.now(), spot, intervalMinutes = 5 }) {
+  const intervalMs = Math.max(1, Number(intervalMinutes) || 5) * 60_000;
+  const [a, b] = completedSignalCandles(candles, now, intervalMinutes);
+  if (!a || !b || marketTimestamp(b.date) - marketTimestamp(a.date) !== intervalMs) return 0;
   if (b.close > a.close && b.close > b.open && spot >= b.close) return 1;
   if (b.close < a.close && b.close < b.open && spot <= b.close) return -1;
   return 0;

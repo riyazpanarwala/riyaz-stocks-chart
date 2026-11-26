@@ -64,41 +64,50 @@ export function useOptionChain(instrument, selectedExpiry = null) {
   const latestRequestRef = useRef(0);
   const closedFetchDone = useRef(false);
   const rawDataRef = useRef(null);
-  const hasPrevRef = useRef(false);
-  const prevSnapshotAtRef = useRef(0);
+  const snapshotHistoryRef = useRef([]);
+  const lastSampleAtRef = useRef(0);
+  const lastRestSyncAtRef = useRef(0);
 
   const dataSource = rawData?.source || "nse";
   const isShoonya = dataSource === "shoonya";
 
   // ── Load Option Chain ──────────────────────────────────────
-  const load = useCallback(async (inst, resetPrev = false, expiryOverride = null) => {
+  const load = useCallback(async (inst, resetPrev = false, expiryOverride = null, { silent = false } = {}) => {
     const requestId = ++latestRequestRef.current;
 
     if (resetPrev) {
       rawDataRef.current = null;
-      hasPrevRef.current = false;
-      prevSnapshotAtRef.current = 0;
+      snapshotHistoryRef.current = [];
+      lastSampleAtRef.current = 0;
+      lastRestSyncAtRef.current = 0;
       setRawData(null);
       setPrevRawData(null);
       closedFetchDone.current = false;
     }
 
-    setLoading(true);
-    setError(null);
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
 
     try {
       const data = await fetchOptionChain(inst, expiryOverride);
 
       if (latestRequestRef.current !== requestId) return; // stale
 
+      const nowMs = Date.now();
+      lastRestSyncAtRef.current = nowMs;
+
       if (rawDataRef.current?.timestamp) {
-        setPrevRawData(cloneChainSnapshot(rawDataRef.current));
-        hasPrevRef.current = true;
-        prevSnapshotAtRef.current = Date.now();
+        const clonedPrev = cloneChainSnapshot(rawDataRef.current);
+        snapshotHistoryRef.current = snapshotHistoryRef.current.filter((s) => nowMs - s.at <= 105_000);
+        snapshotHistoryRef.current.push({ at: nowMs, data: clonedPrev });
+        lastSampleAtRef.current = nowMs;
+        setPrevRawData(snapshotHistoryRef.current[0].data);
       }
       rawDataRef.current = data;
       setRawData(data);
-      setFetchedAt(Date.now());
+      setFetchedAt(nowMs);
 
       if (!isMarketOpen()) {
         closedFetchDone.current = true;
@@ -106,10 +115,12 @@ export function useOptionChain(instrument, selectedExpiry = null) {
       setError(null);
     } catch (err) {
       if (latestRequestRef.current !== requestId) return; // stale
-      closedFetchDone.current = false;
-      setError(err?.message ?? "Failed to fetch option chain");
+      if (!silent) {
+        closedFetchDone.current = false;
+        setError(err?.message ?? "Failed to fetch option chain");
+      }
     } finally {
-      if (latestRequestRef.current === requestId) setLoading(false);
+      if (!silent && latestRequestRef.current === requestId) setLoading(false);
     }
   }, []);
 
@@ -200,10 +211,13 @@ export function useOptionChain(instrument, selectedExpiry = null) {
 
     if (hasChanges) {
       const nowMs = Date.now();
-      if (current.timestamp && (!hasPrevRef.current || nowMs - prevSnapshotAtRef.current >= REFRESH_MS)) {
-        setPrevRawData(cloneChainSnapshot(current));
-        hasPrevRef.current = true;
-        prevSnapshotAtRef.current = nowMs;
+      if (current.timestamp) {
+        snapshotHistoryRef.current = snapshotHistoryRef.current.filter((s) => nowMs - s.at <= 105_000);
+        if (snapshotHistoryRef.current.length === 0 || nowMs - lastSampleAtRef.current >= 15_000) {
+          snapshotHistoryRef.current.push({ at: nowMs, data: cloneChainSnapshot(current) });
+          lastSampleAtRef.current = nowMs;
+        }
+        setPrevRawData(snapshotHistoryRef.current[0].data);
       }
 
       next.timestamp = new Date(nowMs).toISOString();
@@ -242,10 +256,14 @@ export function useOptionChain(instrument, selectedExpiry = null) {
     const tick = () => {
       setMktStatus(getMarketStatusLabel());
 
-      // If Shoonya WebSocket is healthy and actively connected, bypass REST polling
+      // If Shoonya WebSocket is live, silently sync REST quotes every 90s so bid/ask/OI stay populated around new ATM strikes
       // If running on NSE fallback (or Shoonya WS is disconnected), poll via REFRESH_MS
       const isShoonyaWsLive = isShoonya && isWsConnected;
-      if (!isShoonyaWsLive) {
+      if (isShoonyaWsLive) {
+        if (isMarketOpen() && Date.now() - lastRestSyncAtRef.current >= 90_000) {
+          load(instrument, false, selectedExpiry, { silent: true });
+        }
+      } else {
         if (isMarketOpen()) {
           closedFetchDone.current = false;
           load(instrument, false, selectedExpiry);

@@ -85,6 +85,7 @@ const findInstrument = (query) => {
 export default function App({ initialSymbol = null }) {
   const [instrument,     setInstrument]     = useState(() => initialSymbol ?? FO_LIST[0]);
   const [scalpMode,      setScalpMode]      = useState(false);
+  const [signalInterval, setSignalInterval] = useState(5);
   const [activeTab,      setActiveTab]      = useState("oi");
   const [selectedExpiry, setSelectedExpiry] = useState(null);
   const isInitializedRef = useRef(false);
@@ -152,7 +153,7 @@ export default function App({ initialSymbol = null }) {
     isWsConnected,
     wsStatus,
   } = useOptionChain(instrument, selectedExpiry);
-  const candles = useSignalCandles(instrument, fetchedAt);
+  const candles = useSignalCandles(instrument, signalInterval);
 
   // ── Reset UI state on symbol change ──────────────────────
   useEffect(() => {
@@ -168,7 +169,7 @@ export default function App({ initialSymbol = null }) {
     straddleInfo, tYears,
     activeRange,
   } = useChainDerived({ rawData, prevRawData, isIndex, selectedExpiry, scalpMode, lotSize: instrument.lot,
-    candles, marketOpen: mktStatus?.open && !error, now });
+    candles, marketOpen: mktStatus?.open && !error, now, signalInterval });
 
   // ── Snapshot history + breakout signals ──────────────────
   const { breakoutSignals, snapshots } = useSnapshotHistory({
@@ -244,6 +245,40 @@ export default function App({ initialSymbol = null }) {
             >
               ⚡ {scalpMode ? "NEARBY ONLY" : "NEARBY STRIKES"}
             </button>
+
+            {/* Signal Candle Timeframe Selector (Scalping vs Swing) */}
+            <div
+              title="Signal candle timeframe: 1m/3m for fast scalping, 5m/15m for swing"
+              style={{
+                display: "flex", alignItems: "center", gap: 2, flexShrink: 0,
+                border: `1px solid ${C.border}`, borderRadius: 7, padding: 2, background: C.surface,
+              }}
+            >
+              <span style={{ fontSize: 10, color: C.muted, padding: "0 5px", fontWeight: 600 }}>TF</span>
+              {[
+                { id: 1, label: "1m" },
+                { id: 3, label: "3m" },
+                { id: 5, label: "5m" },
+                { id: 15, label: "15m" },
+              ].map((tf) => {
+                const active = signalInterval === tf.id;
+                return (
+                  <button
+                    key={tf.id}
+                    type="button"
+                    onClick={() => setSignalInterval(tf.id)}
+                    style={{
+                      border: 0, borderRadius: 5, padding: "5px 8px", cursor: "pointer",
+                      background: active ? "#14253d" : "transparent",
+                      color: active ? C.blue : C.muted,
+                      fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: active ? 700 : 500,
+                    }}
+                  >
+                    {tf.label}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Sound Toggle (Point 4) */}
             <button

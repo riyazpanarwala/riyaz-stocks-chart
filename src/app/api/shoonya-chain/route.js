@@ -262,12 +262,12 @@ export async function GET(request) {
 
     const sortedStrikes = Object.keys(strikeMap).map(Number).sort((a, b) => a - b);
 
-    // 5. Fetch initial baseline quotes for ATM strikes (ATM ± 2 strikes) so UI is populated immediately
+    // 5. Fetch initial baseline quotes for ATM strikes (ATM ± 8 strikes) so UI and signal engine are populated across intraday moves
     const atmIndex = sortedStrikes.reduce(
       (best, sp, idx) => Math.abs(sp - underlyingValue) < Math.abs(sortedStrikes[best] - underlyingValue) ? idx : best,
       0,
     );
-    const initialAtmStrikes = sortedStrikes.slice(Math.max(0, atmIndex - 2), atmIndex + 3);
+    const initialAtmStrikes = sortedStrikes.slice(Math.max(0, atmIndex - 8), atmIndex + 9);
 
     const initialQuotePromises = [];
     for (const sp of initialAtmStrikes) {

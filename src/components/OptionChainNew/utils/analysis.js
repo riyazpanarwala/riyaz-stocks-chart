@@ -117,12 +117,13 @@ export function wallState(row, side, context = {}) {
     : type === "Long Build-up" ? "Inferred buying" : type === "Long Unwinding" ? "Inferred long unwinding" : type;
 }
 
-export function crossedLevel(candles, level, direction, now = Date.now(), spot) {
+export function crossedLevel(candles, level, direction, now = Date.now(), spot, intervalMinutes = 5) {
   if (!(numeric(level) > 0)) return false;
-  const completed = completedSignalCandles(candles, now);
+  const intervalMs = Math.max(1, Number(intervalMinutes) || 5) * 60_000;
+  const completed = completedSignalCandles(candles, now, intervalMinutes);
   if (completed.length !== 2) return false;
   const [a, b] = completed;
-  if (marketTimestamp(b.date) - marketTimestamp(a.date) !== 300000) return false;
+  if (marketTimestamp(b.date) - marketTimestamp(a.date) !== intervalMs) return false;
   return direction === 1 ? a.close <= level && b.close > level && spot > level
     : a.close >= level && b.close < level && spot < level;
 }
