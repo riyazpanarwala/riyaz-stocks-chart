@@ -256,12 +256,26 @@ export function useOptionChain(instrument, selectedExpiry = null) {
     const tick = () => {
       setMktStatus(getMarketStatusLabel());
 
-      // If Shoonya WebSocket is live, silently sync REST quotes every 90s so bid/ask/OI stay populated around new ATM strikes
+      // If Shoonya WebSocket is live, only sync REST quotes (at most every 90s) if the current ATM strike is missing bid/ask
       // If running on NSE fallback (or Shoonya WS is disconnected), poll via REFRESH_MS
       const isShoonyaWsLive = isShoonya && isWsConnected;
       if (isShoonyaWsLive) {
         if (isMarketOpen() && Date.now() - lastRestSyncAtRef.current >= 90_000) {
-          load(instrument, false, selectedExpiry, { silent: true });
+          const cur = rawDataRef.current;
+          const curRows = cur?.fullData || cur?.displayData || [];
+          const spot = cur?.underlyingValue || 0;
+          const atmRow = curRows.length && spot > 0
+            ? curRows.reduce((best, r) =>
+                Math.abs(r.strikePrice - spot) < Math.abs(best.strikePrice - spot) ? r : best,
+              curRows[0])
+            : null;
+          const missingBidAsk = atmRow && (
+            !(atmRow.CE?.bidprice > 0 && atmRow.CE?.askPrice > 0) ||
+            !(atmRow.PE?.bidprice > 0 && atmRow.PE?.askPrice > 0)
+          );
+          if (missingBidAsk) {
+            load(instrument, false, selectedExpiry, { silent: true });
+          }
         }
       } else {
         if (isMarketOpen()) {

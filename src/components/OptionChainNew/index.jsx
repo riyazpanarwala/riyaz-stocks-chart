@@ -153,7 +153,10 @@ export default function App({ initialSymbol = null }) {
     isWsConnected,
     wsStatus,
   } = useOptionChain(instrument, selectedExpiry);
-  const candles = useSignalCandles(instrument, signalInterval);
+  const candles = useSignalCandles(instrument, signalInterval, {
+    spot: rawData?.underlyingValue,
+    isWsConnected: dataSource === "shoonya" && isWsConnected,
+  });
 
   // ── Reset UI state on symbol change ──────────────────────
   useEffect(() => {
