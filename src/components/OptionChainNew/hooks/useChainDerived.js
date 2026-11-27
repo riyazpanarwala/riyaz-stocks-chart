@@ -3,15 +3,18 @@
 // Derives ALL computed values from raw API data.
 // Centralises memoisation so child components don't recompute.
 // ═══════════════════════════════════════════════════════════════
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   parseIndexChain, parseStockChain,
   calcPCRFull, calcPCR, calcMaxPain, calcMaxPainFull, findATM,
   parseNSEExpiry,
 } from "../utils/parsers.js";
 import { generateSignal } from "../utils/signalEngine.js";
+import { beforeEntryCutoff } from "../utils/tradeRules.js";
 import { calcATMStraddle } from "../utils/greeksEngine.js";
 import { NORMAL_RANGE, SCALP_RANGE } from "../constants.js";
+
+const SIGNAL_HOLD_MS = 60_000;
 
 /**
  * @param {{
@@ -101,8 +104,8 @@ export function useChainDerived({ rawData, prevRawData, isIndex, isCommodity = f
     [prevRows, atm, range],
   );
 
-  // ── Top-level signal ───────────────────────────────────────
-  const sig = useMemo(
+  // ── Top-level signal (with 60s hysteresis latch to prevent tick flicker) ──
+  const rawSig = useMemo(
     () => (rows.length ? generateSignal(rows, atm, pcr, underlyingValue, {
       prevRows: prevRawData?.expiry === rawData?.expiry ? prevRows : [],
       prevSpot: prevRawData?.underlyingValue, expiry: activeExpiry, prevExpiry: isIndex ? prevRawData?.expiry : activeExpiry,
@@ -110,6 +113,52 @@ export function useChainDerived({ rawData, prevRawData, isIndex, isCommodity = f
     }) : null),
     [rows, atm, pcr, underlyingValue, prevRows, rawData, prevRawData, activeExpiry, isIndex, isCommodity, candles, marketOpen, now, signalInterval],
   );
+
+  const chainKey = `${activeExpiry || ""}:${signalInterval}:${isCommodity}`;
+  const [latchedSig, setLatchedSig] = useState(null);
+
+  useEffect(() => {
+    const nowMs = now || Date.now();
+    if (!rawSig || !marketOpen || !beforeEntryCutoff(nowMs, isCommodity)) {
+      setLatchedSig(null);
+      return;
+    }
+    if (rawSig.rawSignal === "BUY CALL" || rawSig.rawSignal === "BUY PUT") {
+      setLatchedSig({ chainKey, sig: rawSig, lastSeenAt: nowMs });
+      return;
+    }
+    setLatchedSig((prev) => {
+      if (!prev) return null;
+      if (prev.chainKey !== chainKey || nowMs - prev.lastSeenAt > SIGNAL_HOLD_MS) return null;
+      return prev;
+    });
+  }, [rawSig, chainKey, marketOpen, isCommodity, now]);
+
+  const sig = useMemo(() => {
+    if (!rawSig) return null;
+    if (rawSig.rawSignal === "BUY CALL" || rawSig.rawSignal === "BUY PUT") return rawSig;
+    const nowMs = now || Date.now();
+    if (
+      marketOpen &&
+      beforeEntryCutoff(nowMs, isCommodity) &&
+      latchedSig &&
+      latchedSig.chainKey === chainKey &&
+      nowMs - latchedSig.lastSeenAt <= SIGNAL_HOLD_MS
+    ) {
+      return {
+        ...latchedSig.sig,
+        pcr: rawSig.pcr,
+        pcrBias: rawSig.pcrBias,
+        distToRes: rawSig.distToRes,
+        distToSup: rawSig.distToSup,
+        topSupport: rawSig.topSupport,
+        topResistance: rawSig.topResistance,
+        nearestSupport: rawSig.nearestSupport,
+        nearestResistance: rawSig.nearestResistance,
+      };
+    }
+    return rawSig;
+  }, [rawSig, latchedSig, chainKey, marketOpen, isCommodity, now]);
 
   // ── Chart data (memoised without `sig` — avoids spurious recomputes) ──
   // FIX #4 (documentation): `sig` is intentionally excluded from this memo's

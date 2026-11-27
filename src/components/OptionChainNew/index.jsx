@@ -478,6 +478,7 @@ export default function App({ initialSymbol = null }) {
               now={now}
               marketOpen={mktStatus?.open}
               expiry={activeExpiry}
+              isCommodity={isCommodity}
             />
             {sig && <ZoneBadges sig={sig} />}
             {straddleInfo && <StraddleBanner straddleInfo={straddleInfo} lotSize={instrument.lot} />}

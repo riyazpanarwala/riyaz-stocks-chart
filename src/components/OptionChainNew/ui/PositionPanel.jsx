@@ -5,7 +5,7 @@ import { pendingFillReducer, recordPendingFill } from "../utils/positionTracking
 
 const MAX_HOLD_MINS = 40;
 
-export function PositionPanel({ sig, exitSignal = sig, storageKey, rows, spot, timestamp, now = Date.now(), marketOpen, expiry }) {
+export function PositionPanel({ sig, exitSignal = sig, storageKey, rows, spot, timestamp, now = Date.now(), marketOpen, expiry, isCommodity = false }) {
   const [fill, setFill] = useState("");
   const [cost, setCost] = useState("0");
   const [position, setPosition] = useState(null);
@@ -38,7 +38,7 @@ export function PositionPanel({ sig, exitSignal = sig, storageKey, rows, spot, t
   const quote = liquidQuote(leg);
   const status = evaluatePosition(position, {
     bid: quote.bid, spot, timestamp, now, marketOpen,
-    rawSignal: exitSignal?.reversalSignal ?? exitSignal?.rawSignal, confirmed: exitSignal?.confirmed,
+    rawSignal: exitSignal?.reversalSignal ?? exitSignal?.rawSignal, confirmed: exitSignal?.confirmed, isCommodity,
   });
 
   const recordFill = () => {
