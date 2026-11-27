@@ -90,7 +90,7 @@ const useCommonHeader = () => {
     if (arr?.source) setDataSource(arr.source);
   };
 
-  const setPeriodOnIntervalChange = (obj) => {
+  const setPeriodOnIntervalChange = useCallback((obj) => {
     if (obj.apiUnit === "minutes") {
       setPeriod(periodMinutes[0]);
     } else if (obj.apiUnit === "hours") {
@@ -100,20 +100,25 @@ const useCommonHeader = () => {
     } else {
       setPeriod(periodMax[0]);
     }
-  };
+  }, []);
 
-  const handleIntervalChange = (obj) => {
-    setIntervalObj(obj);
-    if (intervalObj.apiUnit !== obj.apiUnit) {
-      setPeriodOnIntervalChange(obj);
-    }
-  };
+  const handleIntervalChange = useCallback(
+    (obj) => {
+      setIntervalObj((prev) => {
+        if (prev.apiUnit !== obj.apiUnit) {
+          setPeriodOnIntervalChange(obj);
+        }
+        return obj;
+      });
+    },
+    [setPeriodOnIntervalChange],
+  );
 
   /**
    * Determine which index tabs to show based on the selected company's flags.
    * ETFs are listed on NSE as equities, so we show a single "NSE ETF" entry.
    */
-  const setIndexes = ({
+  const setIndexes = useCallback(({
     nse,
     bse,
     nseIndex,
@@ -145,40 +150,46 @@ const useCommonHeader = () => {
       setNewIndexArr([index1Arr[1]]);
       setIndex(index1Arr[1]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (companyObj?.label) {
       setIndexes(companyObj);
     }
-  }, [companyObj]);
+  }, [companyObj, setIndexes]);
 
-  const handleCompanyChange = (companyObj) => {
-    setIndexes(companyObj);
-    setCompany(companyObj);
-  };
+  const handleCompanyChange = useCallback(
+    (nextCompanyObj) => {
+      setIndexes(nextCompanyObj);
+      setCompany(nextCompanyObj);
+    },
+    [setIndexes, setCompany],
+  );
 
-  const handleIndexChange = (obj) => {
+  const handleIndexChange = useCallback((obj) => {
     setIndex(obj);
-  };
+  }, []);
 
   const isIntraday = (value) => {
     return value === "intraday";
   };
 
-  const setIntervalData = ({ value }) => {
+  const setIntervalData = useCallback(({ value }) => {
     if (isIntraday(value)) {
       setIntervalObj(intervalArr[0]);
     } else {
       setIntervalObj(intervalArr1[6]);
       setPeriod(periodDays[1]);
     }
-  };
+  }, []);
 
-  const handleIntradayChange = (obj) => {
-    setIntervalData(obj);
-    setIntradayOrHistoric(obj);
-  };
+  const handleIntradayChange = useCallback(
+    (obj) => {
+      setIntervalData(obj);
+      setIntradayOrHistoric(obj);
+    },
+    [setIntervalData],
+  );
 
   useEffect(() => {
     if (!intervalObj.value) {
