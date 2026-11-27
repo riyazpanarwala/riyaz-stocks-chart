@@ -1,9 +1,22 @@
-import React from "react";
+import React, { useMemo } from "react";
 import Select from "react-select";
 import MenuList from "./MenuList";
 import Option from "./Option";
 
 import "./ReactSelect.scss";
+
+const SELECT_COMPONENTS = {
+  MenuList,
+  Option,
+};
+
+const customFilter = (option, searchText) => {
+  if (!searchText) return true;
+  const query = searchText.toLowerCase();
+  const label = option.data._lowerLabel || option.data.label?.toLowerCase() || "";
+  const symbol = option.data._lowerSymbol || option.data.symbol?.toLowerCase() || "";
+  return label.includes(query) || symbol.includes(query);
+};
 
 const ReactSelect = ({
   options,
@@ -13,39 +26,33 @@ const ReactSelect = ({
   width,
   minWidth,
 }) => {
-  const customStyles = {
-    menu: (provided) => ({
-      ...provided,
-      zIndex: 100,
-      padding: "10px 0",
+  const customStyles = useMemo(
+    () => ({
+      menu: (provided) => ({
+        ...provided,
+        zIndex: 100,
+        padding: "10px 0",
+      }),
+      control: (provided) => ({
+        ...provided,
+        width: width,
+        minWidth,
+      }),
     }),
-    control: (provided) => ({
-      ...provided,
-      width: width,
-      minWidth,
-    }),
-  };
+    [width, minWidth],
+  );
 
-  const customFilter = (option, searchText) => {
-    if (!searchText) return true;
-    const query = searchText.toLowerCase();
-    const label = option.data._lowerLabel || option.data.label?.toLowerCase() || "";
-    const symbol = option.data._lowerSymbol || option.data.symbol?.toLowerCase() || "";
-    return label.includes(query) || symbol.includes(query);
-  };
+  const selectedValue = useMemo(() => (value ? [value] : null), [value]);
 
   return (
     <Select
       options={options}
-      value={value && [value]}
+      value={selectedValue}
       filterOption={customFilter}
       onChange={onChange}
       classNamePrefix="react-select"
       placeholder={placeholder}
-      components={{
-        MenuList,
-        Option,
-      }}
+      components={SELECT_COMPONENTS}
       styles={customStyles}
       isSearchable={true}
     />

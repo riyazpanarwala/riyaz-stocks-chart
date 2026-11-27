@@ -66,6 +66,7 @@ const CandleStickChart = () => {
     newIndexArr,
     candleData,
     dataSource,
+    wsStatus,
     period,
     isFO,
   } = useCommonHeader();
@@ -269,6 +270,7 @@ const CandleStickChart = () => {
         }
         indexArr={newIndexArr}
         dataSource={dataSource}
+        wsStatus={wsStatus}
       />
       <div className="app-layout">
         <Sidebar

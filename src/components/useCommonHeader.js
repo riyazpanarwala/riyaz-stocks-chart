@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import useParseCsv from "./utils/parseCsv";
 import {
   intraArr,
@@ -15,6 +15,20 @@ import {
 import { getIntradayData } from "./getIntervalData";
 import { isMarketOpen } from "./utils/indianstockmarket";
 import { getCandleArr, fetchHistoricData } from "./common";
+import { useShoonyaWebSocket } from "./OptionChainNew/hooks/useShoonyaWebSocket.js";
+import { getShoonyaStreamKeyAction } from "../app/actions/shoonyaCandles.js";
+
+const IST_OFFSET_MS = 5.5 * 3_600_000;
+
+function formatIstDateTime(ms) {
+  return new Date(ms + IST_OFFSET_MS).toISOString().slice(0, 19).replace("T", " ");
+}
+
+function parseCandleTimestampMs(dateStr) {
+  if (!dateStr || typeof dateStr !== "string") return NaN;
+  const iso = dateStr.includes("T") ? dateStr : dateStr.replace(" ", "T");
+  return Date.parse(iso.endsWith("+05:30") || iso.endsWith("Z") ? iso : `${iso}+05:30`);
+}
 
 // ETF trades on NSE as an equity — reuse the NSE_EQ entry
 const etfIndexArr = [{ label: "NSE ETF", value: "NSE_EQ" }];
@@ -28,6 +42,7 @@ const useCommonHeader = () => {
   const [apiCall, setApiCall] = useState(0);
   const [candleData, setCandleData] = useState([]);
   const [dataSource, setDataSource] = useState("shoonya");
+  const [wsTokenKey, setWsTokenKey] = useState(null);
   const { companyArr, companyObj, setCompany, isFO } = useParseCsv();
   const timerRef = useRef(null);
   const lastLoadedSymbolRef = useRef(null);
@@ -207,6 +222,98 @@ const useCommonHeader = () => {
     }
   }, [intervalObj, intradayObj, companyObj, period, indexObj]);
 
+  // Resolve Shoonya WebSocket token key for the active symbol
+  useEffect(() => {
+    let cancelled = false;
+    if (!companyObj?.value || !indexObj?.value || companyObj?.global) {
+      setWsTokenKey(null);
+      return;
+    }
+
+    const instrumentKey = `${indexObj.value}|${companyObj.value}`;
+    getShoonyaStreamKeyAction(instrumentKey)
+      .then((res) => {
+        if (!cancelled) {
+          setWsTokenKey(res?.tokenKey || null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setWsTokenKey(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [companyObj?.value, companyObj?.global, indexObj?.value]);
+
+  const handleLiveTick = useCallback(
+    (tick) => {
+      const ltp = Number(tick?.ltp);
+      if (!Number.isFinite(ltp) || ltp <= 0) return;
+
+      const tickTimeMs = Number.isFinite(Number(tick?.time)) ? Number(tick.time) : Date.now();
+      const apiUnit = intervalObj?.apiUnit;
+      const apiInterval = Math.max(1, Number(intervalObj?.apiInterval) || 1);
+
+      setCandleData((prev) => {
+        if (!Array.isArray(prev) || prev.length === 0) return prev;
+        const last = prev[prev.length - 1];
+        if (!last) return prev;
+
+        if (apiUnit === "minutes" || apiUnit === "hours") {
+          const intervalMs = apiUnit === "hours" ? apiInterval * 3_600_000 : apiInterval * 60_000;
+          const lastTs = parseCandleTimestampMs(last.date);
+
+          if (Number.isFinite(lastTs) && tickTimeMs >= lastTs && tickTimeMs < lastTs + intervalMs) {
+            const nextHigh = Math.max(Number(last.high) || ltp, ltp);
+            const nextLow = Math.min(Number(last.low) || ltp, ltp);
+            if (last.close === ltp && last.high === nextHigh && last.low === nextLow) return prev;
+            const updated = [...prev];
+            updated[updated.length - 1] = { ...last, high: nextHigh, low: nextLow, close: ltp };
+            return updated;
+          }
+
+          if (!Number.isFinite(lastTs) || tickTimeMs >= lastTs + intervalMs) {
+            const bucketStartMs = Number.isFinite(lastTs)
+              ? lastTs + Math.floor((tickTimeMs - lastTs) / intervalMs) * intervalMs
+              : Math.floor(tickTimeMs / intervalMs) * intervalMs;
+            return [
+              ...prev,
+              {
+                date: formatIstDateTime(bucketStartMs),
+                open: ltp,
+                high: ltp,
+                low: ltp,
+                close: ltp,
+                volume: 0,
+                dividend: null,
+                split: null,
+                dividends: null,
+                splits: null,
+              },
+            ];
+          }
+          return prev;
+        }
+
+        // Daily / Weekly / Monthly: update latest candle's high, low, close
+        const nextHigh = Math.max(Number(last.high) || ltp, ltp);
+        const nextLow = Math.min(Number(last.low) || ltp, ltp);
+        if (last.close === ltp && last.high === nextHigh && last.low === nextLow) return prev;
+        const updated = [...prev];
+        updated[updated.length - 1] = { ...last, high: nextHigh, low: nextLow, close: ltp };
+        return updated;
+      });
+    },
+    [intervalObj?.apiUnit, intervalObj?.apiInterval],
+  );
+
+  const { status: wsStatus } = useShoonyaWebSocket({
+    enabled: Boolean(wsTokenKey && isMarketOpen()),
+    tokenKeys: wsTokenKey,
+    onTick: handleLiveTick,
+  });
+
   return {
     intervalObj,
     intradayObj,
@@ -221,6 +328,7 @@ const useCommonHeader = () => {
     newIndexArr,
     candleData,
     dataSource,
+    wsStatus,
     period,
     isFO,
   };

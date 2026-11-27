@@ -15,6 +15,7 @@ const HeaderWithDropdowns = ({
   intervalArr,
   indexArr,
   dataSource = "shoonya",
+  wsStatus = "idle",
 }) => {
   return (
     <header className="app-header">
@@ -57,7 +58,9 @@ const HeaderWithDropdowns = ({
             <span
               title={
                 dataSource === "shoonya"
-                  ? "Streaming candlestick data from Shoonya API"
+                  ? wsStatus === "connected"
+                    ? "Streaming live ticks via Shoonya WebSocket"
+                    : "Streaming candlestick data from Shoonya API"
                   : "Operating on Upstox / Yahoo Finance fallback"
               }
               style={{
@@ -85,7 +88,11 @@ const HeaderWithDropdowns = ({
                   display: "inline-block",
                 }}
               />
-              {dataSource === "shoonya" ? "Shoonya API" : "Upstox Fallback"}
+              {dataSource === "shoonya"
+                ? wsStatus === "connected"
+                  ? "Shoonya WS Live"
+                  : "Shoonya API"
+                : "Upstox Fallback"}
             </span>
           </div>
         </div>
@@ -94,4 +101,4 @@ const HeaderWithDropdowns = ({
   );
 };
 
-export default HeaderWithDropdowns;
+export default React.memo(HeaderWithDropdowns);

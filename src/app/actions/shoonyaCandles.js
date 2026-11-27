@@ -454,3 +454,25 @@ export async function getShoonyaCandlesAction({
     });
   }
 }
+
+/**
+ * Resolves the Shoonya WebSocket subscription key (e.g. "NSE|26000") for an instrumentKey.
+ */
+export async function getShoonyaStreamKeyAction(instrumentKey) {
+  const uid = process.env.SHOONYA_UID?.trim();
+  const accessToken = process.env.SHOONYA_ACCESS_TOKEN?.trim();
+  if (!uid || !accessToken || !instrumentKey) {
+    return { tokenKey: null };
+  }
+
+  try {
+    const target = await resolveShoonyaTarget(instrumentKey, uid, accessToken);
+    if (target?.exch && target?.token) {
+      return { tokenKey: `${target.exch}|${target.token}` };
+    }
+  } catch (err) {
+    console.warn(`[getShoonyaStreamKeyAction] Failed for ${instrumentKey}:`, err.message);
+  }
+
+  return { tokenKey: null };
+}

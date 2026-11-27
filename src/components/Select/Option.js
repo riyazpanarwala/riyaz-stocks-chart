@@ -1,14 +1,13 @@
 import React from "react";
 import cx from "classnames";
 
-const Option = ({ children, isSelected, innerProps }) => (
+const Option = ({ children, isSelected, innerProps, innerRef }) => (
   <div
+    ref={innerRef}
+    {...innerProps}
     className={cx("react-select__option", {
       "react-select__option_selected": isSelected,
     })}
-    id={innerProps.id}
-    tabIndex={innerProps.tabIndex}
-    onClick={innerProps.onClick}
   >
     {children}
   </div>
