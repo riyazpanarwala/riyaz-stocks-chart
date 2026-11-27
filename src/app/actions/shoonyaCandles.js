@@ -44,20 +44,26 @@ function getInstrumentByValue(value) {
 const scripTokenCache = new Map();
 
 const KNOWN_INDICES = Object.freeze({
-  "NIFTY 50": { exch: "NSE", token: "26000", sym: "NSE:Nifty 50", yahooSymbol: "^NSEI" },
-  NIFTY: { exch: "NSE", token: "26000", sym: "NSE:Nifty 50", yahooSymbol: "^NSEI" },
-  "NIFTY BANK": { exch: "NSE", token: "26009", sym: "NSE:Nifty Bank", yahooSymbol: "^NSEBANK" },
-  BANKNIFTY: { exch: "NSE", token: "26009", sym: "NSE:Nifty Bank", yahooSymbol: "^NSEBANK" },
-  "NIFTY MIDCAP 100": { exch: "NSE", token: "26014", sym: "NSE:NIFTY MIDCAP 100", yahooSymbol: "NIFTY_MIDCAP_100.NS" },
-  "NIFTY SMLCAP 100": { exch: "NSE", token: "26015", sym: "NSE:NIFTY SMLCAP 100", yahooSymbol: "NIFTY_SMALLCAP_100.NS" },
-  "NIFTY NEXT 50": { exch: "NSE", token: "26013", sym: "NSE:NIFTY NEXT 50", yahooSymbol: "NIFTY_NEXT_50.NS" },
-  "NIFTY FINANCIAL SERVICES": { exch: "NSE", token: "26037", sym: "NSE:Nifty Financial Services", yahooSymbol: "NIFTY_FIN_SERVICE.NS" },
-  FINNIFTY: { exch: "NSE", token: "26037", sym: "NSE:Nifty Financial Services", yahooSymbol: "NIFTY_FIN_SERVICE.NS" },
-  "NIFTY ENERGY": { exch: "NSE", token: "26018", sym: "NSE:Nifty Energy", yahooSymbol: "^CNXENERGY" },
-  "INDIA VIX": { exch: "NSE", token: "26017", sym: "NSE:India VIX", yahooSymbol: "^INDIAVIX" },
-  SENSEX: { exch: "BSE", token: "1", sym: "BSE:SENSEX", yahooSymbol: "^BSESN" },
-  BANKEX: { exch: "BSE", token: "12", sym: "BSE:BANKEX", yahooSymbol: "^BSEBANK" },
+  "NIFTY 50": { exch: "NSE", token: "26000", sym: "NSE:Nifty 50", upstoxKey: "NSE_INDEX|Nifty 50", yahooSymbol: "^NSEI" },
+  NIFTY: { exch: "NSE", token: "26000", sym: "NSE:Nifty 50", upstoxKey: "NSE_INDEX|Nifty 50", yahooSymbol: "^NSEI" },
+  "NIFTY BANK": { exch: "NSE", token: "26009", sym: "NSE:Nifty Bank", upstoxKey: "NSE_INDEX|Nifty Bank", yahooSymbol: "^NSEBANK" },
+  BANKNIFTY: { exch: "NSE", token: "26009", sym: "NSE:Nifty Bank", upstoxKey: "NSE_INDEX|Nifty Bank", yahooSymbol: "^NSEBANK" },
+  "NIFTY MIDCAP 100": { exch: "NSE", token: "26014", sym: "NSE:NIFTY MIDCAP 100", upstoxKey: "NSE_INDEX|NIFTY MIDCAP 100", yahooSymbol: "NIFTY_MIDCAP_100.NS" },
+  "NIFTY SMLCAP 100": { exch: "NSE", token: "26015", sym: "NSE:NIFTY SMLCAP 100", upstoxKey: "NSE_INDEX|NIFTY SMLCAP 100", yahooSymbol: "NIFTY_SMALLCAP_100.NS" },
+  "NIFTY NEXT 50": { exch: "NSE", token: "26013", sym: "NSE:NIFTY NEXT 50", upstoxKey: "NSE_INDEX|Nifty Next 50", yahooSymbol: "NIFTY_NEXT_50.NS" },
+  "NIFTY FINANCIAL SERVICES": { exch: "NSE", token: "26037", sym: "NSE:Nifty Financial Services", upstoxKey: "NSE_INDEX|Nifty Fin Service", yahooSymbol: "NIFTY_FIN_SERVICE.NS" },
+  FINNIFTY: { exch: "NSE", token: "26037", sym: "NSE:Nifty Financial Services", upstoxKey: "NSE_INDEX|Nifty Fin Service", yahooSymbol: "NIFTY_FIN_SERVICE.NS" },
+  "NIFTY ENERGY": { exch: "NSE", token: "26018", sym: "NSE:Nifty Energy", upstoxKey: "NSE_INDEX|Nifty Energy", yahooSymbol: "^CNXENERGY" },
+  "INDIA VIX": { exch: "NSE", token: "26017", sym: "NSE:India VIX", upstoxKey: "NSE_INDEX|India VIX", yahooSymbol: "^INDIAVIX" },
+  SENSEX: { exch: "BSE", token: "1", sym: "BSE:SENSEX", upstoxKey: "BSE_INDEX|SENSEX", yahooSymbol: "^BSESN" },
+  BANKEX: { exch: "BSE", token: "12", sym: "BSE:BANKEX", upstoxKey: "BSE_INDEX|BANKEX", yahooSymbol: "^BSEBANK" },
 });
+
+function resolveUpstoxInstrumentKey(instrumentKey) {
+  const [, companyValue = ""] = String(instrumentKey || "").split("|");
+  const upperVal = companyValue.trim().toUpperCase();
+  return KNOWN_INDICES[upperVal]?.upstoxKey || instrumentKey;
+}
 
 async function callShoonya(endpoint, payload, accessToken, timeoutMs = 15000) {
   const body = `jData=${JSON.stringify(payload)}&jKey=${encodeURIComponent(accessToken)}`;
@@ -242,9 +248,10 @@ async function executeFallback({
 }) {
   // 1. Try Upstox
   try {
+    const upstoxKey = resolveUpstoxInstrumentKey(instrumentKey);
     const upstoxRes = await getUpstoxCandlesAction({
       type,
-      instrumentKey,
+      instrumentKey: upstoxKey,
       interval,
       apiInterval,
       toDate,
